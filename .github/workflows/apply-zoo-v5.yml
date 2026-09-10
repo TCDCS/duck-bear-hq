@@ -1,0 +1,36 @@
+name: Apply Zoo HQ v5
+
+on:
+  push:
+    branches: [zoo-hq-v5-stage]
+    paths:
+      - '.github/workflows/apply-zoo-v5.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: zoo-hq-v5-stage
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Apply exact Zoo HQ v5 files
+        run: python3 scripts/apply_zoo_v5_payload.py
+      - name: Check source and migrations
+        run: node scripts/check.mjs
+      - name: Run end-to-end smoke tests
+        run: node scripts/smoke.mjs
+      - name: Commit tested build
+        run: |
+          rm -rf .zoo-v5 scripts/apply_zoo_v5_payload.py .github/workflows/apply-zoo-v5.yml
+          git config user.name "Duck & Bear Zoo Builder"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "Build Zoo HQ v5 with AI customer service"
+          git push origin HEAD:zoo-hq-v5-stage
