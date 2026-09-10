@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#f7efe7" />
+  <meta name="description" content="Duck & Bear HQ — a completely serious relationship commerce operation." />
+  <title>Duck & Bear HQ</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <a class="brand" href="#home" id="brandEgg" aria-label="Duck and Bear HQ home">
+        <span class="brand-mark" aria-hidden="true">🦆🐻</span>
+        <span><strong>Duck & Bear</strong><small>HQ</small></span>
+      </a>
+
+      <nav class="desktop-nav" aria-label="Main navigation">
+        <a href="#home" data-nav="home">Home</a>
+        <a href="#shop" data-nav="shop">£0 Shop</a>
+        <a href="#loyalty" data-nav="loyalty">Loyalty</a>
+        <a href="#orders" data-nav="orders">Orders</a>
+        <a href="#fun" data-nav="fun">Fun Stuff</a>
+        <a href="#admin" data-nav="admin" id="adminNav" hidden>Admin</a>
+      </nav>
+
+      <div class="top-actions">
+        <button class="icon-btn" id="installBtn" type="button" aria-label="Install app" title="Install app" hidden>⇩</button>
+        <button class="icon-btn" id="themeBtn" type="button" aria-label="Change theme" title="Change theme">◐</button>
+        <button class="icon-btn" id="profileBtn" type="button" aria-label="Account and data" title="Account" hidden>👤</button>
+        <button class="cart-btn" id="cartBtn" type="button" aria-label="Open cart" hidden>
+          <span aria-hidden="true">🛒</span><span class="cart-label">Cart</span><b id="cartCount">0</b>
+        </button>
+      </div>
+    </header>
+
+    <main id="view" tabindex="-1"></main>
+
+    <footer class="site-footer">
+      <div>
+        <strong>Duck & Bear HQ</strong>
+        <span>Operating since someone thought this was a sensible idea.</span>
+      </div>
+      <button type="button" class="footer-egg" id="durianEgg" title="Definitely just a durian">💚</button>
+      <span id="storageStatus">Cloudflare sync</span>
+    </footer>
+
+    <nav class="mobile-nav" aria-label="Mobile navigation">
+      <a href="#home" data-nav="home"><span>🏠</span>Home</a>
+      <a href="#shop" data-nav="shop"><span>🛍️</span>Shop</a>
+      <a href="#loyalty" data-nav="loyalty"><span>⭐</span>Loyalty</a>
+      <a href="#orders" data-nav="orders"><span>📦</span>Orders</a>
+      <a href="#fun" data-nav="fun"><span>🎲</span>Fun</a>
+    </nav>
+  </div>
+
+  <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+  <aside class="cart-drawer" id="cartDrawer" aria-hidden="true" aria-label="Shopping cart">
+    <div class="drawer-head">
+      <div>
+        <p class="eyebrow">Definitely legitimate commerce</p>
+        <h2>Your cart</h2>
+      </div>
+      <button class="icon-btn" id="closeCartBtn" type="button" aria-label="Close cart">✕</button>
+    </div>
+    <div id="cartItems" class="cart-items"></div>
+    <div class="drawer-foot">
+      <div class="totals"><span>Total</span><strong id="cartTotal" class="zero-total">£0.00</strong></div>
+      <p class="muted tiny">Delivery, tax, emotional handling fees and Bear Prime are all £0.00.</p>
+      <button class="primary full" id="checkoutBtn" type="button">Proceed to checkout</button>
+    </div>
+  </aside>
+
+  <dialog id="checkoutDialog" class="modal">
+    <form id="checkoutForm" class="checkout-form">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">Secure-ish checkout</p>
+          <h2>Place your £0.00 order</h2>
+        </div>
+        <button class="icon-btn dialog-close" type="button" aria-label="Close">✕</button>
+      </div>
+      <div class="checkout-grid">
+        <label>Customer name<input id="checkoutName" value="Guannan" maxlength="40" autocomplete="name" required /></label>
+        <label>Delivery method<select id="deliveryMethod"><option>Immediate Bear Delivery</option><option>Tonight</option><option>At the next suitable opportunity</option><option>Surprise me</option></select></label>
+        <label class="span-2">Delivery notes<textarea id="deliveryNotes" rows="3" maxlength="180" placeholder="e.g. No raw onion. Knock twice. Bring snacks."></textarea></label>
+      </div>
+      <div id="checkoutSummary" class="checkout-summary"></div>
+      <label class="checkbox"><input id="termsCheck" type="checkbox" required /><span>I accept the entirely made-up Duck & Bear terms and conditions.</span></label>
+      <button class="primary full" type="submit">Place order — £0.00</button>
+    </form>
+  </dialog>
+
+  <dialog id="productDialog" class="modal product-modal">
+    <div id="productDialogContent"></div>
+  </dialog>
+
+  <dialog id="detailDialog" class="modal detail-modal">
+    <div id="detailDialogContent"></div>
+  </dialog>
+
+  <dialog id="dataDialog" class="modal">
+    <div class="modal-body">
+      <div class="modal-head">
+        <div><p class="eyebrow">Account & data</p><h2>Duck & Bear HQ</h2></div>
+        <button class="icon-btn dialog-close" type="button" aria-label="Close">✕</button>
+      </div>
+      <div id="accountSummary" class="account-summary"></div>
+      <div class="stack-actions">
+        <a class="secondary" href="/api/export/orders.csv" download>Export order history CSV</a>
+        <a class="secondary" href="/api/export/loyalty.csv" download>Export loyalty history CSV</a>
+        <a class="secondary" href="/api/export/backup.json" download>Export full JSON backup</a>
+        <button class="danger-btn" id="logoutBtn" type="button">Sign out</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="confetti-layer" id="confettiLayer" aria-hidden="true"></div>
+
+  <div class="easter-egg" id="eggOverlay" hidden>
+    <div class="egg-card">
+      <div class="egg-emoji" id="eggEmoji">🦆💥🐻</div>
+      <p class="eyebrow">Classified</p>
+      <h2 id="eggTitle">SECRET MODE UNLOCKED</h2>
+      <p id="eggText">You found the Duck & Bear emergency nonsense protocol.</p>
+      <button class="primary" id="eggClose" type="button">Excellent</button>
+    </div>
+  </div>
+
+  <noscript><div class="noscript">Duck & Bear HQ needs JavaScript switched on. Otherwise it becomes a very expensive-looking sign.</div></noscript>
+  <script src="app.js" defer></script>
+</body>
+</html>

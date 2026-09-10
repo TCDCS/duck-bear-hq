@@ -1,0 +1,9 @@
+DUCK & BEAR HQ — ONE-TIME FIRST LOGIN KEY
+==========================================
+
+hPnsRdjLrulzHgiJT3GJzF73
+
+Keep the GitHub repository PRIVATE.
+
+You will use this key once on the first setup screen to create the Bear Admin and Duck Member passwords.
+After the two accounts have been created, the app refuses to run setup again, so this key can no longer be used to create or replace accounts.

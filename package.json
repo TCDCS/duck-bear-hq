@@ -1,0 +1,17 @@
+{
+  "name": "duck-bear-hq",
+  "version": "4.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Duck & Bear HQ — Cloudflare Worker + D1 + R2 PWA",
+  "scripts": {
+    "deploy": "wrangler deploy && wrangler d1 migrations apply DB --remote && wrangler deploy",
+    "check": "node scripts/check.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "dev": "wrangler dev",
+    "migrate:local": "wrangler d1 migrations apply DB --local"
+  },
+  "devDependencies": {
+    "wrangler": "^4.45.0"
+  }
+}

@@ -1,0 +1,3 @@
+USE BROWSER-DEPLOY.txt
+
+This edition is specifically made so you do NOT need Node.js, npm, Wrangler or Git installed on your Windows PC.

@@ -1,0 +1,58 @@
+DUCK & BEAR HQ — BROWSER-ONLY DEPLOYMENT
+========================================
+
+YOU DO NOT NEED NODE.JS ON YOUR PC.
+YOU DO NOT NEED TO OPEN OR EDIT package.json OR wrangler.jsonc.
+
+1. Extract this ZIP.
+
+2. In GitHub, create a NEW PRIVATE personal repository called:
+   duck-bear-hq
+
+   Do not use a TCD/work repository.
+
+3. In the empty GitHub repository choose:
+   Add file > Upload files
+
+   Drag the CONTENTS of this folder into the upload page, including the folders:
+   - public
+   - src
+   - migrations
+   - scripts
+
+   and the files at the top level.
+
+4. Commit the upload to main.
+
+5. Open Cloudflare Dashboard > Workers & Pages > Create application > Import a repository.
+
+6. Connect GitHub and select your private duck-bear-hq repository.
+
+7. Use these settings if Cloudflare asks:
+   Root directory: /
+   Build command: leave blank/default
+   Deploy command: npm run deploy
+   Production branch: main
+
+8. Select Save and Deploy.
+
+Cloudflare's own build server installs Node/Wrangler. The deployment command will:
+- create the D1 database automatically;
+- create the R2 bucket automatically;
+- deploy the Worker and web app;
+- apply the database schema and starter data;
+- deploy once more after the schema is ready.
+
+9. When the deployment is green, open the workers.dev URL Cloudflare shows you.
+
+10. Open FIRST-LOGIN.txt from your extracted folder and copy the one-time key into the setup screen. Create:
+    - Bear Admin password
+    - Duck Member password
+
+11. Delete FIRST-LOGIN.txt from the GitHub repository after setup if you want. It is no longer usable after setup has completed, but removing it keeps the repo cleaner.
+
+IMPORTANT
+---------
+Keep the GitHub repository PRIVATE. Do not upload this to a work/TCD repository.
+
+The JSON/JSONC files are application configuration files for Cloudflare. You do not need to double-click them or install anything to use them.
