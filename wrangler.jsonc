@@ -4,8 +4,9 @@
   "main": "./src/index.js",
   "compatibility_date": "2026-09-10",
   "observability": { "enabled": true },
-  "vars": {
-    "SETUP_SECRET": "hPnsRdjLrulzHgiJT3GJzF73"
+  "keep_vars": true,
+  "secrets": {
+    "required": ["SETUP_SECRET"]
   },
   "assets": {
     "directory": "./public",

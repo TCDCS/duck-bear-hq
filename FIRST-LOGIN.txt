@@ -1,9 +1,13 @@
-DUCK & BEAR HQ — ONE-TIME FIRST LOGIN KEY
-==========================================
+DUCK & BEAR HQ — FIRST LOGIN
 
-hPnsRdjLrulzHgiJT3GJzF73
+The old setup key has been retired.
 
-Keep the GitHub repository PRIVATE.
+Before redeploying:
+1. In Cloudflare open duck-bear-hq > Settings > Variables and Secrets.
+2. Add a Secret named SETUP_SECRET.
+3. Use the new setup key supplied privately in ChatGPT.
+4. In Settings > Build change Deploy command to:
+   npm run deploy
+5. Retry the latest build.
 
-You will use this key once on the first setup screen to create the Bear Admin and Duck Member passwords.
-After the two accounts have been created, the app refuses to run setup again, so this key can no longer be used to create or replace accounts.
+Do not store the setup key in GitHub.
