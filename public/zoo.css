@@ -1,0 +1,35 @@
+/* Duck & Bear Zoo HQ — visual layer only. Kept separate from app logic for stability. */
+:root {
+  --bg:#f4f1e7;
+  --surface:rgba(255,255,255,.84);
+  --surface-solid:#fffefa;
+  --surface-2:#e8eee1;
+  --text:#1f2b22;
+  --muted:#697268;
+  --accent:#2f7d4a;
+  --accent-strong:#1f6036;
+  --accent-soft:#dff1df;
+  --warm:#d68145;
+  --warm-soft:#f9e6d2;
+  --gold:#c6982f;
+  --gold-soft:#fff1b8;
+  --info:#3c7f8d;
+  --info-soft:#dff0f2;
+}
+body {
+  background:
+    radial-gradient(circle at 8% 0%,rgba(98,167,93,.18),transparent 28rem),
+    radial-gradient(circle at 100% 18%,rgba(222,164,77,.16),transparent 26rem),
+    linear-gradient(180deg,#f7f2e6 0%,#eef3e7 55%,#f4eadf 100%);
+}
+.topbar{border-color:rgba(57,91,58,.12)}
+.brand-mark{background:linear-gradient(145deg,#e7f1d5,#fde0b8)}
+.hero{background:linear-gradient(145deg,#fffdf7,#e6f2dd)}
+.hero:before{content:"🌿  🦒  🐘  🦜";position:absolute;right:22px;bottom:15px;font-size:22px;opacity:.55;letter-spacing:8px;z-index:1}
+.action-card:nth-child(1){background:linear-gradient(160deg,var(--surface-solid),#f8ead6)}
+.action-card:nth-child(2){background:linear-gradient(160deg,var(--surface-solid),#e2f0dc)}
+.action-card:nth-child(3){background:linear-gradient(160deg,var(--surface-solid),#e0eef1)}
+.product-image{background:linear-gradient(145deg,#eef4df,#f9e1c6)}
+.points-card{background:linear-gradient(145deg,#245f38,#3c8a55)}
+.site-footer:before{content:"🌿 Wildlife Park operations · animals mostly supervised";display:block;font-size:11px;color:var(--muted)}
+@media(max-width:700px){.hero:before{font-size:17px;right:12px;bottom:10px}.site-footer:before{display:none}}
