@@ -6,8 +6,6 @@ parts = sorted((root / '.zoo-v5').glob('part-*'))
 if not parts:
     raise SystemExit('Zoo v5 payload parts are missing.')
 
-# The payload is stored without guaranteed trailing Base64 padding.
-# Normalise whitespace and restore any required '=' characters before decoding.
 encoded = ''.join(p.read_text(encoding='ascii') for p in parts)
 encoded = ''.join(encoded.split())
 encoded += '=' * (-len(encoded) % 4)
@@ -24,24 +22,29 @@ with tarfile.open(fileobj=io.BytesIO(raw), mode='r:gz') as archive:
             raise SystemExit(f'Unsafe archive path: {member.name}')
     archive.extractall(root, filter='data')
 
-# Mobile browsers may still have the v4 service worker and its cache active.
-# Give the two critical UI assets a new URL so an old worker cannot mix an
-# old app.js with the new Zoo HQ HTML/CSS.
-release = '5.0.2'
+# Keep a tiny browser boot guard outside the packed payload. It loads before
+# app.js, catches real runtime failures and prevents a silent blank screen.
+release = '5.0.3'
 index_path = root / 'public' / 'index.html'
 index = index_path.read_text(encoding='utf-8')
 index = re.sub(r'href=["\']styles\.css(?:\?[^"\']*)?["\']', f'href="styles.css?v={release}"', index)
 index = re.sub(r'src=["\']app\.js(?:\?[^"\']*)?["\']', f'src="app.js?v={release}"', index)
+if 'boot-guard.js' not in index:
+    app_tag = re.search(r'<script[^>]+src=["\']app\.js[^>]*></script>', index)
+    guard_tag = f'<script src="boot-guard.js?v={release}"></script>\n  '
+    if app_tag:
+        index = index[:app_tag.start()] + guard_tag + index[app_tag.start():]
+    else:
+        index = index.replace('</body>', f'  {guard_tag}</body>')
 index_path.write_text(index, encoding='utf-8')
 
-# Use network-first static caching. The app is small, so correctness is more
-# useful than serving stale JavaScript while online. API/private media remain
-# completely outside the service-worker cache.
-sw = f'''const CACHE = 'duck-bear-hq-v5-2';
+# Network-first caching avoids mixing old and new app bundles while online.
+sw = f'''const CACHE = 'duck-bear-hq-v5-3';
 const CORE = [
   './',
   './index.html',
   './styles.css?v={release}',
+  './boot-guard.js?v={release}',
   './app.js?v={release}',
   './manifest.webmanifest',
   './assets/icon.svg',
@@ -89,9 +92,7 @@ self.addEventListener('fetch', event => {{
 '''
 (root / 'public' / 'sw.js').write_text(sw, encoding='utf-8')
 
-# Fail the Cloudflare build before deployment if either main JavaScript file
-# has a syntax problem. This avoids publishing another blank shell.
-for js in (root / 'public' / 'app.js', root / 'src' / 'index.js'):
+for js in (root / 'public' / 'boot-guard.js', root / 'public' / 'app.js', root / 'src' / 'index.js'):
     subprocess.run(['node', '--check', str(js)], check=True)
 
-print(f'Zoo HQ v5 payload applied; mobile cache release {release} ready.')
+print(f'Zoo HQ v5 payload applied; runtime guard release {release} ready.')
