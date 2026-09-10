@@ -10,21 +10,22 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
   <link rel="stylesheet" href="styles.css?v=5.1.0" />
+  <link rel="stylesheet" href="zoo.css?v=5.1.0" />
 </head>
 <body>
   <div id="app">
     <header class="topbar">
       <a class="brand" href="#home" id="brandEgg" aria-label="Duck and Bear HQ home">
         <span class="brand-mark" aria-hidden="true">🦆🐻</span>
-        <span><strong>Duck & Bear</strong><small>HQ</small></span>
+        <span><strong>Duck & Bear</strong><small>ZOO HQ</small></span>
       </a>
 
       <nav class="desktop-nav" aria-label="Main navigation">
         <a href="#home" data-nav="home">Home</a>
-        <a href="#shop" data-nav="shop">£0 Shop</a>
-        <a href="#loyalty" data-nav="loyalty">Loyalty</a>
+        <a href="#shop" data-nav="shop">Gift Shop</a>
+        <a href="#loyalty" data-nav="loyalty">Yaya Points</a>
         <a href="#orders" data-nav="orders">Orders</a>
-        <a href="#fun" data-nav="fun">Fun Stuff</a>
+        <a href="#fun" data-nav="fun">Safari & Fun</a>
         <a href="#admin" data-nav="admin" id="adminNav" hidden>Admin</a>
       </nav>
 
@@ -33,7 +34,7 @@
         <button class="icon-btn" id="themeBtn" type="button" aria-label="Change theme" title="Change theme">◐</button>
         <button class="icon-btn" id="profileBtn" type="button" aria-label="Account and data" title="Account" hidden>👤</button>
         <button class="cart-btn" id="cartBtn" type="button" aria-label="Open cart" hidden>
-          <span aria-hidden="true">🛒</span><span class="cart-label">Cart</span><b id="cartCount">0</b>
+          <span aria-hidden="true">🛒</span><span class="cart-label">Basket</span><b id="cartCount">0</b>
         </button>
       </div>
     </header>
@@ -42,19 +43,19 @@
 
     <footer class="site-footer">
       <div>
-        <strong>Duck & Bear HQ</strong>
-        <span>Operating since someone thought this was a sensible idea.</span>
+        <strong>Duck & Bear Zoo HQ</strong>
+        <span>Open daily. Animals unsupervised. Gift-shop prices permanently £0.00.</span>
       </div>
       <button type="button" class="footer-egg" id="durianEgg" title="Definitely just a durian">💚</button>
-      <span id="storageStatus">Cloudflare sync</span>
+      <span id="storageStatus">Cloudflare habitat sync</span>
     </footer>
 
     <nav class="mobile-nav" aria-label="Mobile navigation">
       <a href="#home" data-nav="home"><span>🏠</span>Home</a>
       <a href="#shop" data-nav="shop"><span>🛍️</span>Shop</a>
-      <a href="#loyalty" data-nav="loyalty"><span>⭐</span>Loyalty</a>
+      <a href="#loyalty" data-nav="loyalty"><span>⭐</span>Points</a>
       <a href="#orders" data-nav="orders"><span>📦</span>Orders</a>
-      <a href="#fun" data-nav="fun"><span>🎲</span>Fun</a>
+      <a href="#fun" data-nav="fun"><span>🦒</span>Safari</a>
     </nav>
   </div>
 
@@ -62,15 +63,15 @@
   <aside class="cart-drawer" id="cartDrawer" aria-hidden="true" aria-label="Shopping cart">
     <div class="drawer-head">
       <div>
-        <p class="eyebrow">Definitely legitimate commerce</p>
-        <h2>Your cart</h2>
+        <p class="eyebrow">Zoo gift shop</p>
+        <h2>Your basket</h2>
       </div>
       <button class="icon-btn" id="closeCartBtn" type="button" aria-label="Close cart">✕</button>
     </div>
     <div id="cartItems" class="cart-items"></div>
     <div class="drawer-foot">
       <div class="totals"><span>Total</span><strong id="cartTotal" class="zero-total">£0.00</strong></div>
-      <p class="muted tiny">Delivery, tax, emotional handling fees and Bear Prime are all £0.00.</p>
+      <p class="muted tiny">Delivery, tax, keeper fees and Bear Prime are all £0.00.</p>
       <button class="primary full" id="checkoutBtn" type="button">Proceed to checkout</button>
     </div>
   </aside>
