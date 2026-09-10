@@ -1,6 +1,7 @@
 const ORDER_STATUSES = ['Received','Bear notified','Preparing','Out for Bear Delivery','Delivered','Cancelled'];
 const SESSION_DAYS = 30;
-const PASSWORD_ITERATIONS = 150000;
+// Cloudflare Workers production caps PBKDF2 at 100,000 iterations.
+const PASSWORD_ITERATIONS = 100000;
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 const ALLOWED_UPLOAD_TYPES = new Set(['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm','application/pdf']);
 
