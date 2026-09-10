@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=5.1.0" />
 </head>
 <body>
   <div id="app">
@@ -95,13 +95,8 @@
     </form>
   </dialog>
 
-  <dialog id="productDialog" class="modal product-modal">
-    <div id="productDialogContent"></div>
-  </dialog>
-
-  <dialog id="detailDialog" class="modal detail-modal">
-    <div id="detailDialogContent"></div>
-  </dialog>
+  <dialog id="productDialog" class="modal product-modal"><div id="productDialogContent"></div></dialog>
+  <dialog id="detailDialog" class="modal detail-modal"><div id="detailDialogContent"></div></dialog>
 
   <dialog id="dataDialog" class="modal">
     <div class="modal-body">
@@ -133,6 +128,6 @@
   </div>
 
   <noscript><div class="noscript">Duck & Bear HQ needs JavaScript switched on. Otherwise it becomes a very expensive-looking sign.</div></noscript>
-  <script src="app.js" defer></script>
+  <script src="app.js?v=5.1.0" defer></script>
 </body>
 </html>
