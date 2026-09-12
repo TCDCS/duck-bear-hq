@@ -2,11 +2,14 @@ name: Wacky Races regression and live checks
 on:
   push:
     branches: [main]
-    paths: ['src/**', 'public/**', 'tests/**', 'scripts/**', 'package.json', 'wrangler.jsonc', '.github/workflows/wacky-races.yml']
+    paths: ['src/**','public/**','tests/**','scripts/**','package.json','package-lock.json','wrangler.jsonc','.github/workflows/wacky-races.yml']
   pull_request:
-    paths: ['src/**', 'public/**', 'tests/**', 'scripts/**', 'package.json', 'wrangler.jsonc']
+    paths: ['src/**','public/**','tests/**','scripts/**','package.json','package-lock.json','wrangler.jsonc','.github/workflows/wacky-races.yml']
 permissions:
   contents: read
+defaults:
+  run:
+    shell: bash
 concurrency:
   group: wacky-races-${{ github.ref }}
   cancel-in-progress: true
@@ -25,39 +28,42 @@ jobs:
       - name: Install tools
         run: |
           npm ci --no-audit --no-fund
-          python -m pip install playwright
+          python -m pip install playwright aiohttp
           python -m playwright install --with-deps chromium
       - name: Check source, privacy and Worker bundle
         run: |
-          npm test
+          mkdir -p verification/local
+          npm test | tee verification/unit-tests.tap
           npm run check
           npx wrangler deploy --dry-run --outdir /tmp/wacky-build
           npx wrangler d1 migrations apply DB --local
-      - name: Race two native browser clients locally
+      - name: Race native browser clients and eight separate drivers locally
         env:
           BASE_URL: http://127.0.0.1:8787
         run: |
-          mkdir -p verification
-          npx wrangler dev --ip 127.0.0.1 --port 8787 > verification/wrangler.log 2>&1 &
+          npx wrangler dev --ip 127.0.0.1 --port 8787 > verification/local/wrangler.log 2>&1 &
           SERVER=$!
           trap 'kill $SERVER 2>/dev/null || true' EXIT
           for i in $(seq 1 90); do curl -sf http://127.0.0.1:8787/api/races/version && break; sleep 1; done
+          python tests/live-room-smoke.py
+          mv verification/eight-player-live.json verification/local/eight-player.json
           python tests/browser_clients.py
-          mkdir -p verification/local
-          cp verification/browser-clients.json verification/local/
+          cp verification/browser-clients.json verification/local/browser-clients.json
       - name: Wait for this source to be published by Cloudflare
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           BASE_URL: https://duck-bear-hq.zachary-chambers2.workers.dev
         run: python scripts/wait-live.py
-      - name: Race two guest clients on the published website
+      - name: Check eight guest drivers on the published server
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           BASE_URL: https://duck-bear-hq.zachary-chambers2.workers.dev
-        run: |
-          python tests/browser_clients.py
-          mkdir -p verification/live
-          cp verification/browser-clients.json verification/live/
+        run: python tests/live-room-smoke.py
+      - name: Complete a race through the published website
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          BASE_URL: https://duck-bear-hq.zachary-chambers2.workers.dev
+        run: python tests/browser_clients.py
       - name: Save verification report and screenshots
         if: always()
         uses: actions/upload-artifact@v4

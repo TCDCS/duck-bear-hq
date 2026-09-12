@@ -1,55 +1,50 @@
-# Duck & Bear HQ
+# Duck & Bear
 
-Private two-person PWA for the £0 Shop, Yaya Points, order tracking, room service, memories, reviews, complaints, adventures and unnecessary Bear administration.
+Public website and Wacky Races, with the existing private account behind Sign in.
 
-## Easiest deployment
+**Website:** https://duck-bear-hq.zachary-chambers2.workers.dev/
 
-This package is set up for **browser-only deployment**. You do not need Node.js, npm, Git or Wrangler installed on your PC.
+**Play:** https://duck-bear-hq.zachary-chambers2.workers.dev/games/wacky-races/
 
-Read `BROWSER-DEPLOY.txt`.
+The homepage, gift catalogue and game do not require an account. The top-right Sign in opens the private account for orders, points, memories and administration. The repository remains private; making the website public does not require exposing its source or bootstrap material.
 
-The flow is:
+## Wacky Races
 
-**GitHub private repository → Cloudflare Workers Builds → Worker + static PWA → D1 + R2**
+Six fictional city circuits: London - Westminster Wobble, London - Camden Caper, London - Docklands Dash, London - Hyde Park Hustle, London - Regent Street Rush and Dublin - Liffey Lunacy. Race solo, play the six-track cup, try time trials or race friends online.
 
-Cloudflare's build system runs Node/Wrangler in the cloud. The app configuration automatically provisions the D1 and R2 bindings on first deployment. The deploy script then applies the included D1 migrations and redeploys after the database is ready.
+The cast uses square illustrated portraits, not the original photographs. Racing karts, police/Garda cars, ambulances and buses have country-themed liveries. Mangoes, chocolate ice cream, blueberries and strawberries provide bonuses; pizza and whiskey spills are hazards. Arcade handling includes grip, momentum, drifting, collisions and recovery. Keyboard, touch, gamepad and optional motion steering are supported.
 
-## First login
+For friends: choose **Play with friends**, create a room and share the four-digit code or the invitation link. Friends choose their driver, join and mark ready. The host starts the race. Share is available in the lobby and game Settings, with a copy-link fallback. Up to eight human drivers can join; computer drivers fill spare seats. The server owns positions, laps and results. Menus do not pause the other players. Temporary connection loss reserves the player slot; hosting passes to another connected player when needed.
 
-`FIRST-LOGIN.txt` contains the one-time bootstrap key. Keep the repository private. The key only works while the database has no users; after the Bear Admin and Duck Member accounts are created, the setup endpoint refuses to run again.
+Codes are convenient room locators, not private passwords. The host can lock the lobby once the group is present. Rooms expire after one hour. Invitations contain a code, never a player's reconnect pass. Room creation/join attempts and WebSocket messages are rate-limited.
 
-## What is included
+## Public and private data
 
-- £0 Shop with search, categories, favourites and shared cart
-- checkout and unique order references
-- order history, reordering and status timeline
-- Bear-admin fulfilment updates
-- Yaya Points transaction ledger
-- earn rules, redemptions, rewards, tiers and badges
-- admin credit/debit adjustments with reason and audit history
-- CSV exports and JSON backup
-- password change and admin member-password reset
-- Date Roulette and saved dates
-- Breakfast Room Service
-- shared Memories backed by private R2 objects
-- monthly reviews and Complaints Department
-- Adventure suggestions and completion rewards
-- Easter eggs and secret badges
-- installable responsive PWA
-- light, dark and system themes
+`src/game-routes.js` exposes only the game, the explicit public product catalogue and a signed-in boolean. Original account API and private R2 media handlers remain in `src/index.js`. No private bootstrap response, orders, points or memories are requested by the public homepage. Game API traffic, private API traffic and private media are excluded from service-worker caches.
 
-## Data/security design
+Only use names or locally added images that you have permission to use. New local driver photos are not sent to multiplayer rooms. The game has no public chat and no online account leaderboard.
 
-Private records are served through the Worker API. The browser does not receive D1 or R2 credentials. Passwords are hashed with PBKDF2-SHA256 and session tokens are stored server-side as hashes in secure HttpOnly cookies.
+## Deployment and automatic checks
 
-Private R2 media is delivered only through authenticated `/media/*` routes. API and media responses are excluded from the service-worker cache.
+Existing route: GitHub `main` → Cloudflare Workers Builds → Worker, static assets, D1/R2 and the two SQLite Durable Object classes. Keep the existing resource bindings; no additional hosting provider is required.
 
-This is designed for two trusted users, not public ecommerce. Keep the repository private and use strong account passwords.
+`npm run deploy` runs the unit checks, deploys the Worker, applies the existing D1 migrations and deploys again. Do not rerun account bootstrap on an established site.
 
-## Existing Tally points
+The GitHub regression workflow runs `npm test`, source/migration checks, a Wrangler dry build, native browser tests and eight separate WebSocket clients against the local Workers runtime. On production pushes it verifies the published file hashes and repeats the multiplayer/browser acceptance checks against the live website. Reports and real screenshots are retained as workflow artifacts for seven days. The eight-client test covers full/locked-room rejection without disconnecting the existing racers, independent inputs, authoritative shared updates and host transfer.
 
-After setup, sign in as Bear Admin and use the loyalty adjustment screen to add Guannan's existing Tally balance using a reason such as:
+Useful commands for maintenance:
 
-`Opening balance imported from Tally`
+```sh
+npm ci
+npm test
+npm run check
+npm run dev
+```
 
-This creates a clean opening ledger entry rather than inventing old transactions.
+For the native browser suite, install Python Playwright and Chromium and set `BASE_URL` to the running site. The optional restricted fixture is not a substitute for the normal live transport check.
+
+## Audio and performance
+
+The built-in procedural music and effects do not need a music service. Optional external recordings are off by default, have in-game attribution and fall back to the original score if unavailable. Keep the music credits when redistributing.
+
+The game is stylised browser 3D, not an Unreal Engine or photorealistic game. Automated Chromium uses WebGL through its software GPU. Mobile viewport and simulated sensor tests do not certify physical-device tilt feel, native share-sheet behaviour or frame rate on every handset.
