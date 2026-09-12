@@ -16,7 +16,9 @@ import asset12 from "./kart-assets/host.js.txt";
 import asset13 from "./kart-assets/network.js.txt";
 import asset14 from "./kart-assets/friends.js.txt";
 export {WackyDirectory,WackyRoom} from "./multiplayer/durable.mjs";
+import raceOrder from './kart-assets/race-order.js.txt';
 const assets=new Map([
+  ['race-order.js',{body:raceOrder,type:'text/javascript; charset=utf-8'}],
   ['network.js',{body:asset13,type:'text/javascript; charset=utf-8'}],
   ['friends.js',{body:asset14,type:'text/javascript; charset=utf-8'}],
   ['index.html',{body:asset0,type:'text/html; charset=utf-8'}],

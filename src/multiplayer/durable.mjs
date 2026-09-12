@@ -46,6 +46,7 @@ export class WackyRoom {
         // Reconnect only after every live socket is marked. Enumeration order must not steal hosting.
         for(const id of this.sockets.keys())M.connect(this.room,id);
         if(this.room.phase==='race'&&this.sockets.size)this.startLoop();}
+      else for(const ws of ctx.getWebSockets())try{ws.close(4000,'Race rules updated. Create a new seven-player room.');}catch{}
     });
     if(typeof WebSocketRequestResponsePair!=='undefined')ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping','pong'));
   }

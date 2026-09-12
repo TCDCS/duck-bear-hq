@@ -7,7 +7,7 @@ for (const scenario of ['locked', 'full', 'started']) {
   test(`a ${scenario} room rejects a join without resetting connected players`, async () => {
     const saved = makeRoom('1234');
     if (scenario === 'locked') saved.locked = true;
-    if (scenario === 'full') for (let n = 1; n < 8; n++) joinRoom(saved, {name: `Driver ${n}`});
+    if (scenario === 'full') for (let n = 1; n < 7; n++) joinRoom(saved, {name: `Driver ${n}`});
     if (scenario === 'started') saved.phase = 'race';
     let resets = 0;
     const ctx = {

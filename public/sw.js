@@ -1,4 +1,4 @@
-const CACHE = 'duck-bear-hq-v6-public-races';
+const CACHE = 'duck-bear-hq-v6-1-setup-seven';
 const CORE=['./','./index.html','./home.css?v=4','./home.js?v=4','./account.html','./styles.css?v=5.1.0','./app.js?v=5.1.0','./zoo.css?v=5.1.0','./kart-games.js?v=1','./manifest.webmanifest','./assets/icon.svg','./assets/icon-192.png','./assets/icon-512.png','./assets/apple-touch-icon.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

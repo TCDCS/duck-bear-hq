@@ -8,6 +8,6 @@
   document.addEventListener('keydown',enableSound,{once:true,capture:true});
   const params=new URLSearchParams(location.search);
   if(params.get('friends')==='1')game.openFriends?.();
-  else if(params.get('play')==='1'&&!params.has('room'))game.startRace();
+  // Legacy ?play=1 links also open setup. Only Start (or the online host) begins a race.
   window.addEventListener('pageshow',e=>{if(e.persisted)game.pause();});
 })();

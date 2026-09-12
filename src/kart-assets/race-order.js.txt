@@ -1,0 +1,43 @@
+/* Live positions from the shared race state. The garage cast and race field are separate. */
+(() => {
+  'use strict';
+  const C=globalThis.KartCore;
+  function rows(race,profiles,ownId){
+    const ordered=race.phase==='results'&&Array.isArray(race.order)
+      ?race.order.map(id=>race.racers.find(p=>p.id===id)).filter(Boolean):C.rank(race);
+    return ordered.map((p,i)=>({id:p.id,position:i+1,name:profiles[p.id]?.name||'Driver',
+      photo:profiles[p.id]?.photo||null,color:profiles[p.id]?.color||'#ffd44d',
+      you:p.id===ownId,finished:!!p.finished}));
+  }
+  class Panel {
+    constructor(details,list,count){
+      this.details=details;this.list=list;this.count=count;this.signature='';
+      try{details.open=localStorage.getItem('wacky-race-order-open-v1')!=='false';}catch{}
+      details.addEventListener('toggle',()=>{try{localStorage.setItem('wacky-race-order-open-v1',String(details.open));}catch{}});
+    }
+    update(race,profiles){
+      const positions=rows(race,profiles,race.racers[0].id);
+      const signature=JSON.stringify(positions);
+      if(this.signature===signature)return;
+      this.signature=signature;
+      this.count.textContent=positions.length===1?'Solo':positions.length+' racers';
+      const items=positions.map(p=>{
+        const item=document.createElement('li');item.dataset.driverId=p.id;
+        if(p.you){item.className='is-you';item.setAttribute('aria-current','true');}
+        const place=document.createElement('strong');place.className='order-place';
+        place.textContent=p.position+(p.position===1?'st':p.position===2?'nd':p.position===3?'rd':'th');
+        const portrait=document.createElement('span');portrait.className='order-portrait';portrait.style.background=p.color;
+        if(p.photo){const img=new Image();img.src=p.photo;img.alt='';portrait.append(img);}
+        else{portrait.textContent=p.name.slice(0,1);portrait.setAttribute('aria-hidden','true');}
+        const name=document.createElement('span');name.className='order-name';name.textContent=p.name;name.title=p.name;
+        const badge=document.createElement('small');badge.className='order-badge';
+        badge.textContent=p.you?'YOU':p.finished?'FIN':positions.length===1?'SOLO':p.position===1?'FIRST':p.position===positions.length?'LAST':'';
+        item.setAttribute('aria-label',place.textContent+' — '+p.name+(p.you?' — you':'')+(p.finished?' — finished':''));
+        item.append(place,portrait,name,badge);return item;
+      });
+      // Rebuild only when the order/driver details change; never replace the focused summary.
+      this.list.replaceChildren(...items);
+    }
+  }
+  globalThis.KartRaceOrder={rows,Panel};
+})();

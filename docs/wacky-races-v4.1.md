@@ -1,0 +1,11 @@
+# Wacky Races 4.1 — setup, standings and seven racers
+
+Opening Wacky Races now shows setup, including older links containing `?play=1`. Choose a circuit, driver, vehicle, difficulty and settings, then press **Start race**. Invitations still open the friends lobby and the host still starts a ready online group. The public homepage and account Games links go to setup, not straight to the countdown.
+
+**Race order** is a live left-side list of all active racers, first to last, with square cartoon portraits and your row highlighted. Click or tap the heading to collapse it; keyboard users can focus the heading and press Enter. The choice is saved on that browser. In short landscape screens the list can scroll and speed/item controls move right so they do not cover the list. Results use the server classification online.
+
+Every quick race, cup race, demo and online race is limited to **seven vehicles including the player**. Two online friends therefore have five computer opponents; a full room has seven human drivers. An eighth join is rejected without disconnecting existing players. Extra moving traffic has been removed from the racing surface to keep the total at seven. Country-themed police/Garda cars, ambulances and buses remain selectable, appear among the opponents and remain parked in the scenery. Time trial stays solo.
+
+All eight character choices remain available in the garage. Selecting any character produces a seven-racer grid. Cup standings include only that cup's actual participants, not the unused character. Existing private account data, original photos, orders and database schema are unchanged. Rooms saved with the old oversized grid expire with a reconnect message instead of leaving a driver without a car after the rules change.
+
+Tests cover legacy launch URLs, chosen setup values, all six circuits and eight selectable characters, seven-seat room limits, cup classification, live order changes, mouse/keyboard collapse, responsive layouts and both online clients' highlighted positions. The normal regression workflow repeats the native browser and seven-client room tests against the deployed website. A temporary local static preview is not used as evidence of production multiplayer.

@@ -1,6 +1,7 @@
 /* Wacky Races v3. Deterministic road-relative arcade physics; no network or rendering dependencies. */
 (() => {
   'use strict';
+  const MAX_RACERS=7;
   const TAU=Math.PI*2, clamp=(v,a,b)=>Math.min(b,Math.max(a,v)), mod=(v,n)=>((v%n)+n)%n;
   const finite=(v,f=0)=>Number.isFinite(v)?v:f;
   const TRACKS=[
@@ -34,17 +35,19 @@
   function buildTrack(id=0){id=clamp(Math.floor(finite(id)),0,TRACKS.length-1);const def=TRACKS[id],raw=[];let length=0;for(let i=0;i<=def.points.length*80;i++){const p=curve(def.points,mod(i/(def.points.length*80)*def.points.length,def.points.length));if(i)length+=Math.hypot(p[0]-raw[i-1].x,p[1]-raw[i-1].z);raw.push({x:p[0],z:p[1],d:length});}const count=Math.ceil(length/3);const samples=[];let j=0;for(let i=0;i<count;i++){const d=i/count*length;while(j<raw.length-2&&raw[j+1].d<d)j++;const q=(d-raw[j].d)/(raw[j+1].d-raw[j].d||1);samples.push({x:raw[j].x+(raw[j+1].x-raw[j].x)*q,z:raw[j].z+(raw[j+1].z-raw[j].z)*q});}for(let i=0;i<count;i++){const a=samples[mod(i-1,count)],b=samples[(i+1)%count],p=samples[i],l=Math.hypot(b.x-a.x,b.z-a.z);p.tx=(b.x-a.x)/l;p.tz=(b.z-a.z)/l;}for(let i=0;i<count;i++){const a=samples[mod(i-1,count)],b=samples[(i+1)%count];let angle=Math.atan2(b.tx,b.tz)-Math.atan2(a.tx,a.tz);angle=mod(angle+Math.PI,TAU)-Math.PI;samples[i].bend=angle/(length/count*2);}return {...def,id,length,samples};}
   // Positive lateral x is screen-right: forward cross world-up = (-tz,0,tx).
   function sampleTrack(t,s,x=0){const k=mod(s,t.length)/t.length*t.samples.length,i=Math.floor(k),f=k-i,a=t.samples[i],b=t.samples[(i+1)%t.samples.length];let tx=a.tx+(b.tx-a.tx)*f,tz=a.tz+(b.tz-a.tz)*f;const l=Math.hypot(tx,tz)||1;tx/=l;tz/=l;return {x:a.x+(b.x-a.x)*f-tz*x,y:0,z:a.z+(b.z-a.z)*f+tx*x,tx,tz,bend:a.bend+(b.bend-a.bend)*f};}
+  const gridIds=(driver=0)=>[driver,...DEFAULTS.map((_,i)=>i).filter(i=>i!==driver)].slice(0,MAX_RACERS);
   function newRace(options={}) {
     const mode=['race','cup','trial'].includes(options.mode)?options.mode:'race';
     const driver=clamp(Math.floor(finite(options.driver)),0,7),track=buildTrack(options.track);
     const r={track,mode,difficulty:['easy','normal','hard'].includes(options.difficulty)?options.difficulty:'normal',assist:options.assist!==false,seed:(options.seed||Date.now())>>>0||1,phase:'race',countdown:3,time:0,laps:3,racers:[],pickups:[],traps:[],traffic:[],projectiles:[],events:[],eventId:0,nextId:0};
-    const ids=[driver,...DEFAULTS.map((_,i)=>i).filter(i=>i!==driver)];
-    for(let i=0;i<(mode==='trial'?1:8);i++)r.racers.push({id:ids[i],ai:i>0,vehicle:i?['kart','police','kart','ambulance','kart','bus','kart'][i-1]:(VEHICLES[options.vehicle]?options.vehicle:'kart'),s:-8-Math.floor(i/2)*6,x:i%2?3:-3,speed:0,vx:0,heading:0,roll:0,rollV:0,pitch:0,pitchV:0,heave:0,heaveV:0,lane:(i%3-1)*3,skill:rng(r),item:null,boost:0,shield:0,spin:0,slip:0,immune:0,contact:0,driftCharge:0,drifting:false,coins:0,lapTimes:[],lapStart:0,finished:false,finishTime:null,steer:0,stuck:0,recoveries:0,completedLaps:0});
+    const ids=gridIds(driver);
+    for(let i=0;i<(mode==='trial'?1:MAX_RACERS);i++)r.racers.push({id:ids[i],ai:i>0,vehicle:i?['kart','police','kart','ambulance','kart','bus','kart'][i-1]:(VEHICLES[options.vehicle]?options.vehicle:'kart'),s:-8-Math.floor(i/2)*6,x:i%2?3:-3,speed:0,vx:0,heading:0,roll:0,rollV:0,pitch:0,pitchV:0,heave:0,heaveV:0,lane:(i%3-1)*3,skill:rng(r),item:null,boost:0,shield:0,spin:0,slip:0,immune:0,contact:0,driftCharge:0,drifting:false,coins:0,lapTimes:[],lapStart:0,finished:false,finishTime:null,steer:0,stuck:0,recoveries:0,completedLaps:0});
     if(mode!=='trial'){
       const snacks=Object.keys(SNACKS);let k=0;
       for(let s=65;s<track.length-35;s+=58){for(const x of [-5,0,5])r.pickups.push({id:r.nextId++,s,x,type:k%5===4?'box':snacks[(k+Math.round(x/5)+4)%4],cooldown:0});k++;}
       for(let s=205;s<track.length-50;s+=225)r.traps.push({id:r.nextId++,s,x:(k++%2?1:-1)*4,type:k%2?'pizza':'whiskey',owner:-1,life:1e9,permanent:true,cooldown:0});
-      for(let i=0;i<6;i++)r.traffic.push({id:100+i,vehicle:['police','ambulance','bus'][i%3],s:135+i*track.length/6,x:-4.4,speed:9+i%3*2,contact:0});
+      // All moving vehicles belong to the seven-racer grid. Local service vehicles
+      // remain selectable opponents and parked scenery, not six extra road users.
     }
     return r;
   }
@@ -165,10 +168,10 @@
     const steps=Math.ceil(dt*120-1e-8),h=dt/steps;
     for(let i=0;i<steps&&r.phase==='race';i++)substep(r,input,h);
   }
-  function addCupPoints(scores,order){const points=[15,12,10,8,6,4,2,1];const seen=new Set();order.forEach((id,i)=>{if(Number.isInteger(id)&&id>=0&&id<8&&!seen.has(id)){scores[id]=(Number(scores[id])||0)+(points[i]||0);seen.add(id);}});return scores;}
-  function cupOrder(scores){return DEFAULTS.map((_,i)=>i).sort((a,b)=>(scores[b]||0)-(scores[a]||0)||a-b);}
+  function addCupPoints(scores,order){const points=[15,12,10,8,6,4,2];const seen=new Set();order.forEach((id,i)=>{if(Number.isInteger(id)&&id>=0&&id<8&&!seen.has(id)){scores[id]=(Number(scores[id])||0)+(points[i]||0);seen.add(id);}});return scores;}
+  function cupOrder(scores,ids=gridIds()){return [...new Set(ids)].sort((a,b)=>(scores[b]||0)-(scores[a]||0)||a-b);}
   function formatTime(n){if(!Number.isFinite(n))return '—';const ms=Math.max(0,Math.round(n*1000)),m=Math.floor(ms/60000),s=Math.floor(ms%60000/1000);return `${m}:${String(s).padStart(2,'0')}.${String(ms%1000).padStart(3,'0')}`;}
-  globalThis.KartCore={TRACKS,DEFAULTS,ITEMS,SNACKS,VEHICLES,recover,cleanProfiles,buildTrack,sampleTrack,newRace,stepRace,useItem,hit,lapOf,rank,addCupPoints,cupOrder,formatTime,clamp,mod};
+  globalThis.KartCore={MAX_RACERS,gridIds,TRACKS,DEFAULTS,ITEMS,SNACKS,VEHICLES,recover,cleanProfiles,buildTrack,sampleTrack,newRace,stepRace,useItem,hit,lapOf,rank,addCupPoints,cupOrder,formatTime,clamp,mod};
 })();
 
 export default globalThis.KartCore;
