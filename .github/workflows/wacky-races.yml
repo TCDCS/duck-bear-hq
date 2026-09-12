@@ -1,0 +1,52 @@
+name: Wacky Races regression checks
+on:
+  push:
+    branches: [main]
+    paths: ['src/**', 'public/**', 'tests/**', 'scripts/check.mjs', 'package.json', 'wrangler.jsonc']
+  pull_request:
+    paths: ['src/**', 'public/**', 'tests/**', 'scripts/check.mjs', 'package.json', 'wrangler.jsonc']
+permissions:
+  contents: read
+concurrency:
+  group: wacky-races-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  guest-and-multiplayer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install tools
+        run: |
+          npm install --no-audit --no-fund
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Check source, security and Worker bundle
+        run: |
+          npm test
+          npm run check
+          npx wrangler deploy --dry-run --outdir /tmp/wacky-build
+          npx wrangler d1 migrations apply DB --local
+      - name: Race two native browser clients
+        env:
+          BASE_URL: http://127.0.0.1:8787
+        run: |
+          mkdir -p verification
+          npx wrangler dev --ip 127.0.0.1 --port 8787 > verification/wrangler.log 2>&1 &
+          SERVER=$!
+          trap 'kill $SERVER 2>/dev/null || true' EXIT
+          for i in $(seq 1 90); do curl -sf http://127.0.0.1:8787/api/races/version && break; sleep 1; done
+          python tests/browser_clients.py
+      - name: Save verification report and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wacky-races-verification
+          path: verification/
+          retention-days: 7
