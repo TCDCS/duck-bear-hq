@@ -9,7 +9,7 @@ for path,expected in {'src/index.js':'32f117dfeb12c35df086cd4efaade52edf2026ee',
  if blob(Path(path).read_bytes())!=expected:raise SystemExit('Original account source changed: '+path)
 
 pending=[]
-for entry in json.loads(Path('.wacky-v4/client.json').read_text()):
+for entry in json.loads(Path('.wacky-v4/client.json').read_text())+json.loads(Path('.wacky-v4/browser.json').read_text()):
  p=Path(entry['path']);raw=p.read_bytes()
  if hashlib.sha256(raw).hexdigest()==entry['after']:continue
  if blob(raw)!=entry['before']:raise SystemExit('Unexpected source base: '+str(p))
