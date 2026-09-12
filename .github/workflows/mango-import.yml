@@ -1,0 +1,70 @@
+name: Import and verify Mango Mayhem source
+on:
+  push:
+    branches: [feature/mango-mayhem-20260912]
+    paths: ['.mango-v1/**','scripts/materialize-mango.py','.github/workflows/mango-import.yml']
+permissions:
+  contents: write
+concurrency:
+  group: mango-import-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify and unpack source; apply the three website edits
+        run: python scripts/materialize-mango.py
+      - name: Install build and browser tools
+        run: |
+          npm ci --no-audit --no-fund
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Verify old and new code, local schema and Worker bundle
+        run: |
+          mkdir -p verification/mango
+          npm test | tee verification/mango/unit-tests.tap
+          npm run check
+          python scripts/apply-mango-integration.py --check
+          npx wrangler deploy --dry-run --outdir /tmp/mango-build
+          npx wrangler d1 migrations apply DB --local
+          MANGO_LOCAL_AUTH=1 python scripts/mango-local-auth.py
+      - name: Exercise real hosted browser and local D1
+        env:
+          BASE_URL: http://127.0.0.1:8787
+        run: |
+          npx wrangler dev --ip 127.0.0.1 --port 8787 > verification/mango/wrangler.log 2>&1 &
+          SERVER=$!
+          trap 'kill $SERVER 2>/dev/null || true' EXIT
+          for i in $(seq 1 90); do curl -sf "$BASE_URL/api/mango/health" && break; sleep 1; done
+          python tests/mango-live-api.py | tee verification/mango/real-d1.json
+          python tests/mango-browser.py --hosted | tee verification/mango/browser.json
+          python tests/mango-saved-scenes.py --hosted | tee verification/mango/saved-scenes.json
+          python scripts/build-mango-standalone.py verification/mango/Mango-Mayhem.html
+      - name: Commit only verified source on the isolated branch
+        run: |
+          test "$GITHUB_REF" = refs/heads/feature/mango-mayhem-20260912
+          python scripts/materialize-mango.py --stage
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git diff --cached --check
+          git commit -m 'Add verified Mango Mayhem game, profiles and website integration'
+          git push origin HEAD:feature/mango-mayhem-20260912
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mango-import-verification
+          path: |
+            verification/mango/
+            docs/verification/mango-browser/
+          retention-days: 7

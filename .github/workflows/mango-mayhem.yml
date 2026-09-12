@@ -1,0 +1,68 @@
+name: Mango Mayhem acceptance
+on:
+  push:
+    branches: [main]
+    paths: ['public/games/**','public/mango-games.js','src/mango-routes.mjs','src/worker-games.js','migrations/0003_mango_profiles.sql','tests/mango-*','tests/helpers/mango-*','scripts/*mango*','.github/workflows/mango-mayhem.yml']
+  pull_request:
+    paths: ['public/games/**','public/mango-games.js','src/mango-routes.mjs','src/worker-games.js','migrations/0003_mango_profiles.sql','tests/mango-*','tests/helpers/mango-*','scripts/*mango*','.github/workflows/mango-mayhem.yml']
+permissions:
+  contents: read
+concurrency:
+  group: mango-mayhem-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install tools
+        run: |
+          npm ci --no-audit --no-fund
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Existing and new unit tests, integration and Worker build
+        run: |
+          mkdir -p verification/mango
+          npm test | tee verification/mango/unit-tests.tap
+          npm run check
+          python scripts/apply-mango-integration.py --check
+          npx wrangler deploy --dry-run --outdir /tmp/mango-build
+          npx wrangler d1 migrations apply DB --local
+          MANGO_LOCAL_AUTH=1 python scripts/mango-local-auth.py
+      - name: Real hosted browser and owner-scoped API checks
+        env:
+          BASE_URL: http://127.0.0.1:8787
+        run: |
+          npx wrangler dev --ip 127.0.0.1 --port 8787 > verification/mango/wrangler.log 2>&1 &
+          SERVER=$!
+          trap 'kill $SERVER 2>/dev/null || true' EXIT
+          for i in $(seq 1 90); do curl -sf "$BASE_URL/api/mango/health" && break; sleep 1; done
+          python tests/mango-live-api.py | tee verification/mango/real-d1.json
+          python tests/mango-browser.py --hosted | tee verification/mango/browser.json
+          python tests/mango-saved-scenes.py --hosted | tee verification/mango/saved-scenes.json
+          python scripts/build-mango-standalone.py verification/mango/Mango-Mayhem.html
+      - name: Verify published game bytes and profile schema
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          BASE_URL: https://duck-bear-hq.zachary-chambers2.workers.dev
+        run: |
+          python scripts/wait-mango-live.py | tee verification/mango/published.json
+          python tests/mango-browser.py --hosted | tee verification/mango/live-guest-browser.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mango-mayhem-verification
+          path: |
+            verification/mango/
+            docs/verification/mango-browser/
+          retention-days: 7
