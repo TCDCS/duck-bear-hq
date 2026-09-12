@@ -1,31 +1,44 @@
-name: Release endpoint diagnostics
+name: Published game acceptance
 on:
   push:
     branches: [release/finish-live-20260912]
-    paths: ['.github/workflows/release-diagnostics.yml']
+    paths: ['.github/workflows/release-diagnostics.yml', 'tests/live-acceptance.py']
 permissions:
   contents: read
 jobs:
-  diagnose:
+  live-acceptance:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 15
+    env:
+      BASE_URL: https://duck-bear-hq.zachary-chambers2.workers.dev
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect public response status without credentials
-        shell: python
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Preserve the exact release source for review
         run: |
-          import hashlib,json,socket,urllib.request,urllib.error
-          from pathlib import Path
-          base='https://duck-bear-hq.zachary-chambers2.workers.dev'
-          print('DNS',socket.getaddrinfo('duck-bear-hq.zachary-chambers2.workers.dev',443),flush=True)
-          expected={'/':'public/index.html','/games/wacky-races/game.js':'src/kart-assets/game.js.txt'}
-          for path in ['/','/api/races/version','/games/wacky-races/','/games/wacky-races/game.js','/account','/api/public/session']:
-            for ua in ['Duck-Bear-release-check/4','Mozilla/5.0']:
-              request=urllib.request.Request(base+path,headers={'User-Agent':ua,'Cache-Control':'no-cache'})
-              try:
-                response=urllib.request.urlopen(request,timeout=12)
-              except urllib.error.HTTPError as e:response=e
-              except Exception as e:
-                print(path,ua,type(e).__name__,str(e),flush=True);continue
-              raw=response.read(500000)
-              print(json.dumps({'path':path,'agent':ua,'status':response.code,'url':response.url,'type':response.headers.get('Content-Type'),'server':response.headers.get('Server'),'bytes':len(raw),'matches_source':hashlib.sha256(raw).digest()==hashlib.sha256(Path(expected[path]).read_bytes()).digest() if path in expected else None,'preview':raw[:240].decode('utf8','replace') if response.code>=400 or path.endswith('/version') or path.endswith('/session') else ''}),flush=True)
+          mkdir -p verification
+          git archive --format=zip --output=verification/reviewed-source.zip HEAD src public tests scripts docs migrations wrangler.jsonc package.json package-lock.json
+      - name: Check simulation and public/private boundaries
+        run: |
+          npm test
+          npm run check
+      - name: Install test browser
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Verify hosted files match the release
+        run: python scripts/wait-live.py
+      - name: Complete a live race with two independent guest browsers
+        run: python tests/browser_clients.py
+      - name: Keep release evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wacky-live-acceptance
+          path: verification/
+          retention-days: 7
