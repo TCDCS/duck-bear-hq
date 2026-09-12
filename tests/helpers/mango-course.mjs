@@ -1,0 +1,2 @@
+export function makeTestCourse(){return {id:'dublin',width:3000,height:900,spawn:{x:120,y:450},surfaces:[{id:'floor',x:0,y:450,w:3000,h:450,kind:'solid'}],hazards:[],mangoes:[],enemies:[],powerUps:[],springs:[],checkpoints:[{id:'cp1',index:1,x:700,y:450},{id:'cp2',index:2,x:1400,y:450},{id:'cp3',index:3,x:2100,y:450}],helper:{id:'stephen',x:900,y:450,opensSurfaceIds:[]},boss:{id:'squawks',arena:{x:2400,y:450,w:600,h:540},spawn:{x:2750,y:450}}};}
+export const idle={axis:0,jumpPressed:false,jumpHeld:false,spinPressed:false,pausePressed:false};

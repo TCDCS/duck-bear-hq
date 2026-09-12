@@ -1,3 +1,5 @@
+import {routeMangoApi} from './mango/api.mjs';
+
 const ORDER_STATUSES = ['Received','Bear notified','Preparing','Out for Bear Delivery','Delivered','Cancelled'];
 const SESSION_DAYS = 30;
 // Cloudflare Workers production caps PBKDF2 at 100,000 iterations.
@@ -33,6 +35,8 @@ async function routeApi(request, env, url) {
   const auth = await getAuth(request, env);
   if (!auth) return apiJson({ error: 'Please sign in.' }, 401);
   if (!auth.user.active) return apiJson({ error: 'This account is disabled.' }, 403);
+
+  if (path === '/api/mango/profiles' || path.startsWith('/api/mango/profiles/')) return routeMangoApi(request, env, auth.user);
 
   if (path === '/api/auth/logout' && request.method === 'POST') return logout(request, env, auth);
   if (path === '/api/account/password' && request.method === 'POST') return changePassword(request, env, auth);

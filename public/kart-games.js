@@ -17,7 +17,7 @@
       <p class="muted">Zachary, Guannan, Sara, Samy and Mulan are on the starting grid.</p>
       <a class="primary" href="/games/wacky-races/">Play Wacky Races →</a>
       <p class="muted tiny">Opens race setup first. Choose your circuit, driver and vehicle, then press Start race. Keyboard, gamepad, touch or optional tilt steering. Landscape works best on phones.</p>
-    </article><aside class="fun-card"><h2>Before the lights go out</h2>
+    </article><article class="fun-card" id="mango-mayhem-account-card"><p class="eyebrow">Duck &amp; Bear Games</p><div class="big-icon" aria-hidden="true">🥭</div><h2>Mango Mayhem</h2><p>A colourful manga platform adventure around six places. Collect mangos, meet your helpers and unlock costumes. Five hearts, no timer, single player.</p><a class="primary" href="/games/mango-mayhem/">Play Mango Mayhem →</a><p class="muted tiny">Keyboard, landscape touch and gamepad. Opens the menu first. Player profiles save progress without changing website points.</p></article><aside class="fun-card"><h2>Before the lights go out</h2>
       <p>Arrow keys or W A S D to steer. Shift to drift, Space to use an item and R to recover. On a phone, use the on-screen buttons.</p>
       <p>Pause and choose Controls &amp; sound to enable tilt steering. Tap Enable tilt steering, allow motion access, then calibrate while holding the phone comfortably. Touch controls remain available.</p>
       <p>Choose Back to the paddock to change driver, vehicle or circuit. Choose Games to return here. Sound starts after a tap or key press.</p>

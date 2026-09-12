@@ -50,3 +50,11 @@ For the native browser suite, install Python Playwright and Chromium and set `BA
 The built-in procedural music and effects do not need a music service. Optional external recordings are off by default, have in-game attribution and fall back to the original score if unavailable. Keep the music credits when redistributing.
 
 The game is stylised browser 3D, not an Unreal Engine or photorealistic game. Automated Chromium uses WebGL through its software GPU. Mobile viewport and simulated sensor tests do not certify physical-device tilt feel, native share-sheet behaviour or frame rate on every handset.
+
+## Mango Mayhem
+
+Open `/games/` or `/games/mango-mayhem/`. Six single-player platform levels, six bosses, seven original animated outfits, helper characters, 720 unique mangos and optional accessories. The menu always opens first. Keyboard, landscape touch and gamepad controls are supported. Five hearts, unlimited checkpoint retries and no timer.
+
+Profiles save locally. Existing signed-in accounts can link up to six cloud profiles, with owner-scoped revision checks, conflict merging and an offline retry queue. Game saves never change private orders, media, points or racing. Migration `0003_mango_profiles.sql` is additive and runs before production deployment. `/api/mango/health` exposes only game version and cloud-schema readiness. Reference photos are not published.
+
+Run `node --test tests/mango-*.test.mjs` and `python tests/mango-browser.py` against a running Worker. The browser suite exercises all six levels through real event handlers, not state setters or an auto-win API. Physical controller models, native share sheets and every handset are not certified by emulation. See `docs/mango-mayhem-release.md`.

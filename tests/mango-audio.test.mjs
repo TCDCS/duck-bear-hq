@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+const load=()=>import('../public/games/mango-mayhem/platform/audio.mjs');
+test('audio has a gesture-gated implementation',async()=>assert.ok(await load().catch(()=>null),'Game audio required'));
+test('six original scores differ and contain bounded scheduled notes',async()=>{const {scoreFor}=await load();const values=['dublin','london','taj','sichuan','neimenggu','liaoning'].map(id=>scoreFor(id));assert.equal(new Set(values.map(JSON.stringify)).size,6);for(const score of values){assert.ok(score.notes.length>=32);assert.ok(score.notes.every(n=>n.midi>=36&&n.midi<=96&&n.duration>0&&n.gain<=.3));assert.ok(score.beat>.2);}});
+test('AudioBus never creates an audio context until unlock is requested',async()=>{const {AudioBus}=await load();let created=0;const audio=new AudioBus({createContext(){created++;throw Error('Unavailable');}});assert.equal(created,0);audio.setVolumes(.2,.4);assert.equal(await audio.unlock(),false);assert.equal(created,1);assert.equal(audio.available,false);});
