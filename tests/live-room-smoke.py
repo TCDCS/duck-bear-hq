@@ -60,14 +60,14 @@ async def main():
             check('locked room rejects new visitors while seats remain free', status == 409)
             await clients[0].send_json({'type': 'setup', 'locked': False})
             await wait(lambda: latest(0, 'room').get('room', {}).get('locked') is False, 'room unlock')
-            for i in range(1, 8):
+            for i in range(1, 7):
                 status, seat = await post('/api/races/join', {'code': code, 'name': f'Release check {i+1}', 'avatar': i, 'vehicle': ['kart', 'police', 'ambulance', 'bus'][i % 4]})
                 check(f'guest {i+1} joins a distinct live seat', status == 201 and seat['id'] not in [s['id'] for s in seats])
                 await attach(seat)
-            await wait(lambda: all(len(latest(i, 'room').get('room', {}).get('players', [])) == 8 and all(p['connected'] for p in latest(i, 'room')['room']['players']) for i in range(8)), 'eight-player roster')
-            check('all eight real WebSocket clients share the roster', len({json.dumps(latest(i, 'room')['room']['players'], sort_keys=True) for i in range(8)}) == 1)
-            status, rejected = await post('/api/races/join', {'code': code, 'name': 'Ninth visitor'})
-            check('ninth player cannot overfill the race', status == 409)
+            await wait(lambda: all(len(latest(i, 'room').get('room', {}).get('players', [])) == 7 and all(p['connected'] for p in latest(i, 'room')['room']['players']) for i in range(7)), 'seven-player roster')
+            check('all seven real WebSocket clients share the roster', len({json.dumps(latest(i, 'room')['room']['players'], sort_keys=True) for i in range(7)}) == 1)
+            status, rejected = await post('/api/races/join', {'code': code, 'name': 'Eighth visitor'})
+            check('eighth player cannot overfill the race', status == 409)
             await clients[1].send_json({'type': 'start'})
             await wait(lambda: bool(latest(1, 'error')), 'non-host start rejection')
             check('non-host cannot start the shared race', 'host' in latest(1, 'error').get('message', '').lower())
@@ -75,8 +75,8 @@ async def main():
                 await ws.send_json({'type': 'ready', 'ready': True})
             await wait(lambda: all(p['ready'] for p in latest(0, 'room')['room']['players']), 'ready checks')
             await clients[0].send_json({'type': 'start'})
-            await wait(lambda: all(latest(i, 'snapshot').get('countdown') == 0 for i in range(8)), 'common countdown', 25)
-            check('eight human drivers start the same race', all(not p['ai'] for p in latest(0, 'snapshot')['racers']))
+            await wait(lambda: all(latest(i, 'snapshot').get('countdown') == 0 for i in range(7)), 'common countdown', 25)
+            check('seven human drivers start the same race', all(not p['ai'] for p in latest(0, 'snapshot')['racers']))
             for seq in range(1, 61):
                 for i, ws in enumerate(clients):
                     await ws.send_json({'type': 'input', 'seq': seq, 'gas': 1 if i % 2 == 0 else 0, 'brake': 0 if i % 2 == 0 else 1, 'steer': .15 if i == 0 else -.15 if i == 2 else 0, 's': 99999999, 'completedLaps': 3})
@@ -88,7 +88,7 @@ async def main():
             common = set(m['sequence'] for m in messages[0] if m.get('type') == 'snapshot')
             for bucket in messages[1:]:
                 common &= {m['sequence'] for m in bucket if m.get('type') == 'snapshot'}
-            check('all eight players receive a common authoritative update', bool(common))
+            check('all seven players receive a common authoritative update', bool(common))
             sequence = max(common)
             packets = [next(m for m in bucket if m.get('type') == 'snapshot' and m['sequence'] == sequence) for bucket in messages]
             check('the shared update is identical for every player', len({json.dumps(m, sort_keys=True) for m in packets}) == 1)
@@ -112,7 +112,7 @@ async def main():
 
 if __name__ == '__main__':
     OUT.mkdir(exist_ok=True)
-    report = {'base': BASE, 'kind': 'eight real production WebSocket clients', 'passed': False}
+    report = {'base': BASE, 'kind': 'seven real production WebSocket clients', 'passed': False}
     try:
         asyncio.run(main())
         report['passed'] = True
@@ -121,4 +121,4 @@ if __name__ == '__main__':
         raise
     finally:
         report.update(checks=checks, count=len(checks), completed=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()))
-        (OUT / 'eight-player-live.json').write_text(json.dumps(report, indent=2))
+        (OUT / 'seven-player-live.json').write_text(json.dumps(report, indent=2))

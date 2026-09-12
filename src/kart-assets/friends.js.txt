@@ -20,14 +20,14 @@ function render(room){
   $('roomCodeLabel').textContent=room.code;$('roomInvite').value=net.invite();$('settingsInvite').value=net.invite();
   const host=room.hostId===net.id,players=room.players||[],me=players.find(p=>p.id===net.id),phase=room.phase;
   $('roomPhase').textContent=phase==='race'?'RACE IN PROGRESS':phase==='results'?'CHEQUERED FLAG':host?'YOU’RE THE HOST':'WAITING FOR THE HOST';
-  $('roomCount').textContent=players.length+' / 8 players';$('roomPlayers').replaceChildren();
+  $('roomCount').textContent=players.length+' / '+C.MAX_RACERS+' players';$('roomPlayers').replaceChildren();
   for(const p of players){const row=document.createElement('div');row.className='friend-player';const im=new Image();im.src=globalThis.KartPortraits[p.avatar];im.alt='Cartoon driver';const name=document.createElement('strong');name.textContent=p.name+(p.id===room.hostId?' · Host':'')+(p.id===net.id?' · You':'');const status=document.createElement('span');status.textContent=!p.connected?'Connecting…':p.ready?'Ready':'Not ready';status.className=p.connected&&p.ready?'ready':'';row.append(im,name,status);$('roomPlayers').append(row);}
   $('roomReady').hidden=phase!=='lobby';$('roomReady').disabled=!net.connected;$('roomReady').textContent=me?.ready?'✓ Ready — tap to undo':'I’m ready';$('roomReady').setAttribute('aria-pressed',String(Boolean(me?.ready)));
   $('roomStart').hidden=!host||phase!=='lobby';$('roomStart').disabled=!net.connected||players.filter(p=>p.connected).length<2||players.some(p=>p.connected&&!p.ready);
   $('roomRematch').hidden=!host||phase!=='results';$('roomBackRace').hidden=!['race','results'].includes(phase);
   $('lobbyCircuit').disabled=!host||phase!=='lobby';$('lobbyCircuit').value=room.track??3;
   $('roomLock').disabled=!host||phase!=='lobby';$('roomLock').checked=Boolean(room.locked);
-  $('settingsRoomLabel').textContent='Room '+room.code+' · '+players.length+'/8 players';
+  $('settingsRoomLabel').textContent='Room '+room.code+' · '+players.length+'/'+C.MAX_RACERS+' players';
   $('settingsShare').disabled=false;
 }
 for(let i=0;i<C.TRACKS.length;i++)for(const id of ['createCircuit','lobbyCircuit']){const op=document.createElement('option');op.value=i;op.textContent=C.TRACKS[i].name;$(id).append(op);}

@@ -15,3 +15,7 @@ test('two friends fill only five AI seats',()=>{
 test('old oversized saved rooms expire rather than stranding an eighth player without a car',()=>{
  const room=M.makeRoom('1234');room.players=Array.from({length:8},(_,id)=>({...room.players[0],id}));assert.equal(M.restoreRoom(room),null);
 });
+
+test('old rooms with seven members but an eighth seat id cannot strand that driver',()=>{
+ const room=M.makeRoom('1234');room.players=Array.from({length:7},(_,i)=>({...room.players[0],id:i===6?7:i}));assert.equal(M.restoreRoom(room),null);
+});

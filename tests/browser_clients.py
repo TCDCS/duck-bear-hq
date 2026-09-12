@@ -45,7 +45,7 @@ async def main():
     res=await context.request.get(BASE+'/games/wacky-races/original-portraits.js');await check('native Worker does not expose original portrait files',res.status==404)
     res=await context.request.post(BASE+'/api/races/create',data={},headers={'Origin':'https://other-origin.test'});await check('native Worker rejects cross-origin room creation',res.status==403)
    homepage=await context.new_page();await load(homepage,'/');await homepage.wait_for_timeout(500)
-   await check('public homepage exposes Play without sign-in',await homepage.locator('a[href="/games/wacky-races/?play=1"]').count()==2)
+   await check('public homepage exposes Play without sign-in',await homepage.locator('a[href="/games/wacky-races/"]').count()==2)
    await check('Sign in is in the public header',await homepage.locator('header #publicSignIn').is_visible())
    await check('public cover fallback hides after artwork loads',await homepage.locator('#coverFallback').is_hidden())
    await homepage.screenshot(path=str(OUT/'home-desktop.png'),full_page=True)
@@ -69,6 +69,9 @@ async def main():
    await host.click('#roomStart');await wait(host,'WackyRaces.screen==="race"&&WackyRaces.race.countdown===0',timeout=30000);await wait(guest,'WackyRaces.screen==="race"&&WackyRaces.race.countdown===0',timeout=30000)
    await check('both browsers launch the same Dublin race',await host.evaluate('WackyRaces.race.track.id===5') and await guest.evaluate('WackyRaces.race.track.id===5'))
    await check('friend controls their own bus, not the host kart',await guest.evaluate('WackyRaces.race.racers[0].id===WackyRaces.network.id&&WackyRaces.race.racers[0].vehicle==="bus"'))
+   for client in [host,guest]:
+    await wait(client,'document.querySelectorAll("#raceOrderRows li").length===7')
+    await check('online grid and left race order both have seven racers',await client.evaluate('WackyRaces.race.racers.length===7&&WackyRaces.race.traffic.length===0&&document.querySelector("#raceOrderRows .is-you").dataset.driverId===String(WackyRaces.network.id)'))
    await host.wait_for_timeout(2500)
    # Both scenes have rendered. Drain their software-GPU work before capture,
    # rather than continually queuing two scenes while the screenshot waits.
@@ -100,11 +103,12 @@ async def main():
    await guest.click('#resultNext');await wait(host,'WackyRaces.network.room.phase==="lobby"');await check('host can bring everyone back for another race',await host.locator('#friendsDialog').evaluate('(el)=>el.open'))
    await guest.click('#roomLeave');await check('leaving restores a working solo paddock',await guest.evaluate('!WackyRaces.network.active&&WackyRaces.screen==="menu"'))
    await host.click('#roomLeave');await host.bring_to_front();await host.click('#startRace');await host.wait_for_timeout(300);print('SOLO STATE',await host.evaluate('({hidden:document.hidden,focus:document.hasFocus(),phase:WackyRaces.race.phase,countdown:WackyRaces.race.countdown,active:WackyRaces.network.active})'),flush=True);await wait(host,'WackyRaces.race.countdown===0');await check('solo still starts after an online session',await host.evaluate('!WackyRaces.race.multiplayer'))
+   await context.close()
    mobile_context=await browser.new_context(viewport={'width':390,'height':844},is_mobile=True,has_touch=True,service_workers='block');mobile=await mobile_context.new_page();mobile.on('pageerror',lambda e:errors.append(str(e)));await load(mobile,'/');await mobile.wait_for_timeout(300)
    await check('phone homepage has no horizontal overflow',await mobile.evaluate('document.documentElement.scrollWidth<=innerWidth+1'))
-   await mobile.screenshot(path=str(OUT/'home-mobile.png'),full_page=True);await mobile.close()
+   await mobile.screenshot(path=str(OUT/'home-mobile.png'),full_page=True,timeout=90000);await mobile.close()
    mobile=await mobile_context.new_page();mobile.on('pageerror',lambda e:errors.append(str(e)));await load(mobile,'/games/wacky-races/?friends=1');await check('phone lobby fits horizontally',await mobile.evaluate('document.getElementById("friendsDialog").getBoundingClientRect().right<=innerWidth'))
-   await mobile.screenshot(path=str(OUT/'friends-mobile.png'))
+   await mobile.screenshot(path=str(OUT/'friends-mobile.png'),timeout=90000)
    await check('no uncaught browser application errors',not errors)
   finally:
    for f in fixtures:await f.close()

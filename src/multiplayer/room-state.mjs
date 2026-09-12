@@ -1,6 +1,6 @@
 /* Pure room state. The Worker and the local integration server use this exact logic. */
 import C from './core.mjs';
-export const VERSION=4, CAPACITY=8, ROOM_TTL=60*60*1000, STALE_INPUT=900;
+export const VERSION=4, CAPACITY=C.MAX_RACERS, ROOM_TTL=60*60*1000, STALE_INPUT=900;
 export class RoomError extends Error {constructor(message,status=400){super(message);this.status=status;}}
 const number=(n,f=0)=>Number.isFinite(n)?n:f;
 const integer=(n,min,max,f=min)=>Number.isInteger(n)?C.clamp(n,min,max):f;
@@ -17,7 +17,7 @@ export function joinRoom(room,data={},now=Date.now()) {
   checkRoom(room,now);
   if(room.phase!=='lobby'||room.locked)throw new RoomError('This room has started or is locked. Ask the host to return to the lobby.',409);
   const id=Array.from({length:CAPACITY},(_,i)=>i).find(i=>!room.players.some(p=>p.id===i));
-  if(id===undefined)throw new RoomError('This room is full (eight players).',409);
+  if(id===undefined)throw new RoomError('This room is full (seven players).',409);
   const player=member(id,data,now);player.ready=false;if(!room.players.some(p=>p.id===room.hostId)){room.hostId=id;player.ready=true;}room.players.push(player);return player;
 }
 export function getPlayer(room,id) {const p=room.players.find(p=>p.id===id);if(!p)throw new RoomError('You are no longer in this room.',401);return p;}
@@ -97,5 +97,5 @@ export function snapshot(room) {
     racers:r.racers.map(p=>({...p})),pickups:r.pickups.map(p=>({...p})),traps:r.traps.map(p=>({...p})),traffic:r.traffic.map(p=>({...p})),events:r.events.slice(-8),order:r.order||null};
 }
 export function persistRoom(room) {const copy={...room,controls:{}};if(room.race)copy.race={...room.race,track:{id:room.track},inputs:{}};return copy;}
-export function restoreRoom(saved) {if(!saved||saved.version!==VERSION)return null;const room=saved;if(room.race){room.race.track=C.buildTrack(room.track);room.race.inputs={};}room.controls={};return room;}
+export function restoreRoom(saved) {if(!saved||saved.version!==VERSION||saved.players.length>CAPACITY||saved.players.some(p=>!Number.isInteger(p.id)||p.id<0||p.id>=CAPACITY)||(saved.race?.racers.length||0)>CAPACITY)return null;const room=saved;if(room.race){room.race.track=C.buildTrack(room.track);room.race.inputs={};}room.controls={};return room;}
 export {C};

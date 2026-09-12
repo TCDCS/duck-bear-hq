@@ -18,3 +18,7 @@ test('all selectable drivers remain available but every grid is limited to seven
 test('cup classification excludes the unused eighth character, including when that character is selected',()=>{
  for(const driver of [0,7]){const r=C.newRace({driver,mode:'cup'}),ids=r.racers.map(p=>p.id),scores=Array(8).fill(0);C.addCupPoints(scores,ids);const sorted=C.cupOrder(scores,ids);assert.equal(sorted.length,7);assert.deepEqual(Array.from(sorted),Array.from(ids));}
 });
+
+test('homepage states the same seven-player limit as the simulation',()=>{
+ const html=fs.readFileSync(__dirname+'/../public/index.html','utf8');assert.ok(html.includes('1–7 PLAYERS'));assert.ok(!html.includes('1–8 PLAYERS'));
+});
