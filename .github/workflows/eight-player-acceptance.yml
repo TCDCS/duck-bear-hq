@@ -1,0 +1,26 @@
+name: Eight-player production acceptance
+on:
+  push:
+    branches: [release/finish-live-20260912]
+    paths: ['tests/live-room-smoke.py', '.github/workflows/eight-player-acceptance.yml']
+permissions:
+  contents: read
+jobs:
+  eight-guests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      BASE_URL: https://duck-bear-hq.zachary-chambers2.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install HTTP and WebSocket test client
+        run: python -m pip install aiohttp
+      - name: Verify eight simultaneous guest drivers on production
+        run: python tests/live-room-smoke.py
+      - name: Save results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wacky-eight-player-live
+          path: verification/eight-player-live.json
+          retention-days: 7
