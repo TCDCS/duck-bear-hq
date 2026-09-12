@@ -42,7 +42,9 @@ export class WackyRoom {
     this.ctx=ctx;this.env=env;this.loop=null;this.rate=new Map();this.sockets=new Map();this.lastSave=0;
     this.ready=ctx.blockConcurrencyWhile(async()=>{
       this.room=M.restoreRoom(await ctx.storage.get('room'));
-      if(this.room){this.room.players.forEach(p=>p.connected=false);for(const ws of ctx.getWebSockets()){const a=ws.deserializeAttachment();if(a?.epoch===this.room.epoch&&this.room.players.some(p=>p.id===a.id)){this.sockets.set(a.id,ws);M.connect(this.room,a.id);}else try{ws.close(4000,'Room expired');}catch{}}
+      if(this.room){this.room.players.forEach(p=>p.connected=false);for(const ws of ctx.getWebSockets()){const a=ws.deserializeAttachment();if(a?.epoch===this.room.epoch&&this.room.players.some(p=>p.id===a.id)){this.sockets.set(a.id,ws);this.room.players.find(p=>p.id===a.id).connected=true;}else try{ws.close(4000,'Room expired');}catch{}}
+        // Reconnect only after every live socket is marked. Enumeration order must not steal hosting.
+        for(const id of this.sockets.keys())M.connect(this.room,id);
         if(this.room.phase==='race'&&this.sockets.size)this.startLoop();}
     });
     if(typeof WebSocketRequestResponsePair!=='undefined')ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping','pong'));

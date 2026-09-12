@@ -170,3 +170,5 @@
   function formatTime(n){if(!Number.isFinite(n))return '—';const ms=Math.max(0,Math.round(n*1000)),m=Math.floor(ms/60000),s=Math.floor(ms%60000/1000);return `${m}:${String(s).padStart(2,'0')}.${String(ms%1000).padStart(3,'0')}`;}
   globalThis.KartCore={TRACKS,DEFAULTS,ITEMS,SNACKS,VEHICLES,recover,cleanProfiles,buildTrack,sampleTrack,newRace,stepRace,useItem,hit,lapOf,rank,addCupPoints,cupOrder,formatTime,clamp,mod};
 })();
+
+export default globalThis.KartCore;

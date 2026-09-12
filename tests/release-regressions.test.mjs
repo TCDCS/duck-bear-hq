@@ -24,3 +24,14 @@ test('user-driven room changes do not share photograph data',()=>{
   const guest=M.joinRoom(room,{name:'Friend',avatar:1,photo:'PRIVATE_IMAGE'});
   assert.equal('photo' in guest,false);assert.equal(JSON.stringify(M.publicRoom(room)).includes('PRIVATE_IMAGE'),false);
 });
+
+test('Durable Object wake-up preserves the connected host regardless of socket enumeration order',async()=>{
+ const saved=M.makeRoom('0763',{name:'Host'});M.joinRoom(saved,{name:'Friend'});
+ saved.players.forEach(p=>{p.connected=true;p.ready=true;});
+ const sockets=[1,0].map(id=>({deserializeAttachment:()=>({id,epoch:saved.epoch}),close(){throw Error('Valid socket was closed');}}));
+ const ctx={blockConcurrencyWhile:fn=>fn(),storage:{get:async()=>structuredClone(saved)},getWebSockets:()=>sockets};
+ const worker=new WackyRoom(ctx,{});await worker.ready;
+ assert.equal(worker.room.hostId,0);
+ assert.equal(worker.room.players.every(p=>p.connected),true);
+ assert.doesNotThrow(()=>M.startRoom(worker.room,0));
+});

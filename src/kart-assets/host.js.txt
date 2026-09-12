@@ -6,6 +6,8 @@
   const enableSound=()=>game.audio?.unlock();
   document.addEventListener('pointerdown',enableSound,{once:true,capture:true});
   document.addEventListener('keydown',enableSound,{once:true,capture:true});
-  if(new URLSearchParams(location.search).get('play') === '1') game.startRace();
+  const params=new URLSearchParams(location.search);
+  if(params.get('friends')==='1')game.openFriends?.();
+  else if(params.get('play')==='1'&&!params.has('room'))game.startRace();
   window.addEventListener('pageshow',e=>{if(e.persisted)game.pause();});
 })();
