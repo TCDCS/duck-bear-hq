@@ -1,0 +1,58 @@
+name: Mango release import
+on:
+  push:
+    branches: [mango-mayhem-full-game]
+    paths: ['.mango-release/READY.json']
+permissions:
+  contents: write
+concurrency:
+  group: mango-import
+  cancel-in-progress: true
+jobs:
+  import-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: mango-mayhem-full-game
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify and import approved game package
+        run: python .mango-release/import.py
+      - name: Install and check all games and account sources
+        run: |
+          npm ci
+          npm test
+          npm run check
+          npm run mango:check
+          npx wrangler deploy --dry-run --outdir /tmp/mango-dry
+      - name: Install native browser
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Start the real local Worker
+        run: |
+          npm run migrate:local
+          npx wrangler dev --port 8787 --ip 127.0.0.1 > /tmp/mango-worker.log 2>&1 &
+          python scripts/mango-wait.py http://127.0.0.1:8787
+      - name: Play every level and test input, saves and menus
+        env:
+          BASE_URL: http://127.0.0.1:8787
+          MANGO_REPORT_DIR: verification/mango/local
+        run: |
+          python tests/mango-browser.py
+          python tests/mango-cloud-browser.py
+      - name: Commit only the verified feature and evidence
+        run: python scripts/mango-stage-release.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mango-import-verification
+          path: verification/mango
+          retention-days: 14
