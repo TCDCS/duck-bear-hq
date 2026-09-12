@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "duck-bear-hq",
-  "main": "./src/index.js",
+  "main": "./src/worker-games.js",
   "compatibility_date": "2026-09-10",
   "observability": { "enabled": true },
   "keep_vars": true,
@@ -9,8 +9,9 @@
     "directory": "./public",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*", "/media/*"]
+    "run_worker_first": ["/api/*", "/media/*", "/games/*"]
   },
+  "rules": [{"type":"Text","globs":["**/kart-assets/*.txt"],"fallthrough":true}],
   "d1_databases": [
     {
       "binding": "DB",
