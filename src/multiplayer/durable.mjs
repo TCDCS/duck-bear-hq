@@ -68,8 +68,12 @@ export class WackyRoom {
       M.checkRoom(this.room);
       if(url.pathname==='/join'&&request.method==='POST'){
         return await this.ctx.blockConcurrencyWhile(async()=>{
-          const now=Date.now();if(this.room.phase==='lobby')for(const p of [...this.room.players])if(!p.connected&&now-p.lastSeen>90000)M.leaveRoom(this.room,p.id,now);
-          const p=M.joinRoom(this.room,await request.json(),now);await this.save();this.lobby();return json({room:M.publicRoom(this.room),id:p.id,token:p.token},201);
+          // Expected join refusals must not escape this gate: Cloudflare resets
+          // the object (and its live sockets) when the callback rejects.
+          try{
+            const now=Date.now();if(this.room.phase==='lobby')for(const p of [...this.room.players])if(!p.connected&&now-p.lastSeen>90000)M.leaveRoom(this.room,p.id,now);
+            const p=M.joinRoom(this.room,await request.json(),now);await this.save();this.lobby();return json({room:M.publicRoom(this.room),id:p.id,token:p.token},201);
+          }catch(e){if(e instanceof M.RoomError)return fail(e);throw e;}
         });
       }
       if(request.method!=='GET'||request.headers.get('Upgrade')?.toLowerCase()!=='websocket')return json({error:'WebSocket required.'},426);

@@ -1,4 +1,4 @@
-name: Room rejection regression
+name: Final room regression
 on:
   push:
     branches: [release/finish-live-20260912]
@@ -6,41 +6,39 @@ on:
 permissions:
   contents: read
 jobs:
-  rejection:
+  regression:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Check expected client rejections do not terminate the room
-        run: node --test tests/room-rejection.test.mjs
-      - name: Inspect exact published response and keep reviewed source
-        if: always()
-        shell: python
+      - name: Run all regressions and build the deployable Worker
         run: |
-          import hashlib,json,subprocess,urllib.request,urllib.error
-          from pathlib import Path
-          Path('verification').mkdir(exist_ok=True)
-          subprocess.check_call(['git','archive','--format=zip','--output=verification/reviewed-source.zip','HEAD','src','public','tests','scripts','docs','migrations','wrangler.jsonc','package.json','package-lock.json'])
-          base='https://duck-bear-hq.zachary-chambers2.workers.dev'
-          expected={'/':'public/index.html','/games/wacky-races/game.js':'src/kart-assets/game.js.txt','/games/wacky-races/network.js':'src/kart-assets/network.js.txt'}
-          results=[]
-          for path,file in expected.items():
-            try:
-              req=urllib.request.Request(base+path,headers={'User-Agent':'Duck-Bear-release-check/4','Cache-Control':'no-cache'})
-              try:response=urllib.request.urlopen(req,timeout=12)
-              except urllib.error.HTTPError as error:response=error
-              raw=response.read(500000)
-              result={'path':path,'status':response.code,'type':response.headers.get('Content-Type'),'server':response.headers.get('Server'),'matches_source':hashlib.sha256(raw).digest()==hashlib.sha256(Path(file).read_bytes()).digest(),'preview':raw[:600].decode('utf8','replace') if response.code>=400 else ''}
-            except Exception as e:result={'path':path,'error':str(e)}
-            print(json.dumps(result),flush=True);results.append(result)
-          Path('verification/live-source.json').write_text(json.dumps(results,indent=2))
+          npm ci --no-audit --no-fund
+          npm test
+          npm run check
+          npx wrangler deploy --dry-run --outdir /tmp/wacky-build
+          python -m pip install aiohttp
+      - name: Verify eight native clients against the patched Workers runtime
+        env:
+          BASE_URL: http://127.0.0.1:8787
+        run: |
+          mkdir -p verification
+          npx wrangler dev --ip 127.0.0.1 --port 8787 > verification/wrangler.log 2>&1 &
+          SERVER=$!
+          trap 'kill $SERVER 2>/dev/null || true' EXIT
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:8787/api/races/version && break; sleep 1; done
+          python tests/live-room-smoke.py
+      - name: Inspect published files with the corrected release probe
+        env:
+          BASE_URL: https://duck-bear-hq.zachary-chambers2.workers.dev
+        run: python scripts/wait-live.py
       - name: Save diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: room-rejection-diagnostics
+          name: final-room-regression
           path: verification/
           retention-days: 7
