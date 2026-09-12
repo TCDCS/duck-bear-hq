@@ -1,0 +1,84 @@
+/* Original toy-scale models; liveries are fictional, without official crests. */
+(() => {
+  'use strict';
+  function vehicle(profile,low=false,country='GB'){
+    const G=globalThis.KartGeometry,m=new G.Mesh(low),type=profile.vehicle||'kart',irish=country==='IE';
+    const bus=type==='bus',ambulance=type==='ambulance',police=type==='police';
+    const col=bus?(irish?'#1d9770':'#e43731'):ambulance?(irish?'#f1f1d9':'#eff052'):'#f3f4ea';
+    const stripe=police?'#2362ae':'#238448',length=bus?3.95:ambulance?3.65:3.3,height=bus?3.2:ambulance?2.35:1.35,width=bus?2.0:1.88;
+    m.material=7;m.roundBox(0,.55,0,width,.42,length,col,.16);m.roundBox(0,.76+height/2,-.12,width,height,length-.26,col,.18);
+    m.material=5;m.roundBox(0,1.35,length/2-.10,width-.24,.68,.12,'#195264',.05);
+    if(bus)m.roundBox(0,2.73,length/2-.12,width-.24,.65,.13,'#245f74',.06);
+    for(const side of [-1,1]){
+      if(bus){for(const y of [1.48,2.6])for(let z=-1.35;z<1.4;z+=.72)m.roundBox(side*(width/2+.005),y,z,.04,.63,.56,'#276579',.025);}
+      else m.roundBox(side*(width/2+.006),1.38,.96,.035,.65,.71,'#286c83',.02);
+      m.material=0;
+      if(bus)m.box(side*(width/2+.03),.9,0,.025,.29,length-.4,irish?'#eede46':'#f3d3aa');
+      else for(let i=0;i<6;i++)m.box(side*(width/2+.035),.93,-1.4+i*.51,.035,.30,.50,i%2?stripe:'#f1eb43');
+      if(ambulance&&irish)m.box(side*(width/2+.042),1.43,-.65,.04,.15,1.1,'#238448');
+      for(const z of [-length*.32,length*.32]){m.cylinder([side*(width/2-.1),.44,z],[side*(width/2+.17),.44,z],.43,'#212c31',low?12:24);m.material=7;m.cylinder([side*(width/2+.173),.44,z],[side*(width/2+.19),.44,z],.22,'#b5c7d1',low?12:24);m.material=0;}
+      m.roundBox(side*.63,.69,length/2+.035,.35,.14,.08,'#fff4bc',.04);m.roundBox(side*.66,.7,-length/2-.02,.29,.17,.065,'#f54538',.035);
+    }
+    if(!bus){m.material=7;m.roundBox(0,height+1.02,-.24,1.32,.15,.33,'#263544',.06);m.material=8;for(const x of [-.43,.43])m.roundBox(x,height+1.13,-.24,.4,.15,.27,irish?'#46bcff':'#4387ff',.06);}
+    else{m.material=0;m.roundBox(0,2.04,length/2+.02,1.2,.21,.06,'#20302b',.025);}
+    // Driver visible from the chase camera through a playful open roof hatch.
+    m.material=0;const y=height+.85,skin=profile.avatar==='dark-beard'?'#996440':'#e1b38b';
+    m.roundBox(0,y-.09,-.55,.7,.45,.53,profile.color||'#f39436',.13);
+    if(profile.avatar==='dog'){
+      m.sphere(0,y+.5,-.48,.36,'#a6744c',16);m.sphere(0,y+.39,-.16,.24,'#f7edcf',16);for(const x of [-.28,.28])m.ellipsoid(x,y+.44,-.57,.17,.25,.13,'#865436');m.sphere(0,y+.45,.025,.085,'#633e39',12);
+    }else{
+      m.sphere(0,y+.5,-.49,.32,skin,18);if(profile.avatar!=='bald-beard')m.ellipsoid(0,y+.66,-.58,.34,.22,.28,'#34302c');if(/beard/.test(profile.avatar))m.ellipsoid(0,y+.32,-.3,.24,.19,.13,'#514c48');
+    }
+    m.material=0;return m;
+  }
+  function item(type,low=false){
+    const m=new globalThis.KartGeometry.Mesh(low);m.material=0;
+    if(type==='mango'){m.ellipsoid(0,.9,0,.56,.73,.45,'#ffbe30');m.ellipsoid(.24,.76,.13,.33,.46,.32,'#ff962d');m.cylinder([.05,1.5,0],[.18,1.75,0],.06,'#6b6f30',12);m.ellipsoid(.37,1.67,0,.3,.07,.12,'#54b436');}
+    if(type==='icecream'){m.cylinder([0,.12,0],[0,1.14,0],.025,'#db9e52',18,.4);m.sphere(0,1.35,0,.52,'#633923',20);m.sphere(-.22,1.52,.08,.27,'#82502d',16);for(let i=0;i<7;i++)m.sphere(Math.cos(i*2.4)*.36,1.48+(i%2)*.16,Math.sin(i*2.4)*.32,.045,'#351f1a',8);}
+    if(type==='blueberry'){for(let i=0;i<6;i++){const a=i*2.4,x=Math.cos(a)*.4,z=Math.sin(a)*.35,y=.6+(i%3)*.32;m.sphere(x,y,z,.32,i%2?'#555bc3':'#384ca7',16);m.cylinder([x,y+.28,z],[x,y+.30,z],.10,'#292d76',8);}m.ellipsoid(0,1.57,0,.34,.07,.15,'#66ac3b');}
+    if(type==='strawberry'){m.ellipsoid(0,.91,0,.57,.65,.47,'#f24846');m.cylinder([0,.15,0],[0,.76,0],.05,'#ee3740',20,.49);for(let i=0;i<18;i++){const a=i*2.4,y=.53+(i%4)*.2,r=.48;m.sphere(Math.cos(a)*r,y,Math.sin(a)*r*.82,.03,'#ffe8a4',8);}for(let i=0;i<5;i++){const a=i*1.257;m.ellipsoid(Math.cos(a)*.27,1.51,Math.sin(a)*.23,.26,.06,.15,'#42aa40');}}
+    if(type==='pizza'){m.cylinder([0,.13,0],[0,.15,0],1.3,'#d69a41',24);m.tri([-.95,.18,-.8],[.95,.18,-.8],[0,.18,1.25],'#f8d866');m.cylinder([-.98,.23,-.8],[.98,.23,-.8],.17,'#db963e',18);for(const [x,z] of [[-.43,-.43],[.39,-.35],[0,.29]])m.cylinder([x,.185,z],[x,.205,z],.20,'#c54434',14);}
+    if(type==='whiskey'){m.cylinder([0,.105,0],[0,.13,0],1.4,'#c99135',26);m.cylinder([-.65,.39,-.25],[.55,.39,.14],.29,'#74532e',18);m.cylinder([.55,.39,.14],[1.03,.39,.3],.12,'#7e613b',16);m.cylinder([1.03,.39,.3],[1.13,.39,.335],.14,'#bd8f42',16);m.roundBox(-.1,.63,-.02,.43,.035,.28,'#efe1b5',.02);}
+    return m;
+  }
+  const reserves=[{x:-45,z:115,r:8},{x:-88,z:88,r:27},{x:-152,z:43,r:20},{x:50,z:102,r:40},{x:142,z:-76,r:18}];
+  function dublin(m,t,info){
+    const label=(text,x,y,z,width=14)=>info.labels.push({text,x,y,z,width,type:'shop'});
+    const box=(x,y,z,w,h,d,col,r=.15)=>m.roundBox(x,y,z,w,h,d,col,r);
+    // Liffey-inspired water and quays stay inside the fictional course.
+    m.material=6;m.box(0,-.02,0,334,.12,30,'#279faa');m.material=9;
+    for(const z of [-17,17]){m.box(0,.18,z,340,.6,3.6,'#d9c89c');for(let x=-164;x<166;x+=5)m.cylinder([x,.3,z],[x,1.7,z],.06,'#44564d',8);m.cylinder([-165,1.5,z],[165,1.5,z],.07,'#495e55',8);}
+    m.material=7;m.cylinder([-45,.1,115],[-45,77,115],1.18,'#c0dce5',28,.025);m.material=9;m.cylinder([-45,0,115],[-45,.35,115],3.2,'#e4d4b1',24);label('The Spire',-45,4,119,13);
+    // GPO: six classical columns, pediment, clock and Irish tricolour.
+    m.material=9;box(-88,9,88,42,18,19,'#d9c9a6');m.box(-88,.42,101,45,.7,8,'#dbd1ba');
+    for(let x=-104;x<=-72;x+=6.4){m.cylinder([x,1,100],[x,15,100],.73,'#eee0bc',20);m.cylinder([x,14.7,100],[x,15.3,100],1.1,'#f6e8c9',18);}
+    m.box(-88,16,100,44,1.2,6,'#e6d7b6');m.tri([-110,16.6,103.1],[-66,16.6,103.1],[-88,23,103.1],'#e7d7b2');
+    m.material=7;m.cylinder([-88,22.5,94],[-88,31,94],.09,'#dbd9bd',10);for(let i=0;i<3;i++)m.box(-87.15+i*1.6,28,94,1.6,2.8,.045,['#25a86a','#fff7df','#ff9239'][i]);label('GPO · STAMP OF SPEED',-88,16.1,103.4,38);
+    // Georgian doors and sash windows.
+    for(let j=0;j<7;j++){const x=22+j*9;m.material=2;box(x,10.5,102,8.8,21,12,['#bb7652','#d69767','#a9694a'][j%3]);m.material=9;m.box(x,21.2,102,9.3,.5,12.5,'#f2d4ac');for(let y=6;y<21;y+=4.3)for(const dx of [-2,2]){m.box(x+dx,y,108.06,1.6,2.4,.14,'#f8e4c4');m.material=5;m.box(x+dx,y,108.15,1.35,2.15,.06,'#28617a');m.material=9;m.box(x+dx,y,108.2,.07,2.1,.025,'#f8e4c4');}box(x,1.65,108.1,1.8,3.3,.2,['#246ab5','#c93332','#279264','#eac53b'][j%4]);m.cylinder([x,3.5,108.1],[x,3.5,108.25],1.05,'#efdcad',20);}
+    label('GEORGIAN DOOR GRAND PRIX',48,4,109,37);
+    m.material=2;box(-152,8,43,25,16,13,'#d23631');m.material=0;for(let x=-161;x<=-143;x+=6)for(const y of [3,8,12]){m.box(x,y,49.7,3.2,3,.15,'#f3d49d');m.material=5;m.box(x,y,49.8,2.7,2.5,.08,'#1e5359');m.material=0;}box(-152,5.4,50,24,.9,.3,'#7c2925');label('Temple Bar',-152,5.45,50.25,20);
+    // White arched Ha'penny pedestrian bridge over the water, not an obstacle.
+    m.material=7;for(let i=0;i<28;i++){const a=-20+i*40/28,b=-20+(i+1)*40/28,ya=2+4*(1-(a/20)**2),yb=2+4*(1-(b/20)**2);m.quad([-111,ya,a],[-99,ya,a],[-99,yb,b],[-111,yb,b],'#e8e8d9');for(const x of [-111,-99]){m.cylinder([x,ya+1.6,a],[x,yb+1.6,b],.09,'#fff7da',10);m.cylinder([x,ya,a],[x,ya+1.6,a],.07,'#faf4dc',8);}}
+    label('Ha’penny Bridge',-105,8,5,20);
+    // Harp-shaped Samuel Beckett Bridge: curved mast and radiating stays.
+    m.material=9;m.box(100,2,0,13,1.1,49,'#e8dec7');m.material=7;
+    const mast=[];for(let i=0;i<=28;i++){const u=i/28;mast.push([100+19*Math.sin(u*Math.PI*.62),2+40*u,-20+8*u*u]);if(i)m.cylinder(mast[i-1],mast[i],.85-i*.021,'#f0f0e1',14,.85-i*.021);}
+    for(let i=3;i<27;i+=2)m.cylinder(mast[i],[101,2.8,-17+i*1.5],.055,'#e8eade',8);label('Samuel Beckett Bridge',100,7,26,32);
+    // Poolbeg's red-and-white twins and low industrial buildings.
+    m.material=0;for(const [x,h] of [[135,56],[150,52]]){for(let j=0;j<9;j++)m.cylinder([x,j*h/9,-76],[x,(j+1)*h/9,-76],2.1-j*.10,j%2?'#f3e8d0':'#d8513c',22,2.0-j*.10);m.cylinder([x,h,-76],[x,h+.6,-76],1.3,'#473c33',20);}m.material=9;box(140,4,-80,28,8,18,'#b9aa90');label('Poolbeg',140,10,-68,23);
+    // Affectionate trackside nonsense: shamrocks, sheep, fiddlers and a giant hat.
+    const C=globalThis.KartCore;
+    const jokes=['AH GO ON · ONE MORE LAP','GRAND STRETCH IN THE LEAD','SHEEP HAVE RIGHT OF WAY','MIND THE MANGOES'];
+    for(let i=0;i<12;i++){
+      const q=C.sampleTrack(t,80+i*t.length/12,-(t.width/2+8));
+      m.material=0;m.cylinder([q.x,0,q.z],[q.x,3.1,q.z],.1,'#675538',10);box(q.x,3.3,q.z,6.5,1.6,.25,'#218657');label(jokes[i%4],q.x,3.45,q.z+.2,6.1);
+      for(let j=0;j<3;j++)m.sphere(q.x+Math.cos(j*2.094)*.34,4.7+Math.sin(j*2.094)*.34,q.z,.38,'#38bd51',14);
+      const x=q.x+3.5,z=q.z+1;info.objects.push({kind:'sheep',x,z,radius:1});m.ellipsoid(x,.9,z,.9,.6,.55,'#fff5db');for(const dx of [-.5,.5])for(const dz of [-.28,.28])m.cylinder([x+dx,.1,z+dz],[x+dx,.7,z+dz],.09,'#615448',10);m.ellipsoid(x+.8,1.0,z,.34,.32,.29,'#64564d');m.sphere(x+.9,1.13,z+.26,.055,'#f9fbf4',10);
+    }
+    box(-16,2.5,100,6,5,5,'#25a064');m.cylinder([-16,.1,100],[-16,.5,100],5,'#298253',24);m.box(-16,1.2,102.51,6,.8,.1,'#354635');m.box(-16,1.2,102.59,1,.7,.08,'#f1cf51');label('LUCK NOT INCLUDED',-16,6.2,103,15);
+    for(let i=0;i<4;i++){const x=-60+i*3,z=24;m.ellipsoid(x,1.25,z,.35,.6,.24,['#527edf','#e98038','#31a879','#bd5daa'][i]);m.sphere(x,2.12,z,.25,'#d8a57a',16);for(const side of [-1,1])m.cylinder([x+side*.15,.75,z],[x+side*.17,.1,z],.1,'#3d4a56',10);m.ellipsoid(x+.2,1.32,z+.28,.23,.38,.08,'#a86031');m.cylinder([x+.2,1.5,z+.3],[x+.45,2,z+.3],.045,'#9d6c3d',8);}
+    label('THE QUAY NOTE BUSKERS',-55,3,25,18);m.material=0;
+  }
+  globalThis.WackyModels={vehicle,item,dublin,reserves};
+})();

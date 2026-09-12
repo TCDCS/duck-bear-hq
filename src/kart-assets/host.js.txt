@@ -1,13 +1,11 @@
-/* Duck & Bear full-page integration. The game keeps its own controls and saves. */
+/* Full-page launch. Gesture-gated sound and safe back/forward navigation. */
 (() => {
   'use strict';
-  const game=globalThis.ProperKarted;
-  if(!game) return; // The game's own visible error panel handles startup failure.
-  // Enable sound only after a real user gesture, not by assuming autoplay permission.
-  const enableSound=()=>{for(const context of globalThis.__kartAudioContexts||[]) if(context.state==='suspended')context.resume().catch(()=>{});};
+  const game=globalThis.WackyRaces||globalThis.ProperKarted;
+  if(!game)return;
+  const enableSound=()=>game.audio?.unlock();
   document.addEventListener('pointerdown',enableSound,{once:true,capture:true});
   document.addEventListener('keydown',enableSound,{once:true,capture:true});
   if(new URLSearchParams(location.search).get('play') === '1') game.startRace();
-  // Back/forward cache must not silently restart a race or leave the throttle held.
   window.addEventListener('pageshow',e=>{if(e.persisted)game.pause();});
 })();

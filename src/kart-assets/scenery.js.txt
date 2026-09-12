@@ -1,4 +1,4 @@
-/* Original London scenery. Metres, Y-up. No map API, fetched models or textures. */
+/* Original London and Dublin scenery. Metres, Y-up. No map API, fetched models or textures. */
 (() => {
   'use strict';
   const C=globalThis.KartCore;
@@ -6,10 +6,10 @@
   function build(m,t){
     let seed=1945+t.id*941;
     const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
-    const info={objects:[],labels:[],triangles:0},half=t.width/2,park=t.id===3,regent=t.id===4;
+    const info={objects:[],labels:[],triangles:0},half=t.width/2,park=t.id===3,regent=t.id===4,irish=t.country==='IE';
     const surface=(id,fn)=>{const old=m.material;m.material=id;fn();m.material=old;};
-    const closest=(x,z)=>Math.min(...t.samples.map(p=>Math.hypot(p.x-x,p.z-z)));
-    const allowed=(x,z,r)=>closest(x,z)>=half+4+r;
+    const closest=(x,z)=>{let distance=Infinity;for(const p of t.samples)distance=Math.min(distance,Math.hypot(p.x-x,p.z-z));return distance;};
+    const allowed=(x,z,r)=>closest(x,z)>=half+4+r&&(!irish||!globalThis.WackyModels.reserves.some(q=>Math.hypot(x-q.x,z-q.z)<q.r+r));
     const register=(kind,x,z,r)=>{if(!allowed(x,z,r))return false;info.objects.push({kind,x,z,radius:r});return true;};
     const at=(x,z,rot,a,b)=>[x+a*Math.cos(rot)+b*Math.sin(rot),z-a*Math.sin(rot)+b*Math.cos(rot)];
     const slab=(a,b,lo,hi,y,col)=>{const p=(q,x)=>[q.x-q.tz*x,y,q.z+q.tx*x];m.quad(p(a,lo),p(a,hi),p(b,hi),p(b,lo),col);};
@@ -17,10 +17,10 @@
     // A continuous road ribbon. Right-positive coordinates match the racing camera.
     for(let i=0;i<t.samples.length;i+=m.low?2:1){
       const a=t.samples[i],b=t.samples[(i+(m.low?2:1))%t.samples.length];
-      surface(M.stone,()=>slab(a,b,-half-5.6,half+5.6,.035,'#a5a398'));
-      surface(M.road,()=>slab(a,b,-half,half,.075,park?'#555c58':'#454b53'));
+      surface(M.stone,()=>slab(a,b,-half-5.6,half+5.6,.035,'#e4d4b4'));
+      surface(M.road,()=>slab(a,b,-half,half,.075,park?'#a5a29a':'#727e8a'));
       for(const side of [-1,1]){
-        surface(M.stone,()=>slab(a,b,Math.min(side*half,side*(half+.4)),Math.max(side*half,side*(half+.4)),.13,'#c7c2b3'));
+        surface(M.stone,()=>slab(a,b,Math.min(side*half,side*(half+.4)),Math.max(side*half,side*(half+.4)),.13,'#f2dfb5'));
         for(const delta of [.30,.56])slab(a,b,side*(half-delta-.045),side*(half-delta+.045),.083,'#ddba56');
       }
       if(i%8<4)slab(a,b,-.09,.09,.085,'#e9e1c9');
@@ -31,15 +31,15 @@
       m.box(q.x,.101,q.z,1.1,.025,.8,(Math.round((x+half)/1.1)+z)%2?'#f4ebd7':'#1a2933',yaw);
     }
     for(const side of [-1,1]){const q=C.sampleTrack(t,0,side*(half+5.0));register('start support',q.x,q.z,.37);surface(M.metal,()=>m.box(q.x,4.2,q.z,.52,8.4,.52,'#263b3d',yaw));}
-    m.box(start.x,8.1,start.z,t.width+10.6,1.7,.6,'#be4d38',yaw);
-    info.labels.push({x:start.x,y:8.1,z:start.z,text:'PROPER KARTED',width:t.width+9,type:'gantry'});
+    m.box(start.x,8.1,start.z,t.width+10.6,1.7,.6,'#f37f2f',yaw);
+    info.labels.push({x:start.x,y:8.1,z:start.z,text:'WACKY RACES',width:t.width+9,type:'gantry'});
     function shadow(x,z,r){surface(M.plain,()=>m.cylinder([x,-.089,z],[x,-.087,z],r,park?'#526c42':'#666e61',m.low?8:16));}
     function tree(x,z,scale=1){
       const radius=4.1*scale;if(!register('tree',x,z,radius))return;
       shadow(x,z,radius*1.35);
       surface(M.wood,()=>{m.cylinder([x,0,z],[x,6.1*scale,z],.44*scale,'#736151',8,.23*scale);for(const sign of [-1,1])m.cylinder([x,3.1*scale,z],[x+sign*1.8*scale,6.5*scale,z+.55*scale],.17*scale,'#796650',7,.06);});
-      const colours=['#45683b','#547845','#63894b','#72914f'];
-      for(let j=0;j<(m.low?3:6);j++){const angle=j*2.4,r=j?1.45*scale:0;
+      const colours=['#36954b','#54af40','#74bf43','#a1cc4d'];
+      for(let j=0;j<(m.low?3:4);j++){const angle=j*2.4,r=j?1.45*scale:0;
         surface(M.foliage,()=>m.sphere(x+Math.sin(angle)*r,(6.9+(j%2)*1.2)*scale,z+Math.cos(angle)*r,(j?2.45:3.3)*scale,colours[j%4],m.low?6:10));}
     }
     function lamp(x,z,rot){
@@ -53,7 +53,7 @@
       surface(M.wood,()=>{for(let i=0;i<4;i++)box(0,.58,-.35+i*.22,3.0,.12,.16,'#95724b');for(let i=0;i<3;i++)box(0,.91+i*.22,-.46,3,.16,.09,'#896941');});
       surface(M.metal,()=>{for(const a of [-1.14,1.14]){box(a,.32,0,.10,.64,.65,'#303c38');box(a,1.02,-.49,.11,1.32,.10,'#303c38');}});
     }
-    function phone(x,z,rot){
+    function phone(x,z,rot){if(irish)return;
       if(!register('telephone box',x,z,1.55))return;
       const box=(a,y,b,w,h,d,col)=>{const q=at(x,z,rot,a,b);m.box(q[0],y,q[1],w,h,d,col,rot);};
       box(0,1.75,0,1.72,3.5,1.72,'#b52e2b');box(0,3.57,0,1.94,.26,1.94,'#ca4436');
@@ -62,13 +62,13 @@
     }
     function bus(x,z,rot,taxi=false){
       if(!register(taxi?'black cab':'double-decker',x,z,taxi?2.6:5.0))return;
-      const box=(a,y,b,w,h,d,col)=>{const q=at(x,z,rot,a,b);m.box(q[0],y,q[1],w,h,d,col,rot);};
-      const col=taxi?'#263239':'#b63830',w=taxi?2.1:3.0,h=taxi?1.5:4.6,d=taxi?4.5:9.3;
+      const box=(a,y,b,w,h,d,col)=>{const q=at(x,z,rot,a,b);m.roundBox(q[0],y,q[1],w,h,d,col,.16,rot);};
+      const col=taxi?'#263239':irish?'#1e9b70':'#ec3b35',w=taxi?2.1:3.0,h=taxi?1.5:4.6,d=taxi?4.5:9.3;
       surface(M.metal,()=>{box(0,h/2+.38,0,w,h,d,col);box(0,h+.4,0,w*.96,.14,d*.96,col);box(0,.49,d/2+.06,w,.16,.16,'#bcb9ab');});
       surface(M.glass,()=>{box(0,h*.77,d/2+.025,w*.88,h*.27,.045,'#4c6874');for(const side of [-1,1])for(let b=-d*.34;b<d*.4;b+=taxi?1.4:1.85){const q=at(x,z,rot,side*(w/2+.025),b);m.box(q[0],taxi?1.43:1.68,q[1],.04,taxi?.52:1.03,taxi?1.1:1.55,'#577986',rot);if(!taxi)m.box(q[0],3.48,q[1],.04,1.09,1.55,'#52717d',rot);}});
       for(const side of [-1,1])for(const b of [-d*.32,d*.32]){const a=at(x,z,rot,side*(w/2-.15),b),c=at(x,z,rot,side*(w/2+.15),b);m.cylinder([a[0],.55,a[1]],[c[0],.55,c[1]],taxi?.43:.59,'#202729',12);}
       surface(M.light,()=>{for(const a of [-w*.35,w*.35])box(a,.90,d/2+.06,.25,.18,.035,'#f4e5b3');});
-      if(taxi){box(0,h+.62,0,.68,.18,.31,'#ecd38d');}else{box(0,2.72,d/2+.05,2.35,.41,.035,'#242d29');const q=at(x,z,rot,0,d/2+.15);info.labels.push({x:q[0],y:2.75,z:q[1],text:'LONDON  9',width:2.2,type:'small'});}
+      if(taxi){box(0,h+.62,0,.68,.18,.31,'#ecd38d');}else{box(0,2.72,d/2+.05,2.35,.41,.035,'#242d29');const q=at(x,z,rot,0,d/2+.15);info.labels.push({x:q[0],y:2.75,z:q[1],text:irish?'DUBLIN  46A':'LONDON  9',width:2.2,type:'small'});}
     }
     function building(x,z,w,h,d,rot,index=0,distant=false){
       if(!register('building',x,z,Math.hypot(w,d)/2))return;
@@ -90,7 +90,7 @@
         }
         if(regent)surface(M.stone,()=>box(0,y+1.62,d/2+.04,w,.15,.35,'#e2d2b5'));
       }
-      const shop=['TEA & BISCUITS','THE KART & CROWN','LONDON GOODS','THE CORNER SHOP','PROPER COFFEE','BOOKS & BROLLIES'][index%6];
+      const shop=(irish?['THE GRAND STRETCH','BARRY GOOD TEA','SURE LOOK BOOKS','THE MANGO YOKE','QUAY COFFEE','ONE MORE LAP']:['TEA & BISCUITS','THE KART & CROWN','LONDON GOODS','THE CORNER SHOP','PROPER COFFEE','BOOKS & BROLLIES'])[index%6];
       const shopColour=['#284e43','#6f3e36','#314853','#746443'][index%4];
       box(0,1.87,d/2+.08,w-.6,3.1,.14,shopColour);
       surface(M.glass,()=>{for(const side of [-1,1])box(side*w*.29,1.79,d/2+.18,w*.33,2.46,.07,'#6b7d79');box(0,1.59,d/2+.19,1.45,2.80,.07,'#596b6b');});
@@ -102,7 +102,7 @@
     }
     function pedestrian(x,z,index){
       if(!register('pedestrian',x,z,.45))return;
-      const shirt=['#637f88','#aa7360','#a2987d','#565f58'][index%4];
+      const shirt=['#438cc7','#e58443','#bc63bc','#50a867'][index%4];
       m.box(x,1.10,z,.41,.62,.23,shirt);m.sphere(x,1.62,z,.19,['#c99e7d','#98745c','#dec0a0'][index%3],6);
       for(const side of [-1,1]){m.cylinder([x+side*.12,.87,z],[x+side*.15,.15,z+side*.08],.09,'#48525a',5);m.cylinder([x+side*.26,1.30,z],[x+side*.28,.83,z+.08],.055,shirt,5);}
     }
@@ -117,7 +117,7 @@
         const p=C.sampleTrack(t,s,side*(half+6.4)),rot=Math.atan2(p.tx,p.tz)+side*Math.PI/2;
         if(index%2===0)lamp(p.x,p.z,rot);if(index%3===1){const q=C.sampleTrack(t,s+4,side*(half+6.25));pedestrian(q.x,q.z,index);}
         else if(park){bench(p.x,p.z,rot);}
-        if(index%7===0&&!park){const q=C.sampleTrack(t,s+7,side*(half+6.9));phone(q.x,q.z,rot);}
+        if(index%7===0&&!park&&!irish){const q=C.sampleTrack(t,s+7,side*(half+6.9));phone(q.x,q.z,rot);}
         if(index%4===0){const q=C.sampleTrack(t,s+10,side*(half+11.5));tree(q.x,q.z,.86+rand()*.22);}
         if(park&&index%3===0){const q=C.sampleTrack(t,s,side*(half+10.1));rail(q.x,q.z,Math.atan2(q.tx,q.tz));}
       }
@@ -134,8 +134,8 @@
       // Serpentine-inspired lake: a detailed, closed polygon safely inside this fictional circuit.
       const centre=[0,-14],ring=[];for(let i=0;i<64;i++){const a=i/64*Math.PI*2;ring.push([centre[0]+Math.cos(a)*(103+9*Math.sin(a*3)),centre[1]+Math.sin(a)*44]);}
       surface(M.stone,()=>{for(let i=0;i<ring.length;i++){const a=ring[i],b=ring[(i+1)%ring.length];const out=p=>[centre[0]+(p[0]-centre[0])*1.03,.02,centre[1]+(p[1]-centre[1])*1.08];m.quad([a[0],.02,a[1]],out(a),out(b),[b[0],.02,b[1]],'#a2a08c');}});
-      surface(M.water,()=>{for(let i=0;i<ring.length;i++){const a=ring[i],b=ring[(i+1)%ring.length];m.tri([centre[0],.005,centre[1]],[b[0],.005,b[1]],[a[0],.005,a[1]],'#55877e');}});
-      for(let i=0;i<(m.low?110:210);i++){const x=(rand()-.5)*650,z=(rand()-.5)*530;if((x*x/130**2+(z+14)**2/65**2)<1)continue;tree(x,z,.75+rand()*.85);}
+      surface(M.water,()=>{for(let i=0;i<ring.length;i++){const a=ring[i],b=ring[(i+1)%ring.length];m.tri([centre[0],.005,centre[1]],[b[0],.005,b[1]],[a[0],.005,a[1]],'#2da6ad');}});
+      for(let i=0;i<(m.low?100:140);i++){const x=(rand()-.5)*650,z=(rand()-.5)*530;if((x*x/130**2+(z+14)**2/65**2)<1)continue;tree(x,z,.75+rand()*.85);}
       // Bandstand, picnic spots and background terraces.
       const bx=62,bz=76;
       if(register('bandstand',bx,bz,9)){
@@ -176,10 +176,10 @@
         surface(M.glass,()=>{m.pyramid(63,0,-43,24,100,25,'#839faa');m.pyramid(62,0,-42,10,114,11,'#b3c6cd');});
       }
     }
+    if(irish)globalThis.WackyModels.dublin(m,t,info);
     // Distant skyline and clouds remain scenery, never obstacles on the race surface.
     for(let i=0;i<22;i++){const a=i/22*Math.PI*2,x=Math.cos(a)*440,z=Math.sin(a)*440;building(x,z,20+i%3*8,18+(i%6)*7,20,-a,i,true);}
     info.triangles=m.data.length/30;return info;
   }
   globalThis.KartScene={build,materials:M};
 })();
-

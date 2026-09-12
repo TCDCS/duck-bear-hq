@@ -1,0 +1,66 @@
+/* Original procedural score/SFX, with opt-in CC BY 4.0 catalogue recordings. */
+(() => {
+  'use strict';
+  const CUES=[
+    {title:'Batty McFaddin',isrc:'USUAN1200003',bpm:152,root:60,voice:'triangle',notes:[0,4,7,9,7,4,2,4,5,9,12,9,7,4,2,7,0,4,7,12,11,9,7,4,5,2,4,7,2,-1,0,-1]},
+    {title:'Sneaky Snitch',isrc:'USUAN1100772',bpm:138,root:57,voice:'square',notes:[0,-1,3,7,10,7,3,-1,5,3,0,7,5,3,2,-1,0,7,12,10,7,-1,5,3,2,5,7,3,2,-1,0,-1]},
+    {title:'Cipher',isrc:'USUAN1100844',bpm:150,root:50,voice:'sawtooth',notes:[0,7,12,7,3,10,15,10,5,12,17,12,7,14,19,14,0,7,12,15,10,7,3,7,5,12,17,19,14,7,2,7]},
+    {title:'Carefree',isrc:'USUAN1400037',bpm:120,root:62,voice:'triangle',notes:[0,4,7,-1,9,7,4,2,0,2,4,7,5,4,2,-1,4,7,9,12,9,7,4,-1,5,9,7,4,2,-1,0,-1]},
+    {title:'Vivacity',isrc:'USUAN1400052',bpm:144,root:65,voice:'sine',notes:[0,4,7,11,9,7,4,2,5,9,12,14,12,9,7,4,2,5,9,12,11,7,4,2,0,4,7,9,7,2,0,-1]},
+    {title:'Celtic Impulse',isrc:'USUAN1100297',bpm:144,root:62,voice:'sine',notes:[0,2,3,7,5,3,2,5,7,10,9,7,5,3,2,0,2,3,7,9,10,12,10,9,7,5,3,5,2,3,2,0,7,9,10,12,10,9,7,5,7,3,5,7,2,5,3,0]}
+  ];
+  class WackyAudio {
+    constructor(state){this.state=state;this.ctx=null;this.index=0;this.nextNote=0;this.track=-1;this.active=false;this.stream=null;this.failed=false;this.attempted=false;this.streamStarted=0;this.sirenClock=0;this.status='Original circuit score';}
+    unlock(){
+      try{
+        if(!this.ctx){const AC=globalThis.AudioContext||globalThis.webkitAudioContext;if(!AC)return;this.ctx=new AC();(globalThis.__kartAudioContexts??=[]).push(this.ctx);const c=this.ctx;
+          this.sfx=c.createGain();this.music=c.createGain();this.sfx.connect(c.destination);this.music.connect(c.destination);
+          this.engine=c.createOscillator();this.engine.type='sawtooth';const filter=c.createBiquadFilter();filter.type='lowpass';filter.frequency.value=260;
+          this.engineGain=c.createGain();this.engineGain.gain.value=0;this.engine.connect(filter);filter.connect(this.engineGain);this.engineGain.connect(this.sfx);this.engine.start();
+          const b=c.createBuffer(1,c.sampleRate*.5,c.sampleRate),data=b.getChannelData(0);let seed=12345;for(let i=0;i<data.length;i++){seed=(seed*16807)%2147483647;data[i]=seed/1073741824-1;}this.noise=b;
+          this.skid=c.createBufferSource();this.skid.buffer=b;this.skid.loop=true;const hi=c.createBiquadFilter();hi.type='highpass';hi.frequency.value=2200;this.skidGain=c.createGain();this.skidGain.gain.value=0;this.skid.connect(hi);hi.connect(this.skidGain);this.skidGain.connect(this.sfx);this.skid.start();
+        }
+        this.ctx.resume().catch(()=>{});this.attempted=false;
+      }catch{/* Silent racing must remain possible. */}
+    }
+    note(freq,duration,volume,type,bus,when){
+      if(!this.ctx||this.ctx.state!=='running'||freq<=0)return;
+      const c=this.ctx,t=Math.max(c.currentTime,when??c.currentTime),o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0002,volume),t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(g);g.connect(bus);o.start(t);o.stop(t+duration+.02);o.onended=()=>{o.disconnect();g.disconnect();};
+    }
+    tone(freq=440,duration=.12,volume=.12,type='triangle'){if(this.state().settings.sound)this.note(freq,duration,volume,type,this.sfx);}
+    burst(volume=.1,duration=.15){if(!this.ctx||!this.state().settings.sound)return;const c=this.ctx,s=c.createBufferSource(),g=c.createGain();s.buffer=this.noise;g.gain.setValueAtTime(volume,c.currentTime);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+duration);s.connect(g);g.connect(this.sfx);s.start();s.stop(c.currentTime+duration);s.onended=()=>{s.disconnect();g.disconnect();};}
+    effect(kind){if(!this.ctx||!this.state().settings.sound)return;if(kind==='hit'||kind==='collision'){this.burst(.17,.24);this.tone(105,.2,.12,'sawtooth');}else if(kind==='recover'){[440,587,784].forEach((f,i)=>this.note(f,.18,.06,'sine',this.sfx,(this.ctx?.currentTime||0)+i*.07));}else if(kind==='coin'){this.tone(880,.10,.08);this.note(1320,.14,.05,'sine',this.sfx,(this.ctx?.currentTime||0)+.06);}else if(kind==='lap'){[523,659,784,1047].forEach((f,i)=>this.note(f,.22,.06,'triangle',this.sfx,(this.ctx?.currentTime||0)+i*.08));}else this.tone(660,.12,.07);}
+    setTrack(id){if(this.track===id)return;this.track=id;this.index=0;this.nextNote=this.ctx?.currentTime||0;this.failed=false;this.attempted=false;this.status='Original circuit score';if(this.stream){this.stream.pause();this.stream.removeAttribute('src');this.stream.load();this.stream=null;}}
+    streamMusic(active,settings){
+      if(!active||!settings.recordings||!settings.music){if(this.stream)this.stream.pause();this.attempted=false;return false;}
+      if(!this.stream&&!this.failed){try{const a=new Audio();a.loop=true;a.preload='none';a.referrerPolicy='no-referrer';a.src='https://incompetech.com/music/royalty-free/mp3-royaltyfree/'+encodeURIComponent(CUES[this.track].title)+'.mp3';a.addEventListener('error',()=>{this.failed=true;this.status='Recording unavailable — original score playing';});this.stream=a;}catch{this.failed=true;this.status='Recording unavailable — original score playing';}}
+      if(this.stream&&!this.failed&&!this.attempted){this.attempted=true;this.streamStarted=Date.now();this.stream.play().catch(()=>{this.failed=true;this.status='Recording unavailable — original score playing';});}
+      if(this.stream)this.stream.volume=settings.musicVolume;
+      const playing=this.stream&&!this.stream.paused&&this.stream.readyState>=3&&!this.failed;
+      this.status=playing?CUES[this.track].title+' · Kevin MacLeod':this.failed?'Recording unavailable — original score playing':'Original score · recording loading';
+      return Boolean(playing);
+    }
+    update(dt){
+      if(!this.ctx)return;const {race,screen,settings}=this.state(),p=race.racers[0],c=this.ctx;this.setTrack(race.track.id);
+      const active=screen==='race'&&race.phase==='race'&&race.countdown===0,streaming=this.streamMusic(active,settings);
+      this.sfx.gain.setTargetAtTime(settings.sound?settings.sfxVolume*.5:0,c.currentTime,.04);
+      this.music.gain.setTargetAtTime(active&&settings.music&&!streaming?settings.musicVolume*.6:0,c.currentTime,.08);
+      this.engineGain.gain.setTargetAtTime(active?.07:0,c.currentTime,.08);
+      const gear=Math.floor(p.speed/9),rpm=44+p.speed*2.1-(gear%4)*8;this.engine.frequency.setTargetAtTime(rpm,c.currentTime,.08);
+      this.skidGain.gain.setTargetAtTime(active&&(p.drifting||p.slip>0)?.04:0,c.currentTime,.06);
+      if(!active){this.active=false;this.nextNote=c.currentTime;return;}
+      if(!this.active){this.active=true;this.nextNote=c.currentTime;}
+      const cue=CUES[race.track.id],interval=60/cue.bpm/2*(p.completedLaps===2?.94:1);
+      if(settings.music&&!streaming){let limit=0;while(this.nextNote<c.currentTime+.08&&limit++<3){const i=this.index++,n=cue.notes[i%cue.notes.length],t=this.nextNote;
+        if(n>=0){const f=440*Math.pow(2,(cue.root+n-69)/12);this.note(f,interval*.83,.045,cue.voice,this.music,t);if(race.track.id===5)this.note(f*2,interval*.7,.008,'sine',this.music,t);}
+        if(i%4===0){const bass=[0,5,7,0][Math.floor(i/8)%4];this.note(440*Math.pow(2,(cue.root-24+bass-69)/12),interval*1.8,.07,'triangle',this.music,t);this.note(70,.075,.06,'sine',this.music,t);}
+        if(i%4===2)this.note(1750,.028,.012,'triangle',this.music,t);
+        this.nextNote+=interval;
+      }}else this.nextNote=c.currentTime;
+      if(this.nextNote<c.currentTime-.3)this.nextNote=c.currentTime;
+      this.sirenClock-=dt;if(this.sirenClock<=0&&settings.sound){this.sirenClock=.45;const nearby=race.traffic.find(v=>v.vehicle!=='bus'&&Math.abs(globalThis.KartCore.mod(v.s-p.s+race.track.length/2,race.track.length)-race.track.length/2)<34);if(nearby){const wave=Math.floor(race.time*2.2)%2;this.tone((race.track.country==='IE'?620:540)+wave*220,.22,.014,'sine');}}
+    }
+    quiet(){if(this.ctx){this.engineGain.gain.setTargetAtTime(0,this.ctx.currentTime,.025);this.skidGain.gain.setTargetAtTime(0,this.ctx.currentTime,.025);this.music.gain.setTargetAtTime(0,this.ctx.currentTime,.025);}this.stream?.pause();this.attempted=false;}
+  }
+  globalThis.WackyAudio=WackyAudio;globalThis.WackyMusic=CUES;
+})();
