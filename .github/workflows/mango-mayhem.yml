@@ -1,0 +1,40 @@
+name: Mango Mayhem verification
+on:
+  push:
+    branches: [mango-mayhem-release, main]
+    paths: ['src/**','public/**','tests/**','scripts/**','migrations/**','package.json','package-lock.json','wrangler.jsonc','.github/workflows/mango-mayhem.yml']
+  pull_request:
+    paths: ['src/**','public/**','tests/**','scripts/**','migrations/**','package.json','wrangler.jsonc','.github/workflows/mango-mayhem.yml']
+permissions:
+  contents: read
+concurrency:
+  group: mango-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Baseline and source checks
+        run: |
+          set -euo pipefail
+          mkdir -p verification/mango
+          npm ci --no-audit --no-fund
+          npm test | tee verification/mango/unit-tests.tap
+          npm run check
+          npx wrangler deploy --dry-run --outdir /tmp/mango-build
+          npx wrangler d1 migrations apply DB --local
+      - name: Save evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mango-verification
+          path: verification/mango/
+          retention-days: 7
