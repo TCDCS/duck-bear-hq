@@ -1,0 +1,31 @@
+name: Release endpoint diagnostics
+on:
+  push:
+    branches: [release/finish-live-20260912]
+    paths: ['.github/workflows/release-diagnostics.yml']
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect public response status without credentials
+        shell: python
+        run: |
+          import hashlib,json,socket,urllib.request,urllib.error
+          from pathlib import Path
+          base='https://duck-bear-hq.zachary-chambers2.workers.dev'
+          print('DNS',socket.getaddrinfo('duck-bear-hq.zachary-chambers2.workers.dev',443),flush=True)
+          expected={'/':'public/index.html','/games/wacky-races/game.js':'src/kart-assets/game.js.txt'}
+          for path in ['/','/api/races/version','/games/wacky-races/','/games/wacky-races/game.js','/account','/api/public/session']:
+            for ua in ['Duck-Bear-release-check/4','Mozilla/5.0']:
+              request=urllib.request.Request(base+path,headers={'User-Agent':ua,'Cache-Control':'no-cache'})
+              try:
+                response=urllib.request.urlopen(request,timeout=12)
+              except urllib.error.HTTPError as e:response=e
+              except Exception as e:
+                print(path,ua,type(e).__name__,str(e),flush=True);continue
+              raw=response.read(500000)
+              print(json.dumps({'path':path,'agent':ua,'status':response.code,'url':response.url,'type':response.headers.get('Content-Type'),'server':response.headers.get('Server'),'bytes':len(raw),'matches_source':hashlib.sha256(raw).digest()==hashlib.sha256(Path(expected[path]).read_bytes()).digest() if path in expected else None,'preview':raw[:240].decode('utf8','replace') if response.code>=400 or path.endswith('/version') or path.endswith('/session') else ''}),flush=True)
