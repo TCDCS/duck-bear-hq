@@ -1,0 +1,51 @@
+/* Lobby, ready checks and invitation controls. Text content never becomes HTML. */
+(() => {
+'use strict';
+const game=globalThis.WackyRaces,C=globalThis.KartCore,$=id=>document.getElementById(id);
+if(!game||!globalThis.WackyNetwork)return;
+const dialog=$('friendsDialog');let busy=false;
+const net=new WackyNetwork({
+  room:room=>{game.onlineRoom(room);render(room);},
+  snapshot:state=>game.onlineSnapshot(state,net.id),
+  status:text=>{$('friendsStatus').textContent=text;$('connectionBadge').textContent=text==='Connected'?'ONLINE · '+(net.room?.code||''):text;$('connectionBadge').classList.toggle('offline',text!=='Connected');render(net.room);},
+  error:text=>{$('friendsStatus').textContent=text;game.notify(text);},
+  left:()=>{game.onlineLeave();render(null);}
+});
+game.setNetwork(net);
+function open(){if(game.screen==='race')game.pause();if(!dialog.open)dialog.showModal();render(net.room);}
+function render(room){
+  const active=net.active;
+  $('friendsEntry').hidden=active;$('friendsRoom').hidden=!active;
+  if(!active)return;
+  $('roomCodeLabel').textContent=room.code;$('roomInvite').value=net.invite();$('settingsInvite').value=net.invite();
+  const host=room.hostId===net.id,players=room.players||[],me=players.find(p=>p.id===net.id),phase=room.phase;
+  $('roomPhase').textContent=phase==='race'?'RACE IN PROGRESS':phase==='results'?'CHEQUERED FLAG':host?'YOU’RE THE HOST':'WAITING FOR THE HOST';
+  $('roomCount').textContent=players.length+' / 8 players';$('roomPlayers').replaceChildren();
+  for(const p of players){const row=document.createElement('div');row.className='friend-player';const im=new Image();im.src=globalThis.KartPortraits[p.avatar];im.alt='Cartoon driver';const name=document.createElement('strong');name.textContent=p.name+(p.id===room.hostId?' · Host':'')+(p.id===net.id?' · You':'');const status=document.createElement('span');status.textContent=!p.connected?'Connecting…':p.ready?'Ready':'Not ready';status.className=p.connected&&p.ready?'ready':'';row.append(im,name,status);$('roomPlayers').append(row);}
+  $('roomReady').hidden=phase!=='lobby';$('roomReady').disabled=!net.connected;$('roomReady').textContent=me?.ready?'✓ Ready — tap to undo':'I’m ready';$('roomReady').setAttribute('aria-pressed',String(Boolean(me?.ready)));
+  $('roomStart').hidden=!host||phase!=='lobby';$('roomStart').disabled=!net.connected||players.filter(p=>p.connected).length<2||players.some(p=>p.connected&&!p.ready);
+  $('roomRematch').hidden=!host||phase!=='results';$('roomBackRace').hidden=!['race','results'].includes(phase);
+  $('lobbyCircuit').disabled=!host||phase!=='lobby';$('lobbyCircuit').value=room.track??3;
+  $('roomLock').disabled=!host||phase!=='lobby';$('roomLock').checked=Boolean(room.locked);
+  $('settingsRoomLabel').textContent='Room '+room.code+' · '+players.length+'/8 players';
+  $('settingsShare').disabled=false;
+}
+for(let i=0;i<C.TRACKS.length;i++)for(const id of ['createCircuit','lobbyCircuit']){const op=document.createElement('option');op.value=i;op.textContent=C.TRACKS[i].name;$(id).append(op);}
+for(let i=0;i<C.DEFAULTS.length;i++){const op=document.createElement('option');op.value=i;op.textContent=C.DEFAULTS[i][0];$('friendAvatar').append(op);}
+$('friendName').value=game.profiles[game.settings.driver].name;$('friendAvatar').value=game.settings.driver;$('friendVehicle').value=game.settings.vehicle;$('createCircuit').value=game.race.track.id;
+$('friendAvatar').onchange=()=>{$('friendName').value=C.DEFAULTS[Number($('friendAvatar').value)][0];};
+function profile(){return {name:$('friendName').value.trim()||'Guest',avatar:Number($('friendAvatar').value),vehicle:$('friendVehicle').value,track:Number($('createCircuit').value),difficulty:game.settings.difficulty};}
+async function enter(kind){if(busy)return;busy=true;const button=kind==='create'?$('roomCreate'):$('roomJoin');button.disabled=true;$('friendsStatus').textContent=kind==='create'?'Creating your room…':'Joining your friends…';try{if(kind==='create')await net.create(profile());else await net.join({...profile(),code:$('roomCodeInput').value});}catch(e){$('friendsStatus').textContent=e.message;}finally{busy=false;button.disabled=false;}}
+$('createRoomForm').onsubmit=e=>{e.preventDefault();enter('create');};$('joinRoomForm').onsubmit=e=>{e.preventDefault();enter('join');};
+$('roomCodeInput').oninput=e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,4);};
+$('friendsOpen').onclick=open;$('settingsFriends').onclick=open;$('pauseFriends').onclick=open;
+$('friendsClose').onclick=()=>dialog.close();$('roomReady').onclick=()=>net.command('ready',{ready:!net.room.players.find(p=>p.id===net.id)?.ready});$('roomStart').onclick=()=>net.command('start');$('roomRematch').onclick=()=>net.command('rematch');$('roomBackRace').onclick=()=>{dialog.close();game.resume();};
+$('roomLeave').onclick=()=>{net.leave();dialog.close();};$('lobbyCircuit').onchange=e=>net.command('setup',{track:Number(e.target.value)});$('roomLock').onchange=e=>net.command('setup',{locked:e.target.checked});
+async function share(){const status=await net.share();$('shareStatus').textContent=status;$('settingsShareStatus').textContent=status;$('roomInvite').value=net.invite();$('settingsInvite').value=net.invite();}
+$('roomShare').onclick=share;$('settingsShare').onclick=share;
+for(const id of ['roomInvite','settingsInvite'])$(id).onclick=e=>e.target.select();
+const code=new URLSearchParams(location.search).get('room');
+if(/^\d{4}$/.test(code||'')){$('roomCodeInput').value=code;open();if(!net.resume(code))$('friendsStatus').textContent='Enter your name and join room '+code+'.';}
+window.addEventListener('pagehide',()=>{if(net.active&&net.socket?.readyState===1)net.socket.close();});
+game.openFriends=open;
+})();

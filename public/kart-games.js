@@ -21,7 +21,7 @@
       <p>Arrow keys or W A S D to steer. Shift to drift, Space to use an item and R to recover. On a phone, use the on-screen buttons.</p>
       <p>Pause and choose Controls &amp; sound to enable tilt steering. Tap Enable tilt steering, allow motion access, then calibrate while holding the phone comfortably. Touch controls remain available.</p>
       <p>Choose Back to the paddock to change driver, vehicle or circuit. Choose Games to return here. Sound starts after a tap or key press.</p>
-      <p class="muted tiny">Single-player with computer opponents. Saves stay on this browser and do not change Yaya Points. Optional streamed music needs an internet connection; the built-in music and effects do not.</p>
+      <p class="muted tiny">Solo races and live multiplayer rooms for up to eight friends. Saves stay on this browser and do not change Yaya Points. Optional streamed music needs an internet connection; the built-in music and effects do not.</p>
     </aside></div>`;
   }
   document.addEventListener('click',e=>{if(isGames()&&e.target.closest('[data-action="fun-tab"]'))history.replaceState(null,'','#fun');},true);

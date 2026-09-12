@@ -1,15 +1,16 @@
 {
-  "name": "duck-bear-hq",
-  "version": "5.1.0",
-  "private": true,
-  "type": "module",
-  "description": "Duck & Bear Zoo HQ — Cloudflare Worker + D1 + R2 PWA",
-  "scripts": {
-    "deploy": "node --check public/app.js && node --check src/index.js && wrangler deploy && wrangler d1 migrations apply DB --remote && wrangler deploy",
-    "check": "node scripts/check.mjs",
-    "smoke": "node scripts/smoke.mjs",
-    "dev": "wrangler dev",
-    "migrate:local": "wrangler d1 migrations apply DB --local"
+  "name":"duck-bear-hq",
+  "version":"6.0.0",
+  "private":true,
+  "type":"module",
+  "description":"Duck & Bear public website, private account and Wacky Races online rooms",
+  "scripts":{
+    "deploy":"npm test && node --check public/app.js && node --check src/index.js && wrangler deploy && wrangler d1 migrations apply DB --remote && wrangler deploy",
+    "check":"node scripts/check.mjs",
+    "test":"node --test tests/*.cjs tests/*.mjs",
+    "smoke":"node scripts/smoke.mjs",
+    "dev":"wrangler dev",
+    "migrate:local":"wrangler d1 migrations apply DB --local"
   },
-  "devDependencies": { "wrangler": "^4.45.0" }
+  "devDependencies":{"wrangler":"^4.45.0"}
 }

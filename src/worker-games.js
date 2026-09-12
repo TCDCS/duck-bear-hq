@@ -13,7 +13,12 @@ import asset9 from "./kart-assets/motion.js.txt";
 import asset10 from "./kart-assets/audio.js.txt";
 import asset11 from "./kart-assets/game.js.txt";
 import asset12 from "./kart-assets/host.js.txt";
+import asset13 from "./kart-assets/network.js.txt";
+import asset14 from "./kart-assets/friends.js.txt";
+export {WackyDirectory,WackyRoom} from "./multiplayer/durable.mjs";
 const assets=new Map([
+  ['network.js',{body:asset13,type:'text/javascript; charset=utf-8'}],
+  ['friends.js',{body:asset14,type:'text/javascript; charset=utf-8'}],
   ['index.html',{body:asset0,type:'text/html; charset=utf-8'}],
   ['game.css',{body:asset1,type:'text/css; charset=utf-8'}],
   ['wacky.css',{body:asset2,type:'text/css; charset=utf-8'}],

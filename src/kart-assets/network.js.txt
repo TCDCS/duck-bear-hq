@@ -1,0 +1,79 @@
+/* Guest multiplayer transport. Room passes stay in sessionStorage, never in invite links. */
+(() => {
+'use strict';
+class WackyNetwork {
+  constructor(handlers={}){this.handlers=handlers;this.room=null;this.id=null;this.token=null;this.socket=null;this.connected=false;this.latest=null;this.received=0;this.seq=0;this.attempt=0;this.manual=false;this.lastSend=0;this.pending={use:false,reset:false};this.retry=null;this.keepalive=null;}
+  get active(){return Boolean(this.room&&this.token);}
+  get racing(){return this.active&&this.latest&&this.latest.round===this.room.round&&['race','results'].includes(this.room.phase);}
+  emit(name,value){this.handlers[name]?.(value);}
+  store(){try{const u=new URL(location.href);u.searchParams.set('room',this.room.code);u.searchParams.delete('play');u.searchParams.delete('friends');history.replaceState(null,'',u.href);}catch{}try{sessionStorage.setItem('wacky-room-'+this.room.code,JSON.stringify({code:this.room.code,token:this.token,id:this.id,expiresAt:this.room.expiresAt}));}catch{}}
+  async request(action,data){
+    if(!['http:','https:'].includes(location.protocol))throw Error('Online rooms work on the Duck & Bear website. This saved file can still race solo.');
+    const abort=new AbortController(),timer=setTimeout(()=>abort.abort(),12000);
+    try{const response=await fetch('/api/races/'+action,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'omit',body:JSON.stringify(data),signal:abort.signal});const body=await response.json().catch(()=>({}));if(!response.ok)throw Error(body.error||'Room service unavailable. Try again shortly.');return body;}catch(e){if(e.name==='AbortError')throw Error('The room service took too long. Please try again.');throw e;}finally{clearTimeout(timer);}
+  }
+  async enter(action,data){
+    if(this.active)this.leave();
+    this.manual=false;const result=await this.request(action,data);this.room=result.room;this.id=result.id;this.token=result.token;this.seq=0;this.latest=null;this.attempt=0;this.store();this.emit('room',this.room);this.open();return result.room;
+  }
+  create(data){return this.enter('create',data);}
+  join(data){return this.enter('join',data);}
+  resume(code){
+    try{const value=JSON.parse(sessionStorage.getItem('wacky-room-'+code));if(value?.code===code&&value.expiresAt>Date.now()&&/^[a-f\d-]{36}$/.test(value.token)){this.room={code,expiresAt:value.expiresAt,players:[],phase:'connecting',round:0};this.id=value.id;this.token=value.token;this.manual=false;this.attempt=0;this.open();return true;}}catch{}return false;
+  }
+  open(){
+    if(!this.active||this.manual)return;
+    clearTimeout(this.retry);clearInterval(this.keepalive);this.connected=false;this.emit('status',this.attempt?'Reconnecting… Your car is being kept safe.':'Connecting to the room…');
+    const url=new URL('/api/races/'+this.room.code+'/socket',location.href);url.protocol=location.protocol==='https:'?'wss:':'ws:';url.searchParams.set('token',this.token);
+    const socket=new WebSocket(url);this.socket=socket;let last=Date.now();
+    socket.addEventListener('open',()=>{if(this.socket!==socket)return;this.connected=true;this.seq=0;this.attempt=0;this.emit('status','Connected');this.keepalive=setInterval(()=>{if(Date.now()-last>25000){socket.close();return;}if(socket.readyState===1)socket.send('ping');},10000);});
+    socket.addEventListener('message',e=>{
+      if(this.socket!==socket)return;last=Date.now();if(e.data==='pong')return;
+      let msg;try{msg=JSON.parse(e.data);}catch{return;}
+      if(msg.type==='welcome'){this.id=msg.id;this.room=msg.room;this.store();this.emit('room',this.room);}
+      else if(msg.type==='room'){this.room=msg.room;this.emit('room',this.room);}
+      else if(msg.type==='snapshot'){if(this.latest&&msg.round===this.latest.round&&msg.sequence<this.latest.sequence)return;this.latest=msg;this.received=performance.now();this.emit('snapshot',msg);}
+      else if(msg.type==='error')this.emit('error',msg.message);
+    });
+    socket.addEventListener('error',()=>{});
+    socket.addEventListener('close',e=>{
+      if(this.socket!==socket)return;clearInterval(this.keepalive);this.connected=false;
+      if(this.manual)return;
+      if([4000,4001,1008,1009].includes(e.code)||this.attempt>=10||this.room.expiresAt<=Date.now()){
+        this.emit('error',e.code===4001?'This player connected in another tab. Join again to use this one.':'The room connection ended. Rejoin or create another room.');this.leave(false);return;
+      }
+      this.attempt++;this.emit('status','Connection lost. Reconnecting…');this.retry=setTimeout(()=>this.open(),Math.min(5000,600*2**(this.attempt-1)));
+    });
+  }
+  command(type,data={}){if(!this.connected||this.socket?.readyState!==1){this.emit('error','Wait for the room to reconnect.');return false;}this.socket.send(JSON.stringify({type,...data}));return true;}
+  input(controls,dt){
+    this.pending.use||=Boolean(controls.use);this.pending.reset||=Boolean(controls.reset);this.lastSend+=dt;
+    if(this.lastSend<.05)return false;this.lastSend=0;
+    if(!this.connected||this.socket?.readyState!==1)return false;
+    const finite=(n,min,max)=>Number.isFinite(n)?Math.max(min,Math.min(max,n)):0;
+    this.socket.send(JSON.stringify({type:'input',seq:++this.seq,gas:finite(controls.gas,0,1),brake:finite(controls.brake,0,1),steer:finite(controls.steer,-1,1),drift:Boolean(controls.drift),use:this.pending.use,reset:this.pending.reset}));this.pending={use:false,reset:false};return true;
+  }
+  apply(race,dt){
+    const target=this.latest;if(!target)return;
+    const age=this.connected?Math.min(.12,(performance.now()-this.received)/1000):0,blend=1-Math.exp(-dt*18);
+    for(const state of target.racers){const p=race.racers.find(q=>q.id===state.id);if(!p)continue;const old={s:p.s,x:p.x,roll:p.roll,pitch:p.pitch,heading:p.heading};Object.assign(p,state);
+      if(target.phase==='race'&&target.countdown===0&&!state.finished){const s=state.s+state.speed*Math.cos(state.heading)*age,x=state.x+state.vx*age;p.s=Math.abs(s-old.s)>7?s:old.s+(s-old.s)*blend;p.x=Math.abs(x-old.x)>4?x:old.x+(x-old.x)*blend;p.roll=old.roll+(state.roll-old.roll)*blend;p.pitch=old.pitch+(state.pitch-old.pitch)*blend;p.heading=old.heading+(state.heading-old.heading)*blend;}
+    }
+    race.time=target.time+(target.countdown===0&&target.phase==='race'?age:0);race.countdown=Math.max(0,target.countdown-age);race.phase=target.phase;race.pickups=target.pickups;race.traps=target.traps;race.traffic=target.traffic;race.events=target.events;race.order=target.order;race.firstFinish=target.firstFinish;
+  }
+  invite(){const url=new URL('/games/wacky-races/',location.href);if(this.active)url.searchParams.set('room',this.room.code);return url.href;}
+  async share(){
+    const url=this.invite(),text=this.active?'Join my Wacky Races room: '+this.room.code:'Race London and Dublin with me on Duck & Bear.';
+    if(navigator.share){try{await navigator.share({title:'Wacky Races',text,url});return 'Invite shared.';}catch(e){if(e.name==='AbortError')return 'Sharing cancelled.';}}
+    try{await navigator.clipboard.writeText(url);return 'Invite copied. Paste it into your message.';}catch{return 'Copy the invite link below, or send your four-digit code.';}
+  }
+  leave(notify=true){
+    this.manual=true;clearTimeout(this.retry);clearInterval(this.keepalive);
+    if(notify&&this.socket?.readyState===1)this.socket.send(JSON.stringify({type:'leave'}));
+    this.socket?.close(1000,'Leaving');this.socket=null;this.connected=false;
+    if(this.room)try{sessionStorage.removeItem('wacky-room-'+this.room.code);}catch{}
+    try{const u=new URL(location.href);u.searchParams.delete('room');history.replaceState(null,'',u.href);}catch{}this.room=null;this.token=null;this.latest=null;this.id=null;this.emit('left');
+  }
+}
+globalThis.WackyNetwork=WackyNetwork;
+})();
