@@ -9,10 +9,15 @@ async def check(label,value):
  if not value:raise AssertionError(label)
  checks.append(label);print('PASS',label,flush=True)
 async def wait(page,expression,seconds=45):
- deadline=time.monotonic()+seconds
+ deadline=time.monotonic()+seconds;last=0
  while time.monotonic()<deadline:
   if await page.evaluate('()=>Boolean('+expression+')'):return
+  if time.monotonic()-last>10:
+   last=time.monotonic();print('WAIT STATE',await page.evaluate('()=>({screen:window.WackyRaces?.screen,phase:window.WackyRaces?.race.phase,countdown:window.WackyRaces?.race.countdown,hidden:document.hidden,focus:document.hasFocus(),dialogs:[...document.querySelectorAll("dialog[open]")].map(d=>d.id),tick:window.WackyRaces?.renderer.tick})'),flush=True)
   await asyncio.sleep(.1)
+ print('FINAL WAIT STATE',await page.evaluate('()=>({screen:window.WackyRaces?.screen,phase:window.WackyRaces?.race.phase,countdown:window.WackyRaces?.race.countdown,hidden:document.hidden,tick:window.WackyRaces?.renderer.tick})'),flush=True)
+ await page.evaluate('()=>{if(window.WackyRaces)WackyRaces.renderer.render=()=>{}}')
+ await page.screenshot(path=str(OUT/'setup-timeout.png'),timeout=90000)
  raise AssertionError('Timed out: '+expression)
 async def main():
  async with async_playwright() as p:
