@@ -26,6 +26,14 @@ p=Path('tests/seven-room.test.mjs')
 p.write_text(p.read_text()+"\ntest('old rooms with seven members but an eighth seat id cannot strand that driver',()=>{\n const room=M.makeRoom('1234');room.players=Array.from({length:7},(_,i)=>({...room.players[0],id:i===6?7:i}));assert.equal(M.restoreRoom(room),null);\n});\n")
 p=Path('tests/setup-grid.test.cjs')
 p.write_text(p.read_text()+"\ntest('homepage states the same seven-player limit as the simulation',()=>{\n const html=fs.readFileSync(__dirname+'/../public/index.html','utf8');assert.ok(html.includes('1–7 PLAYERS'));assert.ok(!html.includes('1–8 PLAYERS'));\n});\n")
+# All desktop network checks have finished here. Release their graphics contexts
+# before the independent mobile viewport checks; do not leave a solo race running.
+p=Path('tests/browser_clients.py');s=p.read_text();marker='   mobile_context=await browser.new_context'
+assert s.count(marker)==1
+s=s.replace(marker,'   await context.close()\n'+marker)
+s=s.replace("path=str(OUT/'home-mobile.png'),full_page=True)","path=str(OUT/'home-mobile.png'),full_page=True,timeout=90000)")
+s=s.replace("path=str(OUT/'friends-mobile.png'))","path=str(OUT/'friends-mobile.png'),timeout=90000)")
+p.write_text(s)
 workflow=Path('.github/workflows/wacky-races.yml')
 if blob(workflow.read_bytes())!='6d93843948d5daee7b42a0f7cb46c3ff7a0aa0cf':raise SystemExit('Regression workflow changed.')
 readme=Path('README.md')
