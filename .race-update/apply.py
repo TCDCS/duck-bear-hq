@@ -1,4 +1,4 @@
-"""Apply exact reviewed deltas; fail rather than overwrite an unexpected source base."""
+"""Apply reviewed source changes; stop if an unexpected source version is found."""
 import hashlib,json
 from pathlib import Path
 
@@ -9,7 +9,6 @@ for entry in entries:
  if blob(raw)!=entry['before']:raise SystemExit('Source changed: '+str(p)+' '+blob(raw))
  text=raw.decode()
  for offset,length,replacement in reversed(entry['edits']):
-  # Correct the duplicated context suffix in the transported help-text insertion.
   if entry['path']=='src/kart-assets/index.html.txt' and offset==11044 and replacement.endswith('Three laps. Mangoes'):
    replacement=replacement[:-len('Three laps. Mangoes')]
   text=text[:offset]+replacement+text[offset+length:]
@@ -17,6 +16,16 @@ for entry in entries:
  if blob(data)!=entry['after']:raise SystemExit('Reconstructed source did not match review: '+str(p)+' '+blob(data))
  output[p]=data
 for p,data in output.items():p.write_bytes(data)
+# The old eighth seat can remain after another member leaves an old room.
+p=Path('src/multiplayer/room-state.mjs');s=p.read_text();old='||saved.players.length>CAPACITY'
+assert s.count(old)==1
+p.write_text(s.replace(old,old+'||saved.players.some(p=>!Number.isInteger(p.id)||p.id<0||p.id>=CAPACITY)'))
+p=Path('public/index.html');s=p.read_text();assert s.count('1–8 PLAYERS')==1
+p.write_text(s.replace('1–8 PLAYERS','1–7 PLAYERS'))
+p=Path('tests/seven-room.test.mjs')
+p.write_text(p.read_text()+"\ntest('old rooms with seven members but an eighth seat id cannot strand that driver',()=>{\n const room=M.makeRoom('1234');room.players=Array.from({length:7},(_,i)=>({...room.players[0],id:i===6?7:i}));assert.equal(M.restoreRoom(room),null);\n});\n")
+p=Path('tests/setup-grid.test.cjs')
+p.write_text(p.read_text()+"\ntest('homepage states the same seven-player limit as the simulation',()=>{\n const html=fs.readFileSync(__dirname+'/../public/index.html','utf8');assert.ok(html.includes('1–7 PLAYERS'));assert.ok(!html.includes('1–8 PLAYERS'));\n});\n")
 workflow=Path('.github/workflows/wacky-races.yml')
 if blob(workflow.read_bytes())!='0f6992d15907c89204a35bc3343a8d9073d72380':raise SystemExit('Regression workflow changed.')
 s=workflow.read_text().replace('eight separate drivers','seven separate drivers').replace('Check eight guest drivers','Check seven guest drivers').replace('eight-player-live.json','seven-player-live.json').replace('local/eight-player.json','local/seven-player.json')
