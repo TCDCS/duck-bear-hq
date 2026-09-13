@@ -10,3 +10,11 @@ for(const [id,level] of Object.entries(LEVELS))test(`${id}: complete from openin
  assert.ok(w.collectedIds.size>=20);assert.ok(w.respawns<8,`${id}: ${w.respawns} retries`);
  console.log(JSON.stringify({level:id,ticks:w.tick,mangos:w.collectedIds.size,respawns:w.respawns,bossHits:w.boss.maxHp}));
 });
+
+test('taj checkpoint two remains passable after the nearby enemy is already defeated',()=>{
+ const w=createWorld(LEVELS.taj,{checkpointIndex:2}),memory={};
+ const nearby=w.enemies.find(e=>Math.abs(e.originX-8190)<5);assert.ok(nearby);nearby.dead=true;w.defeatedEnemyIds.add(nearby.id);
+ for(let i=0;i<1500&&w.player.x<9300;i++)stepWorld(w,pilotInput(w,memory));
+ assert.ok(w.player.x>=9300,`taj checkpoint two looped at x=${w.player.x.toFixed(1)} with ${w.respawns} retries`);
+ assert.ok(w.respawns<3,`taj checkpoint two needed ${w.respawns} retries`);
+});
