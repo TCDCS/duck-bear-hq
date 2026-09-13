@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "sourceHash": "c80ccfe6f53652c61dc90b28546f2f2349954ac1825c83de80d8a3f89ba0c3cf",
+  "sourceHash": "f29a896337e2abb2c1ae6deec44422008813d763134e4516fcf52abed0a906ea",
   "files": {
     "/games/mango-mayhem/content/catalog.mjs": "25aa002f7ec7dc6f6a3986e3fa3f6cb7131c95c93688240c74703ba0ffdbc849",
     "/games/mango-mayhem/content/levels/build.mjs": "9dcc76b6fa85a4284eb11d43d0938b091d07dbe7a5edec121c15f28f9deeb0d4",
@@ -14,7 +14,7 @@
     "/games/mango-mayhem/core/bosses.mjs": "f34a74037f3dbe058e3cae6b0deab7e26b82e0dff786f2cdf54b599ffae9c755",
     "/games/mango-mayhem/core/collision.mjs": "39d8b51403649f3b524434c0f9a2ecb4dd9ce9e3789c0f2a33c513c875242f28",
     "/games/mango-mayhem/core/progress.mjs": "039805bb9f0e295f3ac195a19a373c2dcb408094f082e3bfa1e2e54b60ab494a",
-    "/games/mango-mayhem/core/world.mjs": "3632a51909dd4c330a1a38f30962e68c0f27d488bd976954b9a07034e88da6f1",
+    "/games/mango-mayhem/core/world.mjs": "27058f77a428a0b7d131c1a3dd20e308bcd2d75bc5cef0196049bc93b765a32f",
     "/games/mango-mayhem/game.css": "8d710ed88951bf296f5b3c5fb435a18b97b6fbfb5d89c195e84282bc7bc3c0ba",
     "/games/mango-mayhem/icon.svg": "f90a14a985010ffb8b25de79bf5d854e90bc37ca21b1b25905d478228f210bd5",
     "/games/mango-mayhem/index.html": "554c72eb912464339c4ef1a120a170c673fd6afcbb06dc9965043ea2f271738d",

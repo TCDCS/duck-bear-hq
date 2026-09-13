@@ -64,3 +64,8 @@ test('walking from an ascending ramp to its adjoining floor does not catch the b
  let p={x:170,y:149,w:30,h:70,vx:240,vy:30,grounded:true,supportId:'r'};
  for(let i=0;i<30;i++){p.vy=30;p=resolveMotion(p,surfaces,i);}assert.ok(p.x>250);assert.equal(p.y,140);
 });
+
+test('crossing a checkpoint while jumping still activates it',()=>{
+ const w=createWorld(makeTestCourse());w.player.x=698;w.player.y=250;w.player.vx=410;w.player.vy=0;w.player.grounded=false;
+ stepWorld(w,{...idle,axis:1,jumpHeld:true});assert.equal(w.checkpointIndex,1);assert.equal(w.events.filter(e=>e.type==='checkpoint').length,1);
+});

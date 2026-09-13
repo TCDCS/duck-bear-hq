@@ -98,7 +98,9 @@ export function stepWorld(w,rawInput=emptyInput){
  const helper=w.level.helper;
  if(!w.helperActivated&&Math.abs(p.x-helper.x)<110&&Math.abs(p.y-helper.y)<110){w.helperActivated=true;emit(w,'helper',{helperId:helper.id,x:helper.x,y:helper.y});}
  for(const cp of w.level.checkpoints){
-  if(cp.index>w.checkpointIndex&&Math.abs(p.x-cp.x)<38&&Math.abs(p.y-cp.y)<95){w.checkpointIndex=cp.index;p.hearts=5;emit(w,'checkpoint',{checkpointIndex:cp.index,x:cp.x,y:cp.y});}
+  const crossed=Math.min(oldX,p.x)<=cp.x&&Math.max(oldX,p.x)>=cp.x;
+  const touched=Math.abs(p.x-cp.x)<38&&Math.abs(p.y-cp.y)<95;
+  if(cp.index>w.checkpointIndex&&(crossed||touched)){w.checkpointIndex=cp.index;p.hearts=5;emit(w,'checkpoint',{checkpointIndex:cp.index,x:cp.x,y:cp.y});}
  }
  for(const m of w.level.mangoes){
   if(w.collectedIds.has(m.id))continue;
