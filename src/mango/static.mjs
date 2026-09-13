@@ -14,6 +14,6 @@ export function createMangoHandler(fallback){return {async fetch(request,env,ctx
  if(!ours)return fallback.fetch(request,env,ctx);
  if(!['GET','HEAD'].includes(request.method))return new Response('Use GET or HEAD.',{status:405,headers:{...headers('text/plain'),Allow:'GET, HEAD'}});
  const file=MANGO_ASSETS.get(path);if(!file)return new Response(request.method==='HEAD'?null:'Game file not found.',{status:404,headers:headers('text/plain')});
- const target=new URL(request.url);target.pathname=path.endsWith('/')&&file.endsWith('/index.html')?path:file;const asset=await env.ASSETS.fetch(new Request(target,request));const type=MIME[file.split('.').pop()]||'application/octet-stream';
+ const target=new URL(request.url);target.pathname=file.endsWith('/index.html')?file.slice(0,-'index.html'.length):file;const asset=await env.ASSETS.fetch(new Request(target,request));const type=MIME[file.split('.').pop()]||'application/octet-stream';
  return new Response(request.method==='HEAD'?null:asset.body,{status:asset.status,headers:headers(type)});
  }};}
