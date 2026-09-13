@@ -23,7 +23,9 @@ try:
  status,data,headers=request('/api/auth/login','POST',{'username':fixture[0]['username'],'password':fixture[0]['password']})
  check('original login verifies real PBKDF2 password',status==200 and 'Set-Cookie' in headers)
  status,data,_=request(root,user=0);check('authenticated game list contains only owner and profiles',status==200 and sorted(data)==['ownerId','profiles'])
- status,data,_=request(root,'POST',{'nickname':'Worker test','avatarId':'mango'},0);check('authenticated profile can be created',status==201);profile=data['profile'];pid=profile['id']
+ status,data,_=request(root,'POST',{'nickname':'Worker test','avatarId':'mango'},0)
+ if status!=201:print('DIAGNOSTIC create profile response',status,json.dumps(data,sort_keys=True),flush=True)
+ check('authenticated profile can be created',status==201);profile=data['profile'];pid=profile['id']
  check('different account cannot read profile',request(root+'/'+pid,user=1)[0]==404)
  progress=profile['progress'];progress['levels']['dublin']['mangoIds']=['m001']
  check('different account cannot write profile',request(root+'/'+pid+'/progress','PUT',{'revision':0,'progress':progress},1)[0]==404)
