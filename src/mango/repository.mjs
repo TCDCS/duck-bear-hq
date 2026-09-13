@@ -13,10 +13,11 @@ export function createProfileRepository(db,{clock=()=>Date.now(),id=()=>`mg_${cr
  return {
   async list(ownerId){const result=await db.prepare('SELECT id,slot,nickname,avatar_id,progress_json,revision,created_at,updated_at FROM mango_profiles WHERE owner_user_id=? ORDER BY slot').bind(ownerId).all();return result.results.map(safe);},get,
   async create(ownerId,body){const nickname=validateName(body.nickname),avatarId=validateAvatar(body.avatarId),profileId=id(),t=now();
-   // One statement chooses and claims a free slot; UNIQUE prevents racing creates.
+   // D1 limits compound SELECTs to five terms. A two-term recursive CTE generates all six slots atomically.
    for(let attempt=0;attempt<6;attempt++){
-    try{const result=await db.prepare(`INSERT INTO mango_profiles(id,owner_user_id,slot,nickname,avatar_id,progress_json,revision,created_at,updated_at)
-      SELECT ?,?,slots.n,?,?,?,0,?,? FROM (SELECT 0 n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) slots
+    try{const result=await db.prepare(`WITH RECURSIVE slots(n) AS (VALUES(0) UNION ALL SELECT n+1 FROM slots WHERE n<5)
+      INSERT INTO mango_profiles(id,owner_user_id,slot,nickname,avatar_id,progress_json,revision,created_at,updated_at)
+      SELECT ?,?,slots.n,?,?,?,0,?,? FROM slots
       WHERE NOT EXISTS(SELECT 1 FROM mango_profiles p WHERE p.owner_user_id=? AND p.slot=slots.n) ORDER BY slots.n LIMIT 1`).bind(profileId,ownerId,nickname,avatarId,JSON.stringify(emptyProgress()),t,t,ownerId).run();
      if(!result.meta.changes)throw new SaveError(409,'This account has six profiles. Remove one before adding another.');return await get(ownerId,profileId);
     }catch(e){if(e instanceof SaveError)throw e;if(!/unique/i.test(String(e))||attempt===5)throw e;}
