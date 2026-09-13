@@ -11,7 +11,9 @@ def request(path,method='GET',body=None,user=None,origin=None):
  req=urllib.request.Request(BASE+path,data=json.dumps(body).encode() if body is not None else None,method=method,headers=headers)
  try:response=urllib.request.urlopen(req,timeout=15)
  except urllib.error.HTTPError as e:response=e
- raw=response.read();return response.status,json.loads(raw) if raw else {},dict(response.headers)
+ raw=response.read();content_type=(response.headers.get('Content-Type') or '').lower()
+ data=json.loads(raw) if raw and 'application/json' in content_type else ({'raw':raw.decode('utf-8','replace')} if raw else {})
+ return response.status,data,dict(response.headers)
 def check(name,condition):
  checks.append({'name':name,'passed':bool(condition)});print(('PASS ' if condition else 'FAIL ')+name,flush=True)
  if not condition:raise AssertionError(name)
