@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "sourceHash": "6229771adc11754a0b0e9c59c6c3efb122a896b483ece3a3a392a2f75ced75f8",
+  "sourceHash": "c80ccfe6f53652c61dc90b28546f2f2349954ac1825c83de80d8a3f89ba0c3cf",
   "files": {
     "/games/mango-mayhem/content/catalog.mjs": "25aa002f7ec7dc6f6a3986e3fa3f6cb7131c95c93688240c74703ba0ffdbc849",
     "/games/mango-mayhem/content/levels/build.mjs": "9dcc76b6fa85a4284eb11d43d0938b091d07dbe7a5edec121c15f28f9deeb0d4",
@@ -10,7 +10,7 @@
     "/games/mango-mayhem/content/levels/london.mjs": "2d82e1fd1928b1e8d81ade3e34bc78d67685b8532aa47f639c47523da321957c",
     "/games/mango-mayhem/content/levels/neimenggu.mjs": "4c646fe0769942efbd2f569c545e865ffdcf84671f61a2498cf1f40675709ad4",
     "/games/mango-mayhem/content/levels/sichuan.mjs": "9edfe7b3211a515a9aa454930678a77e7f85b89e95dd4c0cc037576f26d845cd",
-    "/games/mango-mayhem/content/levels/taj.mjs": "5c1c39a01a5e33722f3c9166b9a47f0b5b2c502ae48b8e5c1079d363a0662e2c",
+    "/games/mango-mayhem/content/levels/taj.mjs": "65d5cab3c6f747bfd824086622a2eb17a6695eb2812578fc1763bf223d439470",
     "/games/mango-mayhem/core/bosses.mjs": "f34a74037f3dbe058e3cae6b0deab7e26b82e0dff786f2cdf54b599ffae9c755",
     "/games/mango-mayhem/core/collision.mjs": "39d8b51403649f3b524434c0f9a2ecb4dd9ce9e3789c0f2a33c513c875242f28",
     "/games/mango-mayhem/core/progress.mjs": "039805bb9f0e295f3ac195a19a373c2dcb408094f082e3bfa1e2e54b60ab494a",
