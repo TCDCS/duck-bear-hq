@@ -105,7 +105,7 @@ jobs:
         run: |
           set -euo pipefail
           URL="$UNITY_UBA_API/orgs/$UNITY_UBA_ORG_ID/projects/$UNITY_UBA_PROJECT_ID/buildtargets/$TARGET_ID/builds"
-          BODY='{"clean":false,"branch":"feature/danao-unity"}'
+          BODY="$(jq -nc --arg branch "$GITHUB_REF_NAME" --arg commit "$GITHUB_SHA" '{clean:false,branch:$branch,commit:$commit}')"
           HTTP="$(curl --silent --show-error \
             -o build-start.json \
             -w '%{http_code}' \
@@ -122,6 +122,7 @@ jobs:
           echo "Started $TARGET_NAME (HTTP $HTTP)."
           {
             echo "### Unity Build Automation"
-            echo "Started **$TARGET_NAME** from branch \`feature/danao-unity\`."
+            echo "Started **$TARGET_NAME** from branch \`$GITHUB_REF_NAME\`."
+            echo "Requested commit: \`$GITHUB_SHA\`."
             echo "Unity API response: HTTP $HTTP."
           } >> "$GITHUB_STEP_SUMMARY"
