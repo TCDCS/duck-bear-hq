@@ -14,12 +14,15 @@ namespace Danao.Arenas
         private Vector3 _propBase;
         private float _nextPulse;
         private float _nextContact;
+        public bool SimulationAuthority { get; private set; } = true;
 
         public void Configure(ArenaDefinition definition, MatchSettings settings, ArenaRuntime runtime)
         {
             _definition=definition; _settings=settings; _runtime=runtime;
             BuildHazardProp();
         }
+
+        public void SetSimulationAuthority(bool authority) => SimulationAuthority = authority;
 
         private void BuildHazardProp()
         {
@@ -47,7 +50,7 @@ namespace Danao.Arenas
 
         private void Update()
         {
-            if(_settings==null||!_settings.ArenaHazards) return;
+            if(!SimulationAuthority||_settings==null||!_settings.ArenaHazards) return;
             var t=Time.time;
             switch(_definition.Hazard)
             {
