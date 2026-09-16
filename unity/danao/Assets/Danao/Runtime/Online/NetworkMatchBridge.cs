@@ -48,8 +48,9 @@ namespace Danao.Online
 
         public void TickLocalInput(FighterInput input)
         {
-            if(_client==null||_fighters==null||_localSlot<0||_localSlot>=_fighters.Count)return;
-            _fighters[_localSlot].TickInput(input);
+            if(_client==null||_fighters==null||_localSlot<0)return;
+            var fighter=FindFighter(_localSlot);if(fighter==null)return;
+            fighter.TickInput(input);
             if(_isHost)return;
             _client.SendInput(new InputFrameDto{seq=++_inputSequence,moveX=input.Move.x,moveY=input.Move.y,jump=input.Jump,punch=input.Punch,grab=input.Grab,dodge=input.Dodge,fire=input.Fire,block=input.Block});
         }
