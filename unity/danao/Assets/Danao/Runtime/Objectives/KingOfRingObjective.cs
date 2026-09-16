@@ -29,7 +29,7 @@ namespace Danao.Objectives
 
         public override void TickObjective(float deltaTime)
         {
-            if (Finished) return;
+            if (!SimulationAuthority || Finished) return;
             var occupant = -1;
             var count = 0;
             for (var i = 0; i < Fighters.Count; i++)
@@ -41,6 +41,20 @@ namespace Danao.Objectives
             if (count != 1 || occupant < 0 || occupant >= _seconds.Length) return;
             _seconds[occupant] += deltaTime;
             if (ObjectiveRules.KingComplete(_seconds[occupant])) FinishSlot(occupant, "IS KING OF THE RING!");
+        }
+
+        public override ObjectiveNetworkState CaptureNetworkState()
+        {
+            var state = base.CaptureNetworkState();
+            state.seconds = (float[])_seconds.Clone();
+            return state;
+        }
+
+        public override void ApplyNetworkState(ObjectiveNetworkState state)
+        {
+            base.ApplyNetworkState(state);
+            if (state?.seconds == null) return;
+            for (var i = 0; i < _seconds.Length; i++) _seconds[i] = i < state.seconds.Length ? Mathf.Max(0f, state.seconds[i]) : 0f;
         }
     }
 }
