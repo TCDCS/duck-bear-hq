@@ -14,6 +14,14 @@
   "rules": [{"type":"Text","globs":["**/kart-assets/*.txt"],"fallthrough":true}],
   "d1_databases": [{"binding":"DB","database_name":"duck-bear-hq-db","database_id":"05f3e993-e41a-4d0e-8166-bcd04ae235f9","migrations_dir":"migrations"}],
   "r2_buckets": [{"binding":"MEDIA","bucket_name":"duck-bear-hq-media"}],
-  "durable_objects": {"bindings":[{"name":"WACKY_DIRECTORY","class_name":"WackyDirectory"},{"name":"WACKY_ROOMS","class_name":"WackyRoom"}]},
-  "migrations": [{"tag":"wacky-v4-sqlite","new_sqlite_classes":["WackyDirectory","WackyRoom"]}]
+  "durable_objects": {"bindings":[
+    {"name":"WACKY_DIRECTORY","class_name":"WackyDirectory"},
+    {"name":"WACKY_ROOMS","class_name":"WackyRoom"},
+    {"name":"DANAO_DIRECTORY","class_name":"DanaoDirectory"},
+    {"name":"DANAO_ROOMS","class_name":"DanaoRoom"}
+  ]},
+  "migrations": [
+    {"tag":"wacky-v4-sqlite","new_sqlite_classes":["WackyDirectory","WackyRoom"]},
+    {"tag":"danao-v1-sqlite","new_sqlite_classes":["DanaoDirectory","DanaoRoom"]}
+  ]
 }
