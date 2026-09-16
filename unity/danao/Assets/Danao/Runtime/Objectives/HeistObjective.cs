@@ -36,14 +36,16 @@ namespace Danao.Objectives
                 for (var i = 0; i < Fighters.Count; i++)
                 {
                     if (Fighters[i].Health.IsEliminated) continue;
-                    if (Vector3.Distance(Fighters[i].transform.position, _loot.position) < 1.2f) { _carrier = i; break; }
+                    if (Vector3.Distance(Fighters[i].transform.position, _loot.position) < 1.2f) { _carrier = Fighters[i].Slot; break; }
                 }
             }
             else
             {
-                var fighter = Fighters[_carrier];
+                var fighter = FighterForSlot(_carrier);
+                if (fighter == null) { ResetLoot(); return; }
                 if (fighter.Health.IsEliminated) { _carrier = -1; return; }
                 _loot.position = fighter.transform.position + Vector3.up * 1.3f;
+                if (_carrier < 0 || _carrier >= _arena.SpawnPoints.Count) { ResetLoot(); return; }
                 var home = _arena.SpawnPoints[_carrier];
                 if (Vector3.Distance(fighter.transform.position, home) < 1.6f)
                 {
