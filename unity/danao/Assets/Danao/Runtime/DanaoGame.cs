@@ -39,16 +39,11 @@ namespace Danao
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
+            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
             DontDestroyOnLoad(gameObject);
             Application.targetFrameRate = 60;
             Time.fixedDeltaTime = 1f / 60f;
-
             _input = gameObject.AddComponent<LocalInputHub>();
             _audio = gameObject.AddComponent<ProceduralAudio>();
             _roomClient = gameObject.AddComponent<DanaoRoomClient>();
@@ -68,28 +63,17 @@ namespace Danao
             if (_onlineMatch)
             {
                 var input = _input.ReadSlot(0);
-                if (input.Pause)
-                {
-                    LeaveOnlineRoom();
-                    _ui.ShowTitle();
-                    return;
-                }
+                if (input.Pause) { LeaveOnlineRoom(); _ui.ShowTitle(); return; }
                 _networkBridge?.TickLocalInput(input);
                 if (_networkBridge != null && _networkBridge.IsHost) _match.Tick();
                 _networkBridge?.SetMatchStatus(_match.Finished ? "results" : "fight", _match.ObjectiveHudText);
                 _ui.RefreshHud(_config.Settings, _match.ObjectiveHudText);
                 return;
             }
-
             for (var i = 0; i < _fighters.Count; i++)
             {
                 var input = _input.ReadSlot(i);
-                if (input.Pause)
-                {
-                    ReturnToMenu();
-                    _ui.ShowTitle();
-                    return;
-                }
+                if (input.Pause) { ReturnToMenu(); _ui.ShowTitle(); return; }
                 _fighters[i].TickInput(input);
             }
             _match.Tick();
@@ -124,7 +108,6 @@ namespace Danao
             DestroyRuntimeWorld();
             _onlineMatch = true;
             _onlineMatchId = room.matchId;
-
             var mode = ParseMode(room.settings?.mode);
             var arenaId = ParseArena(room.settings?.arena);
             var playerCount = Mathf.Clamp(room.players.Length, 2, 4);
@@ -148,15 +131,13 @@ namespace Danao
             {
                 var p = room.players[i];
                 if (p.id < 0 || p.id >= _arena.SpawnPoints.Count) continue;
-                var character = ParseCharacter(p.character);
-                var costume = ParseCostume(p.costume);
-                var fighter = FighterFactory.Create(p.id, new PlayerLoadout(character,costume), _arena.SpawnPoints[p.id], settings);
+                var fighter = FighterFactory.Create(p.id, new PlayerLoadout(ParseCharacter(p.character),ParseCostume(p.costume)), _arena.SpawnPoints[p.id], settings);
                 fighter.transform.SetParent(_worldRoot.transform, true);
                 _fighters.Add(fighter);
             }
             FinishWorldSetup(_config);
             _networkBridge = _worldRoot.AddComponent<NetworkMatchBridge>();
-            _networkBridge.Configure(_roomClient, _fighters, _roomClient.PlayerId);
+            _networkBridge.Configure(_roomClient, _fighters, _roomClient.PlayerId, _match);
         }
 
         private void FinishWorldSetup(LocalMatchConfig config)
@@ -165,7 +146,6 @@ namespace Danao
             cameraGo.transform.SetParent(_worldRoot.transform, false);
             _arenaCamera = cameraGo.AddComponent<SharedArenaCamera>();
             _arenaCamera.Configure(_fighters);
-
             _match = new LocalMatch(_fighters, _arena, config);
             _match.MatchFinished += OnMatchFinished;
             _ui.ShowFight(_fighters, config.Settings);
@@ -178,29 +158,20 @@ namespace Danao
             _audio.Play(SfxId.Victory);
             if (_onlineMatch)
             {
-                if (_networkBridge != null && _networkBridge.IsHost)
-                    _roomClient.SendResult(new MatchResultDto { winner=FindWinningSlot(), reason=result });
+                if (_networkBridge != null && _networkBridge.IsHost) _roomClient.SendResult(new MatchResultDto { winner=FindWinningSlot(), reason=result });
                 return;
             }
             _saveService?.RecordMatch(FindWinningSlot() == 0, 0);
             _ui.ShowResult(result);
         }
 
-        private int FindWinningSlot()
-        {
-            var winner=-1;for(var i=0;i<_fighters.Count;i++)if(_fighters[i]!=null&&!_fighters[i].Health.IsEliminated){if(winner>=0)return -1;winner=_fighters[i].Slot;}return winner;
-        }
+        private int FindWinningSlot(){var winner=-1;for(var i=0;i<_fighters.Count;i++)if(_fighters[i]!=null&&!_fighters[i].Health.IsEliminated){if(winner>=0)return -1;winner=_fighters[i].Slot;}return winner;}
 
         private void OnOnlineRoomChanged(RoomDto room)
         {
             if(room==null)return;
             if(room.phase=="fight")StartOnlineMatch(room);
-            else if(_onlineMatch&&room.phase=="lobby")
-            {
-                DestroyRuntimeWorld();
-                BuildMenuBackdrop();
-                _audio.PlayTitleMusic();
-            }
+            else if(_onlineMatch&&room.phase=="lobby"){DestroyRuntimeWorld();BuildMenuBackdrop();_audio.PlayTitleMusic();}
         }
 
         private void OnOnlineResult(MatchResultDto result)
@@ -209,9 +180,7 @@ namespace Danao
             foreach(var fighter in _fighters)if(fighter!=null)fighter.SetControlSuppressed(true);
             var text=result?.reason;
             if(string.IsNullOrWhiteSpace(text)&&result!=null&&result.winner>=0&&_roomClient.Room?.players!=null)
-            {
                 foreach(var p in _roomClient.Room.players)if(p.id==result.winner){text=p.name.ToUpperInvariant()+" WINS!";break;}
-            }
             if(string.IsNullOrWhiteSpace(text))text="ROUND OVER!";
             _audio.Play(SfxId.Victory);_ui.ShowResult(text);
             _saveService.RecordMatch(result!=null&&result.winner==_roomClient.PlayerId,0);
@@ -219,11 +188,7 @@ namespace Danao
 
         public void Rematch()
         {
-            if (_onlineMatch)
-            {
-                if (_roomClient.IsHost) _roomClient.SendRematch();
-                return;
-            }
+            if (_onlineMatch) { if (_roomClient.IsHost) _roomClient.SendRematch(); return; }
             if (_match == null) return;
             _match.ResetRound();
             _ui.ShowFight(_fighters, _config.Settings);
@@ -231,34 +196,15 @@ namespace Danao
             _audio.Play(SfxId.RoundStart);
         }
 
-        public void LeaveOnlineRoom()
-        {
-            _roomClient?.Leave();
-            DestroyRuntimeWorld();
-            BuildMenuBackdrop();
-            _audio.PlayTitleMusic();
-        }
-
-        public void ReturnToMenu()
-        {
-            DestroyRuntimeWorld();
-            BuildMenuBackdrop();
-            _audio.PlayTitleMusic();
-        }
+        public void LeaveOnlineRoom(){_roomClient?.Leave();DestroyRuntimeWorld();BuildMenuBackdrop();_audio.PlayTitleMusic();}
+        public void ReturnToMenu(){DestroyRuntimeWorld();BuildMenuBackdrop();_audio.PlayTitleMusic();}
 
         private void DestroyRuntimeWorld()
         {
             if (_match != null) _match.MatchFinished -= OnMatchFinished;
-            _match = null;
-            _arena = null;
-            _config = null;
-            _networkBridge = null;
-            _onlineMatch = false;
-            _fighters.Clear();
-            if (_worldRoot != null) Destroy(_worldRoot);
-            _worldRoot = null;
-            if (_menuBackdrop != null) Destroy(_menuBackdrop);
-            _menuBackdrop = null;
+            _match = null;_arena = null;_config = null;_networkBridge = null;_onlineMatch = false;_fighters.Clear();
+            if (_worldRoot != null) Destroy(_worldRoot);_worldRoot = null;
+            if (_menuBackdrop != null) Destroy(_menuBackdrop);_menuBackdrop = null;
         }
 
         private static LocalMode ParseMode(string value)
@@ -274,34 +220,12 @@ namespace Danao
         {
             if (_menuBackdrop != null) return;
             _menuBackdrop = new GameObject("MenuBackdrop");
-            var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            floor.name = "BackdropFloor";
-            floor.transform.SetParent(_menuBackdrop.transform, false);
-            floor.transform.position = new Vector3(0f,-1f,0f);
-            floor.transform.localScale = new Vector3(28f,.5f,22f);
-            var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
-            floor.GetComponent<Renderer>().material = new Material(shader) { color = new Color(.055f,.04f,.09f) };
-
-            var light = new GameObject("BackdropLight").AddComponent<Light>();
-            light.transform.SetParent(_menuBackdrop.transform, false);
-            light.type = LightType.Directional;
-            light.transform.rotation = Quaternion.Euler(48f,-32f,0f);
-            light.intensity = 1.35f;
-            light.color = new Color(1f,.75f,.52f);
-
-            var cameraGo = new GameObject("MenuCamera");
-            cameraGo.transform.SetParent(_menuBackdrop.transform, false);
-            cameraGo.transform.position = new Vector3(0f,7f,-16f);
-            cameraGo.transform.rotation = Quaternion.Euler(20f,0f,0f);
-            var camera = cameraGo.AddComponent<Camera>();
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color(.025f,.018f,.05f);
-            camera.fieldOfView = 48f;
+            var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);floor.name = "BackdropFloor";floor.transform.SetParent(_menuBackdrop.transform, false);floor.transform.position = new Vector3(0f,-1f,0f);floor.transform.localScale = new Vector3(28f,.5f,22f);
+            var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");floor.GetComponent<Renderer>().material = new Material(shader) { color = new Color(.055f,.04f,.09f) };
+            var light = new GameObject("BackdropLight").AddComponent<Light>();light.transform.SetParent(_menuBackdrop.transform, false);light.type = LightType.Directional;light.transform.rotation = Quaternion.Euler(48f,-32f,0f);light.intensity = 1.35f;light.color = new Color(1f,.75f,.52f);
+            var cameraGo = new GameObject("MenuCamera");cameraGo.transform.SetParent(_menuBackdrop.transform, false);cameraGo.transform.position = new Vector3(0f,7f,-16f);cameraGo.transform.rotation = Quaternion.Euler(20f,0f,0f);var camera = cameraGo.AddComponent<Camera>();camera.clearFlags = CameraClearFlags.SolidColor;camera.backgroundColor = new Color(.025f,.018f,.05f);camera.fieldOfView = 48f;
         }
 
-        private void OnDestroy()
-        {
-            if(_roomClient!=null){_roomClient.RoomChanged-=OnOnlineRoomChanged;_roomClient.ResultReceived-=OnOnlineResult;}
-        }
+        private void OnDestroy(){if(_roomClient!=null){_roomClient.RoomChanged-=OnOnlineRoomChanged;_roomClient.ResultReceived-=OnOnlineResult;}}
     }
 }
