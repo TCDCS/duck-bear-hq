@@ -21,8 +21,8 @@ namespace Danao.Tests.PlayMode
                 Assert.NotNull(arena.Root, id.ToString());
                 Assert.AreEqual(4, arena.SpawnPoints.Count, id.ToString());
                 Assert.GreaterOrEqual(arena.WeaponSpawns.Count, 4, id.ToString());
-                Object.Destroy(parent);
-                foreach (var weapon in arena.Weapons) if (weapon != null) Object.Destroy(weapon.gameObject);
+                UnityEngine.Object.Destroy(parent);
+                foreach (var weapon in arena.Weapons) if (weapon != null) UnityEngine.Object.Destroy(weapon.gameObject);
             }
         }
     }
