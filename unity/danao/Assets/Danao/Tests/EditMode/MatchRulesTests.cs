@@ -19,5 +19,17 @@ namespace Danao.Tests.EditMode
 
         [Test]
         public void TwoVsTwoForcesFourPlayers() => Assert.AreEqual(4, MatchRules.NormalisePlayerCount(LocalMode.TwoVsTwo, 2));
+
+        [Test]
+        public void TwoPlayersSkipTwoVsTwoWhenCyclingForward()
+        {
+            Assert.AreEqual(LocalMode.FreeForAll, MatchRules.NextAllowedMode(LocalMode.OneVsOne, 1, 2));
+        }
+
+        [Test]
+        public void FourPlayersCanReachTwoVsTwo()
+        {
+            Assert.AreEqual(LocalMode.TwoVsTwo, MatchRules.NextAllowedMode(LocalMode.OneVsOne, 1, 4));
+        }
     }
 }
