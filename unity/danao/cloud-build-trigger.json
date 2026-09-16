@@ -1,6 +1,6 @@
 {
-  "target": "webgl",
-  "requestedAt": "2026-09-16T22:21:00Z",
+  "target": "windows",
+  "requestedAt": "2026-09-16T22:42:00Z",
   "requestedBy": "ChatGPT",
-  "reason": "retry after arena smoke test compile fix"
+  "reason": "first Windows x64 Unity Build Automation compile"
 }
