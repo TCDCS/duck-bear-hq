@@ -50,6 +50,34 @@ namespace Danao.Online
         public bool fire;
         public bool block;
     }
+    [Serializable] public sealed class InputCommandDto
+    {
+        public string type="input";
+        public int seq;
+        public float moveX;
+        public float moveY;
+        public bool jump;
+        public bool punch;
+        public bool grab;
+        public bool dodge;
+        public bool fire;
+        public bool block;
+        public static InputCommandDto From(InputFrameDto f) => new InputCommandDto{seq=f.seq,moveX=f.moveX,moveY=f.moveY,jump=f.jump,punch=f.punch,grab=f.grab,dodge=f.dodge,fire=f.fire,block=f.block};
+    }
+    [Serializable] public sealed class SetupCommandDto
+    {
+        public string type="setup";
+        public string mode;
+        public string arena;
+        public bool healthDamage;
+        public bool visibleBruising;
+        public bool arenaHazards;
+        public bool friendlyFire;
+    }
+    [Serializable] public sealed class ChoiceCommandDto { public string type="choice"; public string character; public string costume; }
+    [Serializable] public sealed class StateCommandDto { public string type="state"; public NetworkSnapshot state; }
+    [Serializable] public sealed class ResultCommandDto { public string type="result"; public MatchResultDto result; }
+
     [Serializable] public sealed class SocketMessage
     {
         public string type;
