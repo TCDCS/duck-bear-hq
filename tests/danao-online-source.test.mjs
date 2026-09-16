@@ -140,3 +140,17 @@ test('non-host clients predict movement but do not author combat damage or proje
  assert.match(fighter,/if\s*\(_combatAuthority\)/);
  assert.match(bridge,/SetCombatAuthority\(_isHost\)/);
 });
+
+test('non-host clients cannot author HP or arena hazard forces',()=>{
+ const health=read('unity/danao/Assets/Danao/Runtime/Combat/FighterHealth.cs');
+ const hazards=read('unity/danao/Assets/Danao/Runtime/Arenas/ArenaHazards.cs');
+ const wrestling=read('unity/danao/Assets/Danao/Runtime/Arenas/WrestlingArena.cs');
+ const bridge=read('unity/danao/Assets/Danao/Runtime/Online/NetworkMatchBridge.cs');
+ assert.match(health,/DamageAuthority/);
+ assert.match(health,/SetDamageAuthority/);
+ assert.match(health,/if\s*\(!_damageAuthority\)\s*return/);
+ assert.match(hazards,/SimulationAuthority/);
+ assert.match(wrestling,/SimulationAuthority/);
+ assert.match(bridge,/SetDamageAuthority\(_isHost\)/);
+ assert.match(bridge,/SetArenaAuthority/);
+});
