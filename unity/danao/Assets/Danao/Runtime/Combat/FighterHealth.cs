@@ -13,10 +13,12 @@ namespace Danao.Combat
         private Renderer[] _renderers;
         private Color _baseColour = Color.white;
         private bool _blocking;
+        private bool _damageAuthority = true;
 
         public int CurrentHp { get; private set; } = MatchSettings.StartingHp;
         public bool IsEliminated { get; private set; }
         public bool Blocking => _blocking;
+        public bool DamageAuthority => _damageAuthority;
         public event Action<FighterHealth> Changed;
         public event Action<FighterHealth, int> Eliminated;
 
@@ -35,9 +37,15 @@ namespace Danao.Combat
         }
 
         public void SetBlocking(bool value) => _blocking = value;
+        public void SetDamageAuthority(bool value)
+        {
+            _damageAuthority = value;
+            if (!value) _blocking = false;
+        }
 
         public void ApplyDamage(int rawDamage, Vector3 impulse, int attackerSlot)
         {
+            if (!_damageAuthority) return;
             if (IsEliminated) return;
             var damage = _blocking ? Mathf.CeilToInt(rawDamage * .4f) : rawDamage;
             var appliedImpulse = _blocking ? impulse * .62f : impulse;
@@ -67,6 +75,7 @@ namespace Danao.Combat
 
         public void EliminateByRingOut(int attackerSlot = -1)
         {
+            if (!_damageAuthority) return;
             if (IsEliminated) return;
             IsEliminated = true;
             _controller.Knockdown(Vector3.up * 2f, 999f, true);
