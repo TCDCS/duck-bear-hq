@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Danao.Arenas;
 using Danao.Audio;
@@ -5,6 +6,8 @@ using Danao.CameraSystem;
 using Danao.Core;
 using Danao.Fighters;
 using Danao.Input;
+using Danao.Online;
+using Danao.Save;
 using Danao.UI;
 using UnityEngine;
 
@@ -18,13 +21,21 @@ namespace Danao
         private LocalInputHub _input;
         private ProceduralAudio _audio;
         private ArcadeUi _ui;
+        private DanaoRoomClient _roomClient;
+        private DanaoSaveService _saveService;
+        private NetworkMatchBridge _networkBridge;
         private LocalMatch _match;
         private ArenaRuntime _arena;
         private LocalMatchConfig _config;
         private SharedArenaCamera _arenaCamera;
+        private bool _onlineMatch;
+        private int _onlineMatchId = -1;
 
         public static DanaoGame Instance { get; private set; }
         public LocalInputHub InputHub => _input;
+        public DanaoRoomClient RoomClient => _roomClient;
+        public DanaoSaveService SaveService => _saveService;
+        public bool OnlineMatchActive => _onlineMatch;
 
         private void Awake()
         {
@@ -40,15 +51,36 @@ namespace Danao
 
             _input = gameObject.AddComponent<LocalInputHub>();
             _audio = gameObject.AddComponent<ProceduralAudio>();
+            _roomClient = gameObject.AddComponent<DanaoRoomClient>();
+            _saveService = gameObject.AddComponent<DanaoSaveService>();
+            _roomClient.RoomChanged += OnOnlineRoomChanged;
+            _roomClient.ResultReceived += OnOnlineResult;
             _ui = gameObject.AddComponent<ArcadeUi>();
             _ui.Configure(this);
             BuildMenuBackdrop();
             _audio.PlayTitleMusic();
+            _saveService.SyncCloud();
         }
 
         private void Update()
         {
             if (_match == null) return;
+            if (_onlineMatch)
+            {
+                var input = _input.ReadSlot(0);
+                if (input.Pause)
+                {
+                    LeaveOnlineRoom();
+                    _ui.ShowTitle();
+                    return;
+                }
+                _networkBridge?.TickLocalInput(input);
+                if (_networkBridge != null && _networkBridge.IsHost) _match.Tick();
+                _networkBridge?.SetMatchStatus(_match.Finished ? "results" : "fight", _match.ObjectiveHudText);
+                _ui.RefreshHud(_config.Settings, _match.ObjectiveHudText);
+                return;
+            }
+
             for (var i = 0; i < _fighters.Count; i++)
             {
                 var input = _input.ReadSlot(i);
@@ -67,6 +99,7 @@ namespace Danao
         public void StartLocalMatch(LocalMatchConfig config)
         {
             DestroyRuntimeWorld();
+            _onlineMatch = false;
             _config = config;
             _worldRoot = new GameObject("DanaoLocalMatch");
             _arena = ArenaBuilder.Build(config.Arena, _worldRoot.transform, config.Settings);
@@ -78,7 +111,52 @@ namespace Danao
                 fighter.transform.SetParent(_worldRoot.transform, true);
                 _fighters.Add(fighter);
             }
+            FinishWorldSetup(config);
+        }
 
+        public void StartOnlineMatch(RoomDto room)
+        {
+            if (room == null || room.players == null || room.players.Length < 2) return;
+            if (_onlineMatch && _onlineMatchId == room.matchId) return;
+            DestroyRuntimeWorld();
+            _onlineMatch = true;
+            _onlineMatchId = room.matchId;
+
+            var mode = ParseMode(room.settings?.mode);
+            var arenaId = ParseArena(room.settings?.arena);
+            var playerCount = Mathf.Clamp(room.players.Length, 2, 4);
+            var settings = new MatchSettings
+            {
+                ActivePlayers = playerCount,
+                HealthDamage = room.settings == null || room.settings.healthDamage,
+                VisibleBruising = room.settings == null || room.settings.visibleBruising,
+                ArenaHazards = room.settings == null || room.settings.arenaHazards,
+                FriendlyFire = room.settings != null && room.settings.friendlyFire,
+                TeamMode = mode == LocalMode.TwoVsTwo,
+                RingOut = mode == LocalMode.RoyalRumble || (room.settings != null && !room.settings.healthDamage)
+            };
+            var loadouts = new PlayerLoadout[4];
+            for (var i = 0; i < loadouts.Length; i++) loadouts[i] = new PlayerLoadout(CharacterId.Hero, CostumeId.Arcade);
+            _config = new LocalMatchConfig { Mode=mode, Arena=arenaId, Settings=settings, Loadouts=loadouts };
+            _worldRoot = new GameObject("DanaoOnlineMatch");
+            _arena = ArenaBuilder.Build(arenaId, _worldRoot.transform, settings);
+            _fighters.Clear();
+            for (var i = 0; i < playerCount; i++)
+            {
+                var p = room.players[i];
+                var character = ParseCharacter(p.character);
+                var costume = ParseCostume(p.costume);
+                var fighter = FighterFactory.Create(p.id, new PlayerLoadout(character,costume), _arena.SpawnPoints[i], settings);
+                fighter.transform.SetParent(_worldRoot.transform, true);
+                _fighters.Add(fighter);
+            }
+            FinishWorldSetup(_config);
+            _networkBridge = _worldRoot.AddComponent<NetworkMatchBridge>();
+            _networkBridge.Configure(_roomClient, _fighters, _roomClient.PlayerId);
+        }
+
+        private void FinishWorldSetup(LocalMatchConfig config)
+        {
             var cameraGo = new GameObject("SharedArenaCamera");
             cameraGo.transform.SetParent(_worldRoot.transform, false);
             _arenaCamera = cameraGo.AddComponent<SharedArenaCamera>();
@@ -94,16 +172,61 @@ namespace Danao
         private void OnMatchFinished(string result)
         {
             _audio.Play(SfxId.Victory);
+            if (_onlineMatch)
+            {
+                if (_networkBridge != null && _networkBridge.IsHost)
+                    _roomClient.SendResult(new MatchResultDto { winner=FindWinningSlot(), reason=result });
+                return;
+            }
             _ui.ShowResult(result);
+        }
+
+        private int FindWinningSlot()
+        {
+            var winner=-1;for(var i=0;i<_fighters.Count;i++)if(_fighters[i]!=null&&!_fighters[i].Health.IsEliminated){if(winner>=0)return -1;winner=_fighters[i].Slot;}return winner;
+        }
+
+        private void OnOnlineRoomChanged(RoomDto room)
+        {
+            if(room==null)return;
+            if(room.phase=="fight")StartOnlineMatch(room);
+            else if(_onlineMatch&&room.phase=="lobby")DestroyRuntimeWorld();
+        }
+
+        private void OnOnlineResult(MatchResultDto result)
+        {
+            if(!_onlineMatch)return;
+            foreach(var fighter in _fighters)if(fighter!=null)fighter.SetControlSuppressed(true);
+            var text=result?.reason;
+            if(string.IsNullOrWhiteSpace(text)&&result!=null&&result.winner>=0&&_roomClient.Room?.players!=null)
+            {
+                foreach(var p in _roomClient.Room.players)if(p.id==result.winner){text=p.name.ToUpperInvariant()+" WINS!";break;}
+            }
+            if(string.IsNullOrWhiteSpace(text))text="ROUND OVER!";
+            _audio.Play(SfxId.Victory);_ui.ShowResult(text);
+            _saveService.RecordMatch(result!=null&&result.winner==_roomClient.PlayerId,0);
         }
 
         public void Rematch()
         {
+            if (_onlineMatch)
+            {
+                if (_roomClient.IsHost) _roomClient.SendRematch();
+                return;
+            }
             if (_match == null) return;
             _match.ResetRound();
             _ui.ShowFight(_fighters, _config.Settings);
             _audio.PlayFightMusic();
             _audio.Play(SfxId.RoundStart);
+        }
+
+        public void LeaveOnlineRoom()
+        {
+            _roomClient?.Leave();
+            DestroyRuntimeWorld();
+            BuildMenuBackdrop();
+            _audio.PlayTitleMusic();
         }
 
         public void ReturnToMenu()
@@ -119,12 +242,23 @@ namespace Danao
             _match = null;
             _arena = null;
             _config = null;
+            _networkBridge = null;
+            _onlineMatch = false;
             _fighters.Clear();
             if (_worldRoot != null) Destroy(_worldRoot);
             _worldRoot = null;
             if (_menuBackdrop != null) Destroy(_menuBackdrop);
             _menuBackdrop = null;
         }
+
+        private static LocalMode ParseMode(string value)
+        {
+            if(value=="TwoVsTwo"||value=="TeamKnockout")return LocalMode.TwoVsTwo;
+            if(value=="RoyalRumble")return LocalMode.RoyalRumble;if(value=="MangoGrab")return LocalMode.MangoGrab;if(value=="HotBomb")return LocalMode.HotBomb;if(value=="KingOfTheRing")return LocalMode.KingOfRing;if(value=="Heist")return LocalMode.Heist;if(value=="OneVsOne")return LocalMode.OneVsOne;return LocalMode.FreeForAll;
+        }
+        private static ArenaId ParseArena(string value)=>Enum.TryParse(value,true,out ArenaId id)?id:ArenaId.WrestlingArena;
+        private static CharacterId ParseCharacter(string value)=>Enum.TryParse(value,true,out CharacterId id)?id:CharacterId.Hero;
+        private static CostumeId ParseCostume(string value)=>Enum.TryParse(value,true,out CostumeId id)?id:CostumeId.Arcade;
 
         private void BuildMenuBackdrop()
         {
@@ -153,6 +287,11 @@ namespace Danao
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(.025f,.018f,.05f);
             camera.fieldOfView = 48f;
+        }
+
+        private void OnDestroy()
+        {
+            if(_roomClient!=null){_roomClient.RoomChanged-=OnOnlineRoomChanged;_roomClient.ResultReceived-=OnOnlineResult;}
         }
     }
 }
