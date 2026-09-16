@@ -1,6 +1,6 @@
 {
-  "target": "windows",
-  "requestedAt": "2026-09-16T22:42:00Z",
+  "target": "webgl",
+  "requestedAt": "2026-09-16T23:08:00Z",
   "requestedBy": "ChatGPT",
-  "reason": "first Windows x64 Unity Build Automation compile"
+  "reason": "verify current Danao source after boot scene, URP, networking and WebGL output fixes"
 }
