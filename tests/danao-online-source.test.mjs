@@ -122,3 +122,12 @@ test('online results carry individual and team winners instead of guessing from 
  assert.match(game,/winnerTeam\s*=\s*_match\.WinnerTeam/);
  assert.match(game,/DidLocalPlayerWin/);
 });
+
+test('host snapshots include the weapon currently carried by each fighter',()=>{
+ const fighter=read('unity/danao/Assets/Danao/Runtime/Fighters/FighterController.cs');
+ const snapshot=read('unity/danao/Assets/Danao/Runtime/Online/NetworkSnapshot.cs');
+ assert.match(fighter,/public\s+FighterCombat\s+Combat/);
+ assert.match(snapshot,/weaponId\s*=\s*fighter\.Combat/);
+ assert.match(snapshot,/Held/);
+ assert.match(snapshot,/Definition\.Kind/);
+});
