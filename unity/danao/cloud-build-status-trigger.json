@@ -1,4 +1,4 @@
 {
   "target": "windows",
-  "request": "verify-exact-revision-windows-build"
+  "request": "verify-committed-boot-scene-windows-build"
 }
