@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Danao.Fighters;
+using Danao.Objectives;
 using UnityEngine;
 
 namespace Danao.Online
@@ -29,10 +30,11 @@ namespace Danao.Online
         public string phase;
         public string objective;
         public FighterSnapshot[] fighters;
+        public ObjectiveNetworkState objectiveState;
 
-        public static NetworkSnapshot Capture(int sequence, int match, string matchPhase, IReadOnlyList<FighterController> source, string objectiveText="")
+        public static NetworkSnapshot Capture(int sequence, int match, string matchPhase, IReadOnlyList<FighterController> source, string objectiveText="", ObjectiveNetworkState objectiveNetworkState=null)
         {
-            var result=new NetworkSnapshot{seq=sequence,matchId=match,phase=matchPhase,objective=objectiveText,fighters=new FighterSnapshot[source.Count]};
+            var result=new NetworkSnapshot{seq=sequence,matchId=match,phase=matchPhase,objective=objectiveText,objectiveState=objectiveNetworkState,fighters=new FighterSnapshot[source.Count]};
             for(var i=0;i<source.Count;i++)
             {
                 var fighter=source[i];var body=fighter.Body;var p=fighter.transform.position;var q=fighter.transform.rotation;
