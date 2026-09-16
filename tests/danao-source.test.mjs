@@ -43,6 +43,12 @@ test('objective cleanup explicitly targets UnityEngine.Object in Unity 6', () =>
   assert.match(objective, /UnityEngine\.Object\.Destroy\(go\)/);
 });
 
+test('arena smoke cleanup explicitly targets UnityEngine.Object in Unity 6', () => {
+  const smoke = read('unity/danao/Assets/Danao/Tests/PlayMode/ArenaSmokeTests.cs');
+  assert.match(smoke, /UnityEngine\.Object\.Destroy\(parent\)/);
+  assert.match(smoke, /UnityEngine\.Object\.Destroy\(weapon\.gameObject\)/);
+});
+
 test('health and presentation toggles are independent', () => {
   const settings = read('unity/danao/Assets/Danao/Runtime/Core/MatchSettings.cs');
   assert.match(settings, /StartingHp\s*=\s*100/);
