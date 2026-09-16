@@ -30,7 +30,7 @@ namespace Danao.Objectives
 
         public override void TickObjective(float deltaTime)
         {
-            if (Finished) return;
+            if (!SimulationAuthority || Finished) return;
             if (_carrier < 0)
             {
                 for (var i = 0; i < Fighters.Count; i++)
@@ -54,6 +54,22 @@ namespace Danao.Objectives
                     ResetLoot();
                 }
             }
+        }
+
+        public override ObjectiveNetworkState CaptureNetworkState()
+        {
+            var state = base.CaptureNetworkState();
+            state.carrier = _carrier;
+            if (_loot != null) state.SetObjectPosition(_loot.position);
+            return state;
+        }
+
+        public override void ApplyNetworkState(ObjectiveNetworkState state)
+        {
+            base.ApplyNetworkState(state);
+            if (state == null) return;
+            _carrier = state.carrier;
+            if (_loot != null) _loot.position = state.ObjectPosition;
         }
 
         private void ResetLoot()
