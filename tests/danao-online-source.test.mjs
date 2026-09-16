@@ -51,6 +51,8 @@ test('save service keeps local saves independent from cloud availability',()=>{
  assert.match(s,/\/api\/public\/session/);
  assert.match(s,/\/api\/danao\/profile/);
  assert.match(s,/409/);
+ assert.match(s,/CaptureMatch/);
+ assert.match(s,/CaptureOnlineRoom/);
 });
 
 test('game and arcade UI expose online play without replacing local couch play',()=>{
@@ -65,4 +67,6 @@ test('game and arcade UI expose online play without replacing local couch play',
  assert.match(ui,/JOIN ROOM/);
  assert.match(ui,/ROOM CODE/);
  assert.match(ui,/LOCAL PLAY/);
+ assert.match(ui,/ApplyProfile/);
+ assert.match(ui,/ProfileChanged/);
 });
