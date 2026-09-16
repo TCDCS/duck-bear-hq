@@ -45,6 +45,14 @@ test('network bridge sends bounded host snapshots and non-host input frames',()=
  assert.match(health,/ApplyNetworkState/);
 });
 
+test('non-host input traffic is rate-limited instead of sending every render frame',()=>{
+ const b=read('unity/danao/Assets/Danao/Runtime/Online/NetworkMatchBridge.cs');
+ assert.match(b,/InputRate\s*=\s*(30f|40f|45f|60f)/);
+ assert.match(b,/_nextInput/);
+ assert.match(b,/Time\.unscaledTime\s*<\s*_nextInput/);
+ assert.match(b,/_nextInput\s*=\s*Time\.unscaledTime\s*\+\s*1f\s*\/\s*InputRate/);
+});
+
 test('save service keeps local saves independent from cloud availability',()=>{
  const s=read('unity/danao/Assets/Danao/Runtime/Save/DanaoSaveService.cs');
  assert.match(s,/PlayerPrefs/);
