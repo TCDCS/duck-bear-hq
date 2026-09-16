@@ -150,17 +150,28 @@ jobs:
             download_webgl_file() {
               SOURCE_NAME="$1"
               OUTPUT_NAME="$2"
+              MIN_BYTES="$3"
               HREF="$(jq -r --arg name "$SOURCE_NAME" '[.[] | select(.name == "All Artifacts") | .files[] | select(.filename == $name) | .href][0] // empty' unity-artifacts.json)"
               test -n "$HREF" || { echo "Missing Unity WebGL artifact: $SOURCE_NAME" >&2; exit 1; }
-              curl --fail-with-body --location --silent --show-error \
+
+              SIGNED_RESPONSE="$(curl --fail-with-body --silent --show-error \
                 -H "Authorization: $UNITY_UBA_AUTH" \
-                "$HREF" -o "playable/Build/$OUTPUT_NAME"
-              test -s "playable/Build/$OUTPUT_NAME"
+                "$HREF")"
+              SIGNED_URL="$(printf '%s' "$SIGNED_RESPONSE" | jq -r 'if type == "string" then . elif .href? then .href elif .url? then .url else empty end')"
+              test -n "$SIGNED_URL" || { echo "Unity did not return a signed download URL for $SOURCE_NAME" >&2; exit 1; }
+
+              curl --fail-with-body --location --silent --show-error \
+                "$SIGNED_URL" -o "playable/Build/$OUTPUT_NAME"
+              SIZE="$(stat -c%s "playable/Build/$OUTPUT_NAME")"
+              if [ "$SIZE" -lt "$MIN_BYTES" ]; then
+                echo "Downloaded Unity artifact $OUTPUT_NAME is too small ($SIZE bytes, expected at least $MIN_BYTES)." >&2
+                exit 1
+              fi
             }
-            download_webgl_file 'Danao WebGL/Build/Danao WebGL.loader.js' 'Danao.loader.js'
-            download_webgl_file 'Danao WebGL/Build/Danao WebGL.data' 'Danao.data'
-            download_webgl_file 'Danao WebGL/Build/Danao WebGL.framework.js' 'Danao.framework.js'
-            download_webgl_file 'Danao WebGL/Build/Danao WebGL.wasm' 'Danao.wasm'
+            download_webgl_file 'Danao WebGL/Build/Danao WebGL.loader.js' 'Danao.loader.js' 10000
+            download_webgl_file 'Danao WebGL/Build/Danao WebGL.data' 'Danao.data' 1000000
+            download_webgl_file 'Danao WebGL/Build/Danao WebGL.framework.js' 'Danao.framework.js' 100000
+            download_webgl_file 'Danao WebGL/Build/Danao WebGL.wasm' 'Danao.wasm' 1000000
             ls -lh playable/Build
           fi
 
