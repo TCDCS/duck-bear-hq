@@ -158,20 +158,33 @@ namespace Danao
             _audio.Play(SfxId.Victory);
             if (_onlineMatch)
             {
-                if (_networkBridge != null && _networkBridge.IsHost) _roomClient.SendResult(new MatchResultDto { winner=FindWinningSlot(), reason=result });
+                if (_networkBridge != null && _networkBridge.IsHost)
+                    _roomClient.SendResult(new MatchResultDto { winner=_match.WinnerSlot, winnerTeam=_match.WinnerTeam, reason=result });
                 return;
             }
-            _saveService?.RecordMatch(FindWinningSlot() == 0, 0);
+            var localWon = _match.WinnerSlot == 0 || (_match.WinnerTeam >= 0 && _fighters.Count > 0 && _fighters[0].Team == _match.WinnerTeam);
+            _saveService?.RecordMatch(localWon, 0);
             _ui.ShowResult(result);
         }
-
-        private int FindWinningSlot(){var winner=-1;for(var i=0;i<_fighters.Count;i++)if(_fighters[i]!=null&&!_fighters[i].Health.IsEliminated){if(winner>=0)return -1;winner=_fighters[i].Slot;}return winner;}
 
         private void OnOnlineRoomChanged(RoomDto room)
         {
             if(room==null)return;
             if(room.phase=="fight")StartOnlineMatch(room);
             else if(_onlineMatch&&room.phase=="lobby"){DestroyRuntimeWorld();BuildMenuBackdrop();_audio.PlayTitleMusic();}
+        }
+
+        private bool DidLocalPlayerWin(MatchResultDto result)
+        {
+            if (result == null) return false;
+            if (result.winner == _roomClient.PlayerId) return true;
+            if (result.winnerTeam < 0) return false;
+            for (var i = 0; i < _fighters.Count; i++)
+            {
+                var fighter = _fighters[i];
+                if (fighter != null && fighter.Slot == _roomClient.PlayerId) return fighter.Team == result.winnerTeam;
+            }
+            return false;
         }
 
         private void OnOnlineResult(MatchResultDto result)
@@ -183,7 +196,7 @@ namespace Danao
                 foreach(var p in _roomClient.Room.players)if(p.id==result.winner){text=p.name.ToUpperInvariant()+" WINS!";break;}
             if(string.IsNullOrWhiteSpace(text))text="ROUND OVER!";
             _audio.Play(SfxId.Victory);_ui.ShowResult(text);
-            _saveService.RecordMatch(result!=null&&result.winner==_roomClient.PlayerId,0);
+            _saveService.RecordMatch(DidLocalPlayerWin(result),0);
         }
 
         public void Rematch()
