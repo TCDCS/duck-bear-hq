@@ -62,10 +62,12 @@ namespace Danao.Save
             next.settings.arenaHazards=config.Settings.ArenaHazards;
             next.preferredMode=config.Mode.ToString();
             next.preferredArena=config.Arena.ToString();
+            next.unlockedArenas=EnsureContains(next.unlockedArenas,next.preferredArena);
             if(config.Loadouts!=null&&config.Loadouts.Length>0&&config.Loadouts[0]!=null)
             {
                 next.selectedCharacter=config.Loadouts[0].Character.ToString();
                 next.selectedCostume=config.Loadouts[0].Costume.ToString();
+                next.unlockedCostumes=EnsureContains(next.unlockedCostumes,next.selectedCostume);
             }
             SetProfile(next,true);
         }
@@ -81,6 +83,7 @@ namespace Danao.Save
                 next.settings.arenaHazards=room.settings.arenaHazards;
                 next.preferredMode=MapOnlineMode(room.settings.mode);
                 next.preferredArena=room.settings.arena;
+                next.unlockedArenas=EnsureContains(next.unlockedArenas,next.preferredArena);
             }
             if(room.players!=null)
             {
@@ -89,10 +92,18 @@ namespace Danao.Save
                     if(p.id!=playerId)continue;
                     next.selectedCharacter=p.character;
                     next.selectedCostume=p.costume;
+                    next.unlockedCostumes=EnsureContains(next.unlockedCostumes,next.selectedCostume);
                     break;
                 }
             }
             SetProfile(next,true);
+        }
+
+        private static string[] EnsureContains(string[] values,string value)
+        {
+            if(string.IsNullOrWhiteSpace(value))return values??Array.Empty<string>();
+            if(values!=null)for(var i=0;i<values.Length;i++)if(values[i]==value)return values;
+            var old=values??Array.Empty<string>();var next=new string[old.Length+1];Array.Copy(old,next,old.Length);next[old.Length]=value;return next;
         }
 
         private static string MapOnlineMode(string value)
