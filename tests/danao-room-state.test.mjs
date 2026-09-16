@@ -45,8 +45,18 @@ test('input and host snapshots reject stale sequences and oversized snapshots',(
  assert.throws(()=>R.setHostState(room,0,{seq:5,pad:'x'.repeat(R.MAX_SNAPSHOT_BYTES+1)},1042),e=>e.status===413);
 });
 
-test('host disconnect transfers hosting and retained snapshot survives persistence',()=>{
+test('host disconnect transfers live fight authority without discarding the retained snapshot',()=>{
  const room=R.makeRoom('4444',player('Host'),1000);const p=R.joinRoom(room,player('Friend'),1001);R.connect(room,0,1010);R.connect(room,p.id,1011);R.setReady(room,p.id,true);R.startRoom(room,0,1020);R.setHostState(room,0,{seq:1,fighters:[{slot:0,hp:77}]},1030);
- R.disconnect(room,0,1040);assert.equal(room.hostId,p.id);
+ R.disconnect(room,0,1040);
+ assert.equal(room.hostId,p.id);
+ assert.equal(room.phase,'fight');
+ assert.equal(room.result,null);
  const restored=R.restoreRoom(R.persistRoom(room));assert.equal(restored.hostId,p.id);assert.equal(restored.latestState.fighters[0].hp,77);
+});
+
+test('a fight with no connected players leaves hosting vacant until somebody reconnects',()=>{
+ const room=R.makeRoom('4555',player('Host'),1000);const p=R.joinRoom(room,player('Friend'),1001);R.connect(room,0,1010);R.connect(room,p.id,1011);R.setReady(room,p.id,true);R.startRoom(room,0,1020);
+ R.disconnect(room,0,1030);R.disconnect(room,p.id,1031);
+ assert.equal(room.hostId,null);assert.equal(room.phase,'fight');
+ R.connect(room,p.id,1040);assert.equal(room.hostId,p.id);
 });
