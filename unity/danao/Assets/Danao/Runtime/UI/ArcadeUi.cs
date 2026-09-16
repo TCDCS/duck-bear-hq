@@ -4,6 +4,7 @@ using Danao.Arenas;
 using Danao.Core;
 using Danao.Fighters;
 using Danao.Online;
+using Danao.Save;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -53,6 +54,7 @@ namespace Danao.UI
         public void Configure(DanaoGame game)
         {
             _game=game;
+            ApplyProfile(_game.SaveService?.Profile);
             _font=Font.CreateDynamicFontFromOSFont(new[]{"Noto Sans CJK SC","Microsoft YaHei","PingFang SC","Arial Unicode MS","Arial"},48);
             if(_font==null) _font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             var canvasGo=new GameObject("ArcadeCanvas"); canvasGo.transform.SetParent(transform,false);
@@ -62,7 +64,27 @@ namespace Danao.UI
             _game.RoomClient.RoomChanged+=OnOnlineRoomChanged;
             _game.RoomClient.Error+=OnOnlineError;
             _game.RoomClient.BusyChanged+=OnOnlineBusy;
+            if(_game.SaveService!=null)_game.SaveService.ProfileChanged+=OnProfileChanged;
             ShowTitle();
+        }
+
+        private void ApplyProfile(DanaoProfile profile)
+        {
+            if(profile==null)return;
+            profile.Normalise();
+            _healthDamage=profile.settings.healthDamage;
+            _bruising=profile.settings.visibleBruising;
+            _hazards=profile.settings.arenaHazards;
+            if(Enum.TryParse(profile.preferredMode,true,out LocalMode mode))_mode=mode;
+            if(Enum.TryParse(profile.preferredArena,true,out ArenaId arena))_arena=arena;
+            if(Enum.TryParse(profile.selectedCharacter,true,out CharacterId character))_loadouts[0].Character=character;
+            if(Enum.TryParse(profile.selectedCostume,true,out CostumeId costume))_loadouts[0].Costume=costume;
+        }
+
+        private void OnProfileChanged(DanaoProfile profile)
+        {
+            if(_state==ScreenState.Fight||_state==ScreenState.Setup||_state==ScreenState.Character||_state==ScreenState.OnlineLobby)return;
+            ApplyProfile(profile);
         }
 
         private void Update()
@@ -340,6 +362,7 @@ namespace Danao.UI
         private void OnDestroy()
         {
             if(_game?.RoomClient!=null){_game.RoomClient.RoomChanged-=OnOnlineRoomChanged;_game.RoomClient.Error-=OnOnlineError;_game.RoomClient.BusyChanged-=OnOnlineBusy;}
+            if(_game?.SaveService!=null)_game.SaveService.ProfileChanged-=OnProfileChanged;
         }
     }
 }
