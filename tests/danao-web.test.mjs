@@ -24,3 +24,8 @@ test('Unity CI defines tests plus WebGL and Windows build outputs without commit
  assert.match(workflow,/WebGL/);assert.match(workflow,/StandaloneWindows64/);assert.match(workflow,/runTests|testMode/);assert.match(workflow,/upload-artifact/);
  assert.match(ignore,/unity\/danao\/Build/);assert.match(ignore,/unity\/danao\/Library/);
 });
+
+test('Cloudflare sends Danao WebGL build requests through the Worker before static assets',()=>{
+ const wrangler=JSON.parse(read('wrangler.jsonc'));
+ assert.ok(wrangler.assets.run_worker_first.includes('/game-builds/danao/web/*'));
+});
