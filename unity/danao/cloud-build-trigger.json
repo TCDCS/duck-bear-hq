@@ -1,6 +1,6 @@
 {
   "target": "windows",
-  "requestedAt": "2026-09-16T23:27:00Z",
+  "requestedAt": "2026-09-17T00:01:00Z",
   "requestedBy": "ChatGPT",
-  "reason": "verify Windows x64 with Build Automation pinned to the exact GitHub commit"
+  "reason": "verify Windows x64 after committing the boot scene and EditorBuildSettings"
 }
