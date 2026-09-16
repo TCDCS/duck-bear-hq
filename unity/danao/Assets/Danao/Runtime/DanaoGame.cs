@@ -147,9 +147,10 @@ namespace Danao
             for (var i = 0; i < playerCount; i++)
             {
                 var p = room.players[i];
+                if (p.id < 0 || p.id >= _arena.SpawnPoints.Count) continue;
                 var character = ParseCharacter(p.character);
                 var costume = ParseCostume(p.costume);
-                var fighter = FighterFactory.Create(p.id, new PlayerLoadout(character,costume), _arena.SpawnPoints[i], settings);
+                var fighter = FighterFactory.Create(p.id, new PlayerLoadout(character,costume), _arena.SpawnPoints[p.id], settings);
                 fighter.transform.SetParent(_worldRoot.transform, true);
                 _fighters.Add(fighter);
             }
