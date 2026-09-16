@@ -26,6 +26,7 @@ namespace Danao.Fighters
         public string DisplayName { get; private set; }
         public Transform HandAnchor { get; private set; }
         public Rigidbody Body => _body;
+        public FighterCombat Combat => _combat;
         public FighterHealth Health => _health;
         public MatchSettings Settings { get; private set; }
         public Vector3 Facing => _facing;
