@@ -37,10 +37,12 @@ test('room client uses dedicated Danao APIs and never puts the room pass in invi
 
 test('network bridge sends bounded host snapshots and non-host input frames',()=>{
  const b=read('unity/danao/Assets/Danao/Runtime/Online/NetworkMatchBridge.cs');
+ const health=read('unity/danao/Assets/Danao/Runtime/Combat/FighterHealth.cs');
  assert.match(b,/SendInput/);
  assert.match(b,/SendHostState/);
  assert.match(b,/SnapshotReceived/);
  assert.match(b,/15f|20f/);
+ assert.match(health,/ApplyNetworkState/);
 });
 
 test('save service keeps local saves independent from cloud availability',()=>{
