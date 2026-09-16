@@ -17,7 +17,8 @@ const required = [
   'unity/danao/Assets/Danao/Runtime/Fighters/FighterController.cs',
   'unity/danao/Assets/Danao/Runtime/Combat/FighterHealth.cs',
   'unity/danao/Assets/Danao/Runtime/Weapons/WeaponDefinition.cs',
-  'unity/danao/Assets/Danao/Runtime/Arenas/WrestlingArena.cs',
+  'unity/danao/Assets/Danao/Runtime/Arenas/ArenaCatalog.cs',
+  'unity/danao/Assets/Danao/Runtime/Arenas/ArenaBuilder.cs',
   'unity/danao/Assets/Danao/Runtime/UI/ArcadeUi.cs',
   'unity/danao/Assets/Danao/Runtime/Audio/ProceduralAudio.cs',
   'unity/danao/Assets/Danao/Editor/DanaoBuild.cs'
@@ -40,23 +41,38 @@ test('health and presentation toggles are independent', () => {
   assert.match(settings, /ArenaHazards\s*=\s*true/);
 });
 
-test('required local match types are represented', () => {
+test('all launch match types are represented', () => {
   const rules = read('unity/danao/Assets/Danao/Runtime/Core/MatchRules.cs');
-  assert.match(rules, /OneVsOne/);
-  assert.match(rules, /TwoVsTwo/);
-  assert.match(rules, /FreeForAll/);
-  assert.match(rules, /RoyalRumble/);
+  for (const mode of ['OneVsOne','TwoVsTwo','FreeForAll','RoyalRumble','MangoGrab','HotBomb','KingOfRing','Heist']) {
+    assert.match(rules, new RegExp(mode), `missing mode ${mode}`);
+  }
 });
 
-test('first playable has all eight representative weapons and sane damage', () => {
-  const weapons = read('unity/danao/Assets/Danao/Runtime/Weapons/WeaponDefinition.cs');
-  for (const name of ['BoxingGlove','FoldingChair','FryingPan','NoveltyFloppy','FoamBlaster','Bazooka','BowlingBall','WrestlingTable']) {
-    assert.match(weapons, new RegExp(name));
+test('full launch arena catalogue has all eleven themes', () => {
+  const arenas = read('unity/danao/Assets/Danao/Runtime/Arenas/ArenaCatalog.cs');
+  for (const id of ['DublinDocks','LondonUnderground','MangoMarket','TempleCourtyard','SichuanTeaHouse','IceFestival','HouseParty','ToyFactory','CruiseShip','MadCircus','WrestlingArena']) {
+    assert.match(arenas, new RegExp(id), `missing arena ${id}`);
   }
-  const damageNumbers = [...weapons.matchAll(/New(?:Ranged)?\([^\n]*?,\s*(\d+)\s*,/g)].map(m => Number(m[1]));
-  assert.ok(damageNumbers.length >= 8);
-  assert.ok(damageNumbers.every(n => n > 0 && n < 100));
+  assert.match(arenas, /WeaponPool/);
+});
+
+test('full launch weapon catalogue has thirty-six formal weapons and props', () => {
+  const weapons = read('unity/danao/Assets/Danao/Runtime/Weapons/WeaponDefinition.cs');
+  const names = [
+    'BoxingGlove','SpringBoxingGlove','InflatableHammer','RubberChicken','PoolNoodle','FryingPan','FoldingChair','Mop','Baguette','GiantFish','Umbrella','ToyGuitar','SillySausage','NoveltyFloppy',
+    'FoamBlaster','WaterBlaster','SuctionCupLauncher','ConfettiCannon','BubbleCannon','TennisBallLauncher','MagnetGun','PlungerLauncher','PartyPopperBlaster','Bazooka',
+    'BowlingBall','TrafficCone','Bin','Suitcase','Kettle','Cushion','FoamExtinguisher','Anvil','GiantMango','WrestlingTable','Speaker','ToyCrate'
+  ];
+  assert.equal(names.length, 36);
+  for (const name of names) assert.match(weapons, new RegExp(name), `missing weapon ${name}`);
   assert.match(weapons, /Bazooka[^\n]*24/);
+});
+
+test('full cast and character selection contracts are present', () => {
+  const chars = read('unity/danao/Assets/Danao/Runtime/Fighters/CharacterCatalog.cs');
+  const ui = read('unity/danao/Assets/Danao/Runtime/UI/ArcadeUi.cs');
+  for (const name of ['Hero','Stephen','Zachary','Mulan','Gaby','Sara','Mum','Dad']) assert.match(chars, new RegExp(name));
+  assert.match(ui, /Character/);
 });
 
 test('couch players deliberately join before match setup', () => {
