@@ -98,6 +98,8 @@ namespace Danao
 
         public void StartLocalMatch(LocalMatchConfig config)
         {
+            if (config == null) return;
+            _saveService?.CaptureMatch(config);
             DestroyRuntimeWorld();
             _onlineMatch = false;
             _config = config;
@@ -118,6 +120,7 @@ namespace Danao
         {
             if (room == null || room.players == null || room.players.Length < 2) return;
             if (_onlineMatch && _onlineMatchId == room.matchId) return;
+            _saveService?.CaptureOnlineRoom(room, _roomClient.PlayerId);
             DestroyRuntimeWorld();
             _onlineMatch = true;
             _onlineMatchId = room.matchId;
@@ -178,6 +181,7 @@ namespace Danao
                     _roomClient.SendResult(new MatchResultDto { winner=FindWinningSlot(), reason=result });
                 return;
             }
+            _saveService?.RecordMatch(FindWinningSlot() == 0, 0);
             _ui.ShowResult(result);
         }
 
@@ -190,7 +194,12 @@ namespace Danao
         {
             if(room==null)return;
             if(room.phase=="fight")StartOnlineMatch(room);
-            else if(_onlineMatch&&room.phase=="lobby")DestroyRuntimeWorld();
+            else if(_onlineMatch&&room.phase=="lobby")
+            {
+                DestroyRuntimeWorld();
+                BuildMenuBackdrop();
+                _audio.PlayTitleMusic();
+            }
         }
 
         private void OnOnlineResult(MatchResultDto result)
