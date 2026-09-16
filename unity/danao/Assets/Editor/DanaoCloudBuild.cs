@@ -23,7 +23,10 @@ namespace Danao.Editor
             };
 
             if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.WebGL)
-                PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+            {
+                PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
+                PlayerSettings.WebGL.decompressionFallback = false;
+            }
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
