@@ -1,5 +1,6 @@
 {
   "target": "webgl",
-  "requestedAt": "2026-09-16T22:00:00Z",
-  "requestedBy": "ChatGPT"
+  "requestedAt": "2026-09-16T22:13:30Z",
+  "requestedBy": "ChatGPT",
+  "reason": "retry after Unity compile fixes"
 }
