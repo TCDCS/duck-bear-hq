@@ -75,6 +75,27 @@ namespace Danao.Combat
             Changed?.Invoke(this);
         }
 
+        public void ApplyNetworkState(int hp, bool eliminated)
+        {
+            hp = Mathf.Clamp(hp, 0, MatchSettings.StartingHp);
+            var wasEliminated = IsEliminated;
+            CurrentHp = hp;
+            IsEliminated = eliminated;
+            _blocking = false;
+            if (eliminated && !wasEliminated)
+            {
+                _controller.Knockdown(Vector3.zero, 999f, true);
+            }
+            else if (!eliminated && wasEliminated)
+            {
+                var knockdown = _controller.GetComponent<ArcadeKnockdown>();
+                if (knockdown != null) knockdown.ResetDoll();
+                _controller.SetControlSuppressed(false);
+            }
+            UpdateBruising();
+            Changed?.Invoke(this);
+        }
+
         public void ResetHealth()
         {
             CurrentHp = MatchSettings.StartingHp;
