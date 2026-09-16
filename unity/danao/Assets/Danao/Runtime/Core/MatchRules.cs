@@ -22,6 +22,26 @@ namespace Danao.Core
             if (mode == LocalMode.TwoVsTwo) return 4;
             return requested < 2 ? 2 : requested > 4 ? 4 : requested;
         }
+
+        public static bool IsModeAllowed(LocalMode mode, int joinedPlayers)
+        {
+            if (mode == LocalMode.OneVsOne) return joinedPlayers == 2;
+            if (mode == LocalMode.TwoVsTwo) return joinedPlayers == 4;
+            return joinedPlayers >= 2 && joinedPlayers <= 4;
+        }
+
+        public static LocalMode NextAllowedMode(LocalMode current, int direction, int joinedPlayers)
+        {
+            var values = (LocalMode[])System.Enum.GetValues(typeof(LocalMode));
+            var step = direction < 0 ? -1 : 1;
+            var index = (int)current;
+            for (var i = 0; i < values.Length; i++)
+            {
+                index = (index + step + values.Length) % values.Length;
+                if (IsModeAllowed(values[index], joinedPlayers)) return values[index];
+            }
+            return current;
+        }
     }
 
     public sealed class LocalMatchConfig
