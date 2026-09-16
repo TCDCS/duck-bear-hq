@@ -113,6 +113,7 @@ namespace Danao.Online
             for(var i=0;i<_fighters.Count;i++)
             {
                 var fighter=_fighters[i];if(fighter==null)continue;
+                fighter.SetCombatAuthority(_isHost);
                 if(_isHost){fighter.Body.isKinematic=false;fighter.SetControlSuppressed(false);}
                 else if(fighter.Slot!=_localSlot){fighter.SetControlSuppressed(true);fighter.Body.isKinematic=true;}
                 else {fighter.Body.isKinematic=false;fighter.SetControlSuppressed(false);}
