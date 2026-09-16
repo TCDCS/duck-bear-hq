@@ -36,8 +36,9 @@ namespace Danao.Objectives
 
         internal void Collect(MangoObjectiveToken token, FighterController fighter)
         {
-            if (Finished || fighter == null) return;
+            if (!SimulationAuthority || Finished || fighter == null) return;
             var slot = fighter.Slot;
+            if (slot < 0 || slot >= Scores.Length) return;
             Scores[slot]++;
             if (ObjectiveRules.MangoComplete(Scores[slot]))
             {
@@ -49,8 +50,30 @@ namespace Danao.Objectives
 
         private void Reposition(MangoObjectiveToken token, int seed)
         {
+            if (_arena?.WeaponSpawns == null || _arena.WeaponSpawns.Count == 0) return;
             var p = _arena.WeaponSpawns[(seed * 5 + 3) % _arena.WeaponSpawns.Count];
             token.transform.position = p + Vector3.up * .55f;
+        }
+
+        public override ObjectiveNetworkState CaptureNetworkState()
+        {
+            var state = base.CaptureNetworkState();
+            state.points = new ObjectivePointState[_tokens.Count];
+            for (var i = 0; i < _tokens.Count; i++) state.points[i] = ObjectivePointState.From(_tokens[i].Index, _tokens[i].transform.position);
+            return state;
+        }
+
+        public override void ApplyNetworkState(ObjectiveNetworkState state)
+        {
+            base.ApplyNetworkState(state);
+            if (state?.points == null) return;
+            for (var i = 0; i < state.points.Length; i++)
+            {
+                var point = state.points[i];
+                if (point == null) continue;
+                for (var j = 0; j < _tokens.Count; j++)
+                    if (_tokens[j].Index == point.index) { _tokens[j].transform.position = point.Position; break; }
+            }
         }
 
         public override void TickObjective(float deltaTime) { }
