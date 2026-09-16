@@ -84,3 +84,23 @@ test('online objectives use stable network slots even after a player leaves and 
  assert.match(king,/Fighters\[i\]\.Slot/);
  assert.match(heist,/_carrier\s*=\s*Fighters\[i\]\.Slot/);
 });
+
+test('party objectives are host-authoritative and survive snapshots and host transfer',()=>{
+ const objective=read('unity/danao/Assets/Danao/Runtime/Objectives/ObjectiveController.cs');
+ const localMatch=read('unity/danao/Assets/Danao/Runtime/Core/LocalMatch.cs');
+ const snapshot=read('unity/danao/Assets/Danao/Runtime/Online/NetworkSnapshot.cs');
+ const bridge=read('unity/danao/Assets/Danao/Runtime/Online/NetworkMatchBridge.cs');
+ const mango=read('unity/danao/Assets/Danao/Runtime/Objectives/MangoGrabObjective.cs');
+ const bomb=read('unity/danao/Assets/Danao/Runtime/Objectives/HotBombObjective.cs');
+ const king=read('unity/danao/Assets/Danao/Runtime/Objectives/KingOfRingObjective.cs');
+ const heist=read('unity/danao/Assets/Danao/Runtime/Objectives/HeistObjective.cs');
+ assert.match(objective,/ObjectiveNetworkState/);
+ assert.match(objective,/SimulationAuthority/);
+ assert.match(localMatch,/CaptureObjectiveState/);
+ assert.match(localMatch,/ApplyObjectiveState/);
+ assert.match(localMatch,/SetSimulationAuthority/);
+ assert.match(snapshot,/objectiveState/);
+ assert.match(bridge,/CaptureObjectiveState/);
+ assert.match(bridge,/ApplyObjectiveState/);
+ for(const source of [mango,bomb,king,heist])assert.match(source,/SimulationAuthority/);
+});
