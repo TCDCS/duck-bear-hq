@@ -1,4 +1,4 @@
 {
-  "target": "windows",
-  "request": "monitor-first-windows-x64-build"
+  "target": "webgl",
+  "request": "verify-current-head-webgl-after-bootstrap-fix"
 }
