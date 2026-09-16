@@ -23,7 +23,7 @@ export async function routeDanaoMultiplayer(request,env){
  const action=path==='/api/danao/create'?'create':path==='/api/danao/join'?'join':null;
  const socket=path.match(/^\/api\/danao\/(\d{4})\/socket$/);
  if(!action&&!socket)return json({error:'Danao endpoint not found.'},404);
- if(request.headers.get('Origin')!==url.origin)return json({error:'Cross-site connection blocked.'},403);
+ const origin=request.headers.get('Origin');if(origin&&origin!==url.origin)return json({error:'Cross-site connection blocked.'},403);
  try{
   if(socket){
    if(request.method!=='GET'||request.headers.get('Upgrade')?.toLowerCase()!=='websocket')return json({error:'A WebSocket connection is required.'},426);
