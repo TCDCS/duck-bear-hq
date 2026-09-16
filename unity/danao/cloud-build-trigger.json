@@ -1,6 +1,6 @@
 {
-  "target": "webgl",
-  "requestedAt": "2026-09-16T23:14:00Z",
+  "target": "windows",
+  "requestedAt": "2026-09-16T23:15:00Z",
   "requestedBy": "ChatGPT",
-  "reason": "retry current Danao WebGL after replacing Unity cloud unsaved scene safely"
+  "reason": "retry current Danao Windows x64 after replacing Unity cloud unsaved scene safely"
 }
