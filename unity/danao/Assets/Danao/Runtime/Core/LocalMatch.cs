@@ -32,9 +32,8 @@ namespace Danao.Core
             for (var i = 0; i < fighters.Count; i++)
             {
                 var fighter = fighters[i];
-                if (fighter == null || fighter.Slot < 0 || fighter.Slot >= _spawns.Length) continue;
-                var spawnIndex = fighter.Slot < arena.SpawnPoints.Count ? fighter.Slot : i;
-                _spawns[fighter.Slot] = arena.SpawnPoints[spawnIndex];
+                if (fighter == null || fighter.Slot < 0 || fighter.Slot >= _spawns.Length || fighter.Slot >= arena.SpawnPoints.Count) continue;
+                _spawns[fighter.Slot] = arena.SpawnPoints[fighter.Slot];
             }
             CreateObjective();
         }
