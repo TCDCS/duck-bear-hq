@@ -37,6 +37,16 @@ test('Unity CI accepts either Personal license file or Pro serial and requires U
  assert.match(workflow,/UNITY_PASSWORD_VALUE/);
 });
 
+test('Danao exposes a Unity Build Automation pre-export hook that creates the boot scene',()=>{
+ const rel='unity/danao/Assets/Editor/DanaoCloudBuild.cs';
+ assert.ok(has(rel),`missing ${rel}`);
+ const cloud=read(rel);
+ assert.match(cloud,/public\s+static\s+void\s+PreExport\s*\(/);
+ assert.match(cloud,/Assets\/Danao\/Generated\/Boot\.unity/);
+ assert.match(cloud,/EditorBuildSettings\.scenes/);
+ assert.match(cloud,/DanaoProjectConfigurator\.EnsureProject/);
+});
+
 test('Cloudflare sends Danao WebGL build requests through the Worker before static assets',()=>{
  const wrangler=JSON.parse(read('wrangler.jsonc'));
  assert.ok(wrangler.assets.run_worker_first.includes('/game-builds/danao/web/*'));
