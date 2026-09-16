@@ -18,6 +18,8 @@ namespace Danao.Core
 
         public bool Finished { get; private set; }
         public string ResultText { get; private set; } = string.Empty;
+        public int WinnerSlot { get; private set; } = -1;
+        public int WinnerTeam { get; private set; } = -1;
         public string ObjectiveHudText => _objective != null ? _objective.HudText : string.Empty;
         public event Action<string> MatchFinished;
 
@@ -53,6 +55,8 @@ namespace Danao.Core
             _objective.ApplyNetworkState(state);
             Finished = state.finished;
             ResultText = state.resultText ?? string.Empty;
+            WinnerSlot = state.winnerSlot;
+            WinnerTeam = -1;
         }
 
         public void SetSimulationAuthority(bool authority) => _objective?.SetSimulationAuthority(authority);
@@ -69,11 +73,16 @@ namespace Danao.Core
                     if (fighter.Team == 0) team0 = true;
                     if (fighter.Team == 1) team1 = true;
                 }
-                if (!(team0 && team1)) End(team0 ? "TEAM 1 WINS!" : team1 ? "TEAM 2 WINS!" : "DOUBLE KNOCKOUT!");
+                if (!(team0 && team1))
+                {
+                    var winnerTeam = team0 ? 0 : team1 ? 1 : -1;
+                    End(team0 ? "TEAM 1 WINS!" : team1 ? "TEAM 2 WINS!" : "DOUBLE KNOCKOUT!", -1, winnerTeam);
+                }
             }
             else if (remaining.Count <= 1 && _fighters.Count > 1)
             {
-                End(remaining.Count == 1 ? $"{remaining[0].DisplayName.ToUpperInvariant()} WINS!" : "DOUBLE KNOCKOUT!");
+                var winnerSlot = remaining.Count == 1 ? remaining[0].Slot : -1;
+                End(remaining.Count == 1 ? $"{remaining[0].DisplayName.ToUpperInvariant()} WINS!" : "DOUBLE KNOCKOUT!", winnerSlot, -1);
             }
         }
 
@@ -82,7 +91,7 @@ namespace Danao.Core
             TickRespawns();
             if (_objective == null) return;
             _objective.TickObjective(Time.deltaTime);
-            if (_objective.Finished) End(_objective.ResultText);
+            if (_objective.Finished) End(_objective.ResultText, _objective.WinnerSlot, -1);
         }
 
         private void TickRespawns()
@@ -122,10 +131,12 @@ namespace Danao.Core
             return list;
         }
 
-        private void End(string text)
+        private void End(string text, int winnerSlot = -1, int winnerTeam = -1)
         {
             Finished = true;
             ResultText = text;
+            WinnerSlot = winnerSlot;
+            WinnerTeam = winnerTeam;
             foreach (var fighter in _fighters) fighter.SetControlSuppressed(true);
             MatchFinished?.Invoke(text);
         }
@@ -144,6 +155,8 @@ namespace Danao.Core
             else ArenaBuilder.SpawnWeapons(_arena, ArenaCatalog.For(_config.Arena));
             Finished = false;
             ResultText = string.Empty;
+            WinnerSlot = -1;
+            WinnerTeam = -1;
             CreateObjective();
         }
 
