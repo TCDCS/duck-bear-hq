@@ -61,6 +61,19 @@ test('GitHub can trigger Unity Build Automation directly without browser automat
  assert.match(workflow,/cloud-build-trigger\.json/);
 });
 
+test('GitHub can monitor the latest Unity cloud build and surface logs on failure',()=>{
+ const rel='.github/workflows/danao-uba-status.yml';
+ assert.ok(has(rel),`missing ${rel}`);
+ const workflow=read(rel);
+ assert.match(workflow,/danao-webgl/);
+ assert.match(workflow,/builds\?limit=1/);
+ assert.match(workflow,/buildStatus/);
+ assert.match(workflow,/success\|failure\|canceled\|unknown/);
+ assert.match(workflow,/\/failures/);
+ assert.match(workflow,/\/log/);
+ assert.match(workflow,/cloud-build-status-trigger\.json/);
+});
+
 test('Cloudflare sends Danao WebGL build requests through the Worker before static assets',()=>{
  const wrangler=JSON.parse(read('wrangler.jsonc'));
  assert.ok(wrangler.assets.run_worker_first.includes('/game-builds/danao/web/*'));
