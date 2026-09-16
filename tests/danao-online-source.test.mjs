@@ -88,8 +88,8 @@ test('online objectives use stable network slots even after a player leaves and 
  const heist=read('unity/danao/Assets/Danao/Runtime/Objectives/HeistObjective.cs');
  assert.match(game,/SpawnPoints\[p\.id\]/);
  assert.match(localMatch,/new Vector3\[4\]/);
- assert.match(localMatch,/spawnIndex\s*=\s*fighter\.Slot\s*<\s*arena\.SpawnPoints\.Count\s*\?\s*fighter\.Slot\s*:\s*i/);
- assert.match(localMatch,/_spawns\[fighter\.Slot\]\s*=\s*arena\.SpawnPoints\[spawnIndex\]/);
+ assert.match(localMatch,/fighter\.Slot\s*>=\s*arena\.SpawnPoints\.Count/);
+ assert.match(localMatch,/_spawns\[fighter\.Slot\]\s*=\s*arena\.SpawnPoints\[fighter\.Slot\]/);
  assert.match(localMatch,/ResetFighter\(_spawns\[_fighters\[i\]\.Slot\]\)/);
  assert.match(objective,/FighterForSlot/);
  assert.match(bomb,/Fighters\[0\]\.Slot/);
