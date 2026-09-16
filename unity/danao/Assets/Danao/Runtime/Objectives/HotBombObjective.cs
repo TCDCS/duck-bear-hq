@@ -17,7 +17,7 @@ namespace Danao.Objectives
         public void Configure(IReadOnlyList<FighterController> fighters, LocalMatchConfig config, ArenaRuntime arena)
         {
             base.Configure(fighters, config);
-            _holder = 0;
+            _holder = Fighters.Count > 0 ? Fighters[0].Slot : 0;
             var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             go.name = "HotBomb";
             go.transform.SetParent(transform, false);
@@ -33,7 +33,7 @@ namespace Danao.Objectives
         private void OnFighterHit(int attacker, int target)
         {
             if (Finished) return;
-            if (attacker == _holder && target >= 0 && target < Fighters.Count)
+            if (attacker == _holder && FighterForSlot(target) != null)
             {
                 _holder = target;
                 _timer = Mathf.Max(_timer, 2.5f);
@@ -43,12 +43,19 @@ namespace Danao.Objectives
         public override void TickObjective(float deltaTime)
         {
             if (Finished || Fighters.Count == 0) return;
-            if (_holder >= Fighters.Count || Fighters[_holder].Health.IsEliminated) _holder = NextAlive(_holder);
-            if (_bomb != null) _bomb.position = Fighters[_holder].transform.position + Vector3.up * 1.75f;
+            var holder = FighterForSlot(_holder);
+            if (holder == null || holder.Health.IsEliminated)
+            {
+                _holder = NextAlive(_holder);
+                holder = FighterForSlot(_holder);
+                if (holder == null) return;
+            }
+            if (_bomb != null) _bomb.position = holder.transform.position + Vector3.up * 1.75f;
             _timer -= deltaTime;
             if (_timer > 0f) return;
-            Fighters[_holder].Health.ApplyDamage(24, (Vector3.up + Vector3.forward * .2f) * 15f, -1);
+            holder.Health.ApplyDamage(24, (Vector3.up + Vector3.forward * .2f) * 15f, -1);
             var scorer = NextAlive(_holder);
+            if (scorer < 0) return;
             Scores[scorer] = ObjectiveRules.AddHotBombPoint(Scores[scorer]);
             if (Scores[scorer] >= ObjectiveRules.HotBombTarget)
             {
@@ -59,14 +66,15 @@ namespace Danao.Objectives
             _timer = 8f;
         }
 
-        private int NextAlive(int from)
+        private int NextAlive(int fromSlot)
         {
-            for (var i = 1; i <= Fighters.Count; i++)
+            for (var step = 1; step <= 4; step++)
             {
-                var n = (from + i) % Fighters.Count;
-                if (!Fighters[n].Health.IsEliminated) return n;
+                var slot = (fromSlot + step + 4) % 4;
+                var fighter = FighterForSlot(slot);
+                if (fighter != null && !fighter.Health.IsEliminated) return slot;
             }
-            return 0;
+            return -1;
         }
     }
 }
