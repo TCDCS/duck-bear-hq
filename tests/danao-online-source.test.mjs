@@ -108,3 +108,17 @@ test('party objectives are host-authoritative and survive snapshots and host tra
  assert.match(bridge,/ApplyObjectiveState/);
  for(const source of [mango,bomb,king,heist])assert.match(source,/SimulationAuthority/);
 });
+
+test('online results carry individual and team winners instead of guessing from survivors',()=>{
+ const objective=read('unity/danao/Assets/Danao/Runtime/Objectives/ObjectiveController.cs');
+ const localMatch=read('unity/danao/Assets/Danao/Runtime/Core/LocalMatch.cs');
+ const protocol=read('unity/danao/Assets/Danao/Runtime/Online/OnlineProtocol.cs');
+ const game=read('unity/danao/Assets/Danao/Runtime/DanaoGame.cs');
+ assert.match(objective,/WinnerSlot/);
+ assert.match(localMatch,/WinnerSlot/);
+ assert.match(localMatch,/WinnerTeam/);
+ assert.match(protocol,/winnerTeam/);
+ assert.match(game,/winner\s*=\s*_match\.WinnerSlot/);
+ assert.match(game,/winnerTeam\s*=\s*_match\.WinnerTeam/);
+ assert.match(game,/DidLocalPlayerWin/);
+});
