@@ -187,6 +187,11 @@ namespace Danao.Online
                         fighter.Body.angularVelocity=Vector3.Lerp(fighter.Body.angularVelocity,state.AngularVelocity,blend);
                     }
                     fighter.Health.ApplyNetworkState(state.hp,state.eliminated);
+                    if(!_isHost&&fighter.Slot!=_localSlot)
+                    {
+                        fighter.SetControlSuppressed(true);
+                        fighter.Body.isKinematic=true;
+                    }
                 }
             }
             _match?.ApplyObjectiveState(snapshot.objectiveState);
