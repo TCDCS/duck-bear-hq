@@ -52,3 +52,17 @@ test('save service keeps local saves independent from cloud availability',()=>{
  assert.match(s,/\/api\/danao\/profile/);
  assert.match(s,/409/);
 });
+
+test('game and arcade UI expose online play without replacing local couch play',()=>{
+ const game=read('unity/danao/Assets/Danao/Runtime/DanaoGame.cs');
+ const ui=read('unity/danao/Assets/Danao/Runtime/UI/ArcadeUi.cs');
+ assert.match(game,/DanaoRoomClient/);
+ assert.match(game,/DanaoSaveService/);
+ assert.match(game,/StartOnlineMatch/);
+ assert.match(game,/NetworkMatchBridge/);
+ assert.match(ui,/ONLINE PLAY/);
+ assert.match(ui,/CREATE ROOM/);
+ assert.match(ui,/JOIN ROOM/);
+ assert.match(ui,/ROOM CODE/);
+ assert.match(ui,/LOCAL PLAY/);
+});
