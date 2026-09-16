@@ -71,7 +71,7 @@ export function setHostState(room,id,data,now=Date.now()){
  room.latestState=structuredClone(data);room.updatedAt=now;return true;
 }
 export function finishRoom(room,id,data,now=room.updatedAt){
- ensureActive(room,now);requireHost(room,id);if(room.phase!=='fight')fail(409,'Match is not running.');if(!data||typeof data!=='object'||Array.isArray(data))fail(400,'Result is required.');if(byteLength(data)>4096)fail(413,'Result is too large.');if(data.winner!==undefined&&data.winner!==null)int(data.winner,-1,MAX_PLAYERS-1,'winner');room.result=structuredClone(data);room.phase='results';room.updatedAt=now;return room.result;
+ ensureActive(room,now);requireHost(room,id);if(room.phase!=='fight')fail(409,'Match is not running.');if(!data||typeof data!=='object'||Array.isArray(data))fail(400,'Result is required.');if(byteLength(data)>4096)fail(413,'Result is too large.');if(data.winner!==undefined&&data.winner!==null)int(data.winner,-1,MAX_PLAYERS-1,'winner');if(data.winnerTeam!==undefined&&data.winnerTeam!==null)int(data.winnerTeam,-1,1,'winner team');room.result=structuredClone(data);room.phase='results';room.updatedAt=now;return room.result;
 }
 export function rematch(room,id){requireHost(room,id);if(room.phase!=='results'&&room.phase!=='lobby')fail(409,'Rematch is not available.');room.phase='lobby';room.result=null;room.latestState=null;for(const p of room.players){p.ready=p.id===room.hostId;p.inputSeq=-1;p.lastInput=null;}return room;}
 function publicPlayer(p){return {id:p.id,name:p.name,character:p.character,costume:p.costume,ready:Boolean(p.ready),connected:Boolean(p.connected)};}
