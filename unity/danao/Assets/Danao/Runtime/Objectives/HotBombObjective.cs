@@ -32,7 +32,7 @@ namespace Danao.Objectives
         private void OnDestroy() { FighterCombat.FighterHit -= OnFighterHit; }
         private void OnFighterHit(int attacker, int target)
         {
-            if (Finished) return;
+            if (!SimulationAuthority || Finished) return;
             if (attacker == _holder && FighterForSlot(target) != null)
             {
                 _holder = target;
@@ -42,7 +42,7 @@ namespace Danao.Objectives
 
         public override void TickObjective(float deltaTime)
         {
-            if (Finished || Fighters.Count == 0) return;
+            if (!SimulationAuthority || Finished || Fighters.Count == 0) return;
             var holder = FighterForSlot(_holder);
             if (holder == null || holder.Health.IsEliminated)
             {
@@ -50,7 +50,7 @@ namespace Danao.Objectives
                 holder = FighterForSlot(_holder);
                 if (holder == null) return;
             }
-            if (_bomb != null) _bomb.position = holder.transform.position + Vector3.up * 1.75f;
+            UpdateBombVisual(holder);
             _timer -= deltaTime;
             if (_timer > 0f) return;
             holder.Health.ApplyDamage(24, (Vector3.up + Vector3.forward * .2f) * 15f, -1);
@@ -64,6 +64,31 @@ namespace Danao.Objectives
             }
             _holder = scorer;
             _timer = 8f;
+        }
+
+        public override ObjectiveNetworkState CaptureNetworkState()
+        {
+            var state = base.CaptureNetworkState();
+            state.holder = _holder;
+            state.timer = _timer;
+            if (_bomb != null) state.SetObjectPosition(_bomb.position);
+            return state;
+        }
+
+        public override void ApplyNetworkState(ObjectiveNetworkState state)
+        {
+            base.ApplyNetworkState(state);
+            if (state == null) return;
+            _holder = state.holder;
+            _timer = Mathf.Max(0f, state.timer);
+            var holder = FighterForSlot(_holder);
+            if (holder != null) UpdateBombVisual(holder);
+            else if (_bomb != null) _bomb.position = state.ObjectPosition;
+        }
+
+        private void UpdateBombVisual(FighterController holder)
+        {
+            if (_bomb != null && holder != null) _bomb.position = holder.transform.position + Vector3.up * 1.75f;
         }
 
         private int NextAlive(int fromSlot)
