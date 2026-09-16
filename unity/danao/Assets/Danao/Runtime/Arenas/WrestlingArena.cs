@@ -146,6 +146,7 @@ namespace Danao.Arenas
         private Vector3 _inward;
         private MatchSettings _settings;
         private float _next;
+        public bool SimulationAuthority { get; private set; } = true;
 
         public void Configure(Vector3 inward, MatchSettings settings)
         {
@@ -153,9 +154,11 @@ namespace Danao.Arenas
             _settings = settings;
         }
 
+        public void SetSimulationAuthority(bool authority) => SimulationAuthority = authority;
+
         private void OnTriggerEnter(Collider other)
         {
-            if (_settings == null || !_settings.ArenaHazards || Time.time < _next) return;
+            if (!SimulationAuthority || _settings == null || !_settings.ArenaHazards || Time.time < _next) return;
             var fighter = other.GetComponentInParent<FighterController>();
             if (fighter == null || fighter.Health.IsEliminated) return;
             _next = Time.time + .16f;
