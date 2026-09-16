@@ -59,6 +59,15 @@ test('first playable has all eight representative weapons and sane damage', () =
   assert.match(weapons, /Bazooka[^\n]*24/);
 });
 
+test('couch players deliberately join before match setup', () => {
+  const ui = read('unity/danao/Assets/Danao/Runtime/UI/ArcadeUi.cs');
+  const input = read('unity/danao/Assets/Danao/Runtime/Input/LocalInputHub.cs');
+  assert.match(ui, /ScreenState\s*\{[^}]*Join/s);
+  assert.match(ui, /PRESS START/i);
+  assert.match(input, /startButton\.wasPressedThisFrame/);
+  assert.match(input, /JoinedCount/);
+});
+
 test('title, controller input, Web and Windows build targets are present', () => {
   const ui = read('unity/danao/Assets/Danao/Runtime/UI/ArcadeUi.cs');
   const input = read('unity/danao/Assets/Danao/Runtime/Input/LocalInputHub.cs');
