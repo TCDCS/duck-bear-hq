@@ -1,7 +1,7 @@
 const CHARACTERS=new Set(['Hero','Stephen','Zachary','Mulan','Gaby','Sara','Mum','Dad']);
 const COSTUMES=new Set(['Arcade','KungFu','Wrestler','Pyjamas','RubberDuck','Panda','Space','MangoHero']);
 const ARENAS=new Set(['WrestlingArena','DublinDocks','LondonUnderground','MangoMarket','TempleCourtyard','SichuanTeaHouse','IceFestival','HouseParty','ToyFactory','CruiseShip','MadCircus']);
-const MODES=new Set(['OneVsOne','TwoVsTwo','FreeForAll','TeamKnockout','RoyalRumble','MangoGrab','HotBomb','KingOfTheRing','Heist']);
+const MODES=new Set(['OneVsOne','TwoVsTwo','FreeForAll','TeamKnockout','RoyalRumble','MangoGrab','HotBomb','KingOfTheRing','KingOfRing','Heist']);
 const MAX_COUNTER=1_000_000_000;
 export class ProfileError extends Error{constructor(status,message,current=null,retryAfter=0){super(message);this.name='ProfileError';this.status=status;this.current=current;this.retryAfter=retryAfter;}}
 const fail=(message,status=400)=>{throw new ProfileError(status,message)};
