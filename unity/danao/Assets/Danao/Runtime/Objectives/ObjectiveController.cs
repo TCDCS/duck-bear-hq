@@ -25,6 +25,7 @@ namespace Danao.Objectives
         public int[] scores = new int[4];
         public bool finished;
         public string resultText;
+        public int winnerSlot = -1;
         public int holder = -1;
         public float timer;
         public int carrier = -1;
@@ -56,6 +57,7 @@ namespace Danao.Objectives
         protected LocalMatchConfig Config;
         public bool Finished { get; protected set; }
         public string ResultText { get; protected set; } = string.Empty;
+        public int WinnerSlot { get; protected set; } = -1;
         public bool SimulationAuthority { get; private set; } = true;
         public virtual string HudText => string.Empty;
 
@@ -82,7 +84,8 @@ namespace Danao.Objectives
                 mode = Config != null ? Config.Mode.ToString() : string.Empty,
                 scores = (int[])Scores.Clone(),
                 finished = Finished,
-                resultText = ResultText
+                resultText = ResultText,
+                winnerSlot = WinnerSlot
             };
         }
 
@@ -93,6 +96,7 @@ namespace Danao.Objectives
                 for (var i = 0; i < Scores.Length; i++) Scores[i] = i < state.scores.Length ? Mathf.Max(0, state.scores[i]) : 0;
             Finished = state.finished;
             ResultText = state.resultText ?? string.Empty;
+            WinnerSlot = state.winnerSlot;
         }
 
         protected FighterController FighterForSlot(int slot)
@@ -109,6 +113,7 @@ namespace Danao.Objectives
         protected void FinishSlot(int slot, string verb)
         {
             Finished = true;
+            WinnerSlot = slot;
             var fighter = FighterForSlot(slot);
             var name = fighter != null ? fighter.DisplayName.ToUpperInvariant() : "SOMEONE";
             ResultText = $"{name} {verb}";
