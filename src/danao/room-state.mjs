@@ -23,14 +23,15 @@ function getPlayer(room,id){const p=room.players.find(x=>x.id===id);if(!p)fail(4
 function requireHost(room,id){if(room.hostId!==id)fail(403,'Only the host can do that.');return getPlayer(room,id);}
 function ensureActive(room,now=Date.now()){if(!room||typeof room!=='object')fail(404,'Room not found.');if(now>room.expiresAt)fail(410,'Room expired.');}
 function chooseHost(room){const next=room.players.filter(p=>p.connected).sort((a,b)=>a.id-b.id)[0]||room.players.sort((a,b)=>a.id-b.id)[0]||null;room.hostId=next?.id??null;if(next)next.ready=true;return next;}
+function nextFreeSlot(room){const used=new Set(room.players.map(p=>p.id));for(let id=0;id<MAX_PLAYERS;id++)if(!used.has(id))return id;return -1;}
 export function makeRoom(code,data,now=Date.now()){
  if(!/^\d{4}$/.test(String(code)))fail(400,'Room code must be four digits.');
  const host=playerData(data,0,now,true);
- return {version:1,code:String(code),createdAt:now,updatedAt:now,expiresAt:now+ROOM_TTL_MS,phase:'lobby',locked:false,hostId:0,nextPlayerId:1,matchId:0,settings:{mode:'FreeForAll',arena:'WrestlingArena',healthDamage:true,visibleBruising:true,arenaHazards:true,friendlyFire:false},players:[host],latestState:null,result:null};
+ return {version:1,code:String(code),createdAt:now,updatedAt:now,expiresAt:now+ROOM_TTL_MS,phase:'lobby',locked:false,hostId:0,matchId:0,settings:{mode:'FreeForAll',arena:'WrestlingArena',healthDamage:true,visibleBruising:true,arenaHazards:true,friendlyFire:false},players:[host],latestState:null,result:null};
 }
 export function joinRoom(room,data,now=Date.now()){
  ensureActive(room,now);if(room.locked)fail(409,'Room is locked.');if(room.phase==='fight')fail(409,'Match already started.');if(room.players.length>=MAX_PLAYERS)fail(409,'Room is full.');
- const p=playerData(data,room.nextPlayerId++,now,false);room.players.push(p);room.updatedAt=now;return p;
+ const id=nextFreeSlot(room);if(id<0)fail(409,'Room is full.');const p=playerData(data,id,now,false);room.players.push(p);room.players.sort((a,b)=>a.id-b.id);room.updatedAt=now;return p;
 }
 export function authenticate(room,token,now=Date.now()){
  ensureActive(room,now);if(typeof token!=='string'||token.length<16||token.length>128)fail(401,'Invalid room pass.');const p=room.players.find(x=>x.token===token);if(!p)fail(401,'Invalid room pass.');p.lastSeen=now;return p;
@@ -70,7 +71,7 @@ export function setHostState(room,id,data,now=Date.now()){
  room.latestState=structuredClone(data);room.updatedAt=now;return true;
 }
 export function finishRoom(room,id,data,now=room.updatedAt){
- ensureActive(room,now);requireHost(room,id);if(room.phase!=='fight')fail(409,'Match is not running.');if(!data||typeof data!=='object'||Array.isArray(data))fail(400,'Result is required.');if(byteLength(data)>4096)fail(413,'Result is too large.');if(data.winner!==undefined&&data.winner!==null)int(data.winner,0,MAX_PLAYERS-1,'winner');room.result=structuredClone(data);room.phase='results';room.updatedAt=now;return room.result;
+ ensureActive(room,now);requireHost(room,id);if(room.phase!=='fight')fail(409,'Match is not running.');if(!data||typeof data!=='object'||Array.isArray(data))fail(400,'Result is required.');if(byteLength(data)>4096)fail(413,'Result is too large.');if(data.winner!==undefined&&data.winner!==null)int(data.winner,-1,MAX_PLAYERS-1,'winner');room.result=structuredClone(data);room.phase='results';room.updatedAt=now;return room.result;
 }
 export function rematch(room,id){requireHost(room,id);if(room.phase!=='results'&&room.phase!=='lobby')fail(409,'Rematch is not available.');room.phase='lobby';room.result=null;room.latestState=null;for(const p of room.players){p.ready=p.id===room.hostId;p.inputSeq=-1;p.lastInput=null;}return room;}
 function publicPlayer(p){return {id:p.id,name:p.name,character:p.character,costume:p.costume,ready:Boolean(p.ready),connected:Boolean(p.connected)};}
