@@ -38,7 +38,7 @@ namespace Danao.Online
             for(var i=0;i<source.Count;i++)
             {
                 var fighter=source[i];var body=fighter.Body;var p=fighter.transform.position;var q=fighter.transform.rotation;
-                result.fighters[i]=new FighterSnapshot{slot=fighter.Slot,x=p.x,y=p.y,z=p.z,qx=q.x,qy=q.y,qz=q.z,qw=q.w,vx=body.linearVelocity.x,vy=body.linearVelocity.y,vz=body.linearVelocity.z,avx=body.angularVelocity.x,avy=body.angularVelocity.y,avz=body.angularVelocity.z,hp=fighter.Health.CurrentHp,eliminated=fighter.Health.IsEliminated,weaponId=string.Empty};
+                result.fighters[i]=new FighterSnapshot{slot=fighter.Slot,x=p.x,y=p.y,z=p.z,qx=q.x,qy=q.y,qz=q.z,qw=q.w,vx=body.linearVelocity.x,vy=body.linearVelocity.y,vz=body.linearVelocity.z,avx=body.angularVelocity.x,avy=body.angularVelocity.y,avz=body.angularVelocity.z,hp=fighter.Health.CurrentHp,eliminated=fighter.Health.IsEliminated,weaponId=fighter.Combat?.Held?.Definition!=null?fighter.Combat.Held.Definition.Kind.ToString():string.Empty};
             }
             return result;
         }
