@@ -17,6 +17,7 @@ on:
       - 'wrangler.jsonc'
       - '.github/workflows/danao-unity.yml'
       - '.github/workflows/danao-uba-trigger.yml'
+      - '.github/workflows/danao-uba-status.yml'
 
 permissions:
   contents: read
