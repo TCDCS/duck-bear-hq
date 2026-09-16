@@ -9,6 +9,16 @@ function headers(url,type='text/plain; charset=utf-8') {
     'Content-Security-Policy':`default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob: https://incompetech.com https://www.incompetech.com; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' ${socket}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'`,
     'Permissions-Policy':'accelerometer=(self), gyroscope=(self), magnetometer=(), camera=(), microphone=(), geolocation=(), payment=(), usb=()'};
 }
+function buildType(path){const p=path.replace(/\.(br|gz)$/,'');if(p.endsWith('.wasm'))return'application/wasm';if(p.endsWith('.js'))return'application/javascript; charset=utf-8';if(p.endsWith('.json'))return'application/json; charset=utf-8';if(p.endsWith('.data'))return'application/octet-stream';return'application/octet-stream';}
+async function serveDanaoBuild(request,env,path){
+ if(!['GET','HEAD'].includes(request.method))return new Response(null,{status:405,headers:{Allow:'GET, HEAD'}});
+ const prefix='/game-builds/danao/web/';const suffix=path.slice(prefix.length);if(!suffix||suffix.includes('..')||!/^[-A-Za-z0-9_./]+$/.test(suffix))return new Response('Build file not found.',{status:404});
+ if(!env.MEDIA?.get)return new Response('Danao Web build storage is unavailable.',{status:503});
+ const object=await env.MEDIA.get('danao/web/'+suffix);if(!object)return new Response('Build file not found.',{status:404,headers:{'Cache-Control':'no-store'}});
+ const h=new Headers({'Content-Type':buildType(suffix),'Cache-Control':suffix.startsWith('current/')?'public, max-age=300':'public, max-age=31536000, immutable','X-Content-Type-Options':'nosniff','Cross-Origin-Resource-Policy':'same-origin'});
+ if(suffix.endsWith('.br'))h.set('Content-Encoding','br');else if(suffix.endsWith('.gz'))h.set('Content-Encoding','gzip');if(object.httpEtag)h.set('ETag',object.httpEtag);
+ return new Response(request.method==='HEAD'?null:object.body,{status:200,headers:h});
+}
 async function currentUser(request,env) {
   const cookie=(request.headers.get('Cookie')||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('db_session=')),token=cookie?.slice(11);
   if(!token||token.length>256)return null;
@@ -21,6 +31,7 @@ export function createGameHandler({assets,fallback}) {
   if(!(assets instanceof Map)||typeof fallback?.fetch!=='function')throw new TypeError('Game assets and an existing Worker are required.');
   return {async fetch(request,env,ctx){
     const url=new URL(request.url);let path;try{path=decodeURIComponent(url.pathname);}catch{path=url.pathname;}
+    if(path.startsWith('/game-builds/danao/web/'))return serveDanaoBuild(request,env,path);
     if(path.startsWith('/api/races/'))return routeMultiplayer(request,env);
     if(path==='/api/danao/profile'){
       let user=null;try{user=await currentUser(request,env);}catch{/* API returns signed-out semantics when session lookup is unavailable. */}
