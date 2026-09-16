@@ -1,0 +1,184 @@
+name: Danao Unity Build Status
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Build target to monitor
+        required: true
+        type: choice
+        options:
+          - webgl
+          - windows
+  push:
+    branches: [feature/danao-unity]
+    paths:
+      - 'unity/danao/cloud-build-status-trigger.json'
+
+permissions:
+  contents: read
+
+env:
+  UNITY_UBA_API: https://build-automation.services.api.unity.com/v2
+  UNITY_UBA_AUTH: ${{ secrets.UNITY_UBA_AUTH }}
+  UNITY_UBA_ORG_ID: ${{ secrets.UNITY_UBA_ORG_ID }}
+  UNITY_UBA_PROJECT_ID: ${{ secrets.UNITY_UBA_PROJECT_ID }}
+
+jobs:
+  monitor-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve target
+        id: target
+        shell: bash
+        env:
+          DISPATCH_TARGET: ${{ inputs.target }}
+        run: |
+          set -euo pipefail
+          TARGET="${DISPATCH_TARGET:-}"
+          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+            TARGET="$(jq -r '.target // empty' unity/danao/cloud-build-status-trigger.json)"
+          fi
+          case "$TARGET" in
+            webgl)
+              TARGET_ID="danao-webgl"
+              TARGET_NAME="Danao WebGL"
+              ;;
+            windows)
+              TARGET_ID="danao-windows-x64"
+              TARGET_NAME="Danao Windows x64"
+              ;;
+            *)
+              echo "Unsupported target: $TARGET" >&2
+              exit 2
+              ;;
+          esac
+          echo "id=$TARGET_ID" >> "$GITHUB_OUTPUT"
+          echo "name=$TARGET_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Check Unity API credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$UNITY_UBA_AUTH" || { echo 'Missing UNITY_UBA_AUTH'; exit 1; }
+          test -n "$UNITY_UBA_ORG_ID" || { echo 'Missing UNITY_UBA_ORG_ID'; exit 1; }
+          test -n "$UNITY_UBA_PROJECT_ID" || { echo 'Missing UNITY_UBA_PROJECT_ID'; exit 1; }
+
+      - name: Find latest Unity build
+        id: latest
+        shell: bash
+        env:
+          TARGET_ID: ${{ steps.target.outputs.id }}
+        run: |
+          set -euo pipefail
+          URL="$UNITY_UBA_API/orgs/$UNITY_UBA_ORG_ID/projects/$UNITY_UBA_PROJECT_ID/buildtargets/$TARGET_ID/builds?limit=1"
+          curl --fail-with-body --silent --show-error \
+            -H "Authorization: $UNITY_UBA_AUTH" \
+            "$URL" > builds.json
+          BUILD="$(jq -c '
+            if type == "array" then .[0]
+            elif (.builds? | type) == "array" then .builds[0]
+            else . end
+          ' builds.json)"
+          NUMBER="$(printf '%s' "$BUILD" | jq -r '.buildNumber // .build // .number // empty')"
+          STATUS="$(printf '%s' "$BUILD" | jq -r '.buildStatus // .status // empty')"
+          if [ -z "$NUMBER" ]; then
+            echo 'Unity returned no build number.' >&2
+            cat builds.json >&2
+            exit 1
+          fi
+          echo "number=$NUMBER" >> "$GITHUB_OUTPUT"
+          echo "initial_status=$STATUS" >> "$GITHUB_OUTPUT"
+          echo "Latest build: #$NUMBER status=${STATUS:-unknown}"
+
+      - name: Wait for terminal build status
+        id: wait
+        shell: bash
+        env:
+          TARGET_ID: ${{ steps.target.outputs.id }}
+          BUILD_NUMBER: ${{ steps.latest.outputs.number }}
+        run: |
+          set -euo pipefail
+          URL="$UNITY_UBA_API/orgs/$UNITY_UBA_ORG_ID/projects/$UNITY_UBA_PROJECT_ID/buildtargets/$TARGET_ID/builds/$BUILD_NUMBER"
+          STATUS=""
+          for attempt in $(seq 1 90); do
+            curl --fail-with-body --silent --show-error \
+              -H "Authorization: $UNITY_UBA_AUTH" \
+              "$URL" > build.json
+            STATUS="$(jq -r '.buildStatus // .status // "unknown"' build.json | tr '[:upper:]' '[:lower:]')"
+            echo "Unity build #$BUILD_NUMBER: $STATUS (poll $attempt/90)"
+            case "$STATUS" in
+              success|failure|canceled|unknown)
+                break
+                ;;
+            esac
+            sleep 20
+          done
+          case "$STATUS" in
+            success|failure|canceled|unknown) ;;
+            *)
+              echo "Timed out waiting for Unity build #$BUILD_NUMBER (last status: $STATUS)" >&2
+              exit 1
+              ;;
+          esac
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Unity Build Automation"
+            echo "Target: **${{ steps.target.outputs.name }}**"
+            echo "Build: **#$BUILD_NUMBER**"
+            echo "Status: **$STATUS**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Capture artifacts on success
+        if: ${{ steps.wait.outputs.status == 'success' }}
+        shell: bash
+        env:
+          TARGET_ID: ${{ steps.target.outputs.id }}
+          BUILD_NUMBER: ${{ steps.latest.outputs.number }}
+        run: |
+          set -euo pipefail
+          URL="$UNITY_UBA_API/orgs/$UNITY_UBA_ORG_ID/projects/$UNITY_UBA_PROJECT_ID/buildtargets/$TARGET_ID/builds/$BUILD_NUMBER/artifacts"
+          curl --fail-with-body --silent --show-error \
+            -H "Authorization: $UNITY_UBA_AUTH" \
+            "$URL" > unity-artifacts.json
+          cat unity-artifacts.json
+
+      - name: Capture diagnostics on failure
+        if: ${{ steps.wait.outputs.status != 'success' }}
+        shell: bash
+        env:
+          TARGET_ID: ${{ steps.target.outputs.id }}
+          BUILD_NUMBER: ${{ steps.latest.outputs.number }}
+        run: |
+          set +e
+          BASE="$UNITY_UBA_API/orgs/$UNITY_UBA_ORG_ID/projects/$UNITY_UBA_PROJECT_ID/buildtargets/$TARGET_ID/builds/$BUILD_NUMBER"
+          curl --silent --show-error -H "Authorization: $UNITY_UBA_AUTH" "$BASE/failures" > unity-failures.json
+          curl --location --silent --show-error -H "Authorization: $UNITY_UBA_AUTH" "$BASE/log" > unity-build.log
+          echo '--- failure indicators ---'
+          cat unity-failures.json
+          echo '--- tail of Unity build log ---'
+          tail -n 250 unity-build.log
+          exit 0
+
+      - name: Upload Unity diagnostics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: danao-unity-cloud-build-${{ steps.target.outputs.id }}-${{ steps.latest.outputs.number }}
+          path: |
+            build.json
+            builds.json
+            unity-artifacts.json
+            unity-failures.json
+            unity-build.log
+          if-no-files-found: ignore
+
+      - name: Fail when Unity build did not succeed
+        if: ${{ steps.wait.outputs.status != 'success' }}
+        shell: bash
+        run: |
+          echo "Unity cloud build ended with status '${{ steps.wait.outputs.status }}'." >&2
+          exit 1
