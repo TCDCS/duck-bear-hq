@@ -16,6 +16,7 @@ namespace Danao.Fighters
         private float _dodgeCooldown;
         private Vector3 _facing = Vector3.forward;
         private bool _controlSuppressed;
+        private bool _combatAuthority = true;
         private Rigidbody _body;
         private FighterCombat _combat;
         private FighterHealth _health;
@@ -31,6 +32,7 @@ namespace Danao.Fighters
         public MatchSettings Settings { get; private set; }
         public Vector3 Facing => _facing;
         public bool ControlSuppressed => _controlSuppressed;
+        public bool CombatAuthority => _combatAuthority;
 
         public void Configure(int slot, int team, string displayName, MatchSettings settings, Transform handAnchor)
         {
@@ -58,10 +60,13 @@ namespace Danao.Fighters
         {
             _pendingInput = input;
             if (_controlSuppressed || _health.IsEliminated) return;
-            _health.SetBlocking(input.Block);
-            if (input.Punch) _combat.UseMelee();
-            if (input.Grab) _combat.TryGrabOrThrow();
-            if (input.Fire) _combat.FireHeldWeapon();
+            if (_combatAuthority)
+            {
+                _health.SetBlocking(input.Block);
+                if (input.Punch) _combat.UseMelee();
+                if (input.Grab) _combat.TryGrabOrThrow();
+                if (input.Fire) _combat.FireHeldWeapon();
+            }
         }
 
         private void FixedUpdate()
@@ -110,6 +115,12 @@ namespace Danao.Fighters
         {
             _controlSuppressed = value;
             if (value && _health != null) _health.SetBlocking(false);
+        }
+
+        public void SetCombatAuthority(bool value)
+        {
+            _combatAuthority = value;
+            if (!value && _health != null) _health.SetBlocking(false);
         }
 
         public void ResetFighter(Vector3 position)
