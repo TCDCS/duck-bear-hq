@@ -144,6 +144,19 @@ namespace Danao.Online
             if(room==null)return;
             var shouldHost=room.hostId==_client.PlayerId;
             if(shouldHost!=_isHost){_isHost=shouldHost;ClearQueuedButtons();ApplyRole();}
+            NeutraliseDisconnectedPlayers(room);
+        }
+
+        private void NeutraliseDisconnectedPlayers(RoomDto room)
+        {
+            if(!_isHost||room?.players==null)return;
+            foreach(var player in room.players)
+            {
+                if(player==null||player.connected)continue;
+                var fighter=FindFighter(player.id);
+                if(fighter==null)continue;
+                fighter.TickInput(new FighterInput(Vector2.zero,false,false,false,false,false,false,false));
+            }
         }
 
         private void ApplyRole()
