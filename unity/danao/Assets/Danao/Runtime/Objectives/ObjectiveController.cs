@@ -36,10 +36,22 @@ namespace Danao.Objectives
         public abstract void TickObjective(float deltaTime);
         public int ScoreForSlot(int slot) => slot >= 0 && slot < Scores.Length ? Scores[slot] : 0;
 
+        protected FighterController FighterForSlot(int slot)
+        {
+            if (Fighters == null) return null;
+            for (var i = 0; i < Fighters.Count; i++)
+            {
+                var fighter = Fighters[i];
+                if (fighter != null && fighter.Slot == slot) return fighter;
+            }
+            return null;
+        }
+
         protected void FinishSlot(int slot, string verb)
         {
             Finished = true;
-            var name = slot >= 0 && slot < Fighters.Count ? Fighters[slot].DisplayName.ToUpperInvariant() : "SOMEONE";
+            var fighter = FighterForSlot(slot);
+            var name = fighter != null ? fighter.DisplayName.ToUpperInvariant() : "SOMEONE";
             ResultText = $"{name} {verb}";
         }
     }
