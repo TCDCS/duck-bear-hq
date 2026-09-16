@@ -47,6 +47,20 @@ test('Danao exposes a Unity Build Automation pre-export hook that creates the bo
  assert.match(cloud,/DanaoProjectConfigurator\.EnsureProject/);
 });
 
+test('GitHub can trigger Unity Build Automation directly without browser automation',()=>{
+ const rel='.github/workflows/danao-uba-trigger.yml';
+ assert.ok(has(rel),`missing ${rel}`);
+ const workflow=read(rel);
+ assert.match(workflow,/build-automation\.services\.api\.unity\.com\/v2/);
+ assert.match(workflow,/UNITY_UBA_AUTH/);
+ assert.match(workflow,/UNITY_UBA_ORG_ID/);
+ assert.match(workflow,/UNITY_UBA_PROJECT_ID/);
+ assert.match(workflow,/buildtargets/);
+ assert.match(workflow,/Danao WebGL/);
+ assert.match(workflow,/Danao Windows x64/);
+ assert.match(workflow,/cloud-build-trigger\.json/);
+});
+
 test('Cloudflare sends Danao WebGL build requests through the Worker before static assets',()=>{
  const wrangler=JSON.parse(read('wrangler.jsonc'));
  assert.ok(wrangler.assets.run_worker_first.includes('/game-builds/danao/web/*'));
