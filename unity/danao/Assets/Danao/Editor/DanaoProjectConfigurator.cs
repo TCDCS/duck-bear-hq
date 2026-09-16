@@ -57,9 +57,10 @@ namespace Danao.Editor
         {
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>(BootScenePath) == null)
             {
-                var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+                // Unity Build Automation opens the project with an unsaved untitled
+                // scene. Replacing it is safe; opening another scene additively is not.
+                var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
                 EditorSceneManager.SaveScene(scene, BootScenePath);
-                EditorSceneManager.CloseScene(scene, true);
                 AssetDatabase.Refresh();
             }
 
