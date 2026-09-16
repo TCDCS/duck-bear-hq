@@ -70,3 +70,17 @@ test('game and arcade UI expose online play without replacing local couch play',
  assert.match(ui,/ApplyProfile/);
  assert.match(ui,/ProfileChanged/);
 });
+
+test('online objectives use stable network slots even after a player leaves and slots are sparse',()=>{
+ const game=read('unity/danao/Assets/Danao/Runtime/DanaoGame.cs');
+ const objective=read('unity/danao/Assets/Danao/Runtime/Objectives/ObjectiveController.cs');
+ const bomb=read('unity/danao/Assets/Danao/Runtime/Objectives/HotBombObjective.cs');
+ const king=read('unity/danao/Assets/Danao/Runtime/Objectives/KingOfRingObjective.cs');
+ const heist=read('unity/danao/Assets/Danao/Runtime/Objectives/HeistObjective.cs');
+ assert.match(game,/SpawnPoints\[p\.id\]/);
+ assert.match(objective,/FighterForSlot/);
+ assert.match(bomb,/Fighters\[0\]\.Slot/);
+ assert.match(bomb,/FighterForSlot\(_holder\)/);
+ assert.match(king,/Fighters\[i\]\.Slot/);
+ assert.match(heist,/_carrier\s*=\s*Fighters\[i\]\.Slot/);
+});
