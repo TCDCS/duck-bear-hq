@@ -144,7 +144,34 @@ jobs:
           curl --fail-with-body --silent --show-error \
             -H "Authorization: $UNITY_UBA_AUTH" \
             "$URL" > unity-artifacts.json
-          cat unity-artifacts.json
+
+          if [ "$TARGET_ID" = "danao-webgl" ]; then
+            mkdir -p playable/Build
+            download_webgl_file() {
+              SOURCE_NAME="$1"
+              OUTPUT_NAME="$2"
+              HREF="$(jq -r --arg name "$SOURCE_NAME" '[.[] | select(.name == "All Artifacts") | .files[] | select(.filename == $name) | .href][0] // empty' unity-artifacts.json)"
+              test -n "$HREF" || { echo "Missing Unity WebGL artifact: $SOURCE_NAME" >&2; exit 1; }
+              curl --fail-with-body --location --silent --show-error \
+                -H "Authorization: $UNITY_UBA_AUTH" \
+                "$HREF" -o "playable/Build/$OUTPUT_NAME"
+              test -s "playable/Build/$OUTPUT_NAME"
+            }
+            download_webgl_file 'Danao WebGL/Build/Danao WebGL.loader.js' 'Danao.loader.js'
+            download_webgl_file 'Danao WebGL/Build/Danao WebGL.data' 'Danao.data'
+            download_webgl_file 'Danao WebGL/Build/Danao WebGL.framework.js' 'Danao.framework.js'
+            download_webgl_file 'Danao WebGL/Build/Danao WebGL.wasm' 'Danao.wasm'
+            ls -lh playable/Build
+          fi
+
+      - name: Upload playable WebGL build
+        if: ${{ steps.wait.outputs.status == 'success' && steps.target.outputs.id == 'danao-webgl' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: danao-webgl-playable-${{ steps.latest.outputs.number }}
+          path: playable/Build
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Capture diagnostics on failure
         if: ${{ steps.wait.outputs.status != 'success' }}
