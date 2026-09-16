@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Danao.Arenas;
 using Danao.Core;
@@ -6,6 +7,36 @@ using UnityEngine;
 
 namespace Danao.Objectives
 {
+    [Serializable]
+    public sealed class ObjectivePointState
+    {
+        public int index;
+        public float x;
+        public float y;
+        public float z;
+        public Vector3 Position => new Vector3(x, y, z);
+        public static ObjectivePointState From(int index, Vector3 position) => new ObjectivePointState { index=index, x=position.x, y=position.y, z=position.z };
+    }
+
+    [Serializable]
+    public sealed class ObjectiveNetworkState
+    {
+        public string mode;
+        public int[] scores = new int[4];
+        public bool finished;
+        public string resultText;
+        public int holder = -1;
+        public float timer;
+        public int carrier = -1;
+        public float[] seconds = new float[4];
+        public ObjectivePointState[] points;
+        public float objectX;
+        public float objectY;
+        public float objectZ;
+        public Vector3 ObjectPosition => new Vector3(objectX, objectY, objectZ);
+        public void SetObjectPosition(Vector3 position) { objectX=position.x; objectY=position.y; objectZ=position.z; }
+    }
+
     public static class ObjectiveRules
     {
         public const int MangoTarget = 10;
@@ -25,6 +56,7 @@ namespace Danao.Objectives
         protected LocalMatchConfig Config;
         public bool Finished { get; protected set; }
         public string ResultText { get; protected set; } = string.Empty;
+        public bool SimulationAuthority { get; private set; } = true;
         public virtual string HudText => string.Empty;
 
         public virtual void Configure(IReadOnlyList<FighterController> fighters, LocalMatchConfig config)
@@ -33,8 +65,35 @@ namespace Danao.Objectives
             Config = config;
         }
 
+        public void SetSimulationAuthority(bool authority)
+        {
+            SimulationAuthority = authority;
+            OnSimulationAuthorityChanged(authority);
+        }
+
+        protected virtual void OnSimulationAuthorityChanged(bool authority) { }
         public abstract void TickObjective(float deltaTime);
         public int ScoreForSlot(int slot) => slot >= 0 && slot < Scores.Length ? Scores[slot] : 0;
+
+        public virtual ObjectiveNetworkState CaptureNetworkState()
+        {
+            return new ObjectiveNetworkState
+            {
+                mode = Config != null ? Config.Mode.ToString() : string.Empty,
+                scores = (int[])Scores.Clone(),
+                finished = Finished,
+                resultText = ResultText
+            };
+        }
+
+        public virtual void ApplyNetworkState(ObjectiveNetworkState state)
+        {
+            if (state == null) return;
+            if (state.scores != null)
+                for (var i = 0; i < Scores.Length; i++) Scores[i] = i < state.scores.Length ? Mathf.Max(0, state.scores[i]) : 0;
+            Finished = state.finished;
+            ResultText = state.resultText ?? string.Empty;
+        }
 
         protected FighterController FighterForSlot(int slot)
         {
