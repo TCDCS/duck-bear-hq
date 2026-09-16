@@ -39,6 +39,18 @@ namespace Danao.Core
             else TickObjective();
         }
 
+        public ObjectiveNetworkState CaptureObjectiveState() => _objective != null ? _objective.CaptureNetworkState() : null;
+
+        public void ApplyObjectiveState(ObjectiveNetworkState state)
+        {
+            if (_objective == null || state == null) return;
+            _objective.ApplyNetworkState(state);
+            Finished = state.finished;
+            ResultText = state.resultText ?? string.Empty;
+        }
+
+        public void SetSimulationAuthority(bool authority) => _objective?.SetSimulationAuthority(authority);
+
         private void TickElimination()
         {
             var remaining = AliveFighters();
