@@ -58,3 +58,11 @@ Open `/games/` or `/games/mango-mayhem/`. Six single-player platform levels, six
 Profiles save locally. Existing signed-in accounts can link up to six cloud profiles, with owner-scoped revision checks, conflict merging and an offline retry queue. Game saves never change private orders, media, points or racing. Migration `0003_mango_profiles.sql` is additive and runs before production deployment. `/api/mango/health` exposes only game version and cloud-schema readiness. Reference photos are not published.
 
 Run `node --test tests/mango-*.test.mjs` and `python tests/mango-browser.py` against a running Worker. The browser suite exercises all six levels through real event handlers, not state setters or an auto-win API. Physical controller models, native share sheets and every handset are not certified by emulation. See `docs/mango-mayhem-release.md`.
+
+## 打闹 Dǎnào
+
+Dǎnào is the Unity 6 arcade physics brawler being built for Duck & Bear. The Unity source lives under `unity/danao/` and uses the same gameplay code for Web and Windows builds.
+
+The first playable is the Wrestling Arena with deliberate couch-player joining, 1v1, 2v2, free-for-all and Royal Rumble rules, 100 HP, independent health/bruising/hazard toggles, physics knockdowns, eight representative weapons, controller-first arcade UI and original procedural audio. The main title is `打闹`.
+
+Run `node --test tests/danao-source.test.mjs` for repository-level source checks. Unity EditMode and PlayMode tests are under `unity/danao/Assets/Danao/Tests/`. See `docs/danao-first-playable.md` and `docs/superpowers/specs/2026-09-16-danao-unity-design.md`.
