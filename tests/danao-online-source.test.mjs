@@ -131,3 +131,12 @@ test('host snapshots include the weapon currently carried by each fighter',()=>{
  assert.match(snapshot,/Held/);
  assert.match(snapshot,/Definition\.Kind/);
 });
+
+test('non-host clients predict movement but do not author combat damage or projectiles',()=>{
+ const fighter=read('unity/danao/Assets/Danao/Runtime/Fighters/FighterController.cs');
+ const bridge=read('unity/danao/Assets/Danao/Runtime/Online/NetworkMatchBridge.cs');
+ assert.match(fighter,/CombatAuthority/);
+ assert.match(fighter,/SetCombatAuthority/);
+ assert.match(fighter,/if\s*\(_combatAuthority\)/);
+ assert.match(bridge,/SetCombatAuthority\(_isHost\)/);
+});
