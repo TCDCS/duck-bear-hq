@@ -136,10 +136,9 @@ namespace Danao.Core
             _objective = null;
             for (var i = 0; i < _fighters.Count; i++)
             {
-                var fighter = _fighters[i];
-                if (fighter == null || fighter.Slot < 0 || fighter.Slot >= _spawns.Length) continue;
-                fighter.ResetFighter(_spawns[fighter.Slot]);
-                _respawnTimers[fighter.Slot] = 0f;
+                if (_fighters[i] == null || _fighters[i].Slot < 0 || _fighters[i].Slot >= _spawns.Length) continue;
+                _fighters[i].ResetFighter(_spawns[_fighters[i].Slot]);
+                _respawnTimers[_fighters[i].Slot] = 0f;
             }
             if (_config.Arena == ArenaId.WrestlingArena) WrestlingArena.SpawnWeapons(_arena);
             else ArenaBuilder.SpawnWeapons(_arena, ArenaCatalog.For(_config.Arena));
