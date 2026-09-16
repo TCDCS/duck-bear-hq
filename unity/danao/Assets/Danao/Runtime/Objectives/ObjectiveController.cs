@@ -138,7 +138,7 @@ namespace Danao.Objectives
                 case LocalMode.Heist:
                     var heist = go.AddComponent<HeistObjective>(); heist.Configure(fighters, config, arena); objective = heist; break;
                 default:
-                    Object.Destroy(go); return null;
+                    UnityEngine.Object.Destroy(go); return null;
             }
             return objective;
         }
