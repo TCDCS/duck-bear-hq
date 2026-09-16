@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Danao.Arenas;
 using Danao.Fighters;
+using Danao.Objectives;
 using UnityEngine;
 
 namespace Danao.Core
@@ -12,9 +13,12 @@ namespace Danao.Core
         private readonly ArenaRuntime _arena;
         private readonly LocalMatchConfig _config;
         private readonly Vector3[] _spawns;
+        private readonly float[] _respawnTimers = new float[4];
+        private ObjectiveController _objective;
 
         public bool Finished { get; private set; }
         public string ResultText { get; private set; } = string.Empty;
+        public string ObjectiveHudText => _objective != null ? _objective.HudText : string.Empty;
         public event Action<string> MatchFinished;
 
         public LocalMatch(List<FighterController> fighters, ArenaRuntime arena, LocalMatchConfig config)
@@ -24,12 +28,19 @@ namespace Danao.Core
             _config = config;
             _spawns = new Vector3[fighters.Count];
             for (var i = 0; i < fighters.Count; i++) _spawns[i] = arena.SpawnPoints[i];
+            CreateObjective();
         }
 
         public void Tick()
         {
             if (Finished) return;
             CheckRingOuts();
+            if (_config.UsesElimination) TickElimination();
+            else TickObjective();
+        }
+
+        private void TickElimination()
+        {
             var remaining = AliveFighters();
             if (_config.UsesTeams)
             {
@@ -40,11 +51,31 @@ namespace Danao.Core
                     if (fighter.Team == 0) team0 = true;
                     if (fighter.Team == 1) team1 = true;
                 }
-                if (!(team0 && team1)) End(team0 ? "TEAM 1 WINS!" : "TEAM 2 WINS!");
+                if (!(team0 && team1)) End(team0 ? "TEAM 1 WINS!" : team1 ? "TEAM 2 WINS!" : "DOUBLE KNOCKOUT!");
             }
             else if (remaining.Count <= 1 && _fighters.Count > 1)
             {
                 End(remaining.Count == 1 ? $"{remaining[0].DisplayName.ToUpperInvariant()} WINS!" : "DOUBLE KNOCKOUT!");
+            }
+        }
+
+        private void TickObjective()
+        {
+            TickRespawns();
+            if (_objective == null) return;
+            _objective.TickObjective(Time.deltaTime);
+            if (_objective.Finished) End(_objective.ResultText);
+        }
+
+        private void TickRespawns()
+        {
+            for (var i = 0; i < _fighters.Count; i++)
+            {
+                if (!_fighters[i].Health.IsEliminated) { _respawnTimers[i] = 0f; continue; }
+                _respawnTimers[i] += Time.deltaTime;
+                if (_respawnTimers[i] < 2.2f) continue;
+                _fighters[i].ResetFighter(_spawns[i]);
+                _respawnTimers[i] = 0f;
             }
         }
 
@@ -54,10 +85,10 @@ namespace Danao.Core
             {
                 if (fighter == null || fighter.Health.IsEliminated) continue;
                 var p = fighter.transform.position;
-                var outsideRing = Mathf.Abs(p.x) > _arena.RingBounds.extents.x + .4f || Mathf.Abs(p.z) > _arena.RingBounds.extents.z + .4f;
-                var fellOffRing = outsideRing && p.y < _arena.RingFloorY + .15f;
+                var outside = Mathf.Abs(p.x - _arena.RingBounds.center.x) > _arena.RingBounds.extents.x + .4f || Mathf.Abs(p.z - _arena.RingBounds.center.z) > _arena.RingBounds.extents.z + .4f;
+                var belowFloor = p.y < _arena.RingFloorY + .15f;
                 var fellWorld = p.y < -2.5f;
-                if ((_config.UsesRingOut && fellOffRing) || fellWorld)
+                if ((_config.UsesRingOut && outside && belowFloor) || fellWorld)
                     fighter.Health.EliminateByRingOut();
             }
         }
@@ -80,10 +111,24 @@ namespace Danao.Core
 
         public void ResetRound()
         {
-            for (var i = 0; i < _fighters.Count; i++) _fighters[i].ResetFighter(_spawns[i]);
-            WrestlingArena.SpawnWeapons(_arena);
+            if (_objective != null) UnityEngine.Object.Destroy(_objective.gameObject);
+            _objective = null;
+            for (var i = 0; i < _fighters.Count; i++)
+            {
+                _fighters[i].ResetFighter(_spawns[i]);
+                _respawnTimers[i] = 0f;
+            }
+            if (_config.Arena == ArenaId.WrestlingArena) WrestlingArena.SpawnWeapons(_arena);
+            else ArenaBuilder.SpawnWeapons(_arena, ArenaCatalog.For(_config.Arena));
             Finished = false;
             ResultText = string.Empty;
+            CreateObjective();
+        }
+
+        private void CreateObjective()
+        {
+            if (_config.UsesElimination) return;
+            _objective = ObjectiveFactory.Create(_arena.Root, _fighters, _config, _arena);
         }
     }
 }

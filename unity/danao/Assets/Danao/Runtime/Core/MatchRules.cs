@@ -1,3 +1,6 @@
+using Danao.Arenas;
+using Danao.Fighters;
+
 namespace Danao.Core
 {
     public enum LocalMode
@@ -5,7 +8,11 @@ namespace Danao.Core
         OneVsOne,
         TwoVsTwo,
         FreeForAll,
-        RoyalRumble
+        RoyalRumble,
+        MangoGrab,
+        HotBomb,
+        KingOfRing,
+        Heist
     }
 
     public static class MatchRules
@@ -42,15 +49,29 @@ namespace Danao.Core
             }
             return current;
         }
+
+        public static bool UsesElimination(LocalMode mode)
+        {
+            return mode == LocalMode.OneVsOne || mode == LocalMode.TwoVsTwo || mode == LocalMode.FreeForAll || mode == LocalMode.RoyalRumble;
+        }
     }
 
     public sealed class LocalMatchConfig
     {
         public LocalMode Mode = LocalMode.OneVsOne;
+        public ArenaId Arena = ArenaId.WrestlingArena;
         public MatchSettings Settings = new MatchSettings();
+        public PlayerLoadout[] Loadouts =
+        {
+            new PlayerLoadout(CharacterId.Hero, CostumeId.Arcade),
+            new PlayerLoadout(CharacterId.Stephen, CostumeId.Arcade),
+            new PlayerLoadout(CharacterId.Zachary, CostumeId.Arcade),
+            new PlayerLoadout(CharacterId.Mulan, CostumeId.Arcade)
+        };
 
         public int PlayerCount => MatchRules.NormalisePlayerCount(Mode, Settings.ActivePlayers);
         public bool UsesTeams => Mode == LocalMode.TwoVsTwo;
         public bool UsesRingOut => Mode == LocalMode.RoyalRumble || Settings.RingOut || !Settings.HealthDamage;
+        public bool UsesElimination => MatchRules.UsesElimination(Mode);
     }
 }

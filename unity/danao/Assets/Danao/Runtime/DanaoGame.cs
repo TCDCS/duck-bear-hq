@@ -21,17 +21,23 @@ namespace Danao
         private LocalMatch _match;
         private ArenaRuntime _arena;
         private LocalMatchConfig _config;
+        private SharedArenaCamera _arenaCamera;
 
         public static DanaoGame Instance { get; private set; }
         public LocalInputHub InputHub => _input;
 
         private void Awake()
         {
-            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
             Instance = this;
             DontDestroyOnLoad(gameObject);
             Application.targetFrameRate = 60;
             Time.fixedDeltaTime = 1f / 60f;
+
             _input = gameObject.AddComponent<LocalInputHub>();
             _audio = gameObject.AddComponent<ProceduralAudio>();
             _ui = gameObject.AddComponent<ArcadeUi>();
@@ -55,7 +61,7 @@ namespace Danao
                 _fighters[i].TickInput(input);
             }
             _match.Tick();
-            _ui.RefreshHud(_config.Settings);
+            _ui.RefreshHud(_config.Settings, _match.ObjectiveHudText);
         }
 
         public void StartLocalMatch(LocalMatchConfig config)
@@ -63,18 +69,21 @@ namespace Danao
             DestroyRuntimeWorld();
             _config = config;
             _worldRoot = new GameObject("DanaoLocalMatch");
-            _arena = WrestlingArena.Build(_worldRoot.transform, config.Settings);
+            _arena = ArenaBuilder.Build(config.Arena, _worldRoot.transform, config.Settings);
             _fighters.Clear();
-            var names = FighterFactory.Roster;
             for (var i = 0; i < config.PlayerCount; i++)
             {
-                var fighter = FighterFactory.Create(i, names[i % names.Length], _arena.SpawnPoints[i], config.Settings);
+                var loadout = config.Loadouts != null && i < config.Loadouts.Length ? config.Loadouts[i] : new PlayerLoadout((CharacterId)(i % CharacterCatalog.All.Count), CostumeId.Arcade);
+                var fighter = FighterFactory.Create(i, loadout, _arena.SpawnPoints[i], config.Settings);
                 fighter.transform.SetParent(_worldRoot.transform, true);
                 _fighters.Add(fighter);
             }
+
             var cameraGo = new GameObject("SharedArenaCamera");
             cameraGo.transform.SetParent(_worldRoot.transform, false);
-            cameraGo.AddComponent<SharedArenaCamera>().Configure(_fighters);
+            _arenaCamera = cameraGo.AddComponent<SharedArenaCamera>();
+            _arenaCamera.Configure(_fighters);
+
             _match = new LocalMatch(_fighters, _arena, config);
             _match.MatchFinished += OnMatchFinished;
             _ui.ShowFight(_fighters, config.Settings);
@@ -128,12 +137,14 @@ namespace Danao
             floor.transform.localScale = new Vector3(28f,.5f,22f);
             var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
             floor.GetComponent<Renderer>().material = new Material(shader) { color = new Color(.055f,.04f,.09f) };
+
             var light = new GameObject("BackdropLight").AddComponent<Light>();
             light.transform.SetParent(_menuBackdrop.transform, false);
             light.type = LightType.Directional;
             light.transform.rotation = Quaternion.Euler(48f,-32f,0f);
             light.intensity = 1.35f;
             light.color = new Color(1f,.75f,.52f);
+
             var cameraGo = new GameObject("MenuCamera");
             cameraGo.transform.SetParent(_menuBackdrop.transform, false);
             cameraGo.transform.position = new Vector3(0f,7f,-16f);

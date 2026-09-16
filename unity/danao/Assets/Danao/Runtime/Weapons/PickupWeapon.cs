@@ -27,7 +27,7 @@ namespace Danao.Weapons
             _ammo = definition.Ammo;
             _body = GetComponent<Rigidbody>();
             _collider = GetComponent<Collider>();
-            _body.mass = definition.Kind == WeaponKind.WrestlingTable ? 14f : definition.Kind == WeaponKind.BowlingBall ? 8f : 3.2f;
+            _body.mass = definition.Kind == WeaponKind.Anvil ? 15f : definition.Heavy ? 9f : definition.Kind == WeaponKind.BowlingBall ? 8f : 3.2f;
             _body.interpolation = RigidbodyInterpolation.Interpolate;
             _body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         }
@@ -66,6 +66,7 @@ namespace Danao.Weapons
                 var target = health.GetComponent<FighterController>();
                 if (target != null && !owner.Settings.FriendlyFire && target.Team == owner.Team) continue;
                 health.ApplyDamage(Definition.Damage, (owner.Facing + Vector3.up * .18f) * Definition.Knockback, owner.Slot);
+                if (target != null) FighterCombat.NotifyHit(owner.Slot, target.Slot);
                 ProceduralAudio.Active?.Play(Definition.Kind == WeaponKind.NoveltyFloppy ? SfxId.Squeak : SfxId.WeaponHit);
                 if (Definition.Kind == WeaponKind.WrestlingTable) BreakTable();
                 return;
@@ -111,8 +112,10 @@ namespace Danao.Weapons
             if (health == null) return;
             var target = health.GetComponent<FighterController>();
             if (target != null && !_lastFriendlyFire && target.Team == _lastOwnerTeam) return;
+            var attacker = _lastOwnerSlot;
             var damage = Mathf.Clamp(Mathf.RoundToInt(Definition.Damage * Mathf.InverseLerp(5f, 14f, _body.linearVelocity.magnitude)), 4, Definition.Damage);
-            health.ApplyDamage(damage, _body.linearVelocity.normalized * Definition.Knockback, _lastOwnerSlot);
+            health.ApplyDamage(damage, _body.linearVelocity.normalized * Definition.Knockback, attacker);
+            if (target != null && attacker >= 0) FighterCombat.NotifyHit(attacker, target.Slot);
             _nextImpactDamage = Time.time + .45f;
             ProceduralAudio.Active?.Play(Definition.Kind == WeaponKind.NoveltyFloppy ? SfxId.Squeak : SfxId.WeaponHit);
             if (Definition.Kind == WeaponKind.WrestlingTable && _body.linearVelocity.magnitude > 8f) BreakTable();

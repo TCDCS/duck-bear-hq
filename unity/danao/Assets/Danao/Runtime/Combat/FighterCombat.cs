@@ -1,3 +1,4 @@
+using System;
 using Danao.Audio;
 using Danao.Core;
 using Danao.Fighters;
@@ -8,12 +9,15 @@ namespace Danao.Combat
 {
     public sealed class FighterCombat : MonoBehaviour
     {
+        public static event Action<int,int> FighterHit;
+        public static void NotifyHit(int attackerSlot, int targetSlot) => FighterHit?.Invoke(attackerSlot, targetSlot);
         private FighterController _owner;
         private MatchSettings _settings;
         private PickupWeapon _held;
         private float _nextPunch;
 
         public PickupWeapon Held => _held;
+        public float MovementMultiplier => _held == null ? 1f : _held.Definition.CarrySpeedMultiplier;
 
         public void Configure(FighterController owner, MatchSettings settings)
         {
@@ -38,8 +42,11 @@ namespace Danao.Combat
             {
                 var health = hit.GetComponentInParent<FighterHealth>();
                 if (health == null || health == _owner.Health) continue;
-                if (!_settings.FriendlyFire && health.GetComponent<FighterController>().Team == _owner.Team) continue;
+                var target = health.GetComponent<FighterController>();
+                if (target == null) continue;
+                if (!_settings.FriendlyFire && target.Team == _owner.Team) continue;
                 health.ApplyDamage(8, (_owner.Facing + Vector3.up * .14f) * 6.8f, _owner.Slot);
+                NotifyHit(_owner.Slot, target.Slot);
                 ProceduralAudio.Active?.Play(SfxId.Punch);
                 break;
             }

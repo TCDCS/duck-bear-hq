@@ -1,4 +1,5 @@
 using Danao.Audio;
+using System.Collections.Generic;
 using Danao.Combat;
 using UnityEngine;
 
@@ -6,6 +7,10 @@ namespace Danao.Weapons
 {
     public sealed class Projectile : MonoBehaviour
     {
+        public static bool TryRegisterExplosionTarget(HashSet<FighterHealth> seen, FighterHealth health)
+        {
+            return health != null && seen != null && seen.Add(health);
+        }
         private WeaponDefinition _definition;
         private int _ownerSlot;
         private Rigidbody _body;
@@ -47,7 +52,10 @@ namespace Danao.Weapons
                 var health = collision.collider.GetComponentInParent<FighterHealth>();
                 var fighter = health != null ? health.GetComponent<Danao.Fighters.FighterController>() : null;
                 if (health != null && fighter != null && fighter.Slot != _ownerSlot && (_friendlyFire || fighter.Team != _ownerTeam))
+                {
                     health.ApplyDamage(_definition.Damage, _body.linearVelocity.normalized * _definition.Knockback, _ownerSlot);
+                    FighterCombat.NotifyHit(_ownerSlot, fighter.Slot);
+                }
                 Destroy(gameObject);
             }
         }
@@ -56,10 +64,11 @@ namespace Danao.Weapons
         {
             var centre = transform.position;
             var radius = Mathf.Max(1f, _definition.ExplosionRadius);
+            var seen = new HashSet<FighterHealth>();
             foreach (var hit in Physics.OverlapSphere(centre, radius, ~0, QueryTriggerInteraction.Ignore))
             {
                 var health = hit.GetComponentInParent<FighterHealth>();
-                if (health == null) continue;
+                if (!TryRegisterExplosionTarget(seen, health)) continue;
                 var fighter = health.GetComponent<Danao.Fighters.FighterController>();
                 if (fighter == null) continue;
                 if (!_friendlyFire && fighter.Team == _ownerTeam && fighter.Slot != _ownerSlot) continue;
@@ -69,6 +78,7 @@ namespace Danao.Weapons
                 if (damage <= 0) continue;
                 var direction = (fighter.transform.position - centre).normalized;
                 health.ApplyDamage(damage, (direction + Vector3.up * .28f).normalized * (_definition.Knockback * falloff), _ownerSlot);
+                FighterCombat.NotifyHit(_ownerSlot, fighter.Slot);
             }
             ProceduralAudio.Active?.Play(SfxId.RocketBoom);
             Destroy(gameObject);

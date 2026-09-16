@@ -72,7 +72,7 @@ namespace Danao.Fighters
             var move = new Vector3(_pendingInput.Move.x, 0f, _pendingInput.Move.y);
             if (move.sqrMagnitude > .04f) _facing = move.normalized;
             var velocity = _body.linearVelocity;
-            var desired = move * MoveSpeed;
+            var desired = move * MoveSpeed * (_combat == null ? 1f : _combat.MovementMultiplier);
             var currentPlanar = new Vector3(velocity.x, 0f, velocity.z);
             var change = Vector3.ClampMagnitude(desired - currentPlanar, Acceleration * Time.fixedDeltaTime);
             _body.AddForce(change * _body.mass / Time.fixedDeltaTime, ForceMode.Force);
