@@ -60,3 +60,9 @@ test('a fight with no connected players leaves hosting vacant until somebody rec
  assert.equal(room.hostId,null);assert.equal(room.phase,'fight');
  R.connect(room,p.id,1040);assert.equal(room.hostId,p.id);
 });
+
+test('team results accept team zero or one and reject impossible team ids',()=>{
+ const makeFight=()=>{const room=R.makeRoom('4666',player('Host'),1000);const p=R.joinRoom(room,player('Friend'),1001);R.connect(room,0,1010);R.connect(room,p.id,1011);R.setReady(room,p.id,true);R.startRoom(room,0,1020);return room;};
+ const room=makeFight();R.finishRoom(room,0,{winner:-1,winnerTeam:1});assert.equal(room.result.winnerTeam,1);
+ const bad=makeFight();assert.throws(()=>R.finishRoom(bad,0,{winner:-1,winnerTeam:2}),e=>e.status===400);
+});
