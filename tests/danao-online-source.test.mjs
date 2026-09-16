@@ -53,6 +53,20 @@ test('non-host input traffic is rate-limited instead of sending every render fra
  assert.match(b,/_nextInput\s*=\s*Time\.unscaledTime\s*\+\s*1f\s*\/\s*InputRate/);
 });
 
+test('short online button taps are latched until the next bounded input send',()=>{
+ const b=read('unity/danao/Assets/Danao/Runtime/Online/NetworkMatchBridge.cs');
+ for(const name of ['Jump','Punch','Grab','Dodge','Fire']){
+   assert.match(b,new RegExp(`_queued${name}`));
+   assert.match(b,new RegExp(`_queued${name}\\s*\\|=`));
+ }
+ assert.match(b,/jump\s*=\s*_queuedJump/);
+ assert.match(b,/punch\s*=\s*_queuedPunch/);
+ assert.match(b,/grab\s*=\s*_queuedGrab/);
+ assert.match(b,/dodge\s*=\s*_queuedDodge/);
+ assert.match(b,/fire\s*=\s*_queuedFire/);
+ assert.match(b,/ClearQueuedButtons/);
+});
+
 test('save service keeps local saves independent from cloud availability',()=>{
  const s=read('unity/danao/Assets/Danao/Runtime/Save/DanaoSaveService.cs');
  assert.match(s,/PlayerPrefs/);
