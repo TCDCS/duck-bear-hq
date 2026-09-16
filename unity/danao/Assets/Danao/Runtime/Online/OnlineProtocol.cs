@@ -5,7 +5,7 @@ namespace Danao.Online
 {
     [Serializable] public sealed class RoomPlayerDto { public int id; public string name; public string character; public string costume; public bool ready; public bool connected; }
     [Serializable] public sealed class RoomSettingsDto { public string mode; public string arena; public bool healthDamage = true; public bool visibleBruising = true; public bool arenaHazards = true; public bool friendlyFire; }
-    [Serializable] public sealed class MatchResultDto { public int winner = -1; public bool interrupted; public string reason; }
+    [Serializable] public sealed class MatchResultDto { public int winner = -1; public int winnerTeam = -1; public bool interrupted; public string reason; }
     [Serializable] public sealed class RoomDto
     {
         public int version;
