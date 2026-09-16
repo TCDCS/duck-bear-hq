@@ -1,4 +1,4 @@
 {
-  "target": "webgl",
-  "request": "publish-verified-build-3-to-r2-preview"
+  "target": "windows",
+  "request": "monitor-first-windows-x64-build"
 }
