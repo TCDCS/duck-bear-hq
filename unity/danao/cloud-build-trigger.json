@@ -1,6 +1,6 @@
 {
-  "target": "webgl",
-  "requestedAt": "2026-09-16T23:08:00Z",
+  "target": "windows",
+  "requestedAt": "2026-09-16T23:06:00Z",
   "requestedBy": "ChatGPT",
-  "reason": "verify current Danao source after boot scene, URP, networking and WebGL output fixes"
+  "reason": "verify current Danao source after boot scene, URP and networking fixes"
 }
