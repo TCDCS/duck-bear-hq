@@ -10,6 +10,7 @@ namespace Danao.Online
     public sealed class NetworkMatchBridge : MonoBehaviour
     {
         private const float SnapshotRate = 15f;
+        private const float InputRate = 30f;
         private const int ClientSnapshotBudget = 22000;
         private DanaoRoomClient _client;
         private IReadOnlyList<FighterController> _fighters;
@@ -18,6 +19,7 @@ namespace Danao.Online
         private bool _isHost;
         private int _inputSequence;
         private int _snapshotSequence;
+        private float _nextInput;
         private float _nextSnapshot;
         private NetworkSnapshot _targetSnapshot;
         private string _phase = "fight";
@@ -34,6 +36,7 @@ namespace Danao.Online
             _localSlot=localSlot;
             _match=match;
             _isHost=client!=null&&client.IsHost;
+            _nextInput=0f;
             if(_client!=null)
             {
                 _client.InputReceived+=OnInputReceived;
@@ -56,6 +59,8 @@ namespace Danao.Online
             var fighter=FindFighter(_localSlot);if(fighter==null)return;
             fighter.TickInput(input);
             if(_isHost)return;
+            if(Time.unscaledTime<_nextInput)return;
+            _nextInput=Time.unscaledTime+1f/InputRate;
             _client.SendInput(new InputFrameDto{seq=++_inputSequence,moveX=input.Move.x,moveY=input.Move.y,jump=input.Jump,punch=input.Punch,grab=input.Grab,dodge=input.Dodge,fire=input.Fire,block=input.Block});
         }
 
