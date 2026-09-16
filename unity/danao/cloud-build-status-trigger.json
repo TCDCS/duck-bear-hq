@@ -1,4 +1,4 @@
 {
-  "target": "windows",
-  "request": "verify-current-head-windows-after-bootstrap-fix"
+  "target": "webgl",
+  "request": "retry-webgl-after-single-scene-fix"
 }
