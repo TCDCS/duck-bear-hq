@@ -120,7 +120,7 @@ namespace Danao.Online
             for(var i=0;i<snapshot.fighters.Length;i++)
             {
                 var state=snapshot.fighters[i];if(state==null)continue;var fighter=FindFighter(state.slot);if(fighter==null)continue;
-                var isLocal=!_isHost&&fighter.Slot==_localSlot;var blend=exact?1f:(isLocal?.22f:.48f);
+                var isLocal=!_isHost&&fighter.Slot==_localSlot;var blend=exact?1f:(isLocal ? .22f : .48f);
                 fighter.transform.position=Vector3.Lerp(fighter.transform.position,state.Position,blend);
                 fighter.transform.rotation=Quaternion.Slerp(fighter.transform.rotation,state.Rotation,blend);
                 if(!fighter.Body.isKinematic)
