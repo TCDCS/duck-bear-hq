@@ -22,7 +22,7 @@ function playerData(data,id,now,host=false){
 function getPlayer(room,id){const p=room.players.find(x=>x.id===id);if(!p)fail(404,'Player not found.');return p;}
 function requireHost(room,id){if(room.hostId!==id)fail(403,'Only the host can do that.');return getPlayer(room,id);}
 function ensureActive(room,now=Date.now()){if(!room||typeof room!=='object')fail(404,'Room not found.');if(now>room.expiresAt)fail(410,'Room expired.');}
-function chooseHost(room){const next=room.players.filter(p=>p.connected).sort((a,b)=>a.id-b.id)[0]||room.players.sort((a,b)=>a.id-b.id)[0]||null;room.hostId=next?.id??null;if(next)next.ready=true;return next;}
+function chooseHost(room){const next=room.players.filter(p=>p.connected).sort((a,b)=>a.id-b.id)[0]||null;room.hostId=next?.id??null;if(next)next.ready=true;return next;}
 function nextFreeSlot(room){const used=new Set(room.players.map(p=>p.id));for(let id=0;id<MAX_PLAYERS;id++)if(!used.has(id))return id;return -1;}
 export function makeRoom(code,data,now=Date.now()){
  if(!/^\d{4}$/.test(String(code)))fail(400,'Room code must be four digits.');
@@ -39,7 +39,7 @@ export function authenticate(room,token,now=Date.now()){
 export function connect(room,id,now=Date.now()){ensureActive(room,now);const p=getPlayer(room,id);p.connected=true;p.disconnectedAt=null;p.lastSeen=now;if(room.hostId==null)chooseHost(room);room.updatedAt=now;return p;}
 export function disconnect(room,id,now=Date.now()){
  ensureActive(room,now);const p=getPlayer(room,id);p.connected=false;p.ready=false;p.disconnectedAt=now;p.lastSeen=now;
- if(room.hostId===id){chooseHost(room);if(room.phase==='fight'){room.phase='lobby';room.result={interrupted:true,reason:'host-disconnected'};for(const q of room.players)q.ready=q.id===room.hostId;}}
+ if(room.hostId===id)chooseHost(room);
  room.updatedAt=now;return p;
 }
 export function leaveRoom(room,id,now=Date.now()){
