@@ -152,10 +152,13 @@ namespace Danao.Online
             if(!_isHost||room?.players==null)return;
             foreach(var player in room.players)
             {
-                if(player==null||player.connected)continue;
-                var fighter=FindFighter(player.id);
-                if(fighter==null)continue;
-                fighter.TickInput(new FighterInput(Vector2.zero,false,false,false,false,false,false,false));
+                if(player==null)continue;
+                if(!player.connected)
+                {
+                    var fighter=FindFighter(player.id);
+                    if(fighter==null)continue;
+                    fighter.TickInput(new FighterInput(Vector2.zero,false,false,false,false,false,false,false));
+                }
             }
         }
 
