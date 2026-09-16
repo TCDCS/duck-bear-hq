@@ -25,6 +25,18 @@ test('Unity CI defines tests plus WebGL and Windows build outputs without commit
  assert.match(ignore,/unity\/danao\/Build/);assert.match(ignore,/unity\/danao\/Library/);
 });
 
+test('Unity CI accepts either Personal license file or Pro serial and requires Unity credentials',()=>{
+ const workflow=read('.github/workflows/danao-unity.yml');
+ assert.match(workflow,/secrets\.UNITY_LICENSE/);
+ assert.match(workflow,/secrets\.UNITY_SERIAL/);
+ assert.match(workflow,/secrets\.UNITY_EMAIL/);
+ assert.match(workflow,/secrets\.UNITY_PASSWORD/);
+ assert.match(workflow,/UNITY_LICENSE_VALUE/);
+ assert.match(workflow,/UNITY_SERIAL_VALUE/);
+ assert.match(workflow,/UNITY_EMAIL_VALUE/);
+ assert.match(workflow,/UNITY_PASSWORD_VALUE/);
+});
+
 test('Cloudflare sends Danao WebGL build requests through the Worker before static assets',()=>{
  const wrangler=JSON.parse(read('wrangler.jsonc'));
  assert.ok(wrangler.assets.run_worker_first.includes('/game-builds/danao/web/*'));
