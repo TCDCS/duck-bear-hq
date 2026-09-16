@@ -74,6 +74,17 @@ test('GitHub can monitor the latest Unity cloud build and surface logs on failur
  assert.match(workflow,/cloud-build-status-trigger\.json/);
 });
 
+test('successful Unity cloud WebGL build is captured as a playable GitHub artifact',()=>{
+ const workflow=read('.github/workflows/danao-uba-status.yml');
+ for(const name of ['Danao WebGL.loader.js','Danao WebGL.data','Danao WebGL.framework.js','Danao WebGL.wasm']) assert.match(workflow,new RegExp(name.replaceAll('.', '\\.')));
+ assert.match(workflow,/Authorization: \$UNITY_UBA_AUTH/);
+ assert.match(workflow,/Danao\.loader\.js/);
+ assert.match(workflow,/Danao\.data/);
+ assert.match(workflow,/Danao\.framework\.js/);
+ assert.match(workflow,/Danao\.wasm/);
+ assert.match(workflow,/danao-webgl-playable/);
+});
+
 test('Cloudflare sends Danao WebGL build requests through the Worker before static assets',()=>{
  const wrangler=JSON.parse(read('wrangler.jsonc'));
  assert.ok(wrangler.assets.run_worker_first.includes('/game-builds/danao/web/*'));
