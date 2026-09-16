@@ -26,8 +26,14 @@ namespace Danao.Core
             _fighters = fighters;
             _arena = arena;
             _config = config;
-            _spawns = new Vector3[fighters.Count];
-            for (var i = 0; i < fighters.Count; i++) _spawns[i] = arena.SpawnPoints[i];
+            _spawns = new Vector3[4];
+            for (var i = 0; i < fighters.Count; i++)
+            {
+                var fighter = fighters[i];
+                if (fighter == null || fighter.Slot < 0 || fighter.Slot >= _spawns.Length) continue;
+                var spawnIndex = fighter.Slot < arena.SpawnPoints.Count ? fighter.Slot : i;
+                _spawns[fighter.Slot] = arena.SpawnPoints[spawnIndex];
+            }
             CreateObjective();
         }
 
@@ -83,11 +89,14 @@ namespace Danao.Core
         {
             for (var i = 0; i < _fighters.Count; i++)
             {
-                if (!_fighters[i].Health.IsEliminated) { _respawnTimers[i] = 0f; continue; }
-                _respawnTimers[i] += Time.deltaTime;
-                if (_respawnTimers[i] < 2.2f) continue;
-                _fighters[i].ResetFighter(_spawns[i]);
-                _respawnTimers[i] = 0f;
+                var fighter = _fighters[i];
+                if (fighter == null || fighter.Slot < 0 || fighter.Slot >= _respawnTimers.Length) continue;
+                var slot = fighter.Slot;
+                if (!fighter.Health.IsEliminated) { _respawnTimers[slot] = 0f; continue; }
+                _respawnTimers[slot] += Time.deltaTime;
+                if (_respawnTimers[slot] < 2.2f) continue;
+                fighter.ResetFighter(_spawns[slot]);
+                _respawnTimers[slot] = 0f;
             }
         }
 
@@ -127,8 +136,10 @@ namespace Danao.Core
             _objective = null;
             for (var i = 0; i < _fighters.Count; i++)
             {
-                _fighters[i].ResetFighter(_spawns[i]);
-                _respawnTimers[i] = 0f;
+                var fighter = _fighters[i];
+                if (fighter == null || fighter.Slot < 0 || fighter.Slot >= _spawns.Length) continue;
+                fighter.ResetFighter(_spawns[fighter.Slot]);
+                _respawnTimers[fighter.Slot] = 0f;
             }
             if (_config.Arena == ArenaId.WrestlingArena) WrestlingArena.SpawnWeapons(_arena);
             else ArenaBuilder.SpawnWeapons(_arena, ArenaCatalog.For(_config.Arena));
