@@ -12,6 +12,12 @@ test('Danao rooms cap at four and public state never exposes tokens',()=>{
  const pub=R.publicRoom(room);assert.equal(pub.players.length,4);assert.equal(JSON.stringify(pub).includes('token'),false);
 });
 
+test('vacated player slots are reused and never exceed slot three',()=>{
+ const room=R.makeRoom('0101',player('Host'),1000);const two=R.joinRoom(room,player('Two'),1001);const three=R.joinRoom(room,player('Three'),1002);
+ assert.deepEqual([two.id,three.id],[1,2]);R.leaveRoom(room,two.id,1003);const replacement=R.joinRoom(room,player('Replacement'),1004);assert.equal(replacement.id,1);
+ R.joinRoom(room,player('Four'),1005);assert.deepEqual(room.players.map(p=>p.id).sort((a,b)=>a-b),[0,1,2,3]);
+});
+
 test('only host can configure, start, publish state and finish',()=>{
  const room=R.makeRoom('1234',player('Host'),1000);const p=R.joinRoom(room,player('Friend'),1001);
  assert.throws(()=>R.configureRoom(room,p.id,{arena:'MadCircus'}),e=>e.status===403);
