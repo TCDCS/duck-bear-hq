@@ -12,8 +12,8 @@ namespace Danao.Editor
     public static class DanaoProjectConfigurator
     {
         private const string GeneratedFolder = "Assets/Danao/Generated";
-        private const string PipelineAssetPath = GeneratedFolder + "/DanaoURP.asset";
-        private const string BootScenePath = GeneratedFolder + "/Boot.unity";
+        private const string PipelineAssetPath = "Assets/Danao/Generated/DanaoURP.asset";
+        private const string BootScenePath = "Assets/Danao/Generated/Boot.unity";
 
         static DanaoProjectConfigurator() { EditorApplication.delayCall += EnsureProject; }
 
