@@ -33,6 +33,11 @@ test('Unity 6 Danao project scaffold exists', () => {
   assert.ok(manifest.dependencies['com.unity.test-framework']);
 });
 
+test('Unity Web Request built-in module is enabled for online and cloud save code', () => {
+  const manifest = JSON.parse(read('unity/danao/Packages/manifest.json'));
+  assert.equal(manifest.dependencies['com.unity.modules.unitywebrequest'], '1.0.0');
+});
+
 test('objective cleanup explicitly targets UnityEngine.Object in Unity 6', () => {
   const objective = read('unity/danao/Assets/Danao/Runtime/Objectives/ObjectiveController.cs');
   assert.match(objective, /UnityEngine\.Object\.Destroy\(go\)/);
