@@ -23,12 +23,16 @@ namespace Danao.Editor
             Directory.CreateDirectory("Assets/Danao/Generated");
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             EditorSceneManager.SaveScene(scene, ScenePath);
+            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             AssetDatabase.Refresh();
 
             if (target == BuildTarget.WebGL)
             {
                 Directory.CreateDirectory(output);
-                PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+                // Keep the four canonical Unity filenames uncompressed. R2 and the
+                // browser launcher address Danao.data/framework.js/wasm directly.
+                PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
+                PlayerSettings.WebGL.decompressionFallback = false;
             }
             else
             {
