@@ -33,6 +33,11 @@ test('Unity 6 Danao project scaffold exists', () => {
   assert.ok(manifest.dependencies['com.unity.test-framework']);
 });
 
+test('objective cleanup explicitly targets UnityEngine.Object in Unity 6', () => {
+  const objective = read('unity/danao/Assets/Danao/Runtime/Objectives/ObjectiveController.cs');
+  assert.match(objective, /UnityEngine\.Object\.Destroy\(go\)/);
+});
+
 test('health and presentation toggles are independent', () => {
   const settings = read('unity/danao/Assets/Danao/Runtime/Core/MatchSettings.cs');
   assert.match(settings, /StartingHp\s*=\s*100/);
