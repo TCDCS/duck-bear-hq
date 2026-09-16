@@ -1,4 +1,4 @@
 {
-  "target": "webgl",
-  "request": "retry-webgl-after-single-scene-fix"
+  "target": "windows",
+  "request": "retry-windows-after-single-scene-fix"
 }
