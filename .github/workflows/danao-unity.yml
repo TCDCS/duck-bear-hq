@@ -16,6 +16,7 @@ on:
       - 'migrations/0004_danao_profiles.sql'
       - 'wrangler.jsonc'
       - '.github/workflows/danao-unity.yml'
+      - '.github/workflows/danao-uba-trigger.yml'
 
 permissions:
   contents: read
