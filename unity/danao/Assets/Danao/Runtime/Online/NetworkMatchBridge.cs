@@ -21,6 +21,11 @@ namespace Danao.Online
         private int _snapshotSequence;
         private float _nextInput;
         private float _nextSnapshot;
+        private bool _queuedJump;
+        private bool _queuedPunch;
+        private bool _queuedGrab;
+        private bool _queuedDodge;
+        private bool _queuedFire;
         private NetworkSnapshot _targetSnapshot;
         private string _phase = "fight";
         private string _objective = string.Empty;
@@ -37,6 +42,7 @@ namespace Danao.Online
             _match=match;
             _isHost=client!=null&&client.IsHost;
             _nextInput=0f;
+            ClearQueuedButtons();
             if(_client!=null)
             {
                 _client.InputReceived+=OnInputReceived;
@@ -59,9 +65,36 @@ namespace Danao.Online
             var fighter=FindFighter(_localSlot);if(fighter==null)return;
             fighter.TickInput(input);
             if(_isHost)return;
+
+            _queuedJump |= input.Jump;
+            _queuedPunch |= input.Punch;
+            _queuedGrab |= input.Grab;
+            _queuedDodge |= input.Dodge;
+            _queuedFire |= input.Fire;
             if(Time.unscaledTime<_nextInput)return;
             _nextInput=Time.unscaledTime+1f/InputRate;
-            _client.SendInput(new InputFrameDto{seq=++_inputSequence,moveX=input.Move.x,moveY=input.Move.y,jump=input.Jump,punch=input.Punch,grab=input.Grab,dodge=input.Dodge,fire=input.Fire,block=input.Block});
+            _client.SendInput(new InputFrameDto
+            {
+                seq=++_inputSequence,
+                moveX=input.Move.x,
+                moveY=input.Move.y,
+                jump=_queuedJump,
+                punch=_queuedPunch,
+                grab=_queuedGrab,
+                dodge=_queuedDodge,
+                fire=_queuedFire,
+                block=input.Block
+            });
+            ClearQueuedButtons();
+        }
+
+        private void ClearQueuedButtons()
+        {
+            _queuedJump=false;
+            _queuedPunch=false;
+            _queuedGrab=false;
+            _queuedDodge=false;
+            _queuedFire=false;
         }
 
         private void Update()
@@ -101,6 +134,7 @@ namespace Danao.Online
             var becomingHost=_client!=null&&hostId==_client.PlayerId;
             if(becomingHost&&retained!=null)ApplySnapshot(retained,true);
             _isHost=becomingHost;
+            ClearQueuedButtons();
             if(retained!=null)_snapshotSequence=Mathf.Max(_snapshotSequence,retained.seq);
             ApplyRole();
         }
@@ -109,7 +143,7 @@ namespace Danao.Online
         {
             if(room==null)return;
             var shouldHost=room.hostId==_client.PlayerId;
-            if(shouldHost!=_isHost){_isHost=shouldHost;ApplyRole();}
+            if(shouldHost!=_isHost){_isHost=shouldHost;ClearQueuedButtons();ApplyRole();}
         }
 
         private void ApplyRole()
