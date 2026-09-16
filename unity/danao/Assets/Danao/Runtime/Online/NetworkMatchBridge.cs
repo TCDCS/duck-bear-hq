@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
+using Danao.Core;
 using Danao.Fighters;
 using UnityEngine;
 
@@ -11,6 +12,7 @@ namespace Danao.Online
         private const int ClientSnapshotBudget = 22000;
         private DanaoRoomClient _client;
         private IReadOnlyList<FighterController> _fighters;
+        private LocalMatch _match;
         private int _localSlot = -1;
         private bool _isHost;
         private int _inputSequence;
@@ -23,12 +25,13 @@ namespace Danao.Online
         public bool IsHost => _isHost;
         public int LocalSlot => _localSlot;
 
-        public void Configure(DanaoRoomClient client, IReadOnlyList<FighterController> fighters, int localSlot)
+        public void Configure(DanaoRoomClient client, IReadOnlyList<FighterController> fighters, int localSlot, LocalMatch match)
         {
             Unsubscribe();
             _client=client;
             _fighters=fighters;
             _localSlot=localSlot;
+            _match=match;
             _isHost=client!=null&&client.IsHost;
             if(_client!=null)
             {
@@ -63,7 +66,7 @@ namespace Danao.Online
                 if(Time.unscaledTime<_nextSnapshot)return;
                 _nextSnapshot=Time.unscaledTime+1f/SnapshotRate;
                 var matchId=_client.Room?.matchId??0;
-                var snapshot=NetworkSnapshot.Capture(++_snapshotSequence,matchId,_phase,_fighters,_objective);
+                var snapshot=NetworkSnapshot.Capture(++_snapshotSequence,matchId,_phase,_fighters,_objective,_match?.CaptureObjectiveState());
                 var wrapped=OnlineProtocol.Json(new StateCommandDto{state=snapshot});
                 if(Encoding.UTF8.GetByteCount(wrapped)<=ClientSnapshotBudget)_client.SendHostState(snapshot);
             }
@@ -105,6 +108,7 @@ namespace Danao.Online
 
         private void ApplyRole()
         {
+            _match?.SetSimulationAuthority(_isHost);
             if(_fighters==null)return;
             for(var i=0;i<_fighters.Count;i++)
             {
@@ -117,20 +121,24 @@ namespace Danao.Online
 
         private void ApplySnapshot(NetworkSnapshot snapshot,bool exact)
         {
-            if(snapshot?.fighters==null||_fighters==null)return;
-            for(var i=0;i<snapshot.fighters.Length;i++)
+            if(snapshot==null)return;
+            if(snapshot.fighters!=null&&_fighters!=null)
             {
-                var state=snapshot.fighters[i];if(state==null)continue;var fighter=FindFighter(state.slot);if(fighter==null)continue;
-                var isLocal=!_isHost&&fighter.Slot==_localSlot;var blend=exact?1f:(isLocal ? .22f : .48f);
-                fighter.transform.position=Vector3.Lerp(fighter.transform.position,state.Position,blend);
-                fighter.transform.rotation=Quaternion.Slerp(fighter.transform.rotation,state.Rotation,blend);
-                if(!fighter.Body.isKinematic)
+                for(var i=0;i<snapshot.fighters.Length;i++)
                 {
-                    fighter.Body.linearVelocity=Vector3.Lerp(fighter.Body.linearVelocity,state.Velocity,blend);
-                    fighter.Body.angularVelocity=Vector3.Lerp(fighter.Body.angularVelocity,state.AngularVelocity,blend);
+                    var state=snapshot.fighters[i];if(state==null)continue;var fighter=FindFighter(state.slot);if(fighter==null)continue;
+                    var isLocal=!_isHost&&fighter.Slot==_localSlot;var blend=exact?1f:(isLocal ? .22f : .48f);
+                    fighter.transform.position=Vector3.Lerp(fighter.transform.position,state.Position,blend);
+                    fighter.transform.rotation=Quaternion.Slerp(fighter.transform.rotation,state.Rotation,blend);
+                    if(!fighter.Body.isKinematic)
+                    {
+                        fighter.Body.linearVelocity=Vector3.Lerp(fighter.Body.linearVelocity,state.Velocity,blend);
+                        fighter.Body.angularVelocity=Vector3.Lerp(fighter.Body.angularVelocity,state.AngularVelocity,blend);
+                    }
+                    fighter.Health.ApplyNetworkState(state.hp,state.eliminated);
                 }
-                fighter.Health.ApplyNetworkState(state.hp,state.eliminated);
             }
+            _match?.ApplyObjectiveState(snapshot.objectiveState);
             _phase=snapshot.phase??_phase;_objective=snapshot.objective??_objective;
         }
 
