@@ -36,9 +36,9 @@ namespace Danao.Objectives
             {
                 if (Fighters[i].Health.IsEliminated) continue;
                 var p = Fighters[i].transform.position - _centre;
-                if (new Vector2(p.x, p.z).magnitude <= Radius) { occupant = i; count++; }
+                if (new Vector2(p.x, p.z).magnitude <= Radius) { occupant = Fighters[i].Slot; count++; }
             }
-            if (count != 1) return;
+            if (count != 1 || occupant < 0 || occupant >= _seconds.Length) return;
             _seconds[occupant] += deltaTime;
             if (ObjectiveRules.KingComplete(_seconds[occupant])) FinishSlot(occupant, "IS KING OF THE RING!");
         }
