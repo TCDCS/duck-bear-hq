@@ -1,4 +1,4 @@
 {
   "target": "webgl",
-  "request": "third-cloud-build-after-smoke-test-fix"
+  "request": "capture-playable-successful-build-3"
 }
