@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Text;
+using Danao.Core;
 using Danao.Online;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -50,6 +51,56 @@ namespace Danao.Save
         public void SetProfile(DanaoProfile profile,bool queueCloud=true)
         {
             Profile=(profile??DanaoProfile.Default()).Clone();Profile.Normalise();_dirty|=queueCloud;SaveLocal();ProfileChanged?.Invoke(Profile);if(queueCloud&&SignedIn&&!_syncing)StartCoroutine(PushCloud(false));
+        }
+
+        public void CaptureMatch(LocalMatchConfig config)
+        {
+            if(config==null)return;
+            var next=Profile.Clone();
+            next.settings.healthDamage=config.Settings.HealthDamage;
+            next.settings.visibleBruising=config.Settings.VisibleBruising;
+            next.settings.arenaHazards=config.Settings.ArenaHazards;
+            next.preferredMode=config.Mode.ToString();
+            next.preferredArena=config.Arena.ToString();
+            if(config.Loadouts!=null&&config.Loadouts.Length>0&&config.Loadouts[0]!=null)
+            {
+                next.selectedCharacter=config.Loadouts[0].Character.ToString();
+                next.selectedCostume=config.Loadouts[0].Costume.ToString();
+            }
+            SetProfile(next,true);
+        }
+
+        public void CaptureOnlineRoom(RoomDto room,int playerId)
+        {
+            if(room==null)return;
+            var next=Profile.Clone();
+            if(room.settings!=null)
+            {
+                next.settings.healthDamage=room.settings.healthDamage;
+                next.settings.visibleBruising=room.settings.visibleBruising;
+                next.settings.arenaHazards=room.settings.arenaHazards;
+                next.preferredMode=MapOnlineMode(room.settings.mode);
+                next.preferredArena=room.settings.arena;
+            }
+            if(room.players!=null)
+            {
+                foreach(var p in room.players)
+                {
+                    if(p.id!=playerId)continue;
+                    next.selectedCharacter=p.character;
+                    next.selectedCostume=p.costume;
+                    break;
+                }
+            }
+            SetProfile(next,true);
+        }
+
+        private static string MapOnlineMode(string value)
+        {
+            if(value=="TwoVsTwo"||value=="TeamKnockout")return LocalMode.TwoVsTwo.ToString();
+            if(value=="KingOfTheRing")return LocalMode.KingOfRing.ToString();
+            if(Enum.TryParse(value,true,out LocalMode mode))return mode.ToString();
+            return LocalMode.FreeForAll.ToString();
         }
 
         public void RecordMatch(bool won,int knockouts)
