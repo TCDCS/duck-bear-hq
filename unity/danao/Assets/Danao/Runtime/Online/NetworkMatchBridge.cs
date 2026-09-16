@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
+using Danao.Arenas;
 using Danao.Core;
 using Danao.Fighters;
 using UnityEngine;
@@ -109,15 +110,25 @@ namespace Danao.Online
         private void ApplyRole()
         {
             _match?.SetSimulationAuthority(_isHost);
+            SetArenaAuthority(_isHost);
             if(_fighters==null)return;
             for(var i=0;i<_fighters.Count;i++)
             {
                 var fighter=_fighters[i];if(fighter==null)continue;
                 fighter.SetCombatAuthority(_isHost);
+                fighter.Health.SetDamageAuthority(_isHost);
                 if(_isHost){fighter.Body.isKinematic=false;fighter.SetControlSuppressed(false);}
                 else if(fighter.Slot!=_localSlot){fighter.SetControlSuppressed(true);fighter.Body.isKinematic=true;}
                 else {fighter.Body.isKinematic=false;fighter.SetControlSuppressed(false);}
             }
+        }
+
+        private void SetArenaAuthority(bool authority)
+        {
+            foreach(var hazard in Object.FindObjectsByType<ArenaHazardController>(FindObjectsSortMode.None))
+                hazard.SetSimulationAuthority(authority);
+            foreach(var rope in Object.FindObjectsByType<RopeBouncer>(FindObjectsSortMode.None))
+                rope.SetSimulationAuthority(authority);
         }
 
         private void ApplySnapshot(NetworkSnapshot snapshot,bool exact)
