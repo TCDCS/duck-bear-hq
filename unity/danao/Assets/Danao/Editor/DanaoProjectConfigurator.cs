@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System.IO;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -12,6 +13,7 @@ namespace Danao.Editor
     {
         private const string GeneratedFolder = "Assets/Danao/Generated";
         private const string PipelineAssetPath = GeneratedFolder + "/DanaoURP.asset";
+        private const string BootScenePath = GeneratedFolder + "/Boot.unity";
 
         static DanaoProjectConfigurator() { EditorApplication.delayCall += EnsureProject; }
 
@@ -22,17 +24,20 @@ namespace Danao.Editor
             PlayerSettings.colorSpace = ColorSpace.Linear;
             PlayerSettings.defaultScreenWidth = 1920;
             PlayerSettings.defaultScreenHeight = 1080;
+            EnsureGeneratedFolder();
             EnsureUniversalRenderPipeline();
+            EnsureBootScene();
+        }
+
+        private static void EnsureGeneratedFolder()
+        {
+            if (AssetDatabase.IsValidFolder(GeneratedFolder)) return;
+            Directory.CreateDirectory(GeneratedFolder);
+            AssetDatabase.Refresh();
         }
 
         private static void EnsureUniversalRenderPipeline()
         {
-            if (!AssetDatabase.IsValidFolder(GeneratedFolder))
-            {
-                Directory.CreateDirectory(GeneratedFolder);
-                AssetDatabase.Refresh();
-            }
-
             var pipeline = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(PipelineAssetPath);
             if (pipeline == null)
             {
@@ -46,6 +51,24 @@ namespace Danao.Editor
                 GraphicsSettings.defaultRenderPipeline = pipeline;
             if (QualitySettings.renderPipeline != pipeline)
                 QualitySettings.renderPipeline = pipeline;
+        }
+
+        private static void EnsureBootScene()
+        {
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(BootScenePath) == null)
+            {
+                var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+                EditorSceneManager.SaveScene(scene, BootScenePath);
+                EditorSceneManager.CloseScene(scene, true);
+                AssetDatabase.Refresh();
+            }
+
+            var scenes = EditorBuildSettings.scenes;
+            if (scenes.Length == 1 && scenes[0].enabled && scenes[0].path == BootScenePath) return;
+            EditorBuildSettings.scenes = new[]
+            {
+                new EditorBuildSettingsScene(BootScenePath, true)
+            };
         }
     }
 }
