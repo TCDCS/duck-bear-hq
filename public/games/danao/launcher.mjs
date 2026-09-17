@@ -28,7 +28,7 @@ async function start(){
   const config={dataUrl:join(base,release.data||'Danao.data'),frameworkUrl:join(base,release.framework||'Danao.framework.js'),codeUrl:join(base,release.wasm||'Danao.wasm'),streamingAssetsUrl:'StreamingAssets',companyName:'Duck & Bear',productName:'打闹 · Dǎnào',productVersion:release.version||'1.0.0',matchWebGLToCanvasSize:true,devicePixelRatio:Math.min(2,window.devicePixelRatio||1)};
   unityInstance=await globalThis.createUnityInstance(canvas,config,p=>{const pct=Math.round(p*100);meter.style.width=`${pct}%`;loadingText.textContent=p<.25?'Unfolding the wrestling chairs.':p<.55?'Inflating the boxing gloves.':p<.85?'Checking the bazooka is definitely a cartoon.':`Almost ready · ${pct}%`;});
   loading.hidden=true;starting=false;canvas.focus();
- }catch(err){showFatal(err?.message||'The Dǎnào Web build could not start. You can still use the Windows build when it is published.');}
+ }catch(err){const detail=typeof err==='string'?err:err?.message;showFatal(detail||'The Dǎnào Web build could not start. You can still use the Windows build when it is published.');}
 }
 play.addEventListener('click',start);retry.addEventListener('click',()=>{fatal.hidden=true;unityInstance=null;start();});
 fullscreen.addEventListener('click',async()=>{try{if(unityInstance?.SetFullscreen){unityInstance.SetFullscreen(1);return;}if(gamePanel.requestFullscreen)await gamePanel.requestFullscreen();}catch{}});
