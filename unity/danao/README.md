@@ -47,16 +47,16 @@ Inside Unity, run EditMode and PlayMode tests through **Window → General → T
 
 ## Build
 
+Dǎnào is a browser-only game. The shipping target is Unity WebGL. Windows Micro may be used as the Unity Build Automation worker machine, but it still produces the WebGL browser build rather than a Windows application.
+
 From the Unity Editor menu:
 
 - `Danao → Build → Web`
-- `Danao → Build → Windows x64`
 
-Command line equivalents:
+Command line equivalent:
 
 ```bash
 Unity -batchmode -quit -projectPath unity/danao -executeMethod Danao.Editor.DanaoBuild.BuildWeb
-Unity -batchmode -quit -projectPath unity/danao -executeMethod Danao.Editor.DanaoBuild.BuildWindows
 ```
 
 Generated output is written under `unity/danao/Build/` and is intentionally ignored by git.
@@ -71,7 +71,7 @@ Generated output is written under `unity/danao/Build/` and is intentionally igno
 - `Assets/Danao/Runtime/Arenas` — Wrestling Arena vertical slice.
 - `Assets/Danao/Runtime/UI` — controller-first arcade menu, join/setup flow and HUD.
 - `Assets/Danao/Runtime/Audio` — generated music and effects.
-- `Assets/Danao/Editor` — project setup and Web/Windows build automation.
+- `Assets/Danao/Editor` — project setup and WebGL build automation.
 - `Assets/Danao/Tests` — Unity EditMode/PlayMode tests.
 
-The full design and later content/online/cloud slices are specified in `docs/superpowers/specs/2026-09-16-danao-unity-design.md`.
+The full design and later content/online/cloud slices are specified in `docs/superpowers/specs/2026-09-16-danao-unity-design.md`; that design document records the earlier dual-target plan, but the current shipping configuration is browser-only.
