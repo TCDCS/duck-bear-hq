@@ -13,6 +13,7 @@ namespace Danao.Editor
     {
         private const string GeneratedFolder = "Assets/Danao/Generated";
         private const string PipelineAssetPath = "Assets/Danao/Generated/DanaoURP.asset";
+        private const string RendererAssetPath = "Assets/Danao/Generated/DanaoUniversalRenderer.asset";
         private const string BootScenePath = "Assets/Danao/Generated/Boot.unity";
 
         static DanaoProjectConfigurator() { EditorApplication.delayCall += EnsureProject; }
@@ -38,14 +39,28 @@ namespace Danao.Editor
 
         private static void EnsureUniversalRenderPipeline()
         {
+            var rendererData = AssetDatabase.LoadAssetAtPath<ScriptableRendererData>(RendererAssetPath);
             var pipeline = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(PipelineAssetPath);
             if (pipeline == null)
             {
-                pipeline = UniversalRenderPipelineAsset.Create();
+                pipeline = UniversalRenderPipelineAsset.Create(rendererData);
                 pipeline.name = "Danao URP";
                 AssetDatabase.CreateAsset(pipeline, PipelineAssetPath);
-                AssetDatabase.SaveAssets();
             }
+
+            if (rendererData == null)
+            {
+                rendererData = pipeline.LoadBuiltinRendererData(RendererType.UniversalRenderer);
+                var rendererDataPath = AssetDatabase.GetAssetPath(rendererData);
+                if (!string.IsNullOrEmpty(rendererDataPath) && rendererDataPath != RendererAssetPath)
+                {
+                    var moveError = AssetDatabase.MoveAsset(rendererDataPath, RendererAssetPath);
+                    if (!string.IsNullOrEmpty(moveError))
+                        Debug.LogError("Could not persist Dǎnào Universal Renderer data: " + moveError);
+                }
+            }
+
+            AssetDatabase.SaveAssets();
 
             if (GraphicsSettings.defaultRenderPipeline != pipeline)
                 GraphicsSettings.defaultRenderPipeline = pipeline;
