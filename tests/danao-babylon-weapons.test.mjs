@@ -47,3 +47,16 @@ test('weapon module exposes pickup/use helpers for browser gameplay',()=>{
  assert.match(source,/export function useHeldWeapon/);
  assert.match(source,/export function dropHeldWeapon/);
 });
+
+test('live Babylon match spawns pickups and routes attacks through held weapons',()=>{
+ const game=fs.readFileSync(path.join(root,'public/games/danao/game.mjs'),'utf8');
+ const html=fs.readFileSync(path.join(root,'public/games/danao/index.html'),'utf8');
+ assert.match(game,/from ['"]\.\/weapons\.mjs['"]/);
+ assert.match(game,/weaponSpawns/);
+ assert.match(game,/spawnWeapons\s*\(/);
+ assert.match(game,/tryPickupWeapon\s*\(/);
+ assert.match(game,/useHeldWeapon\s*\(/);
+ assert.match(game,/heldWeapon/);
+ assert.match(html,/id=["']p1-weapon["']/);
+ assert.match(html,/id=["']p2-weapon["']/);
+});
