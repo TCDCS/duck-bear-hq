@@ -128,13 +128,12 @@ jobs:
               elif (.machinetypes? | type) == "array" then .machinetypes
               else [] end;
             rows
-            | map(select((.freeTierEligible // false) == true))
-            | map(select((((.name // "") + " " + (.shortName // "") + " " + (.label // "")) | ascii_downcase) | contains("micro")))
+            | map(select((.label // "") == "win_micro_v1" or (.name // "") == "Windows Micro"))
             | .[0]
-            | (.name // .shortName // .label // empty)
+            | (.label // empty)
           ' machine-types.json)"
-          test -n "$MICRO_LABEL" && test "$MICRO_LABEL" != "null" || {
-            echo 'Unity did not expose a free-tier-eligible Windows Micro machine.' >&2
+          test "$MICRO_LABEL" = "win_micro_v1" || {
+            echo 'Unity did not expose the expected Windows Micro machine label win_micro_v1.' >&2
             jq -c '.[]? | {name,shortName,label,operatingSystem,freeTierEligible,enabled}' machine-types.json >&2 || true
             exit 1
           }
@@ -146,7 +145,7 @@ jobs:
               elif (.machinetypes? | type) == "array" then .machinetypes
               else [] end;
             rows
-            | map(select((.name // .shortName // .label // "") == $machine))
+            | map(select((.label // "") == $machine))
             | .[0]
             | (.operatingSystemVersions // [])
             | .[0]
