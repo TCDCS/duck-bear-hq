@@ -32,3 +32,22 @@ test('Danao production release uses Unity Build Automation for the exact main co
   const dataIndex=workflow.indexOf('Danao.data Danao.framework.js Danao.wasm Danao.loader.js');
   assert.notEqual(dataIndex,-1,'loader must be uploaded last so it only becomes visible after its dependencies');
 });
+
+test('Danao keeps WebGL builds on Windows Micro and enforces conservative cost controls', () => {
+  const workflow = fs.readFileSync(workflowPath, 'utf8');
+  assert.match(workflow, /DANAO_WINDOWS_MINUTE_GUARD:\s*150/);
+  assert.match(workflow, /Configure Danao WebGL for Windows Micro/);
+  assert.match(workflow, /\/machinetypes\?operatingSystem=windows/);
+  assert.match(workflow, /freeTierEligible/);
+  assert.match(workflow, /micro/i);
+  assert.match(workflow, /operatingSystemSelected/);
+  assert.match(workflow, /machineTypeLabel/);
+  assert.match(workflow, /-X PUT[\s\S]*buildtargets\/\$TARGET_ID/);
+  assert.match(workflow, /Set Unity concurrency limit to one/);
+  assert.match(workflow, /\/orgs\/\$UNITY_UBA_ORG_ID\/concurrency-limit/);
+  assert.match(workflow, /'\{\"limit\":1\}'/);
+  assert.match(workflow, /Guard Danao monthly Windows minutes/);
+  assert.match(workflow, /billableTimeInSeconds/);
+  assert.match(workflow, /operatingSystem/);
+  assert.match(workflow, /DANAO_WINDOWS_MINUTE_GUARD/);
+});

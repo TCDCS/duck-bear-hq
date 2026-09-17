@@ -22,6 +22,7 @@ env:
   UNITY_UBA_ORG_ID: ${{ secrets.UNITY_UBA_ORG_ID }}
   UNITY_UBA_PROJECT_ID: ${{ secrets.UNITY_UBA_PROJECT_ID }}
   DANAO_RELEASE_ORIGIN: https://duck-bear-hq.zachary-chambers2.workers.dev
+  DANAO_WINDOWS_MINUTE_GUARD: 150
 
 jobs:
   build-and-publish:
@@ -64,6 +65,26 @@ jobs:
           test -n "$TARGET_ID" && test "$TARGET_ID" != "null" || { echo "Could not resolve $TARGET_NAME" >&2; exit 1; }
           echo "id=$TARGET_ID" >> "$GITHUB_OUTPUT"
 
+      - name: Set Unity concurrency limit to one
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="$UNITY_UBA_API/orgs/$UNITY_UBA_ORG_ID/concurrency-limit"
+          HTTP="$(curl --silent --show-error \
+            -o concurrency.json \
+            -w '%{http_code}' \
+            -X PUT \
+            -H "Authorization: $UNITY_UBA_AUTH" \
+            -H 'Content-Type: application/json' \
+            --data '{"limit":1}' \
+            "$URL")"
+          if [ "$HTTP" -lt 200 ] || [ "$HTTP" -ge 300 ]; then
+            echo "Could not set Unity concurrency limit to one (HTTP $HTTP)." >&2
+            cat concurrency.json >&2 || true
+            exit 1
+          fi
+          echo "Unity Build Automation concurrency is limited to one build."
+
       - name: Cancel stale Danao WebGL builds
         shell: bash
         env:
@@ -83,6 +104,127 @@ jobs:
           fi
           echo "Canceled any stale Danao WebGL builds (HTTP $HTTP)."
           sleep 2
+
+      - name: Configure Danao WebGL for Windows Micro
+        shell: bash
+        env:
+          TARGET_ID: ${{ steps.target.outputs.id }}
+        run: |
+          set -euo pipefail
+          MACHINE_URL="$UNITY_UBA_API/orgs/$UNITY_UBA_ORG_ID/projects/$UNITY_UBA_PROJECT_ID/machinetypes?operatingSystem=windows"
+          TARGET_URL="$UNITY_UBA_API/orgs/$UNITY_UBA_ORG_ID/projects/$UNITY_UBA_PROJECT_ID/buildtargets/$TARGET_ID"
+
+          curl --fail-with-body --silent --show-error \
+            -H "Authorization: $UNITY_UBA_AUTH" \
+            "$MACHINE_URL" > machine-types.json
+
+          MICRO_LABEL="$(jq -r '
+            def rows:
+              if type == "array" then .
+              elif (.machineTypes? | type) == "array" then .machineTypes
+              elif (.machinetypes? | type) == "array" then .machinetypes
+              else [] end;
+            rows
+            | map(select((.freeTierEligible // false) == true))
+            | map(select((((.name // "") + " " + (.shortName // "") + " " + (.label // "")) | ascii_downcase) | contains("micro")))
+            | .[0]
+            | (.name // .shortName // .label // empty)
+          ' machine-types.json)"
+          test -n "$MICRO_LABEL" && test "$MICRO_LABEL" != "null" || {
+            echo 'Unity did not expose a free-tier-eligible Windows Micro machine.' >&2
+            jq -c '.[]? | {name,shortName,label,operatingSystem,freeTierEligible,enabled}' machine-types.json >&2 || true
+            exit 1
+          }
+
+          OS_VERSION="$(jq -r --arg machine "$MICRO_LABEL" '
+            def rows:
+              if type == "array" then .
+              elif (.machineTypes? | type) == "array" then .machineTypes
+              elif (.machinetypes? | type) == "array" then .machinetypes
+              else [] end;
+            rows
+            | map(select((.name // .shortName // .label // "") == $machine))
+            | .[0]
+            | (.operatingSystemVersions // [])
+            | .[0]
+            | if type == "string" then . else (.name // .value // .version // empty) end
+          ' machine-types.json)"
+          test -n "$OS_VERSION" && test "$OS_VERSION" != "null" || { echo "Windows Micro '$MICRO_LABEL' has no usable OS version." >&2; exit 1; }
+
+          curl --fail-with-body --silent --show-error \
+            -H "Authorization: $UNITY_UBA_AUTH" \
+            "$TARGET_URL" > target-before.json
+
+          jq --arg machine "$MICRO_LABEL" --arg osVersion "$OS_VERSION" '
+            {
+              name: (.name // .targetName),
+              platform: .platform,
+              targetType: .targetType,
+              enabled: (.enabled // true),
+              generateProjectPreview3D: (.generateProjectPreview3D // false),
+              scenePreview: (.scenePreview // false),
+              settings: ((.settings // {}) + {
+                machineTypeLabel: $machine,
+                operatingSystemSelected: "windows",
+                operatingSystemVersion: $osVersion,
+                architecture: "x86_64",
+                windowsGitBinary: "inherit"
+              }),
+              credentials: (.credentials // [])
+            }
+          ' target-before.json > target-update.json
+
+          HTTP="$(curl --silent --show-error \
+            -o target-update-response.json \
+            -w '%{http_code}' \
+            -X PUT \
+            -H "Authorization: $UNITY_UBA_AUTH" \
+            -H 'Content-Type: application/json' \
+            --data-binary @target-update.json \
+            "$TARGET_URL")"
+          if [ "$HTTP" -lt 200 ] || [ "$HTTP" -ge 300 ]; then
+            echo "Could not configure Danao WebGL for Windows Micro (HTTP $HTTP)." >&2
+            cat target-update-response.json >&2 || true
+            exit 1
+          fi
+
+          curl --fail-with-body --silent --show-error \
+            -H "Authorization: $UNITY_UBA_AUTH" \
+            "$TARGET_URL" > target-after.json
+          ACTIVE_OS="$(jq -r '.settings.operatingSystemSelected // empty' target-after.json | tr '[:upper:]' '[:lower:]')"
+          ACTIVE_MACHINE="$(jq -r '.settings.machineTypeLabel // empty' target-after.json)"
+          test "$ACTIVE_OS" = "windows" || { echo "Danao target still reports OS '$ACTIVE_OS'." >&2; exit 1; }
+          test "$ACTIVE_MACHINE" = "$MICRO_LABEL" || { echo "Danao target reports '$ACTIVE_MACHINE', expected '$MICRO_LABEL'." >&2; exit 1; }
+          echo "Danao WebGL now uses Windows Micro machine '$MICRO_LABEL' ($OS_VERSION)."
+
+      - name: Guard Danao monthly Windows minutes
+        shell: bash
+        env:
+          TARGET_ID: ${{ steps.target.outputs.id }}
+        run: |
+          set -euo pipefail
+          URL="$UNITY_UBA_API/orgs/$UNITY_UBA_ORG_ID/projects/$UNITY_UBA_PROJECT_ID/buildtargets/$TARGET_ID/builds?limit=100"
+          curl --fail-with-body --silent --show-error \
+            -H "Authorization: $UNITY_UBA_AUTH" \
+            "$URL" > monthly-builds.json
+          MONTH_START="$(date -u +%Y-%m-01T00:00:00Z)"
+          USED_SECONDS="$(jq -r --arg start "$MONTH_START" '
+            def rows:
+              if type == "array" then .
+              elif (.builds? | type) == "array" then .builds
+              else [] end;
+            [rows[]
+              | select((.created // .createdAt // .createdDate // .queuedAt // .startTime // "") >= $start)
+              | select((((.operatingSystem // .machineType.operatingSystem // .machineTypeOperatingSystem // "") | ascii_downcase) == "windows"))
+              | (.billableTimeInSeconds // 0)
+            ] | add // 0
+          ' monthly-builds.json)"
+          USED_MINUTES=$(( (USED_SECONDS + 59) / 60 ))
+          echo "Danao Windows Build Automation usage this month: ${USED_MINUTES} minutes; guard: ${DANAO_WINDOWS_MINUTE_GUARD} minutes."
+          if [ "$USED_MINUTES" -ge "$DANAO_WINDOWS_MINUTE_GUARD" ]; then
+            echo "Stopping before another paid Danao build: Windows usage reached the ${DANAO_WINDOWS_MINUTE_GUARD}-minute safety guard." >&2
+            exit 1
+          fi
 
       - name: Start exact main-commit Unity build
         shell: bash
