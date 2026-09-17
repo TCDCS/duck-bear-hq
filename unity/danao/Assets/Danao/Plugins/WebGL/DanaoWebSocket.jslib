@@ -37,5 +37,28 @@ mergeInto(LibraryManager.library, {
     if (!socket) return;
     try { socket.close(1000, 'Client closed'); } catch (_) {}
     delete sockets[id];
+  },
+  DanaoDebugMark: function(stagePtr) {
+    try {
+      var stage = UTF8ToString(stagePtr) || 'unknown';
+      var params = new URLSearchParams(globalThis.location.search || '');
+      if (params.get('debug') !== 'unity') return;
+      globalThis.__danaoBootStage = stage;
+      document.documentElement.setAttribute('data-danao-boot-stage', stage);
+      document.title = 'Danao Unity · ' + stage;
+      var marker = document.getElementById('danao-unity-debug');
+      if (!marker) {
+        marker = document.createElement('div');
+        marker.id = 'danao-unity-debug';
+        marker.setAttribute('style', 'position:fixed;z-index:2147483647;left:8px;bottom:8px;padding:8px 10px;background:#000;color:#7fffd4;font:12px monospace;border:1px solid #7fffd4;pointer-events:none');
+        document.body.appendChild(marker);
+      }
+      marker.textContent = 'UNITY BOOT · ' + stage;
+      try {
+        var next = new URL(globalThis.location.href);
+        next.hash = 'danao-boot=' + encodeURIComponent(stage);
+        history.replaceState(null, '', next);
+      } catch (_) {}
+    } catch (_) {}
   }
 });
