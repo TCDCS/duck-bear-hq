@@ -86,10 +86,15 @@ function buildArena(scene,world,definition){
   {x:-w*.18,y:.95,z:-d*.28},{x:w*.18,y:.95,z:d*.28},{x:0,y:.95,z:-d*.3},{x:0,y:.95,z:d*.3},
   {x:-w*.3,y:.95,z:0},{x:w*.3,y:.95,z:0}
  ];
+ let ringFloorY=.5,ringBounds={cx:0,cz:0,ex:w/2,ez:d/2};
  if(definition.id==='wrestling-arena'){
-  meshes.push(visualBox(scene,'ring-mat',[0,.18,0],[14,.36,10],'#f3dfb0'));bodies.push(fixedBox(world,[0,.18,0],[7,.18,5]));
-  for(const x of [-6.7,6.7])for(const z of [-4.7,4.7])meshes.push(visualCylinder(scene,`post-${x}-${z}`,[x,1.7,z],.34,3.4,definition.secondary));
-  for(const y of [1.05,1.55,2.05]){meshes.push(visualBox(scene,`rope-n-${y}`,[0,y,4.72],[13.4,.08,.08],'#e74f53'));meshes.push(visualBox(scene,`rope-s-${y}`,[0,y,-4.72],[13.4,.08,.08],'#e74f53'));meshes.push(visualBox(scene,`rope-e-${y}`,[6.72,y,0],[.08,.08,9.4],'#e74f53'));meshes.push(visualBox(scene,`rope-w-${y}`,[-6.72,y,0],[.08,.08,9.4],'#e74f53'));}
+  ringFloorY=1.25;ringBounds={cx:0,cz:0,ex:5.8,ez:5.8};
+  spawnPoints.splice(0,spawnPoints.length,{x:-2.8,y:2.2,z:-2.5},{x:2.8,y:2.2,z:2.5},{x:-2.8,y:2.2,z:2.5},{x:2.8,y:2.2,z:-2.5});
+  weaponSpawns.splice(0,weaponSpawns.length,{x:-4.4,y:2,z:0},{x:4.4,y:2,z:0},{x:0,y:2,z:-4.4},{x:0,y:2,z:4.4},{x:-7.5,y:.8,z:-3.5},{x:7.5,y:.8,z:3.5},{x:-7.5,y:.8,z:3.5},{x:7.5,y:.8,z:-3.5});
+  meshes.push(visualBox(scene,'ring-base',[0,.55,0],[12.6,1.1,12.6],'#242938'));bodies.push(fixedBox(world,[0,.55,0],[6.3,.55,6.3]));
+  meshes.push(visualBox(scene,'ring-mat',[0,1.12,0],[11.8,.18,11.8],'#e1e1e8'));
+  for(const x of [-5.8,5.8])for(const z of [-5.8,5.8])meshes.push(visualBox(scene,`post-${x}-${z}`,[x,2.15,z],[.34,2.5,.34],'#1a1e2b'));
+  for(const y of [1.65,2.15,2.65]){meshes.push(visualBox(scene,`rope-n-${y}`,[0,y,5.65],[11.2,.09,.09],'#eb2938'));meshes.push(visualBox(scene,`rope-s-${y}`,[0,y,-5.65],[11.2,.09,.09],'#eb2938'));meshes.push(visualBox(scene,`rope-e-${y}`,[5.65,y,0],[.09,.09,11.2],'#eb2938'));meshes.push(visualBox(scene,`rope-w-${y}`,[-5.65,y,0],[.09,.09,11.2],'#eb2938'));}
  }else if(definition.id==='dublin-docks'){
   meshes.push(visualBox(scene,'container-a',[-6,1,5],[4,2,2],definition.secondary),visualBox(scene,'container-b',[6,1,-5],[4,2,2],'#ca4d47'));
  }else if(definition.id==='london-underground'){
@@ -112,7 +117,7 @@ function buildArena(scene,world,definition){
   for(let i=0;i<8;i++){const a=i*Math.PI/4;meshes.push(visualCylinder(scene,`tent-${i}`,[Math.cos(a)*8,2,Math.sin(a)*6],.45,4,i%2?definition.secondary:definition.primary));}
   meshes.push(visualCylinder(scene,'trampoline',[0,.25,0],4.5,.35,'#28232f'));
  }
- return{meshes,bodies,spawnPoints,weaponSpawns,bounds:{w,d}};
+ return{meshes,bodies,spawnPoints,weaponSpawns,bounds:{w,d},ringBounds,ringFloorY};
 }
 
 function createScene(engine,definition){
@@ -239,12 +244,10 @@ function handleRespawns(dt){
 }
 
 function handleArenaBounds(fighters){
+ const bounds=active.arena.ringBounds,usesRingOut=Boolean(active.modeRules.ringOut||active.settings.healthDamage===false);
  for(const f of fighters){
-  const p=f.body.translation();
-  if(p.y<-3.5&&f.alive){
-   if(active.modeRules.ringOut||active.modeRules.objective||active.settings.healthDamage===false)f.eliminate();
-   else{f.applyDamage(25,{x:0,y:0,z:0});if(f.alive){f.body.setTranslation(f.spawn,true);f.body.setLinvel({x:0,y:0,z:0},true);}}
-  }
+  const p=f.body.translation(),outside=Math.abs(p.x-bounds.cx)>bounds.ex+.4||Math.abs(p.z-bounds.cz)>bounds.ez+.4,belowFloor=p.y<active.arena.ringFloorY+.15,fellWorld=p.y<-2.5;
+  if(f.alive&&((usesRingOut&&outside&&belowFloor)||fellWorld))f.eliminate();
   if(!f.alive&&f.heldWeapon)dropHeldWeapon(f,{x:p.x,y:Math.max(.9,p.y),z:p.z});
  }
 }
