@@ -19,9 +19,10 @@ test('Danao browser shell has WebGL checks, progress UI and a local fallback mes
  assert.match(html,/打闹/);assert.match(html,/loading/i);assert.match(html,/fullscreen/i);assert.match(js,/webgl2/i);assert.match(js,/Build\/Danao\.loader\.js/);assert.match(js,/controller/i);assert.match(js,/not published|unavailable/i);
 });
 
-test('Unity CI defines tests plus WebGL and Windows build outputs without committing generated builds',()=>{
+test('Unity CI is browser-only: tests plus WebGL output with no Windows application build',()=>{
  const workflow=read('.github/workflows/danao-unity.yml');const ignore=read('.gitignore');
- assert.match(workflow,/WebGL/);assert.match(workflow,/StandaloneWindows64/);assert.match(workflow,/runTests|testMode/);assert.match(workflow,/upload-artifact/);
+ assert.match(workflow,/WebGL/);assert.match(workflow,/runTests|testMode/);assert.match(workflow,/upload-artifact/);
+ assert.doesNotMatch(workflow,/StandaloneWindows64|build-windows|danao-windows-x64/i);
  assert.match(ignore,/unity\/danao\/Build/);assert.match(ignore,/unity\/danao\/Library/);
 });
 
@@ -47,7 +48,14 @@ test('Danao exposes a Unity Build Automation pre-export hook that creates the bo
  assert.match(cloud,/DanaoProjectConfigurator\.EnsureProject/);
 });
 
-test('GitHub can trigger Unity Build Automation directly without browser automation',()=>{
+test('Danao editor build entry point is WebGL-only',()=>{
+ const build=read('unity/danao/Assets/Danao/Editor/DanaoBuild.cs');
+ assert.match(build,/BuildWeb\s*\(\)/);
+ assert.match(build,/BuildTarget\.WebGL/);
+ assert.doesNotMatch(build,/BuildWindows|StandaloneWindows64|Windows x64/);
+});
+
+test('GitHub can trigger Unity Build Automation directly for WebGL only',()=>{
  const rel='.github/workflows/danao-uba-trigger.yml';
  assert.ok(has(rel),`missing ${rel}`);
  const workflow=read(rel);
@@ -57,15 +65,16 @@ test('GitHub can trigger Unity Build Automation directly without browser automat
  assert.match(workflow,/UNITY_UBA_PROJECT_ID/);
  assert.match(workflow,/buildtargets/);
  assert.match(workflow,/Danao WebGL/);
- assert.match(workflow,/Danao Windows x64/);
+ assert.doesNotMatch(workflow,/Danao Windows x64|danao-windows-x64|StandaloneWindows64/);
  assert.match(workflow,/cloud-build-trigger\.json/);
 });
 
-test('GitHub can monitor the latest Unity cloud build and surface logs on failure',()=>{
+test('GitHub can monitor the latest Unity cloud WebGL build and surface logs on failure',()=>{
  const rel='.github/workflows/danao-uba-status.yml';
  assert.ok(has(rel),`missing ${rel}`);
  const workflow=read(rel);
  assert.match(workflow,/danao-webgl/);
+ assert.doesNotMatch(workflow,/danao-windows-x64|Danao Windows x64/);
  assert.match(workflow,/builds\?limit=1/);
  assert.match(workflow,/buildStatus/);
  assert.match(workflow,/success\|failure\|canceled\|unknown/);
