@@ -46,6 +46,8 @@ test('Danao keeps WebGL builds on Windows Micro and enforces conservative cost c
   assert.match(workflow, /Set Unity concurrency limit to one/);
   assert.match(workflow, /\/orgs\/\$UNITY_UBA_ORG_ID\/concurrency-limit/);
   assert.match(workflow, /'\{\"limit\":1\}'/);
+  assert.match(workflow, /if \[ "\$HTTP" = "403" \]/);
+  assert.match(workflow, /continuing with GitHub serialization/i);
   assert.match(workflow, /Guard Danao monthly Windows minutes/);
   assert.match(workflow, /billableTimeInSeconds/);
   assert.match(workflow, /operatingSystem/);
