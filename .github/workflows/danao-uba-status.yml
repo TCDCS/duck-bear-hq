@@ -2,14 +2,6 @@ name: Danao Unity Build Status
 
 on:
   workflow_dispatch:
-    inputs:
-      target:
-        description: Build target to monitor
-        required: true
-        type: choice
-        options:
-          - webgl
-          - windows
   push:
     branches: [feature/danao-unity]
     paths:
@@ -31,33 +23,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Resolve target
+      - name: Resolve WebGL target
         id: target
         shell: bash
-        env:
-          DISPATCH_TARGET: ${{ inputs.target }}
         run: |
           set -euo pipefail
-          TARGET="${DISPATCH_TARGET:-}"
+          TARGET="webgl"
           if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
             TARGET="$(jq -r '.target // empty' unity/danao/cloud-build-status-trigger.json)"
           fi
-          case "$TARGET" in
-            webgl)
-              TARGET_ID="danao-webgl"
-              TARGET_NAME="Danao WebGL"
-              ;;
-            windows)
-              TARGET_ID="danao-windows-x64"
-              TARGET_NAME="Danao Windows x64"
-              ;;
-            *)
-              echo "Unsupported target: $TARGET" >&2
-              exit 2
-              ;;
-          esac
-          echo "id=$TARGET_ID" >> "$GITHUB_OUTPUT"
-          echo "name=$TARGET_NAME" >> "$GITHUB_OUTPUT"
+          test "$TARGET" = "webgl" || { echo "Danao is browser-only; unsupported status target: $TARGET" >&2; exit 2; }
+          echo "id=danao-webgl" >> "$GITHUB_OUTPUT"
+          echo "name=Danao WebGL" >> "$GITHUB_OUTPUT"
 
       - name: Check Unity API credentials
         shell: bash
@@ -132,7 +109,7 @@ jobs:
             echo "Status: **$STATUS**"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Capture artifacts on success
+      - name: Capture WebGL artifacts on success
         if: ${{ steps.wait.outputs.status == 'success' }}
         shell: bash
         env:
@@ -163,30 +140,22 @@ jobs:
             fi
           }
 
-          if [ "$TARGET_ID" = "danao-webgl" ]; then
-            mkdir -p playable/Build
-            download_webgl_file() {
-              SOURCE_NAME="$1"
-              OUTPUT_NAME="$2"
-              MIN_BYTES="$3"
-              HREF="$(jq -r --arg name "$SOURCE_NAME" '[.[] | select(.name == "All Artifacts") | .files[] | select(.filename == $name) | .href][0] // empty' unity-artifacts.json)"
-              download_signed_artifact "$HREF" "playable/Build/$OUTPUT_NAME" "$MIN_BYTES"
-            }
-            download_webgl_file 'Danao WebGL/Build/Danao WebGL.loader.js' 'Danao.loader.js' 10000
-            download_webgl_file 'Danao WebGL/Build/Danao WebGL.data' 'Danao.data' 1000000
-            download_webgl_file 'Danao WebGL/Build/Danao WebGL.framework.js' 'Danao.framework.js' 100000
-            download_webgl_file 'Danao WebGL/Build/Danao WebGL.wasm' 'Danao.wasm' 1000000
-            ls -lh playable/Build
-          elif [ "$TARGET_ID" = "danao-windows-x64" ]; then
-            mkdir -p playable
-            HREF="$(jq -r '[.[] | select(.primary == true) | .files[] | select(.filename == "Danao Windows x64.zip") | .href][0] // empty' unity-artifacts.json)"
-            download_signed_artifact "$HREF" 'playable/Danao Windows x64.zip' 5000000
-            unzip -t 'playable/Danao Windows x64.zip'
-            ls -lh 'playable/Danao Windows x64.zip'
-          fi
+          mkdir -p playable/Build
+          download_webgl_file() {
+            SOURCE_NAME="$1"
+            OUTPUT_NAME="$2"
+            MIN_BYTES="$3"
+            HREF="$(jq -r --arg name "$SOURCE_NAME" '[.[] | select(.name == "All Artifacts") | .files[] | select(.filename == $name) | .href][0] // empty' unity-artifacts.json)"
+            download_signed_artifact "$HREF" "playable/Build/$OUTPUT_NAME" "$MIN_BYTES"
+          }
+          download_webgl_file 'Danao WebGL/Build/Danao WebGL.loader.js' 'Danao.loader.js' 10000
+          download_webgl_file 'Danao WebGL/Build/Danao WebGL.data' 'Danao.data' 1000000
+          download_webgl_file 'Danao WebGL/Build/Danao WebGL.framework.js' 'Danao.framework.js' 100000
+          download_webgl_file 'Danao WebGL/Build/Danao WebGL.wasm' 'Danao.wasm' 1000000
+          ls -lh playable/Build
 
       - name: Upload playable WebGL build
-        if: ${{ steps.wait.outputs.status == 'success' && steps.target.outputs.id == 'danao-webgl' }}
+        if: ${{ steps.wait.outputs.status == 'success' }}
         uses: actions/upload-artifact@v4
         with:
           name: danao-webgl-playable-${{ steps.latest.outputs.number }}
@@ -194,17 +163,8 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Upload playable Windows build
-        if: ${{ steps.wait.outputs.status == 'success' && steps.target.outputs.id == 'danao-windows-x64' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: danao-windows-x64-playable-${{ steps.latest.outputs.number }}
-          path: playable/Danao Windows x64.zip
-          if-no-files-found: error
-          retention-days: 30
-
       - name: Publish WebGL build to R2
-        if: ${{ steps.wait.outputs.status == 'success' && steps.target.outputs.id == 'danao-webgl' }}
+        if: ${{ steps.wait.outputs.status == 'success' }}
         shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
