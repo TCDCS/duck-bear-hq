@@ -18,6 +18,7 @@ on:
       - '.github/workflows/danao-unity.yml'
       - '.github/workflows/danao-uba-trigger.yml'
       - '.github/workflows/danao-uba-status.yml'
+      - '.github/workflows/danao-release.yml'
 
 permissions:
   contents: read
@@ -38,6 +39,10 @@ jobs:
       - run: npm ci
       - name: Danao source and server tests
         run: node --test tests/danao-*.test.mjs
+      - name: Full repository Node test suite
+        run: npm test
+      - name: Repository checks
+        run: npm run check
       - name: Worker syntax checks
         run: |
           node --check src/danao/room-state.mjs
