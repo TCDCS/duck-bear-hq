@@ -45,14 +45,21 @@ test('Cloudflare deploy assembles the exact Danao v0.5 release before verificati
 
 test('browser fighter select uses the complete Danao cast instead of generic stand-ins', () => {
   const runtime = read('public/games/danao/src/game/runtime.js');
+  const visuals = read('public/games/danao/src/game/visuals.js');
   const app = read('public/games/danao/src/ui/App.js');
-  for (const name of ['Hero', 'Stephen', 'Zachary', 'Mulan', 'Gaby', 'Sara', 'Mum', 'Dad']) {
-    assert.match(runtime, new RegExp(`name: '${name}'`));
-    assert.match(app, new RegExp(`name: '${name}'`));
+  const cast = [
+    ['hero', 'Hero'], ['stephen', 'Stephen'], ['zachary', 'Zachary'], ['mulan', 'Mulan'],
+    ['gaby', 'Gaby'], ['sara', 'Sara'], ['mum', 'Mum'], ['dad', 'Dad'],
+  ];
+  for (const [id, name] of cast) {
+    assert.match(runtime, new RegExp(`id: '${id}'.*name: '${name}'`));
+    assert.match(app, new RegExp(`id: '${id}'.*name: '${name}'`));
+    assert.match(visuals, new RegExp(`style\\.id === '${id}'`));
   }
-  for (const oldName of ['Tiger', 'Crane', 'Monkey', 'Ox']) {
-    assert.doesNotMatch(runtime, new RegExp(`name: '${oldName}'`));
-    assert.doesNotMatch(app, new RegExp(`name: '${oldName}'`));
+  for (const [oldId, oldName] of [['tiger', 'Tiger'], ['crane', 'Crane'], ['monkey', 'Monkey'], ['ox', 'Ox']]) {
+    assert.doesNotMatch(runtime, new RegExp(`id: '${oldId}'.*name: '${oldName}'`));
+    assert.doesNotMatch(app, new RegExp(`id: '${oldId}'.*name: '${oldName}'`));
+    assert.doesNotMatch(visuals, new RegExp(`style\\.id === '${oldId}'`));
   }
   assert.match(app, /fighterId: 'hero'/);
 });
