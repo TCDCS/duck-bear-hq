@@ -5,6 +5,14 @@ import {fileURLToPath} from 'node:url';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const outdir=path.join(root,'public/games/danao/build');
+const babylonLite=path.join(root,'public/games/danao/babylon-lite.mjs');
+const danaoBabylonLite={
+  name:'danao-babylon-lite',
+  setup(bundle){
+    bundle.onResolve({filter:/^@babylonjs\/core$/},()=>({path:babylonLite}));
+  }
+};
+
 await rm(outdir,{recursive:true,force:true});
 await mkdir(outdir,{recursive:true});
 
@@ -24,5 +32,6 @@ await build({
   chunkNames:'chunks/[name]-[hash]',
   assetNames:'assets/[name]-[hash]',
   define:{'process.env.NODE_ENV':'"production"'},
+  plugins:[danaoBabylonLite],
   logLevel:'info'
 });
