@@ -1,4 +1,4 @@
 {
-  "target": "webgl",
-  "request": "verify-committed-boot-scene-webgl-build"
+  "target": "windows",
+  "request": "package-verified-windows-build-as-downloadable-artifact"
 }
