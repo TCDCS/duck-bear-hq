@@ -10,6 +10,7 @@ test('Danao production release uses Unity Build Automation for the exact main co
   assert.equal(fs.existsSync(workflowPath), true, 'production Danao release workflow must exist');
   const workflow = fs.readFileSync(workflowPath, 'utf8');
   assert.match(workflow, /branches:\s*\[main\]/);
+  assert.match(workflow, /if:\s*\$\{\{\s*github\.ref\s*==\s*'refs\/heads\/main'\s*\}\}/);
   assert.match(workflow, /TARGET_NAME="Danao WebGL"/);
   assert.match(workflow, /--arg commit "\$GITHUB_SHA"/);
   assert.match(workflow, /scmCommitId/);
