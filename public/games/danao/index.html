@@ -48,11 +48,41 @@
         <label>Fighter<select id="character-select"></select></label>
         <label>Mode<select id="mode-select"></select></label>
       </div>
-      <p class="setup-note">The first Babylon/Rapier slice plays the selected arena as a head-to-head brawl while the remaining mode rules are ported.</p>
+      <p class="setup-note">Pick the arena, fighter and match style, then jump straight into the browser-native brawl.</p>
       <div class="menu-actions">
         <button id="start-local" class="play-button" type="button">START FIGHT</button>
         <button id="setup-back" class="menu-button" type="button">BACK</button>
       </div>
+    </section>
+
+    <section id="online-lobby" class="menu-card online-card" hidden aria-labelledby="online-title">
+      <p class="eyebrow">ONLINE BRAWL</p>
+      <h2 id="online-title">Room chaos</h2>
+      <div class="online-entry">
+        <label>Your name<input id="online-name" type="text" maxlength="32" autocomplete="nickname" value="Player"></label>
+        <label>Fighter<select id="online-character"></select></label>
+        <label>Room code<input id="online-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="4" pattern="[0-9]{4}" placeholder="0000"></label>
+      </div>
+      <div class="menu-actions online-entry-actions">
+        <button id="create-room" class="play-button" type="button">CREATE ROOM</button>
+        <button id="join-room" class="menu-button" type="button">JOIN ROOM</button>
+      </div>
+
+      <div class="room-panel" aria-live="polite">
+        <div class="room-heading"><span>ROOM</span><strong id="room-code">----</strong></div>
+        <div id="room-players" class="room-players"><p class="room-empty">Create or join a room to see players here.</p></div>
+        <div class="online-setup-grid">
+          <label>Arena<select id="online-arena"></select></label>
+          <label>Mode<select id="online-mode"></select></label>
+        </div>
+        <div class="menu-actions room-actions">
+          <button id="room-ready" class="menu-button" type="button" disabled>READY</button>
+          <button id="room-start" class="play-button small-play" type="button" disabled>START</button>
+          <button id="room-leave" class="menu-button danger-button" type="button" disabled>LEAVE ROOM</button>
+        </div>
+      </div>
+      <p id="online-status" class="compatibility" role="status">Create a room or enter a four-digit code.</p>
+      <div class="menu-actions online-back-row"><button id="online-back" class="menu-button" type="button">BACK</button></div>
     </section>
 
     <section id="game-screen" class="game-panel" hidden aria-label="Danao game">
