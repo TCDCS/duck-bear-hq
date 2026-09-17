@@ -7,54 +7,67 @@
   <meta name="description" content="打闹 — Dǎnào. A ridiculous arcade physics brawler for local and online play.">
   <title>打闹 · Dǎnào — Duck &amp; Bear Games</title>
   <link rel="stylesheet" href="/games/danao/danao.css">
-  <script type="module" src="/games/danao/launcher.mjs"></script>
+  <script type="module" src="/games/danao/game.mjs"></script>
 </head>
 <body>
   <div class="noise" aria-hidden="true"></div>
   <header class="topbar">
     <a href="/games/">← Games</a>
     <div class="top-actions">
-      <span id="padState" class="pad-state">CONTROLLER: WAITING</span>
+      <span id="padState" class="pad-state">CONTROLLER: KEYBOARD</span>
       <button id="fullscreen" class="mini-button" type="button">FULLSCREEN</button>
     </div>
   </header>
 
   <main class="stage">
-    <section id="launchPanel" class="launch-panel" aria-labelledby="gameTitle">
+    <section id="main-menu" class="menu-card hero-card" aria-labelledby="gameTitle">
       <div class="burst burst-one" aria-hidden="true">啪!</div>
       <div class="burst burst-two" aria-hidden="true">BONK!</div>
       <p class="eyebrow">DUCK &amp; BEAR ARCADE</p>
       <h1 id="gameTitle"><span lang="zh-Hans">打闹</span></h1>
       <p class="roman">Dǎnào</p>
       <p class="tagline">PHYSICS. BAD DECISIONS. NO HARD FEELINGS.</p>
-      <div class="feature-strip" aria-label="Game features">
-        <span>1–4 LOCAL</span><span>2–4 ONLINE</span><span>11 ARENAS</span><span>36 WEAPONS &amp; PROPS</span>
+      <div class="feature-strip" aria-label="Game features"><span>ARCADE PHYSICS</span><span>11 ARENAS</span><span>8 FIGHTERS</span><span>LOCAL + ONLINE</span></div>
+      <div class="menu-actions">
+        <button id="local-play" class="play-button" type="button">LOCAL PLAY</button>
+        <button id="online-play" class="menu-button" type="button">ONLINE PLAY</button>
+        <button id="how-to-play" class="menu-button" type="button">HOW TO PLAY</button>
       </div>
-      <button id="play" class="play-button" type="button">LET THE NONSENSE BEGIN</button>
-      <div id="invite" class="invite-note" hidden></div>
-      <p class="controller-note">Best with controllers. Keyboard works for Player 1. Plug controllers in before starting for the easiest couch setup.</p>
-      <p id="compatibility" class="compatibility" role="status">Checking WebGL 2…</p>
+      <div id="how-panel" class="how-panel" hidden>
+        <p><strong>Move:</strong> WASD / arrows or left stick. <strong>Attack:</strong> Space or A / Cross. <strong>Dash:</strong> Shift or shoulder button.</p>
+        <p>Knock the other fighter down to 0 HP. A second controller can take Player 2; otherwise the game supplies a CPU opponent.</p>
+      </div>
+      <p id="compatibility" class="compatibility" role="status">Loading browser controls…</p>
     </section>
 
-    <section id="gamePanel" class="game-panel" hidden aria-label="Danao game">
-      <div id="loading" class="loading" aria-live="polite">
-        <div class="loading-title"><span lang="zh-Hans">打闹</span> IS LOADING…</div>
-        <div class="meter"><span id="meterFill"></span></div>
-        <div id="loadingText" class="loading-text">Warming up the boxing gloves.</div>
+    <section id="local-setup" class="menu-card setup-card" hidden aria-labelledby="setup-title">
+      <p class="eyebrow">LOCAL BRAWL</p>
+      <h2 id="setup-title">Choose the nonsense</h2>
+      <div class="setup-grid">
+        <label>Arena<select id="arena-select"></select></label>
+        <label>Fighter<select id="character-select"></select></label>
+        <label>Mode<select id="mode-select"></select></label>
       </div>
-      <canvas id="unity-canvas" tabindex="0" aria-label="Danao game canvas"></canvas>
-      <div id="fatal" class="fatal" hidden>
-        <h2>That went sideways.</h2>
-        <p id="fatalText">The game could not start.</p>
-        <button id="retry" class="mini-button" type="button">TRY AGAIN</button>
+      <p class="setup-note">The first Babylon/Rapier slice plays the selected arena as a head-to-head brawl while the remaining mode rules are ported.</p>
+      <div class="menu-actions">
+        <button id="start-local" class="play-button" type="button">START FIGHT</button>
+        <button id="setup-back" class="menu-button" type="button">BACK</button>
       </div>
+    </section>
+
+    <section id="game-screen" class="game-panel" hidden aria-label="Danao game">
+      <canvas id="game-canvas" tabindex="0" aria-label="Danao Babylon game canvas"></canvas>
+      <div id="game-hud" class="game-hud">
+        <div class="health-card left"><strong id="p1-name">P1</strong><span id="p1-hp">100 HP</span><div class="health-track"><i id="p1-fill"></i></div></div>
+        <div id="round-over" class="round-over" hidden>ROUND OVER</div>
+        <div class="health-card right"><strong id="p2-name">P2</strong><span id="p2-hp">100 HP</span><div class="health-track"><i id="p2-fill"></i></div></div>
+        <button id="return-menu" class="mini-button return-menu" type="button">RETURN TO MENU</button>
+      </div>
+      <div id="loading" class="loading" hidden aria-live="polite"><div class="loading-title"><span lang="zh-Hans">打闹</span> IS LOADING…</div><div id="loading-text" class="loading-text">Loading Babylon + Rapier…</div></div>
+      <div id="fatal" class="fatal" hidden><h2>That went sideways.</h2><p id="fatal-text">The game could not start.</p><button id="retry" class="mini-button" type="button">TRY AGAIN</button></div>
     </section>
   </main>
 
-  <footer>
-    <span>打闹 · Dǎnào</span>
-    <span>No gore. Plenty of bruised pride.</span>
-    <a href="/games/">Back to Duck &amp; Bear Games</a>
-  </footer>
+  <footer><span>打闹 · Dǎnào</span><span>No gore. Plenty of bruised pride.</span><a href="/games/">Back to Duck &amp; Bear Games</a></footer>
 </body>
 </html>
