@@ -5,6 +5,9 @@ on:
   push:
     branches: [feature/danao-babylon-final]
     paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/build-danao.mjs'
       - 'public/games/danao/**'
       - 'src/game-routes.js'
       - 'tests/danao-*.test.mjs'
@@ -14,7 +17,7 @@ on:
       - '.github/workflows/danao-babylon.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   source-tests:
@@ -25,7 +28,20 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Refresh migration lockfile
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Commit lockfile if dependencies changed
+        run: |
+          if ! git diff --quiet -- package-lock.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "build: lock Danao Babylon dependencies"
+            git push origin HEAD:feature/danao-babylon-final
+          fi
       - run: npm ci --no-audit --no-fund
+      - name: Build self-hosted Danao client
+        run: npm run build:danao
       - name: Danao tests
         run: node --test tests/danao-*.test.mjs
       - name: Full repository tests
@@ -38,6 +54,7 @@ jobs:
           node --check public/games/danao/catalog.mjs
           node --check public/games/danao/fighter.mjs
           node --check public/games/danao/bot.mjs
+          node --check scripts/build-danao.mjs
           node --check src/game-routes.js
       - uses: actions/setup-python@v5
         with:
