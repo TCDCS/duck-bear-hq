@@ -6,7 +6,7 @@ function material(BABYLON,scene,name,colour){
  return mat;
 }
 
-export function createFighter({BABYLON,RAPIER,scene,world,definition,position,slot}){
+export function createFighter({BABYLON,RAPIER,scene,world,definition,position,slot,settings={}}){
  const root=new BABYLON.TransformNode(`fighter-${slot}`,scene);
  const bodyMat=material(BABYLON,scene,`fighter-${slot}-body`,definition.body);
  const accentMat=material(BABYLON,scene,`fighter-${slot}-accent`,definition.accent);
@@ -21,7 +21,7 @@ export function createFighter({BABYLON,RAPIER,scene,world,definition,position,sl
  const body=world.createRigidBody(desc);
  body.setEnabledRotations(false,false,false,true);
  const collider=world.createCollider(RAPIER.ColliderDesc.capsule(.65,.46).setFriction(.85).setRestitution(.08),body);
- const state={slot,definition,root,body,collider,hp:100,attackCooldown:0,alive:true,spawn:{...position},jumpHeld:false,grabHeld:false,blocking:false,lastInput:{x:0,z:0,jump:false,attack:false,grab:false,dash:false,fire:false,block:false}};
+ const state={slot,definition,settings,root,body,collider,hp:100,attackCooldown:0,alive:true,spawn:{...position},jumpHeld:false,grabHeld:false,blocking:false,lastInput:{x:0,z:0,jump:false,attack:false,grab:false,dash:false,fire:false,block:false}};
 
  state.update=(input,dt)=>{
   state.lastInput=input;
@@ -40,13 +40,17 @@ export function createFighter({BABYLON,RAPIER,scene,world,definition,position,sl
  };
  state.applyDamage=(amount,impulse)=>{
   if(!state.alive)return 0;
-  const damageScale=state.blocking?.35:1,impulseScale=state.blocking?.55:1,applied=Math.max(0,amount)*damageScale;
+  const damageScale=state.blocking?.35:1,impulseScale=state.blocking?.55:1,applied=state.settings?.healthDamage===false?0:Math.max(0,amount)*damageScale;
   state.hp=Math.max(0,state.hp-applied);
   if(impulse)body.applyImpulse({x:(impulse.x||0)*impulseScale,y:(impulse.y||0)*impulseScale,z:(impulse.z||0)*impulseScale},true);
-  bodyMat.emissiveColor=new BABYLON.Color3(.65,.08,.08);
-  setTimeout(()=>{if(!bodyMat.isDisposed)bodyMat.emissiveColor=BABYLON.Color3.Black();},90);
+  if(state.settings?.visibleBruising!==false){bodyMat.emissiveColor=new BABYLON.Color3(.65,.08,.08);setTimeout(()=>{if(!bodyMat.isDisposed)bodyMat.emissiveColor=BABYLON.Color3.Black();},90);}
   if(state.hp<=0)state.alive=false;
   return applied;
+ };
+ state.eliminate=(impulse=null)=>{
+  if(!state.alive)return;
+  if(impulse)body.applyImpulse(impulse,true);
+  state.hp=0;state.alive=false;
  };
  state.sync=()=>{
   const p=body.translation();
