@@ -4,7 +4,7 @@
 
 Slice A is the local multiplayer vertical slice for the Unity version of Dǎnào. It is intended to prove the game feel and project structure before the remaining arenas, full content roster, online transport and cloud profiles are layered on.
 
-The source is on `feature/danao-unity` under `unity/danao/`.
+The source is under `unity/danao/`.
 
 ## Included
 
@@ -18,25 +18,20 @@ Eight representative weapons are included: boxing glove, folding chair, frying p
 
 All first-playable audio is generated in code. There are no downloaded music or SFX files in Slice A, avoiding redistribution/licence ambiguity.
 
-## Verification completed in this environment
+## Verification
 
-The source contract test passes and checks the Unity 6 project layout, 100 HP rule, the three independent presentation/gameplay toggles, required local match modes, all eight weapons, deliberate controller joining, Chinese title, Web/Windows build targets and procedural audio policy.
+The source contract tests check the Unity 6 project layout, 100 HP rule, the three independent presentation/gameplay toggles, required local match modes, all eight weapons, deliberate controller joining, Chinese title, WebGL browser build target and procedural audio policy.
 
-The C# source set was also checked for structural delimiter balance before commit.
+Dǎnào now ships only as a Unity WebGL browser game. Windows Micro can be used as the cloud build worker because it is cheaper, but it does not produce a Win64 application.
 
-## Verification that still requires Unity
-
-This environment does not include a licensed Unity 6 Editor, so it cannot truthfully certify Unity compilation, the Unity Test Runner, PhysX feel, controller hardware mappings, WebGL frame rate or generated Web/Windows binaries. Those checks must run on a Unity 6 machine or a CI runner with Unity available before the build is published as playable.
-
-That limitation does not affect the source/build setup: `DanaoBuild.BuildWeb` and `DanaoBuild.BuildWindows` are included, and the generated build directory is excluded from source control.
-
-## Build commands
+## Build command
 
 ```bash
 Unity -batchmode -quit -projectPath unity/danao -executeMethod Danao.Editor.DanaoBuild.BuildWeb
-Unity -batchmode -quit -projectPath unity/danao -executeMethod Danao.Editor.DanaoBuild.BuildWindows
 ```
+
+Generated Unity build output remains excluded from source control.
 
 ## Next slices
 
-Slice B expands this foundation to the other ten arenas, the full weapon/prop roster, launch modes, character presentation and costumes. Slice C adds Dǎnào-specific Cloudflare Durable Object rooms, WebSocket/WebGL transport and cloud profiles. Slice D publishes the Web build through Duck & Bear, adds the `/games/danao/` launch shell, Windows release workflow, licence manifest and release checks.
+Slice B expands this foundation to the other ten arenas, the full weapon/prop roster, launch modes, character presentation and costumes. Slice C adds Dǎnào-specific Cloudflare Durable Object rooms, WebSocket/WebGL transport and cloud profiles. Slice D publishes the Web build through Duck & Bear, adds the `/games/danao/` launch shell, licence manifest and release checks.

@@ -10,14 +10,10 @@ namespace Danao.Editor
     public static class DanaoBuild
     {
         private const string ScenePath = "Assets/Danao/Generated/Boot.unity";
+        private const string WebOutput = "Build/Web";
 
         [MenuItem("Danao/Build/Web")]
-        public static void BuildWeb() => Build(BuildTarget.WebGL, "Build/Web");
-
-        [MenuItem("Danao/Build/Windows x64")]
-        public static void BuildWindows() => Build(BuildTarget.StandaloneWindows64, "Build/Windows/Danao.exe");
-
-        public static void Build(BuildTarget target, string output)
+        public static void BuildWeb()
         {
             DanaoProjectConfigurator.EnsureProject();
             Directory.CreateDirectory("Assets/Danao/Generated");
@@ -26,30 +22,22 @@ namespace Danao.Editor
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             AssetDatabase.Refresh();
 
-            if (target == BuildTarget.WebGL)
-            {
-                Directory.CreateDirectory(output);
-                // Keep the four canonical Unity filenames uncompressed. R2 and the
-                // browser launcher address Danao.data/framework.js/wasm directly.
-                PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
-                PlayerSettings.WebGL.decompressionFallback = false;
-            }
-            else
-            {
-                var directory = Path.GetDirectoryName(output);
-                if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
-            }
+            Directory.CreateDirectory(WebOutput);
+            // Keep the four canonical Unity filenames uncompressed. R2 and the
+            // browser launcher address Danao.data/framework.js/wasm directly.
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
+            PlayerSettings.WebGL.decompressionFallback = false;
 
             var options = new BuildPlayerOptions
             {
                 scenes = new[] { ScenePath },
-                locationPathName = output,
-                target = target,
+                locationPathName = WebOutput,
+                target = BuildTarget.WebGL,
                 options = BuildOptions.None
             };
             var report = BuildPipeline.BuildPlayer(options);
             if (report.summary.result != BuildResult.Succeeded)
-                throw new InvalidOperationException($"Dǎnào build failed: {report.summary.result} ({report.summary.totalErrors} errors)");
+                throw new InvalidOperationException($"Dǎnào WebGL build failed: {report.summary.result} ({report.summary.totalErrors} errors)");
         }
     }
 }

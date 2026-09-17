@@ -2,14 +2,6 @@ name: Danao Unity Build Automation API
 
 on:
   workflow_dispatch:
-    inputs:
-      target:
-        description: Build target to start
-        required: true
-        type: choice
-        options:
-          - webgl
-          - windows
   push:
     branches: [feature/danao-unity]
     paths:
@@ -33,28 +25,15 @@ jobs:
       - name: Resolve requested target
         id: target
         shell: bash
-        env:
-          DISPATCH_TARGET: ${{ inputs.target }}
         run: |
           set -euo pipefail
-          TARGET="${DISPATCH_TARGET:-}"
+          TARGET="webgl"
           if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
             TARGET="$(jq -r '.target // empty' unity/danao/cloud-build-trigger.json)"
           fi
-          case "$TARGET" in
-            webgl)
-              NAME="Danao WebGL"
-              ;;
-            windows)
-              NAME="Danao Windows x64"
-              ;;
-            *)
-              echo "Unsupported build target: $TARGET" >&2
-              exit 2
-              ;;
-          esac
-          echo "key=$TARGET" >> "$GITHUB_OUTPUT"
-          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          test "$TARGET" = "webgl" || { echo "Danao is browser-only; unsupported build target: $TARGET" >&2; exit 2; }
+          echo "key=webgl" >> "$GITHUB_OUTPUT"
+          echo "name=Danao WebGL" >> "$GITHUB_OUTPUT"
 
       - name: Check Unity Build Automation credentials
         shell: bash

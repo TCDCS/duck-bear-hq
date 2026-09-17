@@ -61,14 +61,14 @@ Run `node --test tests/mango-*.test.mjs` and `python tests/mango-browser.py` aga
 
 ## 打闹 Dǎnào
 
-Dǎnào is the Unity 6 arcade physics brawler for Duck & Bear. The same Unity gameplay project targets the website and Windows desktop.
+Dǎnào is the Unity 6 arcade physics brawler for Duck & Bear and ships as a **WebGL browser game only**. Windows Micro may be used as the Unity cloud worker that compiles the WebGL build, but there is no Win64 application release.
 
-The current source includes all eleven planned arenas, eight launch modes, the eight-character cast, thirty-six weapons and props, 100 HP, independent health/bruising/hazard toggles, couch multiplayer, controller-first menus, procedural audio, WebGL/Windows transports, private four-player online rooms and local/cloud profile support. The main title is `打闹`.
+The current source includes all eleven planned arenas, eight launch modes, the eight-character cast, thirty-six weapons and props, 100 HP, independent health/bruising/hazard toggles, couch multiplayer, controller-first menus, procedural audio, WebGL online transport, private four-player online rooms and local/cloud profile support. The main title is `打闹`.
 
 Online rooms use separate `DanaoDirectory` and `DanaoRoom` Durable Objects. Cloudflare owns membership, ready/setup state and host identity; the connected Unity host owns PhysX simulation. Non-host clients send input to the host and receive 15 Hz authoritative fighter/objective snapshots. The latest snapshot is retained so a replacement host can resume the same fight instead of forcing everyone back to the lobby.
 
-Web profiles always save locally and signed-in users can sync the Dǎnào profile through revisioned D1 records. The Windows build currently has the same local save format but still needs a secure desktop account-link flow before standalone cross-device cloud sync can be called complete.
+Web profiles always save locally and signed-in users can sync the Dǎnào profile through revisioned D1 records.
 
-The website launcher is `/games/danao/`. Unity Web build files are served from the existing R2 bucket under `/game-builds/danao/web/current/`; generated Unity builds are not committed to Git. The GitHub workflow is prepared to build WebGL and Windows x64 and publish the Web build to R2 when Unity/Cloudflare CI credentials are present.
+The website launcher is `/games/danao/`. Unity Web build files are served from the existing R2 bucket under `/game-builds/danao/web/current/`; generated Unity builds are not committed to Git. GitHub and Unity Build Automation produce only the WebGL artifact and publish the verified browser build to R2.
 
-Run `node --test tests/danao-*.test.mjs` for the server/source suite. Unity EditMode/PlayMode tests and real WebGL/Windows artifacts require a licensed Unity 6 runner; those jobs are deliberately skipped if the repository does not expose a Unity licence. See `docs/danao-first-playable.md`, `docs/danao-online-cloud.md` and `docs/superpowers/specs/2026-09-16-danao-unity-design.md`.
+Run `node --test tests/danao-*.test.mjs` for the server/source suite. Unity EditMode/PlayMode tests and the real WebGL artifact require a licensed Unity 6 runner; those jobs are deliberately skipped if the repository does not expose a Unity licence. See `docs/danao-first-playable.md`, `docs/danao-online-cloud.md` and `docs/superpowers/specs/2026-09-16-danao-unity-design.md` (the design document records the earlier dual-target plan).

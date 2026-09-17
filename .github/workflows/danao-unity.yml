@@ -139,36 +139,6 @@ jobs:
           path: unity/danao/Builds/WebGL
           if-no-files-found: error
 
-  build-windows:
-    needs: [unity-tests, check-build-secrets]
-    if: ${{ needs.check-build-secrets.outputs.unity == 'true' && needs.unity-tests.result == 'success' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: unity/danao/Library
-          key: danao-unity-windows-${{ runner.os }}-${{ hashFiles('unity/danao/Packages/**','unity/danao/ProjectSettings/**') }}
-          restore-keys: danao-unity-windows-${{ runner.os }}-
-      - name: Build Windows x64
-        uses: game-ci/unity-builder@v4
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        with:
-          projectPath: ${{ env.PROJECT_PATH }}
-          unityVersion: ${{ env.UNITY_VERSION }}
-          targetPlatform: StandaloneWindows64
-          buildName: Danao
-          buildsPath: unity/danao/Builds
-      - uses: actions/upload-artifact@v4
-        with:
-          name: danao-windows-x64
-          path: unity/danao/Builds/StandaloneWindows64
-          if-no-files-found: error
-
   publish-web-r2:
     needs: [build-web, check-build-secrets]
     if: ${{ github.ref == 'refs/heads/main' && needs.build-web.result == 'success' && needs.check-build-secrets.outputs.cloudflare == 'true' }}
