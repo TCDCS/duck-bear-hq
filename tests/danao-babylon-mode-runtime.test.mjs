@@ -25,10 +25,9 @@ test('objective modes expose HUD state and browser respawns',()=>{
  assert.match(game,/Heist/);
 });
 
-test('Royal Rumble and team knockout have distinct live match handling',()=>{
- assert.match(game,/ringOut/);
+test('ring-out and team knockout have distinct live match handling',()=>{
+ assert.match(game,/modeRules\.ringOut/);
  assert.match(game,/winnerTeam/);
  assert.match(game,/team/);
  assert.match(game,/TwoVsTwo/);
- assert.match(game,/RoyalRumble/);
 });
