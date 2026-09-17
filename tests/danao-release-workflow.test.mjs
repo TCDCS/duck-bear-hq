@@ -6,14 +6,25 @@ import path from 'node:path';
 const root = path.resolve(import.meta.dirname, '..');
 const workflowPath = path.join(root, '.github/workflows/danao-release.yml');
 
-test('Danao production release uses Unity Build Automation for the exact main commit and publishes current WebGL', () => {
+test('Danao production release uses Unity Build Automation for the exact main commit and uploads through the authenticated Worker route', () => {
   assert.equal(fs.existsSync(workflowPath), true, 'production Danao release workflow must exist');
   const workflow = fs.readFileSync(workflowPath, 'utf8');
   assert.match(workflow, /branches:\s*\[main\]/);
   assert.match(workflow, /if:\s*\$\{\{\s*github\.ref\s*==\s*'refs\/heads\/main'\s*\}\}/);
+  assert.match(workflow, /actions:\s*read/);
   assert.match(workflow, /TARGET_NAME="Danao WebGL"/);
   assert.match(workflow, /--arg commit "\$GITHUB_SHA"/);
   assert.match(workflow, /scmCommitId/);
-  assert.match(workflow, /danao\/web\/current\/\$NAME/);
+  assert.match(workflow, /GITHUB_TOKEN:\s*\$\{\{\s*github\.token\s*\}\}/);
+  assert.match(workflow, /\/api\/danao\/release\/health/);
+  assert.match(workflow, /\/api\/danao\/release\/\$NAME/);
+  assert.match(workflow, /X-Danao-Run-Id:\s*\$GITHUB_RUN_ID/);
+  assert.match(workflow, /X-Danao-Commit:\s*\$GITHUB_SHA/);
+  assert.doesNotMatch(workflow, /CLOUDFLARE_API_TOKEN/);
+  assert.doesNotMatch(workflow, /CLOUDFLARE_ACCOUNT_ID/);
+  assert.doesNotMatch(workflow, /wrangler r2 object put/);
   assert.match(workflow, /danao-webgl-production-/);
+
+  const dataIndex=workflow.indexOf('Danao.data Danao.framework.js Danao.wasm Danao.loader.js');
+  assert.notEqual(dataIndex,-1,'loader must be uploaded last so it only becomes visible after its dependencies');
 });
