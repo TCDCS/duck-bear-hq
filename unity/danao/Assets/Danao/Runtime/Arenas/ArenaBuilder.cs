@@ -134,8 +134,7 @@ namespace Danao.Arenas
 
         internal static void Paint(GameObject go,Color colour)
         {
-            var shader=Shader.Find("Universal Render Pipeline/Lit")??Shader.Find("Standard");
-            go.GetComponent<Renderer>().material=new Material(shader){color=colour};
+            RuntimeMaterial.Paint(go.GetComponent<Renderer>(), colour);
         }
     }
 }
