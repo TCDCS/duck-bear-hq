@@ -5,7 +5,7 @@ export const MODE_RULES=Object.freeze({
  RoyalRumble:Object.freeze({elimination:true,objective:false,teams:false,ringOut:true,respawnSeconds:0}),
  MangoGrab:Object.freeze({elimination:false,objective:true,teams:false,ringOut:false,respawnSeconds:2.2}),
  HotBomb:Object.freeze({elimination:false,objective:true,teams:false,ringOut:false,respawnSeconds:2.2}),
- KingOfTheRing:Object.freeze({elimination:false,objective:true,teams:false,ringOut:false,respawnSeconds:2.2}),
+ KingOfRing:Object.freeze({elimination:false,objective:true,teams:false,ringOut:false,respawnSeconds:2.2}),
  Heist:Object.freeze({elimination:false,objective:true,teams:false,ringOut:false,respawnSeconds:2.2})
 });
 
@@ -24,9 +24,16 @@ const distance=(a,b)=>Math.hypot((a?.x||0)-(b?.x||0),(a?.z||0)-(b?.z||0));
 const blankScores=()=>[0,0,0,0];
 const blankSeconds=()=>[0,0,0,0];
 
-export function rulesFor(kind){return MODE_RULES[kind]||MODE_RULES.OneVsOne;}
+export function normaliseModeKind(kind){
+ if(kind==='KingOfTheRing')return'KingOfRing';
+ if(kind==='TeamKnockout')return'TwoVsTwo';
+ return MODE_RULES[kind]?kind:'FreeForAll';
+}
+export function onlineModeKind(kind){const local=normaliseModeKind(kind);return local==='KingOfRing'?'KingOfTheRing':local;}
+export function rulesFor(kind){return MODE_RULES[normaliseModeKind(kind)]||MODE_RULES.OneVsOne;}
 
 export function createModeState(kind,slots=[],options={}){
+ kind=normaliseModeKind(kind);
  const state={kind,scores:blankScores(),seconds:blankSeconds(),finished:false,winnerSlot:-1,winnerTeam:-1,resultText:'',respawns:{}};
  if(kind==='HotBomb')Object.assign(state,{holder:slots[0]??-1,timer:OBJECTIVE_RULES.hotBombSeconds});
  if(kind==='Heist'){
@@ -116,7 +123,7 @@ export function objectiveHudText(state){
  if(!state)return'';
  if(state.kind==='MangoGrab')return`MANGO GRAB · FIRST TO ${OBJECTIVE_RULES.mangoTarget} · ${state.scores.map((score,i)=>`P${i+1} ${score}`).join(' · ')}`;
  if(state.kind==='HotBomb')return`HOT BOMB · P${state.holder+1} ${Math.max(0,state.timer).toFixed(1)}s · FIRST TO ${OBJECTIVE_RULES.hotBombTarget}`;
- if(state.kind==='KingOfTheRing')return`KING OF THE RING · HOLD THE CENTRE FOR ${OBJECTIVE_RULES.kingTargetSeconds}s · ${state.seconds.map((seconds,i)=>`P${i+1} ${seconds.toFixed(1)}s`).join(' · ')}`;
+ if(state.kind==='KingOfRing')return`KING OF THE RING · HOLD THE CENTRE FOR ${OBJECTIVE_RULES.kingTargetSeconds}s · ${state.seconds.map((seconds,i)=>`P${i+1} ${seconds.toFixed(1)}s`).join(' · ')}`;
  if(state.kind==='Heist')return`HEIST · RETURN THE LOOT ${OBJECTIVE_RULES.heistTarget} TIMES · ${state.scores.map((score,i)=>`P${i+1} ${score}`).join(' · ')}`;
  return'';
 }
