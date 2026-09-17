@@ -2,7 +2,9 @@
 
 ## Status
 
-The Dǎnào Unity project now has the online and cloud-save source layer needed for the Duck & Bear release. The game remains on `feature/danao-unity` until a real Unity 6 CI build has compiled and tested the project. Repository/server checks are running in GitHub Actions; Unity EditMode/PlayMode, WebGL and Windows build jobs are intentionally skipped when the repository does not have a Unity licence secret.
+The Dǎnào Unity project has the online and cloud-save source layer needed for the Duck & Bear browser release. Repository/server checks run in GitHub Actions, and production WebGL builds are produced through Unity Build Automation.
+
+Dǎnào is browser-only. Windows Micro may be used as the Unity cloud worker that compiles WebGL because it is cheaper than the previous Mac worker, but no Windows application is produced or published.
 
 ## Online rooms
 
@@ -17,7 +19,7 @@ Public room entry points are:
 
 Rooms support up to four players. The four-digit code is only a room locator. Each player receives a separate reconnect token and that token is never placed in an invitation link. Rooms expire after one hour. Create/join attempts and WebSocket traffic are bounded and rate-limited.
 
-Browser requests are same-origin checked. Native Unity requests can omit the browser `Origin` header, which is required for the Windows build to use the same room service.
+Browser requests are same-origin checked. The WebGL client uses the same-origin Dǎnào room service.
 
 ## Authority model
 
@@ -42,7 +44,7 @@ Cloud records are owner-scoped in D1 and use an integer revision. A stale write 
 
 The schema is added by `migrations/0004_danao_profiles.sql`. Dǎnào profile APIs do not expose orders, points, memories, media or other private account data.
 
-The WebGL build can use the existing Duck & Bear sign-in cookie. The native Windows build currently keeps the same local profile but does not yet have a desktop account-link flow, so cross-device cloud sync for the standalone build must not be described as complete until a secure device-link method is added.
+The WebGL build can use the existing Duck & Bear sign-in cookie for cloud profile sync.
 
 ## Website release
 
@@ -50,7 +52,9 @@ The WebGL build can use the existing Duck & Bear sign-in cookie. The native Wind
 
 Unity Web build files are not committed to Git. The release manifest points at `/game-builds/danao/web/current/*`. Those requests run through the Worker and are served from the existing R2 bucket under `danao/web/current/`.
 
-The Unity workflow is prepared to produce both WebGL and Windows x64 artifacts. On `main`, if Unity and Cloudflare secrets are present, the WebGL output is copied to R2. Generated Unity `Library`, temporary state and build folders remain ignored.
+The Unity workflows produce and monitor only WebGL artifacts. On `main`, the verified WebGL output is published to the current R2 channel. Generated Unity `Library`, temporary state and build folders remain ignored.
+
+The production release workflow also verifies that the Unity Build Automation target uses Windows Micro before it is allowed to start a build and enforces the Dǎnào monthly Windows-minute safety guard.
 
 ## Verification
 
@@ -60,6 +64,6 @@ Repository verification command:
 node --test tests/danao-*.test.mjs
 ```
 
-The GitHub `Danao Unity` workflow also runs Worker syntax checks. Current source/server tests cover room capacity, token redaction, ready/start rules, host-only authority, snapshot bounds/sequences, host transfer, native-vs-browser gateway behaviour, profile validation/conflicts, R2 build routing, website launcher contracts and the Unity online/cloud source contracts.
+The GitHub `Danao Unity` workflow also runs Worker syntax checks. Current source/server tests cover room capacity, token redaction, ready/start rules, host-only authority, snapshot bounds/sequences, host transfer, gateway behaviour, profile validation/conflicts, R2 build routing, website launcher contracts and the Unity online/cloud source contracts.
 
-Unity compilation, Unity Test Runner, PhysX feel, real controller hardware and generated Web/Windows binaries require a licensed Unity 6 runner. Until that runner succeeds, the source should be described as implemented but the final binary build should not be described as verified or released.
+Production verification requires the Unity WebGL build to compile successfully, publish through the authenticated release path, and then load correctly through `/games/danao/` in a real browser.
