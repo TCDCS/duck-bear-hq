@@ -17,7 +17,7 @@ on:
       - '.github/workflows/danao-babylon.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   source-tests:
@@ -28,17 +28,6 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - name: Refresh migration lockfile
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - name: Commit lockfile if dependencies changed
-        run: |
-          if ! git diff --quiet -- package-lock.json; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add package-lock.json
-            git commit -m "build: lock Danao Babylon dependencies"
-            git push origin HEAD:feature/danao-babylon-final
-          fi
       - run: npm ci --no-audit --no-fund
       - name: Build self-hosted Danao client
         run: npm run build:danao
