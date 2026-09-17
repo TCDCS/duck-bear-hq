@@ -20,6 +20,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Assemble exact Danao v0.5 source
+        run: npm run assemble:danao
       - name: Test
         run: npm test
       - name: Repository checks
