@@ -3,7 +3,7 @@ name: Danao Unity
 on:
   workflow_dispatch:
   push:
-    branches: [main, feature/danao-unity, feature/danao-webgl-release-fix]
+    branches: [main, feature/danao-unity, feature/danao-webgl-release-fix, feature/danao-uba-revision-fix]
     paths:
       - 'unity/danao/**'
       - 'src/danao/**'
