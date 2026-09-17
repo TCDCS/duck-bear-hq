@@ -1,7 +1,8 @@
 import {ARENAS,CHARACTERS,MODES,byId} from './catalog.mjs';
 import {createFighter} from './fighter.mjs';
 import {createBotInput} from './bot.mjs';
-import {spawnWeapons,tryPickupWeapon,useHeldWeapon,dropHeldWeapon} from './weapons.mjs';
+import {spawnWeapons,tryPickupWeapon,useHeldWeapon,dropHeldWeapon,throwHeldWeapon} from './weapons.mjs';
+import {keyboardFrame,gamepadFrame,mergeFrames,ZERO_FRAME} from './controls.mjs';
 import {MODE_RULES,OBJECTIVE_RULES,createModeState,resolveElimination,collectMango,tickKingOfRing,passHotBomb,tickHotBomb,tickHeist,objectiveHudText} from './modes.mjs';
 import {setupArenaHazard,tickArenaHazard,syncHazardVisual,captureHazardState,hydrateHazardState} from './hazard-runtime.mjs';
 import {createRoom,joinRoom,connectRoom,sendReady,sendChoice,sendSetup,sendStart,sendInput,sendHostState,sendResult,leaveRoom,roomSession} from './online.mjs';
@@ -9,7 +10,7 @@ import {createRoom,joinRoom,connectRoom,sendReady,sendChoice,sendSetup,sendStart
 export const FIXED_STEP=1/60;
 const SNAPSHOT_STEP=1/15;
 const INPUT_STEP=1/30;
-const ZERO_INPUT=Object.freeze({x:0,z:0,attack:false,dash:false});
+const ZERO_INPUT=ZERO_FRAME;
 
 const $=id=>document.getElementById(id);
 const ui={
@@ -45,29 +46,19 @@ function updatePadState(){
 }
 addEventListener('gamepadconnected',updatePadState);addEventListener('gamepaddisconnected',updatePadState);updatePadState();
 
-const gameKeys=new Set(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','ShiftLeft','ShiftRight','Escape']);
+const gameKeys=new Set(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyE','KeyF','KeyR','KeyQ','ShiftLeft','ShiftRight','Escape']);
 addEventListener('keydown',event=>{keys.add(event.code);if(active&&gameKeys.has(event.code))event.preventDefault();if(event.code==='Escape'&&active)leaveActiveMatch();},{passive:false});
 addEventListener('keyup',event=>{keys.delete(event.code);if(active&&gameKeys.has(event.code))event.preventDefault();},{passive:false});
 
 function padInput(index){
- const pads=typeof navigator.getGamepads==='function'?navigator.getGamepads():[];const pad=pads?.[index];
- if(!pad?.connected)return null;
- const dead=v=>Math.abs(v)<.16?0:v;
- let x=dead(pad.axes?.[0]||0),z=dead(pad.axes?.[1]||0);
- if(pad.buttons?.[14]?.pressed)x=-1;if(pad.buttons?.[15]?.pressed)x=1;if(pad.buttons?.[12]?.pressed)z=-1;if(pad.buttons?.[13]?.pressed)z=1;
- return{x,z,attack:Boolean(pad.buttons?.[0]?.pressed),dash:Boolean(pad.buttons?.[4]?.pressed||pad.buttons?.[5]?.pressed)};
+ const pads=typeof navigator.getGamepads==='function'?navigator.getGamepads():[];
+ return gamepadFrame(pads?.[index]||null);
 }
 
 export function readPlayerInput(slot){
  const pad=padInput(slot);
- if(slot>0)return pad||{x:0,z:0,attack:false,dash:false};
- const keyboard={
-  x:(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0),
-  z:(keys.has('KeyS')||keys.has('ArrowDown')?1:0)-(keys.has('KeyW')||keys.has('ArrowUp')?1:0),
-  attack:keys.has('Space'),dash:keys.has('ShiftLeft')||keys.has('ShiftRight')
- };
- if(!pad)return keyboard;
- return{x:Math.abs(pad.x)>Math.abs(keyboard.x)?pad.x:keyboard.x,z:Math.abs(pad.z)>Math.abs(keyboard.z)?pad.z:keyboard.z,attack:pad.attack||keyboard.attack,dash:pad.dash||keyboard.dash};
+ if(slot>0)return pad||ZERO_INPUT;
+ return mergeFrames(pad,keyboardFrame(keys))||ZERO_INPUT;
 }
 
 export async function initRuntime(){
@@ -201,11 +192,22 @@ function finishMatch({winnerSlot=-1,winnerTeam=-1,text='',reason='finished'}={})
 
 function notifySuccessfulHit(attacker,target){if(active?.modeKind==='HotBomb'&&active.modeState){passHotBomb(active.modeState,attacker.slot,target.slot);syncObjectiveVisuals();updateObjectiveHud();}}
 
+function handleGrab(fighter,target,input,scene){
+ const pressed=Boolean(input.grab);
+ if(!pressed){fighter.grabHeld=false;return false;}
+ if(fighter.grabHeld||!fighter?.alive||active?.roundOver)return false;
+ fighter.grabHeld=true;
+ if(fighter.heldWeapon){const result=throwHeldWeapon({BABYLON,scene,attacker:fighter,target});if(result.hit&&target)notifySuccessfulHit(fighter,target);updateHud(active.fighters);return Boolean(result.hit);}
+ const picked=tryPickupWeapon(fighter,active.pickups);if(picked){fighter.attackCooldown=Math.max(fighter.attackCooldown,.18);updateHud(active.fighters);}
+ return false;
+}
+
 function attemptAttack(attacker,target,input,scene){
- if(!attacker?.alive||!target?.alive||!input.attack||attacker.attackCooldown>0||active?.roundOver)return false;
+ const wantsAttack=Boolean(input.attack||input.fire);
+ if(!attacker?.alive||!target?.alive||!wantsAttack||attacker.attackCooldown>0||active?.roundOver)return false;
  if(!attacker.heldWeapon){
-  const picked=tryPickupWeapon(attacker,active.pickups);
-  if(picked){attacker.attackCooldown=.25;updateHud(active.fighters);return false;}
+  if(input.attack){const picked=tryPickupWeapon(attacker,active.pickups);if(picked){attacker.attackCooldown=.25;updateHud(active.fighters);return false;}}
+  if(!attacker.heldWeapon&&input.fire)return false;
  }
  if(attacker.heldWeapon){
   const result=useHeldWeapon({BABYLON,scene,attacker,target});
@@ -264,18 +266,22 @@ export function tickModeObjectives(dt){
  if(active.modeState.finished)finishMatch({winnerSlot:active.modeState.winnerSlot,winnerTeam:active.modeState.winnerTeam,text:active.modeState.resultText,reason:active.modeKind});
 }
 
-function networkInput(frame){if(!frame)return ZERO_INPUT;return{x:Number(frame.moveX)||0,z:Number(frame.moveY)||0,attack:Boolean(frame.punch||frame.fire||frame.grab),dash:Boolean(frame.dodge)};}
+function networkInput(frame){
+ if(!frame)return ZERO_INPUT;
+ return{x:Number(frame.moveX)||0,z:Number(frame.moveY)||0,jump:Boolean(frame.jump),attack:Boolean(frame.punch),grab:Boolean(frame.grab),dash:Boolean(frame.dodge),fire:Boolean(frame.fire),block:Boolean(frame.block)};
+}
 
 function localInputFor(fighter,fighters){
  if(fighter.slot===0)return readPlayerInput(0);
  const pad=padInput(fighter.slot);if(pad)return pad;
- const target=nearestTarget(fighter,fighters);return target?createBotInput(fighter,target):ZERO_INPUT;
+ const target=nearestTarget(fighter,fighters),bot=target?createBotInput(fighter,target):ZERO_INPUT;
+ return{...ZERO_INPUT,...bot};
 }
 
 function simulateLocal(dt){
  const {fighters,scene}=active;if(active.roundOver)return;
  const inputs=new Map();for(const fighter of fighters){const input=localInputFor(fighter,fighters);inputs.set(fighter.slot,input);fighter.update(input,dt);}
- for(const fighter of fighters){const target=nearestTarget(fighter,fighters);if(target)attemptAttack(fighter,target,inputs.get(fighter.slot),scene);}
+ for(const fighter of fighters){const target=nearestTarget(fighter,fighters),input=inputs.get(fighter.slot);handleGrab(fighter,target,input,scene);if(target)attemptAttack(fighter,target,input,scene);}
  tickArenaHazard(active,dt);handleArenaBounds(fighters);handleRespawns(dt);tickModeObjectives(dt);completeRoundIfNeeded(fighters);updateHud(fighters);
 }
 
@@ -284,7 +290,7 @@ function simulateOnline(dt){
  const localInput=readPlayerInput(0),local=fighterForSlot(localSlot);
  if(!isHost){if(local)local.update(localInput,dt);tickArenaHazard(active,dt);updateHud(fighters);return;}
  const inputs=new Map();for(const fighter of fighters){const input=fighter.slot===localSlot?localInput:networkInput(active.remoteInputs.get(fighter.slot));inputs.set(fighter.slot,input);fighter.update(input,dt);}
- for(const fighter of fighters){const target=nearestTarget(fighter,fighters);if(target)attemptAttack(fighter,target,inputs.get(fighter.slot),scene);}
+ for(const fighter of fighters){const target=nearestTarget(fighter,fighters),input=inputs.get(fighter.slot);handleGrab(fighter,target,input,scene);if(target)attemptAttack(fighter,target,input,scene);}
  tickArenaHazard(active,dt);handleArenaBounds(fighters);handleRespawns(dt);tickModeObjectives(dt);completeRoundIfNeeded(fighters);updateHud(fighters);
 }
 
@@ -315,8 +321,12 @@ function tickNetwork(now){
  if(!active?.online)return;
  const input=readPlayerInput(0);
  if(!active.isHost){
-  active.inputLatch.attack=active.inputLatch.attack||input.attack;active.inputLatch.dash=active.inputLatch.dash||input.dash;
-  if(now>=active.nextInputAt){active.nextInputAt=now+INPUT_STEP;sendInput({seq:++active.inputSeq,moveX:input.x,moveY:input.z,jump:false,punch:active.inputLatch.attack,grab:false,dodge:active.inputLatch.dash,fire:false,block:false});active.inputLatch.attack=false;active.inputLatch.dash=false;}
+  for(const action of ['jump','attack','grab','dash','fire'])active.inputLatch[action]=active.inputLatch[action]||Boolean(input[action]);
+  if(now>=active.nextInputAt){
+   active.nextInputAt=now+INPUT_STEP;
+   sendInput({seq:++active.inputSeq,moveX:input.x,moveY:input.z,jump:active.inputLatch.jump,punch:active.inputLatch.attack,grab:active.inputLatch.grab,dodge:active.inputLatch.dash,fire:active.inputLatch.fire,block:Boolean(input.block)});
+   for(const action of ['jump','attack','grab','dash','fire'])active.inputLatch[action]=false;
+  }
   if(active.latestSnapshot)applyNetworkSnapshot(active.latestSnapshot,false);
  }else if(now>=active.nextSnapshotAt){active.nextSnapshotAt=now+SNAPSHOT_STEP;sendHostState(captureNetworkSnapshot());}
 }
@@ -334,7 +344,7 @@ async function launchMatch({arenaDef,fighterSpecs,modeKind='OneVsOne',onlineData
  for(const fighter of fighters)fighter.team=modeKind==='TwoVsTwo'?fighter.slot%2:-1;
  const pickups=spawnWeapons({BABYLON,scene,positions:arena.weaponSpawns,arenaId:arenaDef.id});
  active={engine,scene,camera,world,arena,arenaDef,fighters,pickups,roundOver:false,modeKind,modeRules:MODE_RULES[modeKind]||MODE_RULES.OneVsOne,arenaHazards:onlineData?.arenaHazards??true,online:Boolean(onlineData),...(onlineData||{})};setupModeObjectives();setupArenaHazard(active,{BABYLON});
- if(active.online){active.remoteInputs=new Map();active.latestSnapshot=null;active.snapshotSeq=0;active.appliedSnapshotSeq=-1;active.inputSeq=0;active.nextInputAt=0;active.nextSnapshotAt=0;active.inputLatch={attack:false,dash:false};active.resultSent=false;}
+ if(active.online){active.remoteInputs=new Map();active.latestSnapshot=null;active.snapshotSeq=0;active.appliedSnapshotSeq=-1;active.inputSeq=0;active.nextInputAt=0;active.nextSnapshotAt=0;active.inputLatch={jump:false,attack:false,grab:false,dash:false,fire:false};active.resultSent=false;}
  ui.round.hidden=true;updateHud(fighters);setLoading(false);
  let previous=performance.now()/1000,accumulator=0;
  engine.runRenderLoop(()=>{
