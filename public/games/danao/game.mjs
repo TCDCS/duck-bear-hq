@@ -1,13 +1,14 @@
 import {ARENAS,CHARACTERS,MODES,byId} from './catalog.mjs';
 import {createFighter} from './fighter.mjs';
 import {createBotInput} from './bot.mjs';
+import {spawnWeapons,tryPickupWeapon,useHeldWeapon,dropHeldWeapon} from './weapons.mjs';
 
 export const FIXED_STEP=1/60;
 
 const $=id=>document.getElementById(id);
 const ui={
  main:$('main-menu'),setup:$('local-setup'),game:$('game-screen'),hud:$('game-hud'),canvas:$('game-canvas'),loading:$('loading'),loadingText:$('loading-text'),error:$('fatal'),errorText:$('fatal-text'),
- arena:$('arena-select'),character:$('character-select'),mode:$('mode-select'),round:$('round-over'),p1Name:$('p1-name'),p2Name:$('p2-name'),p1Hp:$('p1-hp'),p2Hp:$('p2-hp'),p1Fill:$('p1-fill'),p2Fill:$('p2-fill'),pad:$('padState'),status:$('compatibility')
+ arena:$('arena-select'),character:$('character-select'),mode:$('mode-select'),round:$('round-over'),p1Name:$('p1-name'),p2Name:$('p2-name'),p1Hp:$('p1-hp'),p2Hp:$('p2-hp'),p1Fill:$('p1-fill'),p2Fill:$('p2-fill'),p1Weapon:$('p1-weapon'),p2Weapon:$('p2-weapon'),pad:$('padState'),status:$('compatibility')
 };
 
 let BABYLON=null,RAPIER=null,active=null,lastConfig=null;
@@ -71,6 +72,11 @@ function buildArena(scene,world,definition){
  const walls=[[0,.7,d/2,w,.9,.45],[0,.7,-d/2,w,.9,.45],[w/2,.7,0,.45,.9,d],[-w/2,.7,0,.45,.9,d]];
  for(const [x,y,z,sx,sy,sz] of walls){meshes.push(visualBox(scene,`wall-${meshes.length}`,[x,y,z],[sx,sy,sz],wall));bodies.push(fixedBox(world,[x,y,z],[sx/2,sy/2,sz/2]));}
  const spawnPoints=[{x:-w*.24,y:1.45,z:0},{x:w*.24,y:1.45,z:0},{x:0,y:1.45,z:-d*.25},{x:0,y:1.45,z:d*.25}];
+ const weaponSpawns=[
+  {x:spawnPoints[0].x+.85,y:.95,z:.65},{x:spawnPoints[1].x-.85,y:.95,z:-.65},
+  {x:-w*.18,y:.95,z:-d*.28},{x:w*.18,y:.95,z:d*.28},{x:0,y:.95,z:-d*.3},{x:0,y:.95,z:d*.3},
+  {x:-w*.3,y:.95,z:0},{x:w*.3,y:.95,z:0}
+ ];
  if(definition.id==='wrestling-arena'){
   meshes.push(visualBox(scene,'ring-mat',[0,.18,0],[14,.36,10],'#f3dfb0'));bodies.push(fixedBox(world,[0,.18,0],[7,.18,5]));
   for(const x of [-6.7,6.7])for(const z of [-4.7,4.7])meshes.push(visualCylinder(scene,`post-${x}-${z}`,[x,1.7,z],.34,3.4,definition.secondary));
@@ -97,7 +103,7 @@ function buildArena(scene,world,definition){
   for(let i=0;i<8;i++){const a=i*Math.PI/4;meshes.push(visualCylinder(scene,`tent-${i}`,[Math.cos(a)*8,2,Math.sin(a)*6],.45,4,i%2?definition.secondary:definition.primary));}
   meshes.push(visualCylinder(scene,'trampoline',[0,.25,0],4.5,.35,'#28232f'));
  }
- return{meshes,bodies,spawnPoints,bounds:{w,d}};
+ return{meshes,bodies,spawnPoints,weaponSpawns,bounds:{w,d}};
 }
 
 function createScene(engine,definition){
@@ -110,10 +116,29 @@ function createScene(engine,definition){
 
 function hitBurst(scene,pos,hex){const ring=BABYLON.MeshBuilder.CreateTorus('hit-burst',{diameter:1.2,thickness:.18,tessellation:18},scene);ring.position.set(pos.x,pos.y+1,pos.z);ring.rotation.x=Math.PI/2;const mat=makeMat(scene,'hit-burst-mat',hex,.8);ring.material=mat;let n=0;const obs=scene.onBeforeRenderObservable.add(()=>{n++;ring.scaling.scaleInPlace(1.08);ring.visibility=Math.max(0,1-n/8);if(n>=8){scene.onBeforeRenderObservable.remove(obs);ring.dispose();mat.dispose();}});}
 
-function updateHud(fighters){const [a,b]=fighters;if(!a||!b)return;ui.p1Name.textContent=a.definition.name;ui.p2Name.textContent=b.definition.name;ui.p1Hp.textContent=`${Math.ceil(a.hp)} HP`;ui.p2Hp.textContent=`${Math.ceil(b.hp)} HP`;ui.p1Fill.style.width=`${a.hp}%`;ui.p2Fill.style.width=`${b.hp}%`;}
+function heldText(fighter){
+ const held=fighter?.heldWeapon;if(!held)return'FISTS';
+ const ammo=held.definition.class==='ranged'?` · ${held.ammo} LEFT`:'';
+ return`${held.definition.name.toUpperCase()}${ammo}`;
+}
+
+function updateHud(fighters){
+ const [a,b]=fighters;if(!a||!b)return;
+ ui.p1Name.textContent=a.definition.name;ui.p2Name.textContent=b.definition.name;ui.p1Hp.textContent=`${Math.ceil(a.hp)} HP`;ui.p2Hp.textContent=`${Math.ceil(b.hp)} HP`;ui.p1Fill.style.width=`${a.hp}%`;ui.p2Fill.style.width=`${b.hp}%`;
+ if(ui.p1Weapon)ui.p1Weapon.textContent=heldText(a);if(ui.p2Weapon)ui.p2Weapon.textContent=heldText(b);
+}
 
 function attemptAttack(attacker,target,input,scene){
  if(!attacker.alive||!target.alive||!input.attack||attacker.attackCooldown>0||active?.roundOver)return;
+ if(!attacker.heldWeapon){
+  const picked=tryPickupWeapon(attacker,active.pickups);
+  if(picked){attacker.attackCooldown=.25;updateHud(active.fighters);return;}
+ }
+ if(attacker.heldWeapon){
+  const result=useHeldWeapon({BABYLON,scene,attacker,target});
+  if(result.hit){const p=target.body.translation();hitBurst(scene,p,result.weapon?.colour||attacker.definition.accent);}
+  updateHud(active.fighters);return;
+ }
  attacker.attackCooldown=.46;
  const a=attacker.body.translation(),b=target.body.translation(),dx=b.x-a.x,dz=b.z-a.z,dist=Math.hypot(dx,dz)||.001;if(dist>2.5)return;
  const damage=input.dash?16:12,force=input.dash?7.5:5.6;
@@ -124,7 +149,10 @@ function simulate(dt){
  const {fighters,scene}=active;if(active.roundOver)return;
  const p1=readPlayerInput(0);const secondPad=padInput(1);const p2=secondPad||createBotInput(fighters[1],fighters[0]);
  fighters[0].update(p1,dt);fighters[1].update(p2,dt);attemptAttack(fighters[0],fighters[1],p1,scene);attemptAttack(fighters[1],fighters[0],p2,scene);
- for(const f of fighters){const p=f.body.translation();if(p.y<-3.5&&f.alive){f.applyDamage(25,{x:0,y:0,z:0});f.body.setTranslation(f.spawn,true);f.body.setLinvel({x:0,y:0,z:0},true);}}
+ for(const f of fighters){
+  const p=f.body.translation();if(p.y<-3.5&&f.alive){f.applyDamage(25,{x:0,y:0,z:0});f.body.setTranslation(f.spawn,true);f.body.setLinvel({x:0,y:0,z:0},true);}
+  if(!f.alive&&f.heldWeapon)dropHeldWeapon(f,{x:p.x,y:Math.max(.9,p.y),z:p.z});
+ }
  const alive=fighters.filter(f=>f.alive);if(alive.length<=1){active.roundOver=true;ui.round.hidden=false;ui.round.textContent=alive[0]?`${alive[0].definition.name.toUpperCase()} WINS!`:'DOUBLE KNOCKOUT!';}
  updateHud(fighters);
 }
@@ -137,12 +165,15 @@ export async function startLocalMatch(config){
   const arenaDef=byId(ARENAS,config.arena),characterDef=byId(CHARACTERS,config.character);const opponentDef=CHARACTERS[(CHARACTERS.indexOf(characterDef)+1)%CHARACTERS.length];
   const {scene,camera}=createScene(engine,arenaDef);const world=new RAPIER.World({x:0,y:-18,z:0});world.timestep=FIXED_STEP;const arena=buildArena(scene,world,arenaDef);
   const fighters=[createFighter({BABYLON,RAPIER,scene,world,definition:characterDef,position:arena.spawnPoints[0],slot:0}),createFighter({BABYLON,RAPIER,scene,world,definition:opponentDef,position:arena.spawnPoints[1],slot:1})];
-  active={engine,scene,camera,world,arena,fighters,roundOver:false};ui.round.hidden=true;updateHud(fighters);setLoading(false);
+  const pickups=spawnWeapons({BABYLON,scene,positions:arena.weaponSpawns,arenaId:arenaDef.id});
+  active={engine,scene,camera,world,arena,fighters,pickups,roundOver:false};ui.round.hidden=true;updateHud(fighters);setLoading(false);
   let previous=performance.now()/1000,accumulator=0;
   engine.runRenderLoop(()=>{
    if(!active)return;const now=performance.now()/1000,frame=Math.min(.1,Math.max(0,now-previous));previous=now;accumulator=Math.min(.25,accumulator+frame);
    while(accumulator>=FIXED_STEP){simulate(FIXED_STEP);world.step();accumulator-=FIXED_STEP;}
-   fighters.forEach(f=>f.sync());const a=fighters[0].root.position,b=fighters[1].root.position;const target=new BABYLON.Vector3((a.x+b.x)/2,1.1,(a.z+b.z)/2);camera.setTarget(BABYLON.Vector3.Lerp(camera.target,target,.08));scene.render();
+   fighters.forEach(f=>f.sync());
+   pickups.forEach((pickup,index)=>{if(pickup.available){pickup.mesh.rotation.y+=.012;pickup.mesh.position.y=pickup.home.y+Math.sin(now*2.3+index)*.08;}});
+   const a=fighters[0].root.position,b=fighters[1].root.position;const target=new BABYLON.Vector3((a.x+b.x)/2,1.1,(a.z+b.z)/2);camera.setTarget(BABYLON.Vector3.Lerp(camera.target,target,.08));scene.render();
   });
   engine.resize();
  }catch(error){console.error(error);setLoading(false);setFatal(error?.message||String(error));}
