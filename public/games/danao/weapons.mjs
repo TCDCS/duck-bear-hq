@@ -112,6 +112,22 @@ function projectileFlash({BABYLON,scene,definition,from,to}){
  });
 }
 
+export function throwHeldWeapon({BABYLON,scene,attacker,target,maxRange=7}){
+ const pickup=attacker?.heldWeapon;if(!pickup||!attacker.alive)return{used:false,hit:false};
+ const weapon=pickup.definition,start=attacker.body.translation(),targetPos=target?.body?.translation?.()||{x:start.x,z:start.z+4,y:start.y};
+ const dx=targetPos.x-start.x,dz=targetPos.z-start.z,dist=Math.hypot(dx,dz)||.001,travel=Math.min(maxRange,Math.max(3,dist));
+ const nx=dx/dist,nz=dz/dist,end={x:start.x+nx*travel,y:Math.max(.55,start.y),z:start.z+nz*travel};
+ pickup.mesh.setParent(null,true);pickup.mesh.scaling.setAll(1);pickup.mesh.position.set(start.x,start.y+1,start.z);pickup.holder=null;pickup.available=false;attacker.heldWeapon=null;
+ const hit=Boolean(target?.alive&&dist<=maxRange),damage=Math.max(3,Math.round(weapon.damage*.75)),force=Math.max(4,weapon.knockback*1.05);
+ if(hit)target.applyDamage(damage,{x:nx*force,y:3.2,z:nz*force});
+ const from=pickup.mesh.position.clone(),to=new BABYLON.Vector3(end.x,end.y+.3,end.z);let frame=0,frames=Math.max(10,Math.round(travel*5));
+ const observer=scene.onBeforeRenderObservable.add(()=>{
+  frame++;const t=Math.min(1,frame/frames),p=BABYLON.Vector3.Lerp(from,to,t);p.y+=Math.sin(Math.PI*t)*1.6;pickup.mesh.position.copyFrom(p);pickup.mesh.rotation.x+=.22;pickup.mesh.rotation.z+=.16;
+  if(frame>=frames){scene.onBeforeRenderObservable.remove(observer);pickup.mesh.position.copyFrom(to);pickup.available=true;pickup.mesh.rotation.set(0,pickup.mesh.rotation.y,0);}
+ });
+ return{used:true,hit,weapon};
+}
+
 export function useHeldWeapon({BABYLON,scene,attacker,target}){
  const pickup=attacker?.heldWeapon;if(!pickup||!attacker.alive||!target?.alive)return{used:false,hit:false};
  const weapon=pickup.definition;if(attacker.attackCooldown>0)return{used:false,hit:false};
