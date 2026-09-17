@@ -3,6 +3,7 @@ import {createFighter} from './fighter.mjs';
 import {createBotInput} from './bot.mjs';
 import {spawnWeapons,tryPickupWeapon,useHeldWeapon,dropHeldWeapon} from './weapons.mjs';
 import {MODE_RULES,OBJECTIVE_RULES,createModeState,resolveElimination,collectMango,tickKingOfRing,passHotBomb,tickHotBomb,tickHeist,objectiveHudText} from './modes.mjs';
+import {setupArenaHazard,tickArenaHazard,syncHazardVisual,captureHazardState,hydrateHazardState} from './hazard-runtime.mjs';
 import {createRoom,joinRoom,connectRoom,sendReady,sendChoice,sendSetup,sendStart,sendInput,sendHostState,sendResult,leaveRoom,roomSession} from './online.mjs';
 
 export const FIXED_STEP=1/60;
@@ -275,23 +276,23 @@ function simulateLocal(dt){
  const {fighters,scene}=active;if(active.roundOver)return;
  const inputs=new Map();for(const fighter of fighters){const input=localInputFor(fighter,fighters);inputs.set(fighter.slot,input);fighter.update(input,dt);}
  for(const fighter of fighters){const target=nearestTarget(fighter,fighters);if(target)attemptAttack(fighter,target,inputs.get(fighter.slot),scene);}
- handleArenaBounds(fighters);handleRespawns(dt);tickModeObjectives(dt);completeRoundIfNeeded(fighters);updateHud(fighters);
+ tickArenaHazard(active,dt);handleArenaBounds(fighters);handleRespawns(dt);tickModeObjectives(dt);completeRoundIfNeeded(fighters);updateHud(fighters);
 }
 
 function simulateOnline(dt){
  const {fighters,scene,isHost,localSlot}=active;if(active.roundOver)return;
  const localInput=readPlayerInput(0),local=fighterForSlot(localSlot);
- if(!isHost){if(local)local.update(localInput,dt);updateHud(fighters);return;}
+ if(!isHost){if(local)local.update(localInput,dt);tickArenaHazard(active,dt);updateHud(fighters);return;}
  const inputs=new Map();for(const fighter of fighters){const input=fighter.slot===localSlot?localInput:networkInput(active.remoteInputs.get(fighter.slot));inputs.set(fighter.slot,input);fighter.update(input,dt);}
  for(const fighter of fighters){const target=nearestTarget(fighter,fighters);if(target)attemptAttack(fighter,target,inputs.get(fighter.slot),scene);}
- handleArenaBounds(fighters);handleRespawns(dt);tickModeObjectives(dt);completeRoundIfNeeded(fighters);updateHud(fighters);
+ tickArenaHazard(active,dt);handleArenaBounds(fighters);handleRespawns(dt);tickModeObjectives(dt);completeRoundIfNeeded(fighters);updateHud(fighters);
 }
 
 function simulate(dt){if(!active)return;if(active.online)simulateOnline(dt);else simulateLocal(dt);}
 
 function copyModeState(){try{return JSON.parse(JSON.stringify(active.modeState));}catch{return null;}}
 function captureNetworkSnapshot(){
- return{seq:++active.snapshotSeq,matchId:onlineRoom?.matchId||0,phase:active.roundOver?'results':'fight',objective:active.modeState?{kind:active.modeKind,state:copyModeState()}:null,fighters:active.fighters.map(f=>{const p=f.body.translation(),q=f.body.rotation(),v=f.body.linvel(),av=f.body.angvel();return{slot:f.slot,x:p.x,y:p.y,z:p.z,qx:q.x,qy:q.y,qz:q.z,qw:q.w,vx:v.x,vy:v.y,vz:v.z,avx:av.x,avy:av.y,avz:av.z,hp:Math.max(0,Math.min(100,Math.round(f.hp))),eliminated:!f.alive,weaponId:f.heldWeapon?.definition?.id||''};})};
+ return{seq:++active.snapshotSeq,matchId:onlineRoom?.matchId||0,phase:active.roundOver?'results':'fight',objective:active.modeState?{kind:active.modeKind,state:copyModeState()}:null,hazard:captureHazardState(active),fighters:active.fighters.map(f=>{const p=f.body.translation(),q=f.body.rotation(),v=f.body.linvel(),av=f.body.angvel();return{slot:f.slot,x:p.x,y:p.y,z:p.z,qx:q.x,qy:q.y,qz:q.z,qw:q.w,vx:v.x,vy:v.y,vz:v.z,avx:av.x,avy:av.y,avz:av.z,hp:Math.max(0,Math.min(100,Math.round(f.hp))),eliminated:!f.alive,weaponId:f.heldWeapon?.definition?.id||''};})};
 }
 
 function lerp(a,b,t){return a+(b-a)*t;}
@@ -307,7 +308,7 @@ export function applyNetworkSnapshot(snapshot,exact=false){
   fighter.hp=Math.max(0,Math.min(100,Number(state.hp)??fighter.hp));fighter.alive=!state.eliminated&&fighter.hp>0;
  }
  if(snapshot.objective?.state&&snapshot.objective.kind===active.modeKind){try{active.modeState=JSON.parse(JSON.stringify(snapshot.objective.state));}catch{}}
- syncObjectiveVisuals();updateHud(active.fighters);
+ hydrateHazardState(active,snapshot.hazard);syncObjectiveVisuals();syncHazardVisual(active);updateHud(active.fighters);
 }
 
 function tickNetwork(now){
@@ -332,7 +333,7 @@ async function launchMatch({arenaDef,fighterSpecs,modeKind='OneVsOne',onlineData
  const fighters=fighterSpecs.map(spec=>createFighter({BABYLON,RAPIER,scene,world,definition:spec.definition,position:arena.spawnPoints[spec.slot%arena.spawnPoints.length],slot:spec.slot}));
  for(const fighter of fighters)fighter.team=modeKind==='TwoVsTwo'?fighter.slot%2:-1;
  const pickups=spawnWeapons({BABYLON,scene,positions:arena.weaponSpawns,arenaId:arenaDef.id});
- active={engine,scene,camera,world,arena,fighters,pickups,roundOver:false,modeKind,modeRules:MODE_RULES[modeKind]||MODE_RULES.OneVsOne,online:Boolean(onlineData),...(onlineData||{})};setupModeObjectives();
+ active={engine,scene,camera,world,arena,arenaDef,fighters,pickups,roundOver:false,modeKind,modeRules:MODE_RULES[modeKind]||MODE_RULES.OneVsOne,arenaHazards:onlineData?.arenaHazards??true,online:Boolean(onlineData),...(onlineData||{})};setupModeObjectives();setupArenaHazard(active,{BABYLON});
  if(active.online){active.remoteInputs=new Map();active.latestSnapshot=null;active.snapshotSeq=0;active.appliedSnapshotSeq=-1;active.inputSeq=0;active.nextInputAt=0;active.nextSnapshotAt=0;active.inputLatch={attack:false,dash:false};active.resultSent=false;}
  ui.round.hidden=true;updateHud(fighters);setLoading(false);
  let previous=performance.now()/1000,accumulator=0;
@@ -342,7 +343,7 @@ async function launchMatch({arenaDef,fighterSpecs,modeKind='OneVsOne',onlineData
   if(active?.online)tickNetwork(now);
   fighters.forEach(f=>f.sync());
   pickups.forEach((pickup,index)=>{if(pickup.available){pickup.mesh.rotation.y+=.012;pickup.mesh.position.y=pickup.home.y+Math.sin(now*2.3+index)*.08;}});
-  syncObjectiveVisuals();camera.setTarget(BABYLON.Vector3.Lerp(camera.target,cameraTarget(fighters),.08));scene.render();
+  syncObjectiveVisuals();syncHazardVisual(active);camera.setTarget(BABYLON.Vector3.Lerp(camera.target,cameraTarget(fighters),.08));scene.render();
  });
  engine.resize();ui.canvas?.focus();
 }
@@ -362,7 +363,7 @@ export async function startOnlineMatch(room=onlineRoom){
   const session=roomSession();if(!session||!Number.isInteger(session.id))throw new Error('Online room session was lost.');
   const players=[...(room.players||[])].sort((a,b)=>a.id-b.id);if(players.length<2)throw new Error('The online room needs at least two players.');
   const arenaDef=arenaFromNetwork(room.settings?.arena),modeKind=room.settings?.mode||'FreeForAll';const fighterSpecs=players.map(player=>({slot:player.id,definition:characterFromNetwork(player.character)}));
-  await launchMatch({arenaDef,fighterSpecs,modeKind,onlineData:{localSlot:session.id,isHost:room.hostId===session.id,hostId:room.hostId}});
+  await launchMatch({arenaDef,fighterSpecs,modeKind,onlineData:{localSlot:session.id,isHost:room.hostId===session.id,hostId:room.hostId,arenaHazards:room.settings?.arenaHazards!==false}});
   setOnlineStatus(`ROOM ${room.code} · FIGHT IN PROGRESS`);
  }catch(error){console.error(error);setLoading(false);setFatal(error?.message||String(error));}finally{onlineStarting=false;}
 }
