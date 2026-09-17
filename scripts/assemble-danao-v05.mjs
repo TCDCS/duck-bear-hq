@@ -6,22 +6,30 @@ import crypto from 'node:crypto';
 const root = path.resolve(import.meta.dirname, '..');
 const builds = [
   {
-    partsDir: path.join(root, 'scripts/danao-v05-gz/runtime'),
+    source: path.join(root, 'scripts/danao-v05-gz/runtime.gz'),
     output: path.join(root, 'public/games/danao/src/game/runtime.js'),
-    sha256: '921b5438c5defc1f569c1e30a744b43daa52990687f7770020b793f9d3d4ee69',
+    sha256: 'b803937f6c2f6f8162eaa746301ef7583420f773d3eb39b43353fe4064724209',
   },
   {
-    partsDir: path.join(root, 'scripts/danao-v05-gz/visuals'),
+    source: path.join(root, 'scripts/danao-v05-gz/visuals.gz'),
     output: path.join(root, 'public/games/danao/src/game/visuals.js'),
-    sha256: '886d4f23c29db01d8ced5d8232ab506fce1cad318ffc9c762e48315d7dae5cf1',
+    sha256: 'aba427b2c9658e24887e2511f7769425f48c1b19d9a15830d7292642e7963a47',
+  },
+  {
+    source: path.join(root, 'scripts/danao-v05-gz/App.js.gz'),
+    output: path.join(root, 'public/games/danao/src/ui/App.js'),
+    sha256: 'c730de0d72c26a484c035b824a03a28c18f372375b403d9258498c454e093053',
+  },
+  {
+    source: path.join(root, 'scripts/danao-v05-gz/styles.css.gz'),
+    output: path.join(root, 'public/games/danao/src/styles.css'),
+    sha256: '1df1da15140da03a84734fc0ea366abf35592a1c079c65b22a06673be2ad3f1b',
   },
 ];
 
 for (const build of builds) {
-  const names = fs.readdirSync(build.partsDir).filter((name) => name.endsWith('.part')).sort();
-  if (!names.length) throw new Error(`No Danao release parts found in ${build.partsDir}`);
-  const encoded = names.map((name) => fs.readFileSync(path.join(build.partsDir, name), 'utf8').trim()).join('');
-  const source = zlib.gunzipSync(Buffer.from(encoded, 'base64'));
+  if (!fs.existsSync(build.source)) throw new Error(`Missing Danao release source ${path.relative(root, build.source)}`);
+  const source = zlib.gunzipSync(fs.readFileSync(build.source));
   const actual = crypto.createHash('sha256').update(source).digest('hex');
   if (actual !== build.sha256) throw new Error(`Danao release hash mismatch for ${path.basename(build.output)}: ${actual}`);
   fs.mkdirSync(path.dirname(build.output), { recursive: true });
