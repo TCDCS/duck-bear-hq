@@ -12,7 +12,10 @@ test('Danao production release uses Unity Build Automation for the exact main co
   assert.match(workflow, /branches:\s*\[main\]/);
   assert.match(workflow, /if:\s*\$\{\{\s*github\.ref\s*==\s*'refs\/heads\/main'\s*\}\}/);
   assert.match(workflow, /actions:\s*read/);
+  assert.match(workflow, /concurrency:[\s\S]*group:\s*danao-production-webgl[\s\S]*cancel-in-progress:\s*true/);
   assert.match(workflow, /TARGET_NAME="Danao WebGL"/);
+  assert.match(workflow, /Cancel stale Danao WebGL builds/);
+  assert.match(workflow, /-X DELETE[\s\S]*buildtargets\/\$TARGET_ID\/builds/);
   assert.match(workflow, /--arg commit "\$GITHUB_SHA"/);
   assert.match(workflow, /requestedRevision/);
   assert.match(workflow, /lastBuiltRevision/);
