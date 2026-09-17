@@ -15,7 +15,7 @@ function headers(url,type='text/plain; charset=utf-8') {
 }
 function withDanaoWebAssemblyPolicy(response,url){
   const h=new Headers(response.headers);
-  const policy=headers(url,'text/html; charset=utf-8')['Content-Security-Policy'].replace("script-src 'self';","script-src 'self' 'wasm-unsafe-eval';");
+  const policy=headers(url,'text/html; charset=utf-8')['Content-Security-Policy'].replace("script-src 'self';","script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net;");
   h.set('Content-Security-Policy',policy);
   return new Response(response.body,{status:response.status,statusText:response.statusText,headers:h});
 }
