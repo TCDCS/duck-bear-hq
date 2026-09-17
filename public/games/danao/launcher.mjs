@@ -15,7 +15,10 @@ async function releaseInfo(){
 }
 function join(base,file){return `${String(base||'./Build').replace(/\/$/,'')}/${file}`;}
 function addScript(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.async=true;s.onload=resolve;s.onerror=()=>reject(new Error('The Dǎnào Web build is not published on this deployment yet.'));document.head.append(s);});}
-function showFatal(message){starting=false;loading.hidden=true;fatal.hidden=false;fatalText.textContent=message||'The game could not start.';play.disabled=false;}
+function showFatal(message){
+ const text=message||'The game could not start.';starting=false;loading.hidden=true;fatal.hidden=false;fatalText.textContent=text;play.disabled=false;
+ const current=new URL(location.href);if(current.searchParams.has('debug')){current.hash=`danao-error=${encodeURIComponent(text.slice(0,700))}`;history.replaceState(null,'',current);}
+}
 
 async function start(){
  if(starting||unityInstance)return;starting=true;play.disabled=true;fatal.hidden=true;launchPanel.hidden=true;gamePanel.hidden=false;loading.hidden=false;meter.style.width='0%';loadingText.textContent='Warming up the boxing gloves.';lastUnityError='';
