@@ -42,3 +42,17 @@ test('Cloudflare deploy assembles the exact Danao v0.5 release before verificati
   assert.equal(pkg.scripts['assemble:danao'], 'node scripts/assemble-danao-v05.mjs');
   assert.match(read('public/games/danao/release.json'), /"version": "0\.5\.0"/);
 });
+
+test('browser fighter select uses the complete Danao cast instead of generic stand-ins', () => {
+  const runtime = read('public/games/danao/src/game/runtime.js');
+  const app = read('public/games/danao/src/ui/App.js');
+  for (const name of ['Hero', 'Stephen', 'Zachary', 'Mulan', 'Gaby', 'Sara', 'Mum', 'Dad']) {
+    assert.match(runtime, new RegExp(`name: '${name}'`));
+    assert.match(app, new RegExp(`name: '${name}'`));
+  }
+  for (const oldName of ['Tiger', 'Crane', 'Monkey', 'Ox']) {
+    assert.doesNotMatch(runtime, new RegExp(`name: '${oldName}'`));
+    assert.doesNotMatch(app, new RegExp(`name: '${oldName}'`));
+  }
+  assert.match(app, /fighterId: 'hero'/);
+});
