@@ -156,48 +156,58 @@ jobs:
           curl --fail-with-body --silent --show-error \
             -H "Authorization: $UNITY_UBA_AUTH" \
             "$TARGET_URL" > target-before.json
+          CURRENT_OS="$(jq -r '.settings.operatingSystemSelected // .operatingSystem // empty' target-before.json | tr '[:upper:]' '[:lower:]')"
+          CURRENT_MACHINE="$(jq -r '.settings.machineTypeLabel // .machineTypeLabel // empty' target-before.json)"
+          echo "Current Danao builder: OS=$CURRENT_OS machine=$CURRENT_MACHINE"
 
-          jq --arg machine "$MICRO_LABEL" --arg osVersion "$OS_VERSION" '
-            {
-              name: (.name // .targetName),
-              platform: .platform,
-              targetType: .targetType,
-              enabled: (.enabled // true),
-              generateProjectPreview3D: (.generateProjectPreview3D // false),
-              scenePreview: (.scenePreview // false),
-              settings: ((.settings // {}) + {
-                machineTypeLabel: $machine,
-                operatingSystemSelected: "windows",
-                operatingSystemVersion: $osVersion,
-                architecture: "x86_64",
-                windowsGitBinary: "inherit"
-              }),
-              credentials: (.credentials // [])
-            }
-          ' target-before.json > target-update.json
+          if [ "$CURRENT_OS" = "windows" ] && [ "$CURRENT_MACHINE" = "$MICRO_LABEL" ]; then
+            echo "Danao WebGL already uses Windows Micro."
+          else
+            jq --arg machine "$MICRO_LABEL" --arg osVersion "$OS_VERSION" '
+              {
+                name: (.name // .targetName),
+                platform: .platform,
+                targetType: .targetType,
+                enabled: (.enabled // true),
+                generateProjectPreview3D: (.generateProjectPreview3D // false),
+                scenePreview: (.scenePreview // false),
+                settings: ((.settings // {}) + {
+                  machineTypeLabel: $machine,
+                  operatingSystemSelected: "windows",
+                  operatingSystemVersion: $osVersion,
+                  architecture: "x86_64",
+                  windowsGitBinary: "inherit"
+                }),
+                credentials: (.credentials // [])
+              }
+            ' target-before.json > target-update.json
 
-          HTTP="$(curl --silent --show-error \
-            -o target-update-response.json \
-            -w '%{http_code}' \
-            -X PUT \
-            -H "Authorization: $UNITY_UBA_AUTH" \
-            -H 'Content-Type: application/json' \
-            --data-binary @target-update.json \
-            "$TARGET_URL")"
-          if [ "$HTTP" -lt 200 ] || [ "$HTTP" -ge 300 ]; then
-            echo "Could not configure Danao WebGL for Windows Micro (HTTP $HTTP)." >&2
-            cat target-update-response.json >&2 || true
-            exit 1
+            HTTP="$(curl --silent --show-error \
+              -o target-update-response.json \
+              -w '%{http_code}' \
+              -X PUT \
+              -H "Authorization: $UNITY_UBA_AUTH" \
+              -H 'Content-Type: application/json' \
+              --data-binary @target-update.json \
+              "$TARGET_URL")"
+            if [ "$HTTP" = "403" ]; then
+              echo "Unity Dashboard action required: set Danao WebGL Builder Configuration to Windows Micro, save it, then rerun this workflow. No Unity build was started." >&2
+              exit 1
+            elif [ "$HTTP" -lt 200 ] || [ "$HTTP" -ge 300 ]; then
+              echo "Could not configure Danao WebGL for Windows Micro (HTTP $HTTP)." >&2
+              cat target-update-response.json >&2 || true
+              exit 1
+            fi
           fi
 
           curl --fail-with-body --silent --show-error \
             -H "Authorization: $UNITY_UBA_AUTH" \
             "$TARGET_URL" > target-after.json
-          ACTIVE_OS="$(jq -r '.settings.operatingSystemSelected // empty' target-after.json | tr '[:upper:]' '[:lower:]')"
-          ACTIVE_MACHINE="$(jq -r '.settings.machineTypeLabel // empty' target-after.json)"
-          test "$ACTIVE_OS" = "windows" || { echo "Danao target still reports OS '$ACTIVE_OS'." >&2; exit 1; }
-          test "$ACTIVE_MACHINE" = "$MICRO_LABEL" || { echo "Danao target reports '$ACTIVE_MACHINE', expected '$MICRO_LABEL'." >&2; exit 1; }
-          echo "Danao WebGL now uses Windows Micro machine '$MICRO_LABEL' ($OS_VERSION)."
+          ACTIVE_OS="$(jq -r '.settings.operatingSystemSelected // .operatingSystem // empty' target-after.json | tr '[:upper:]' '[:lower:]')"
+          ACTIVE_MACHINE="$(jq -r '.settings.machineTypeLabel // .machineTypeLabel // empty' target-after.json)"
+          test "$ACTIVE_OS" = "windows" || { echo "Danao target still reports OS '$ACTIVE_OS'. Refusing to start a non-Windows build." >&2; exit 1; }
+          test "$ACTIVE_MACHINE" = "$MICRO_LABEL" || { echo "Danao target reports '$ACTIVE_MACHINE', expected '$MICRO_LABEL'. Refusing to start a non-Micro build." >&2; exit 1; }
+          echo "Danao WebGL is verified on Windows Micro machine '$MICRO_LABEL' ($OS_VERSION)."
 
       - name: Guard Danao monthly Windows minutes
         shell: bash
