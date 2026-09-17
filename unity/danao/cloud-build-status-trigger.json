@@ -1,4 +1,4 @@
 {
-  "target": "windows",
-  "request": "verify-committed-boot-scene-windows-build"
+  "target": "webgl",
+  "request": "verify-committed-boot-scene-webgl-build"
 }
