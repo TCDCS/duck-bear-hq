@@ -8,3 +8,6 @@
 
 /games/danao/*
   ! Content-Security-Policy
+
+/games/meow-wars/*
+  ! Content-Security-Policy
