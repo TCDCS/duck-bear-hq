@@ -8,6 +8,10 @@ on:
       - '.github/workflows/danao-release.yml'
   workflow_dispatch:
 
+concurrency:
+  group: danao-production-webgl
+  cancel-in-progress: true
+
 permissions:
   contents: read
   actions: read
@@ -59,6 +63,26 @@ jobs:
           ' buildtargets.json)"
           test -n "$TARGET_ID" && test "$TARGET_ID" != "null" || { echo "Could not resolve $TARGET_NAME" >&2; exit 1; }
           echo "id=$TARGET_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Cancel stale Danao WebGL builds
+        shell: bash
+        env:
+          TARGET_ID: ${{ steps.target.outputs.id }}
+        run: |
+          set -euo pipefail
+          HTTP="$(curl --silent --show-error \
+            -o cancel-builds.json \
+            -w '%{http_code}' \
+            -X DELETE \
+            -H "Authorization: $UNITY_UBA_AUTH" \
+            "$UNITY_UBA_API/orgs/$UNITY_UBA_ORG_ID/projects/$UNITY_UBA_PROJECT_ID/buildtargets/$TARGET_ID/builds")"
+          if [ "$HTTP" -lt 200 ] || [ "$HTTP" -ge 300 ]; then
+            echo "Unity Build Automation stale-build cancellation returned HTTP $HTTP" >&2
+            cat cancel-builds.json >&2 || true
+            exit 1
+          fi
+          echo "Canceled any stale Danao WebGL builds (HTTP $HTTP)."
+          sleep 2
 
       - name: Start exact main-commit Unity build
         shell: bash
