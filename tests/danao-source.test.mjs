@@ -100,7 +100,7 @@ test('couch players deliberately join before match setup', () => {
   assert.match(input, /JoinedCount/);
 });
 
-test('title, controller input, Web and Windows build targets are present', () => {
+test('title, controller input and WebGL browser build target are present', () => {
   const ui = read('unity/danao/Assets/Danao/Runtime/UI/ArcadeUi.cs');
   const input = read('unity/danao/Assets/Danao/Runtime/Input/LocalInputHub.cs');
   const build = read('unity/danao/Assets/Danao/Editor/DanaoBuild.cs');
@@ -108,7 +108,7 @@ test('title, controller input, Web and Windows build targets are present', () =>
   assert.match(ui, /Dǎnào/);
   assert.match(input, /Gamepad\.all/);
   assert.match(build, /BuildTarget\.WebGL/);
-  assert.match(build, /BuildTarget\.StandaloneWindows64/);
+  assert.doesNotMatch(build, /StandaloneWindows64|BuildWindows/);
 });
 
 test('procedural audio contains no external media dependency', () => {
