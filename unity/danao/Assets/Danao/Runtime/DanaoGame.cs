@@ -39,22 +39,34 @@ namespace Danao
 
         private void Awake()
         {
+            DanaoBootDebug.Mark("awake-start");
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
             DontDestroyOnLoad(gameObject);
             Application.targetFrameRate = 60;
             Time.fixedDeltaTime = 1f / 60f;
             _input = gameObject.AddComponent<LocalInputHub>();
+            DanaoBootDebug.Mark("input-ready");
+            DanaoBootDebug.Mark("audio-start");
             _audio = gameObject.AddComponent<ProceduralAudio>();
+            DanaoBootDebug.Mark("audio-ready");
             _roomClient = gameObject.AddComponent<DanaoRoomClient>();
+            DanaoBootDebug.Mark("room-ready");
             _saveService = gameObject.AddComponent<DanaoSaveService>();
+            DanaoBootDebug.Mark("save-ready");
             _roomClient.RoomChanged += OnOnlineRoomChanged;
             _roomClient.ResultReceived += OnOnlineResult;
+            DanaoBootDebug.Mark("ui-start");
             _ui = gameObject.AddComponent<ArcadeUi>();
             _ui.Configure(this);
+            DanaoBootDebug.Mark("ui-ready");
             BuildMenuBackdrop();
+            DanaoBootDebug.Mark("backdrop-ready");
             _audio.PlayTitleMusic();
+            DanaoBootDebug.Mark("music-ready");
             _saveService.SyncCloud();
+            DanaoBootDebug.Mark("cloud-sync-started");
+            DanaoBootDebug.Mark("awake-complete");
         }
 
         private void Update()
