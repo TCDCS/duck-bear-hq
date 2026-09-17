@@ -32,3 +32,16 @@ export function nearestOpponent(self, fighters = []) {
   }
   return best;
 }
+
+export function partyCameraPlacement(frame = { center: { x: 0, z: 0 }, distance: 15 }) {
+  const center = frame.center || { x: 0, z: 0 };
+  const d = Math.max(8, Number(frame.distance) || 15);
+  return {
+    x: (Number(center.x) || 0) + d * 0.42,
+    y: d * 0.48 + 3.0,
+    z: (Number(center.z) || 0) - d * 0.72,
+    targetX: Number(center.x) || 0,
+    targetY: 1.45,
+    targetZ: Number(center.z) || 0,
+  };
+}

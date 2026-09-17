@@ -76,10 +76,10 @@ button { cursor: pointer; }
 .setting-row input[type="checkbox"] { width:28px; height:28px; accent-color:var(--red); }
 .match-ui { position:absolute; inset:0; pointer-events:none; }
 .scoreboard { position:absolute; top:18px; left:50%; transform:translateX(-50%); display:flex; gap:8px; }
-.score-chip { width:150px; background:rgba(20,14,17,.85); border:2px solid #6a5148; padding:8px 10px 11px; position:relative; box-shadow:4px 4px 0 rgba(0,0,0,.24); }
+.score-chip { width:185px; min-height:55px; background:rgba(20,14,17,.9); border:2px solid #6a5148; padding:8px 10px 17px; position:relative; box-shadow:4px 4px 0 rgba(0,0,0,.24); }
 .score-chip span { font-weight:900; font-size:12px; text-transform:uppercase; }
-.score-chip b { float:right; font:900 20px/1 Impact; color:var(--gold); }
-.score-chip i { position:absolute; left:0; bottom:0; height:4px; width:var(--health); background:#79d56c; transition:width .14s ease; }
+.score-chip b { float:right; font:900 18px/1 Impact; color:var(--gold); letter-spacing:.02em; }
+.score-chip i { position:absolute; left:0; bottom:0; height:7px; width:var(--health); background:#79d56c; transition:width .14s ease; box-shadow:0 -1px 0 rgba(255,255,255,.16) inset; }
 .score-chip.p2 i { background:#efb34d; } .score-chip.p3 i { background:#5fbdd1; } .score-chip.p4 i { background:#d86582; }
 .round-banner { position:absolute; left:50%; top:42%; transform:translate(-50%,-50%) rotate(-2deg); background:var(--gold); color:#3a1419; padding:16px 32px; font:900 42px/1 Impact,"Arial Black"; box-shadow:8px 8px 0 #8b2725; }
 .quit-match { pointer-events:auto; position:absolute; right:14px; top:14px; border:1px solid #7e675d; background:rgba(20,15,17,.68); color:#fff; padding:8px 12px; font-size:11px; font-weight:900; }
@@ -106,9 +106,7 @@ button { cursor: pointer; }
   .score-chip { width:calc(50% - 6px); }
 }
 
-.score-chip em { position:absolute; right:9px; bottom:7px; font-style:normal; font-size:9px; font-weight:1000; letter-spacing:.08em; color:#ffd66a; }
-.score-chip.danger { border-color:#ffb43c; animation:edge-pulse .48s steps(2,end) infinite; }
-.score-chip.danger i { background:#ff8c3a; }
+.score-chip em { position:absolute; left:10px; right:10px; bottom:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-style:normal; font-size:9px; font-weight:1000; letter-spacing:.07em; color:#ffd66a; }
 .score-chip.out { opacity:.58; filter:grayscale(.35); }
 .round-banner { min-width:120px; text-align:center; animation:banner-pop .18s cubic-bezier(.2,1.35,.35,1); }
 .pause-overlay { pointer-events:auto; position:absolute; inset:0; display:grid; place-items:center; background:rgba(11,7,10,.72); backdrop-filter:blur(7px); }

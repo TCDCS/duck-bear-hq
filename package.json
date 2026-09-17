@@ -5,7 +5,8 @@
   "type": "module",
   "description": "Duck & Bear public website, private account and Wacky Races online rooms",
   "scripts": {
-    "deploy": "npm test && npm run check && wrangler d1 migrations apply DB --remote && wrangler deploy",
+    "assemble:danao": "node scripts/assemble-danao-v05.mjs",
+    "deploy": "npm run assemble:danao && npm test && npm run check && wrangler d1 migrations apply DB --remote && wrangler deploy",
     "check": "node scripts/check.mjs && node scripts/mango-check.mjs",
     "test": "node --test tests/*.cjs tests/*.mjs",
     "smoke": "node scripts/smoke.mjs",

@@ -1,14 +1,14 @@
 const FIGHTERS = Object.freeze([
-  { id: 'tiger', name: 'Tiger', chinese: '虎', style: 'Red jacket · fast hands' },
-  { id: 'crane', name: 'Crane', chinese: '鹤', style: 'Teal sash · balanced' },
-  { id: 'monkey', name: 'Monkey', chinese: '猴', style: 'Gold vest · slippery' },
-  { id: 'ox', name: 'Ox', chinese: '牛', style: 'Blue coat · big hits' },
+  { id: 'tiger', name: 'Tiger', chinese: '虎', style: 'Red jacket · headband · loud confidence' },
+  { id: 'crane', name: 'Crane', chinese: '鹤', style: 'Teal robe · straw hat · dramatic poses' },
+  { id: 'monkey', name: 'Monkey', chinese: '猴', style: 'Gold vest · sash · permanent mischief' },
+  { id: 'ox', name: 'Ox', chinese: '牛', style: 'Blue coat · horns · absolutely no subtlety' },
 ]);
 
 export function createInitialUiState() {
   return {
     screen: 'menu',
-    arenaId: 'courtyard',
+    arenaId: 'ring',
     fighterId: 'tiger',
     botCount: 3,
     inMatch: false,
@@ -84,15 +84,15 @@ function mainMenu() {
     <div class="title-lockup">
       <div class="seal">闹</div>
       <h1><span class="hanzi">大闹</span><span class="roman">DANAO</span></h1>
-      <p>Wacky kung-fu. Big hits. Bigger knockouts.</p>
+      <p>Grab anything. Hit your mates. Break the room.</p>
     </div>
     <div class="menu-stack">
       ${menuButton('play', 'PLAY', 'Jump straight to arena select')}
       ${menuButton('fighters', 'FIGHTERS', 'Pick your kung-fu troublemaker')}
-      ${menuButton('arenas', 'ARENAS', 'Courtyard · Rooftop · Wrestling Ring')}
+      ${menuButton('arenas', 'ARENAS', 'Wrestling Hall · Courtyard · Rooftop')}
       ${menuButton('settings', 'SETTINGS', 'Audio · camera shake · controls')}
     </div>
-    <div class="control-strip"><b>Keyboard</b> WASD · Space jump · J light · K heavy · L dodge <span></span><b>Gamepad</b> Left stick · A · X · Y · B</div>
+    <div class="control-strip"><b>Keyboard</b> WASD · Space jump · J punch/use · K grab/throw · L dodge <span></span><b>Gamepad</b> Left stick · A jump · X punch/use · Y grab/throw · B dodge</div>
   `, 'menu-screen');
 }
 
@@ -109,7 +109,7 @@ function arenaScreen(state, arenas) {
       <div class="arena-grid">${cards}</div>
       <div class="match-options">
         <label>Bots <select data-setting="bots"><option value="1" ${state.botCount === 1 ? 'selected' : ''}>1</option><option value="2" ${state.botCount === 2 ? 'selected' : ''}>2</option><option value="3" ${state.botCount === 3 ? 'selected' : ''}>3</option></select></label>
-        <button class="start-btn" data-action="start">START FIGHT</button>
+        <button class="start-btn" data-action="start">START BRAWL</button>
       </div>
     </div>
   `, 'panel-screen');
@@ -137,7 +137,7 @@ function settingsScreen(state) {
       <div class="panel-head"><button class="back" data-action="back">←</button><div><span>KEEP IT SIMPLE</span><h2>Settings</h2></div></div>
       <label class="setting-row"><span><b>Master volume</b><small>Overall game audio</small></span><input data-setting="masterVolume" type="range" min="0" max="1" step="0.05" value="${s.masterVolume}"></label>
       <label class="setting-row"><span><b>Music</b><small>Procedural kung-fu arcade soundtrack</small></span><input data-setting="music" type="checkbox" ${s.music ? 'checked' : ''}></label>
-      <label class="setting-row"><span><b>Sound effects</b><small>Hits, jumps, ring-outs and menu sounds</small></span><input data-setting="sfx" type="checkbox" ${s.sfx ? 'checked' : ''}></label>
+      <label class="setting-row"><span><b>Sound effects</b><small>Punches, grabs, throws, broken furniture and menu sounds</small></span><input data-setting="sfx" type="checkbox" ${s.sfx ? 'checked' : ''}></label>
       <label class="setting-row"><span><b>Camera shake</b><small>Short impact shake on heavy hits</small></span><input data-setting="cameraShake" type="checkbox" ${s.cameraShake ? 'checked' : ''}></label>
       <button class="start-btn secondary" data-action="back">DONE</button>
     </div>
@@ -145,13 +145,21 @@ function settingsScreen(state) {
 }
 
 function matchScreen(state) {
-  const hud = (state.hud || []).map((fighter, index) => `
-    <div class="score-chip p${index + 1} ${fighter.danger > 0.58 ? 'danger' : ''} ${fighter.active === false ? 'out' : ''}">
-      <span>${escapeHtml(fighter.name)}</span><b>${fighter.score ?? 0}</b>
-      <em>${fighter.active === false ? 'RESPAWN' : fighter.danger > 0.58 ? 'EDGE!' : ''}</em>
-      <i style="--health:${Math.max(0, Math.min(100, fighter.health ?? 100))}%"></i>
-    </div>
-  `).join('');
+  const hud = (state.hud || []).map((fighter, index) => {
+    const health = Math.max(0, Math.min(100, fighter.health ?? 100));
+    const status = fighter.ko || fighter.active === false
+      ? 'KO'
+      : fighter.heldItem
+        ? `HOLDING: ${escapeHtml(fighter.heldItem)}`
+        : 'READY';
+    return `
+      <div class="score-chip p${index + 1} ${fighter.ko || fighter.active === false ? 'out' : ''}">
+        <span>${escapeHtml(fighter.name)}</span><b>${health} HP</b>
+        <em>${status}</em>
+        <i style="--health:${health}%"></i>
+      </div>
+    `;
+  }).join('');
   const pause = state.paused ? `
     <div class="pause-overlay">
       <div class="pause-card"><span>暂停</span><h2>PAUSED</h2><p>Take a second. The chaos will still be here.</p>

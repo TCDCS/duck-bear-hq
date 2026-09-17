@@ -5,6 +5,7 @@ export const neutralInput = () => ({
   light: false,
   heavy: false,
   dodge: false,
+  grab: false,
 });
 
 export function createInputEdges(previous = neutralInput(), current = neutralInput()) {
@@ -15,5 +16,6 @@ export function createInputEdges(previous = neutralInput(), current = neutralInp
     lightPressed: Boolean(current.light && !previous.light),
     heavyPressed: Boolean(current.heavy && !previous.heavy),
     dodgePressed: Boolean(current.dodge && !previous.dodge),
+    grabPressed: Boolean(current.grab && !previous.grab),
   };
 }
