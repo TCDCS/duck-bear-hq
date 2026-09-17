@@ -16,9 +16,8 @@ test('Unity artifact download follows signed file URLs and validates real WebGL 
   assert.match(workflow,/Danao\.wasm[^\n]*1000000/s);
 });
 
-test('successful Windows cloud builds are preserved as a downloadable playable zip',()=>{
-  assert.match(workflow,/Danao Windows x64\.zip/);
-  assert.match(workflow,/danao-windows-x64-playable-/);
-  assert.match(workflow,/playable\/Danao Windows x64\.zip/);
-  assert.match(workflow,/steps\.target\.outputs\.id == 'danao-windows-x64'/);
+test('Unity cloud artifact monitoring is WebGL-only and never preserves a Windows application',()=>{
+  assert.match(workflow,/danao-webgl-playable-/);
+  assert.match(workflow,/playable\/Build/);
+  assert.doesNotMatch(workflow,/Danao Windows x64|danao-windows-x64-playable|danao-windows-x64/);
 });
