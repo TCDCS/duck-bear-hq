@@ -5,7 +5,7 @@ from playwright.sync_api import sync_playwright
 
 BASE=os.environ.get('BASE_URL','http://127.0.0.1:8787').rstrip('/')
 OUT=Path(os.environ.get('DANAO_REPORT_DIR','verification/danao-babylon'));OUT.mkdir(parents=True,exist_ok=True)
-report={'base':BASE,'checks':[],'errors':[],'network':[]}
+report={'base':BASE,'checks':[],'errors':[],'network':[],'moduleProbe':None}
 
 def check(name,value,detail=None):
     report['checks'].append({'name':name,'passed':bool(value),'detail':detail})
@@ -27,6 +27,24 @@ with sync_playwright() as pw:
         page.goto(BASE+'/games/danao/',wait_until='networkidle')
         check('Chinese title visible',page.get_by_text('打闹',exact=True).count()>=1)
         check('native Local Play button visible',page.get_by_role('button',name='LOCAL PLAY').is_visible())
+        report['moduleProbe']=page.evaluate("""async () => {
+          const probe=async (name,url) => {
+            try {
+              const result=await Promise.race([
+                import(url).then(mod=>({status:'resolved',keys:Object.keys(mod).slice(0,8)})),
+                new Promise(resolve=>setTimeout(()=>resolve({status:'timeout'}),7000))
+              ]);
+              return {name,url,...result};
+            } catch (error) {
+              return {name,url,status:'rejected',message:String(error && (error.stack||error.message||error))};
+            }
+          };
+          return [
+            await probe('babylon','https://cdn.jsdelivr.net/npm/@babylonjs/core@9.26.2/+esm'),
+            await probe('rapier','https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.20.0/+esm')
+          ];
+        }""")
+        print('MODULE PROBE '+json.dumps(report['moduleProbe'],ensure_ascii=False),flush=True)
         page.get_by_role('button',name='LOCAL PLAY').click()
         check('Local Play opens setup without Unity',page.locator('#local-setup').is_visible() and page.locator('#arena-select').is_visible())
         page.locator('#arena-select').select_option('wrestling-arena')
@@ -42,8 +60,9 @@ with sync_playwright() as pw:
         detail={
             'fatal':page.locator('#fatal-text').inner_text() if fatal else None,
             'loading':page.locator('#loading-text').inner_text() if loading else None,
+            'moduleProbe':report['moduleProbe'],
             'errors':report['errors'],
-            'network':report['network'][-20:]
+            'network':report['network'][-30:]
         }
         print('STARTUP EVIDENCE '+json.dumps(detail,ensure_ascii=False),flush=True)
         check('3D runtime leaves loading state',not loading and not fatal,detail)
