@@ -1,14 +1,5 @@
 {
-  "version": "0.1.0",
-  "channel": "development",
-  "buildBase": "/game-builds/danao/web/current",
-  "loader": "Danao.loader.js",
-  "data": "Danao.data",
-  "framework": "Danao.framework.js",
-  "wasm": "Danao.wasm",
-  "minimum": {
-    "webgl": 2,
-    "playersLocal": 4,
-    "playersOnline": 4
-  }
+  "version": "0.4.0",
+  "engine": "Babylon.js + Rapier",
+  "entry": "./src/main.js"
 }

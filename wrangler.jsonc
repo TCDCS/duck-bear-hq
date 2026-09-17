@@ -9,7 +9,7 @@
     "directory": "./public",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*", "/media/*", "/games/*", "/game-builds/danao/web/*"]
+    "run_worker_first": ["/api/*", "/media/*", "/games/wacky-races", "/games/wacky-races/*", "/games/proper-karted", "/games/proper-karted/*"]
   },
   "rules": [{"type":"Text","globs":["**/kart-assets/*.txt"],"fallthrough":true}],
   "d1_databases": [{"binding":"DB","database_name":"duck-bear-hq-db","database_id":"05f3e993-e41a-4d0e-8166-bcd04ae235f9","migrations_dir":"migrations"}],
