@@ -35,6 +35,8 @@ jobs:
           path: |
             public/games/danao/src/game/runtime.js
             public/games/danao/src/game/visuals.js
+            public/games/danao/src/ui/App.js
+            public/games/danao/src/styles.css
           retention-days: 1
       - name: Syntax check Danao modules
         run: find public/games/danao/src -name '*.js' -print0 | xargs -0 -n1 node --check
