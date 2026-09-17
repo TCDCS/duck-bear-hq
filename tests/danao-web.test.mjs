@@ -45,10 +45,14 @@ test('Danao and its retired WebGL build path bypass the old game Worker launcher
  for(const route of ['/games/wacky-races','/games/wacky-races/*','/games/proper-karted','/games/proper-karted/*'])assert.ok(routes.includes(route),`missing ${route}`);
 });
 
-test('Danao has a narrow CSP exception for its pinned renderer and physics CDNs',()=>{
+test('Danao detaches the restrictive site CSP and declares its own pinned engine policy',()=>{
  const headers=read('public/_headers');
  const block=headers.match(/\/games\/danao\/\*\s*\n((?:  .*\n?)*)/)?.[1]||'';
- for(const host of ['https://cdn.jsdelivr.net','https://unpkg.com','https://esm.sh'])assert.ok(block.includes(host),`missing ${host}`);
- assert.match(block,/'wasm-unsafe-eval'/);
- assert.doesNotMatch(block,/(?:^|\s)'unsafe-eval'(?:\s|;|$)/);
+ assert.match(block,/! Content-Security-Policy/);
+ assert.doesNotMatch(block,/^  Content-Security-Policy:/m);
+ const html=read('public/games/danao/index.html');
+ assert.match(html,/http-equiv="Content-Security-Policy"/);
+ for(const host of ['https://cdn.jsdelivr.net','https://unpkg.com','https://esm.sh'])assert.ok(html.includes(host),`missing ${host}`);
+ assert.match(html,/'wasm-unsafe-eval'/);
+ assert.doesNotMatch(html,/(?:^|\s)'unsafe-eval'(?:\s|;|$)/);
 });
