@@ -36,3 +36,10 @@ export function impactDamage(speed = 0, mass = 1) {
   if (v < 4) return 0;
   return Math.min(30, Math.max(1, Math.round((v - 3.5) * Math.sqrt(m) * 0.72)));
 }
+
+export function hitStopDuration(force = 0, heavy = false) {
+  const bounded = Math.max(0, Math.min(30, Number(force) || 0));
+  if (bounded <= 0) return 0;
+  const duration = 18 + bounded * 2.3 + (heavy ? 28 : 0);
+  return Math.round(Math.max(24, Math.min(92, duration)));
+}

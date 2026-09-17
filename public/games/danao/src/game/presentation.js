@@ -37,6 +37,8 @@ export function fighterPose({
     bob: idleBob,
     lean: moving * 0.13,
     punch: attacking ? (attackKind === 'heavy' ? 0.92 : 0.62) : 0,
+    punchLift: attacking ? (attackKind === 'heavy' ? 0.42 : 0.18) : 0,
+    hitTilt: stunned && !knockedDown ? 0.2 : 0,
     squash: knockedDown ? 0.66 : dodging ? 0.72 : 1,
     stretch: knockedDown ? 1.08 : dodging ? 1.18 : 1,
     flop: knockedDown ? 1 : 0,

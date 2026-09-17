@@ -8,12 +8,12 @@ const builds = [
   {
     source: path.join(root, 'scripts/danao-v05-gz/runtime.gz'),
     output: path.join(root, 'public/games/danao/src/game/runtime.js'),
-    sha256: 'b803937f6c2f6f8162eaa746301ef7583420f773d3eb39b43353fe4064724209',
+    sha256: '7e4f433225347badb7e51217792d278f1e1c84734e8d969d2439cb6ac7484d2a',
   },
   {
     source: path.join(root, 'scripts/danao-v05-gz/visuals.gz'),
     output: path.join(root, 'public/games/danao/src/game/visuals.js'),
-    sha256: 'aba427b2c9658e24887e2511f7769425f48c1b19d9a15830d7292642e7963a47',
+    sha256: '5b58adde9afeecda68d38436005029e42fc5dbf82fec9a9255246ffdd7c250f3',
   },
   {
     source: path.join(root, 'scripts/danao-v05-gz/App.js.gz'),
