@@ -14,7 +14,8 @@ test('Danao production release uses Unity Build Automation for the exact main co
   assert.match(workflow, /actions:\s*read/);
   assert.match(workflow, /TARGET_NAME="Danao WebGL"/);
   assert.match(workflow, /--arg commit "\$GITHUB_SHA"/);
-  assert.match(workflow, /scmCommitId/);
+  assert.match(workflow, /requestedRevision/);
+  assert.match(workflow, /lastBuiltRevision/);
   assert.match(workflow, /GITHUB_TOKEN:\s*\$\{\{\s*github\.token\s*\}\}/);
   assert.match(workflow, /\/api\/danao\/release\/health/);
   assert.match(workflow, /\/api\/danao\/release\/\$NAME/);
