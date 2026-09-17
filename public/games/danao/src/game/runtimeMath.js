@@ -9,7 +9,7 @@ export function cameraFrameForPoints(points = []) {
   const spread = Math.max(maxX - minX, maxZ - minZ);
   return {
     center: { x: (minX + maxX) / 2, z: (minZ + maxZ) / 2 },
-    distance: Math.max(15, 12 + spread * 0.9),
+    distance: Math.max(12.8, 10.6 + spread * 0.72),
   };
 }
 
@@ -37,11 +37,11 @@ export function partyCameraPlacement(frame = { center: { x: 0, z: 0 }, distance:
   const center = frame.center || { x: 0, z: 0 };
   const d = Math.max(8, Number(frame.distance) || 15);
   return {
-    x: (Number(center.x) || 0) + d * 0.42,
-    y: d * 0.48 + 3.0,
-    z: (Number(center.z) || 0) - d * 0.72,
+    x: (Number(center.x) || 0) + d * 0.34,
+    y: d * 0.38 + 2.35,
+    z: (Number(center.z) || 0) - d * 0.62,
     targetX: Number(center.x) || 0,
-    targetY: 1.45,
+    targetY: 1.4,
     targetZ: Number(center.z) || 0,
   };
 }

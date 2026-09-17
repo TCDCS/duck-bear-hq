@@ -8,12 +8,12 @@ const builds = [
   {
     source: path.join(root, 'scripts/danao-v05-gz/runtime.gz'),
     output: path.join(root, 'public/games/danao/src/game/runtime.js'),
-    sha256: 'b803937f6c2f6f8162eaa746301ef7583420f773d3eb39b43353fe4064724209',
+    sha256: '7e4f433225347badb7e51217792d278f1e1c84734e8d969d2439cb6ac7484d2a',
   },
   {
-    source: path.join(root, 'scripts/danao-v05-gz/visuals.gz'),
+    partsDir: path.join(root, 'scripts/danao-v05-gz/visuals'),
     output: path.join(root, 'public/games/danao/src/game/visuals.js'),
-    sha256: 'aba427b2c9658e24887e2511f7769425f48c1b19d9a15830d7292642e7963a47',
+    sha256: '5b58adde9afeecda68d38436005029e42fc5dbf82fec9a9255246ffdd7c250f3',
   },
   {
     source: path.join(root, 'scripts/danao-v05-gz/App.js.gz'),
@@ -27,9 +27,19 @@ const builds = [
   },
 ];
 
-for (const build of builds) {
+function readReleaseSource(build) {
+  if (build.partsDir) {
+    const names = fs.readdirSync(build.partsDir).filter((name) => name.endsWith('.part')).sort();
+    if (!names.length) throw new Error(`No Danao release parts found in ${path.relative(root, build.partsDir)}`);
+    const encoded = names.map((name) => fs.readFileSync(path.join(build.partsDir, name), 'utf8').trim()).join('');
+    return zlib.gunzipSync(Buffer.from(encoded, 'base64'));
+  }
   if (!fs.existsSync(build.source)) throw new Error(`Missing Danao release source ${path.relative(root, build.source)}`);
-  const source = zlib.gunzipSync(fs.readFileSync(build.source));
+  return zlib.gunzipSync(fs.readFileSync(build.source));
+}
+
+for (const build of builds) {
+  const source = readReleaseSource(build);
   const actual = crypto.createHash('sha256').update(source).digest('hex');
   if (actual !== build.sha256) throw new Error(`Danao release hash mismatch for ${path.basename(build.output)}: ${actual}`);
   fs.mkdirSync(path.dirname(build.output), { recursive: true });
