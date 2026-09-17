@@ -14,6 +14,8 @@ namespace Danao.Editor
         private const string GeneratedFolder = "Assets/Danao/Generated";
         private const string PipelineAssetPath = "Assets/Danao/Generated/DanaoURP.asset";
         private const string RendererAssetPath = "Assets/Danao/Generated/DanaoUniversalRenderer.asset";
+        private const string RuntimeResourcesFolder = "Assets/Danao/Generated/Resources";
+        private const string RuntimeMaterialPath = "Assets/Danao/Generated/Resources/DanaoRuntimeLit.mat";
         private const string BootScenePath = "Assets/Danao/Generated/Boot.unity";
 
         static DanaoProjectConfigurator() { EditorApplication.delayCall += EnsureProject; }
@@ -27,6 +29,7 @@ namespace Danao.Editor
             PlayerSettings.defaultScreenHeight = 1080;
             EnsureGeneratedFolder();
             EnsureUniversalRenderPipeline();
+            EnsureRuntimeMaterial();
             EnsureBootScene();
         }
 
@@ -66,6 +69,33 @@ namespace Danao.Editor
                 GraphicsSettings.defaultRenderPipeline = pipeline;
             if (QualitySettings.renderPipeline != pipeline)
                 QualitySettings.renderPipeline = pipeline;
+        }
+
+        private static void EnsureRuntimeMaterial()
+        {
+            if (!AssetDatabase.IsValidFolder(RuntimeResourcesFolder))
+            {
+                Directory.CreateDirectory(RuntimeResourcesFolder);
+                AssetDatabase.Refresh();
+            }
+
+            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            if (shader == null)
+                throw new InvalidDataException("Dǎnào requires the Universal Render Pipeline/Lit shader.");
+
+            var material = AssetDatabase.LoadAssetAtPath<Material>(RuntimeMaterialPath);
+            if (material == null)
+            {
+                material = new Material(shader) { name = "Danao Runtime Lit" };
+                AssetDatabase.CreateAsset(material, RuntimeMaterialPath);
+            }
+            else if (material.shader != shader)
+            {
+                material.shader = shader;
+                EditorUtility.SetDirty(material);
+            }
+
+            AssetDatabase.SaveAssets();
         }
 
         private static void EnsureBootScene()
