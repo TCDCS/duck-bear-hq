@@ -21,7 +21,7 @@ export function createFighter({BABYLON,RAPIER,scene,world,definition,position,sl
  const body=world.createRigidBody(desc);
  body.setEnabledRotations(false,false,false,true);
  const collider=world.createCollider(RAPIER.ColliderDesc.capsule(.65,.46).setFriction(.85).setRestitution(.08),body);
- const state={slot,definition,root,body,collider,hp:100,attackCooldown:0,alive:true,spawn:{...position},jumpHeld:false,blocking:false,lastInput:{x:0,z:0,jump:false,attack:false,grab:false,dash:false,fire:false,block:false}};
+ const state={slot,definition,root,body,collider,hp:100,attackCooldown:0,alive:true,spawn:{...position},jumpHeld:false,grabHeld:false,blocking:false,lastInput:{x:0,z:0,jump:false,attack:false,grab:false,dash:false,fire:false,block:false}};
 
  state.update=(input,dt)=>{
   state.lastInput=input;
@@ -53,7 +53,7 @@ export function createFighter({BABYLON,RAPIER,scene,world,definition,position,sl
   root.position.set(p.x,p.y-.84,p.z);
  };
  state.reset=()=>{
-  state.hp=100;state.alive=true;state.attackCooldown=0;state.jumpHeld=false;state.blocking=false;
+  state.hp=100;state.alive=true;state.attackCooldown=0;state.jumpHeld=false;state.grabHeld=false;state.blocking=false;
   body.setTranslation(state.spawn,true);body.setLinvel({x:0,y:0,z:0},true);body.setAngvel({x:0,y:0,z:0},true);
  };
  state.dispose=()=>{try{world.removeRigidBody(body);}catch{} root.dispose(false,true);bodyMat.dispose();accentMat.dispose();};
