@@ -5,14 +5,22 @@
   "type": "module",
   "description": "Duck & Bear public website, private account and Wacky Races online rooms",
   "scripts": {
+    "build:danao": "node scripts/build-danao.mjs",
+    "predeploy": "npm run build:danao",
     "deploy": "npm test && npm run check && wrangler d1 migrations apply DB --remote && wrangler deploy",
     "check": "node scripts/check.mjs && node scripts/mango-check.mjs",
     "test": "node --test tests/*.cjs tests/*.mjs",
     "smoke": "node scripts/smoke.mjs",
+    "predev": "npm run build:danao",
     "dev": "wrangler dev",
     "migrate:local": "wrangler d1 migrations apply DB --local"
   },
+  "dependencies": {
+    "@babylonjs/core": "9.26.2",
+    "@dimforge/rapier3d-compat": "0.20.0"
+  },
   "devDependencies": {
+    "esbuild": "0.28.2",
     "wrangler": "^4.45.0"
   }
 }
