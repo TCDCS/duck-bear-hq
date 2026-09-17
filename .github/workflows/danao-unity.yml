@@ -12,8 +12,12 @@ on:
       - 'public/games/danao/**'
       - 'public/games/index.html'
       - 'public/games/games.css'
+      - 'scripts/assemble-danao-v05.mjs'
+      - 'scripts/danao-v05-gz/**'
       - 'tests/danao-*.test.mjs'
       - 'migrations/0004_danao_profiles.sql'
+      - 'package.json'
+      - 'package-lock.json'
       - 'wrangler.jsonc'
       - '.github/workflows/danao-unity.yml'
       - '.github/workflows/danao-uba-trigger.yml'
@@ -37,6 +41,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Assemble exact Danao v0.5 source
+        run: npm run assemble:danao
       - name: Danao source and server tests
         run: node --test tests/danao-*.test.mjs
       - name: Full repository Node test suite
