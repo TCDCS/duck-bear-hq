@@ -1,0 +1,200 @@
+name: Danao Unity
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, feature/danao-unity]
+    paths:
+      - 'unity/danao/**'
+      - 'src/danao/**'
+      - 'src/game-routes.js'
+      - 'src/worker-games.js'
+      - 'public/games/danao/**'
+      - 'public/games/index.html'
+      - 'public/games/games.css'
+      - 'tests/danao-*.test.mjs'
+      - 'migrations/0004_danao_profiles.sql'
+      - 'wrangler.jsonc'
+      - '.github/workflows/danao-unity.yml'
+      - '.github/workflows/danao-uba-trigger.yml'
+      - '.github/workflows/danao-uba-status.yml'
+      - '.github/workflows/danao-release.yml'
+
+permissions:
+  contents: read
+
+env:
+  UNITY_VERSION: 6000.0.65f1
+  PROJECT_PATH: unity/danao
+
+jobs:
+  source-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Danao source and server tests
+        run: node --test tests/danao-*.test.mjs
+      - name: Full repository Node test suite
+        run: npm test
+      - name: Repository checks
+        run: npm run check
+      - name: Worker syntax checks
+        run: |
+          node --check src/danao/room-state.mjs
+          node --check src/danao/gateway.mjs
+          node --check src/danao/durable.mjs
+          node --check src/danao/profile.mjs
+          node --check src/danao/api.mjs
+          node --check src/game-routes.js
+          node --check src/worker-games.js
+
+  check-build-secrets:
+    runs-on: ubuntu-latest
+    outputs:
+      unity: ${{ steps.check.outputs.unity }}
+      cloudflare: ${{ steps.check.outputs.cloudflare }}
+    steps:
+      - id: check
+        shell: bash
+        env:
+          UNITY_LICENSE_VALUE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_SERIAL_VALUE: ${{ secrets.UNITY_SERIAL }}
+          UNITY_EMAIL_VALUE: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD_VALUE: ${{ secrets.UNITY_PASSWORD }}
+          CF_TOKEN_VALUE: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_VALUE: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if { [ -n "$UNITY_LICENSE_VALUE" ] || [ -n "$UNITY_SERIAL_VALUE" ]; } && [ -n "$UNITY_EMAIL_VALUE" ] && [ -n "$UNITY_PASSWORD_VALUE" ]; then
+            echo "unity=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "unity=false" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -n "$CF_TOKEN_VALUE" ] && [ -n "$CF_ACCOUNT_VALUE" ]; then echo "cloudflare=true" >> "$GITHUB_OUTPUT"; else echo "cloudflare=false" >> "$GITHUB_OUTPUT"; fi
+
+  unity-tests:
+    needs: [source-tests, check-build-secrets]
+    if: ${{ needs.check-build-secrets.outputs.unity == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: unity/danao/Library
+          key: danao-unity-${{ runner.os }}-${{ hashFiles('unity/danao/Packages/**','unity/danao/ProjectSettings/**') }}
+          restore-keys: danao-unity-${{ runner.os }}-
+      - name: Run Unity EditMode and PlayMode tests
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: ${{ env.PROJECT_PATH }}
+          unityVersion: ${{ env.UNITY_VERSION }}
+          testMode: all
+          artifactsPath: unity-test-results
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: danao-unity-test-results
+          path: unity-test-results
+          if-no-files-found: ignore
+
+  build-web:
+    needs: [unity-tests, check-build-secrets]
+    if: ${{ needs.check-build-secrets.outputs.unity == 'true' && needs.unity-tests.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: unity/danao/Library
+          key: danao-unity-web-${{ runner.os }}-${{ hashFiles('unity/danao/Packages/**','unity/danao/ProjectSettings/**') }}
+          restore-keys: danao-unity-web-${{ runner.os }}-
+      - name: Build WebGL
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: ${{ env.PROJECT_PATH }}
+          unityVersion: ${{ env.UNITY_VERSION }}
+          targetPlatform: WebGL
+          buildName: Danao
+          buildsPath: unity/danao/Builds
+      - name: Locate Web build
+        run: find unity/danao/Builds -maxdepth 6 -type f -print | sort
+      - uses: actions/upload-artifact@v4
+        with:
+          name: danao-webgl
+          path: unity/danao/Builds/WebGL
+          if-no-files-found: error
+
+  build-windows:
+    needs: [unity-tests, check-build-secrets]
+    if: ${{ needs.check-build-secrets.outputs.unity == 'true' && needs.unity-tests.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: unity/danao/Library
+          key: danao-unity-windows-${{ runner.os }}-${{ hashFiles('unity/danao/Packages/**','unity/danao/ProjectSettings/**') }}
+          restore-keys: danao-unity-windows-${{ runner.os }}-
+      - name: Build Windows x64
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: ${{ env.PROJECT_PATH }}
+          unityVersion: ${{ env.UNITY_VERSION }}
+          targetPlatform: StandaloneWindows64
+          buildName: Danao
+          buildsPath: unity/danao/Builds
+      - uses: actions/upload-artifact@v4
+        with:
+          name: danao-windows-x64
+          path: unity/danao/Builds/StandaloneWindows64
+          if-no-files-found: error
+
+  publish-web-r2:
+    needs: [build-web, check-build-secrets]
+    if: ${{ github.ref == 'refs/heads/main' && needs.build-web.result == 'success' && needs.check-build-secrets.outputs.cloudflare == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: danao-webgl
+          path: danao-webgl
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Publish current Danao WebGL build to R2
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          LOADER="$(find danao-webgl -type f -name 'Danao.loader.js' -print -quit)"
+          test -n "$LOADER"
+          ROOT="$(dirname "$LOADER")"
+          for NAME in Danao.loader.js Danao.data Danao.framework.js Danao.wasm; do
+            FILE="$ROOT/$NAME"
+            test -f "$FILE"
+            npx wrangler r2 object put "duck-bear-hq-media/danao/web/current/$NAME" --file "$FILE" --remote
+          done

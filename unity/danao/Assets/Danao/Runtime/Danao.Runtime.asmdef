@@ -1,0 +1,11 @@
+{
+  "name": "Danao.Runtime",
+  "rootNamespace": "Danao",
+  "references": [
+    "Unity.InputSystem",
+    "UnityEngine.UI"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "noEngineReferences": false
+}

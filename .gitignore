@@ -1,0 +1,19 @@
+node_modules/
+.wrangler/
+.dev.vars
+.env
+.DS_Store
+
+# Unity generated state and build output
+unity/danao/Library/
+unity/danao/Temp/
+unity/danao/Obj/
+unity/danao/Logs/
+unity/danao/UserSettings/
+unity/danao/Build/
+unity/danao/Builds/
+unity/danao/MemoryCaptures/
+
+# Local test/output files
+playwright-report/
+test-results/

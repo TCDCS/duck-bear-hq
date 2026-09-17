@@ -1,0 +1,215 @@
+name: Danao Production WebGL Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'unity/danao/**'
+      - '.github/workflows/danao-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  UNITY_UBA_API: https://build-automation.services.api.unity.com/v2
+  UNITY_UBA_AUTH: ${{ secrets.UNITY_UBA_AUTH }}
+  UNITY_UBA_ORG_ID: ${{ secrets.UNITY_UBA_ORG_ID }}
+  UNITY_UBA_PROJECT_ID: ${{ secrets.UNITY_UBA_PROJECT_ID }}
+
+jobs:
+  build-and-publish:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check release credentials
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$UNITY_UBA_AUTH" || { echo 'Missing UNITY_UBA_AUTH'; exit 1; }
+          test -n "$UNITY_UBA_ORG_ID" || { echo 'Missing UNITY_UBA_ORG_ID'; exit 1; }
+          test -n "$UNITY_UBA_PROJECT_ID" || { echo 'Missing UNITY_UBA_PROJECT_ID'; exit 1; }
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing CLOUDFLARE_API_TOKEN'; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo 'Missing CLOUDFLARE_ACCOUNT_ID'; exit 1; }
+
+      - name: Resolve Danao WebGL target
+        id: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET_NAME="Danao WebGL"
+          URL="$UNITY_UBA_API/orgs/$UNITY_UBA_ORG_ID/projects/$UNITY_UBA_PROJECT_ID/buildtargets"
+          curl --fail-with-body --silent --show-error \
+            -H "Authorization: $UNITY_UBA_AUTH" \
+            "$URL" > buildtargets.json
+          TARGET_ID="$(jq -r --arg name "$TARGET_NAME" '
+            def rows:
+              if type == "array" then .
+              elif (.buildtargets? | type) == "array" then .buildtargets
+              elif (.buildTargets? | type) == "array" then .buildTargets
+              elif (.targets? | type) == "array" then .targets
+              else [] end;
+            rows
+            | map(select((.name // .targetName // .buildTargetName // .displayName // "") == $name))
+            | .[0]
+            | (.buildtargetid // .buildTargetId // .id // .name // empty)
+          ' buildtargets.json)"
+          test -n "$TARGET_ID" && test "$TARGET_ID" != "null" || { echo "Could not resolve $TARGET_NAME" >&2; exit 1; }
+          echo "id=$TARGET_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Start exact main-commit Unity build
+        shell: bash
+        env:
+          TARGET_ID: ${{ steps.target.outputs.id }}
+        run: |
+          set -euo pipefail
+          URL="$UNITY_UBA_API/orgs/$UNITY_UBA_ORG_ID/projects/$UNITY_UBA_PROJECT_ID/buildtargets/$TARGET_ID/builds"
+          BODY="$(jq -nc --arg branch "$GITHUB_REF_NAME" --arg commit "$GITHUB_SHA" '{clean:false,branch:$branch,commit:$commit}')"
+          HTTP="$(curl --silent --show-error \
+            -o build-start.json \
+            -w '%{http_code}' \
+            -X POST \
+            -H "Authorization: $UNITY_UBA_AUTH" \
+            -H 'Content-Type: application/json' \
+            --data "$BODY" \
+            "$URL")"
+          if [ "$HTTP" -lt 200 ] || [ "$HTTP" -ge 300 ]; then
+            echo "Unity Build Automation returned HTTP $HTTP" >&2
+            cat build-start.json >&2 || true
+            exit 1
+          fi
+          echo "Requested Danao WebGL for commit $GITHUB_SHA (HTTP $HTTP)."
+
+      - name: Find exact Unity build number
+        id: build
+        shell: bash
+        env:
+          TARGET_ID: ${{ steps.target.outputs.id }}
+        run: |
+          set -euo pipefail
+          URL="$UNITY_UBA_API/orgs/$UNITY_UBA_ORG_ID/projects/$UNITY_UBA_PROJECT_ID/buildtargets/$TARGET_ID/builds?limit=25"
+          NUMBER=""
+          for attempt in $(seq 1 60); do
+            curl --fail-with-body --silent --show-error \
+              -H "Authorization: $UNITY_UBA_AUTH" \
+              "$URL" > builds.json
+            NUMBER="$(jq -r --arg commit "$GITHUB_SHA" '
+              def rows:
+                if type == "array" then .
+                elif (.builds? | type) == "array" then .builds
+                else [] end;
+              rows
+              | map(select((.scmCommitId // .commit // .revision // .scmRevision // "") == $commit))
+              | .[0]
+              | (.buildNumber // .build // .number // empty)
+            ' builds.json)"
+            if [ -n "$NUMBER" ] && [ "$NUMBER" != "null" ]; then break; fi
+            echo "Waiting for Unity to register commit $GITHUB_SHA ($attempt/60)"
+            sleep 5
+          done
+          test -n "$NUMBER" && test "$NUMBER" != "null" || { echo "Unity did not register the requested commit." >&2; exit 1; }
+          echo "number=$NUMBER" >> "$GITHUB_OUTPUT"
+          echo "Unity build #$NUMBER is tied to $GITHUB_SHA."
+
+      - name: Wait for WebGL success
+        id: wait
+        shell: bash
+        env:
+          TARGET_ID: ${{ steps.target.outputs.id }}
+          BUILD_NUMBER: ${{ steps.build.outputs.number }}
+        run: |
+          set -euo pipefail
+          URL="$UNITY_UBA_API/orgs/$UNITY_UBA_ORG_ID/projects/$UNITY_UBA_PROJECT_ID/buildtargets/$TARGET_ID/builds/$BUILD_NUMBER"
+          STATUS=""
+          for attempt in $(seq 1 120); do
+            curl --fail-with-body --silent --show-error \
+              -H "Authorization: $UNITY_UBA_AUTH" \
+              "$URL" > build.json
+            STATUS="$(jq -r '.buildStatus // .status // "unknown"' build.json | tr '[:upper:]' '[:lower:]')"
+            echo "Unity build #$BUILD_NUMBER: $STATUS ($attempt/120)"
+            case "$STATUS" in
+              success|failure|canceled|unknown) break ;;
+            esac
+            sleep 20
+          done
+          if [ "$STATUS" != "success" ]; then
+            echo "Unity production build ended with status '$STATUS'." >&2
+            exit 1
+          fi
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+
+      - name: Download verified WebGL payload
+        shell: bash
+        env:
+          TARGET_ID: ${{ steps.target.outputs.id }}
+          BUILD_NUMBER: ${{ steps.build.outputs.number }}
+        run: |
+          set -euo pipefail
+          URL="$UNITY_UBA_API/orgs/$UNITY_UBA_ORG_ID/projects/$UNITY_UBA_PROJECT_ID/buildtargets/$TARGET_ID/builds/$BUILD_NUMBER/artifacts"
+          curl --fail-with-body --silent --show-error \
+            -H "Authorization: $UNITY_UBA_AUTH" \
+            "$URL" > unity-artifacts.json
+          mkdir -p playable/Build
+
+          download_file() {
+            SOURCE_NAME="$1"
+            OUTPUT_NAME="$2"
+            MIN_BYTES="$3"
+            HREF="$(jq -r --arg name "$SOURCE_NAME" '[.[] | select(.name == "All Artifacts") | .files[] | select(.filename == $name) | .href][0] // empty' unity-artifacts.json)"
+            test -n "$HREF" || { echo "Missing Unity WebGL artifact: $SOURCE_NAME" >&2; exit 1; }
+            SIGNED_RESPONSE="$(curl --fail-with-body --silent --show-error -H "Authorization: $UNITY_UBA_AUTH" "$HREF")"
+            SIGNED_URL="$(printf '%s' "$SIGNED_RESPONSE" | jq -r 'if type == "string" then . elif .href? then .href elif .url? then .url else empty end')"
+            test -n "$SIGNED_URL" || { echo "Missing signed URL for $SOURCE_NAME" >&2; exit 1; }
+            curl --fail-with-body --location --silent --show-error "$SIGNED_URL" -o "playable/Build/$OUTPUT_NAME"
+            SIZE="$(stat -c%s "playable/Build/$OUTPUT_NAME")"
+            if [ "$SIZE" -lt "$MIN_BYTES" ]; then
+              echo "$OUTPUT_NAME is too small ($SIZE bytes)." >&2
+              exit 1
+            fi
+          }
+
+          download_file 'Danao WebGL/Build/Danao WebGL.loader.js' 'Danao.loader.js' 10000
+          download_file 'Danao WebGL/Build/Danao WebGL.data' 'Danao.data' 1000000
+          download_file 'Danao WebGL/Build/Danao WebGL.framework.js' 'Danao.framework.js' 100000
+          download_file 'Danao WebGL/Build/Danao WebGL.wasm' 'Danao.wasm' 1000000
+          ls -lh playable/Build
+
+      - name: Preserve production WebGL artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: danao-webgl-production-${{ steps.build.outputs.number }}
+          path: playable/Build
+          if-no-files-found: error
+          retention-days: 30
+
+      - run: npm ci
+
+      - name: Publish Danao WebGL current channel
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          for NAME in Danao.loader.js Danao.data Danao.framework.js Danao.wasm; do
+            FILE="playable/Build/$NAME"
+            test -s "$FILE"
+            npx wrangler r2 object put "duck-bear-hq-media/danao/web/current/$NAME" --file "$FILE" --remote
+          done
+          {
+            echo "### Danao production release"
+            echo "Unity build **#${{ steps.build.outputs.number }}**"
+            echo "Commit: \`$GITHUB_SHA\`"
+            echo "Published to R2 channel **current**."
+          } >> "$GITHUB_STEP_SUMMARY"

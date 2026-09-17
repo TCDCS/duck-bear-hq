@@ -1,0 +1,6 @@
+{
+  "target": "webgl",
+  "requestedAt": "2026-09-17T00:03:00Z",
+  "requestedBy": "ChatGPT",
+  "reason": "verify WebGL after committing the boot scene and EditorBuildSettings"
+}

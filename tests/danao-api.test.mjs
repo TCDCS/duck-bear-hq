@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {routeDanaoApi} from '../src/danao/api.mjs';
+import {defaultProfile} from '../src/danao/profile.mjs';
+const req=(method='GET',body=null,origin='https://example.test')=>new Request('https://example.test/api/danao/profile',{method,headers:{...(origin?{Origin:origin}:{}),...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+const repo={get:async()=>({profile:defaultProfile(),revision:2,updatedAt:'2026-09-16T00:00:00.000Z'}),save:async(_owner,body)=>({profile:body.profile,revision:body.revision+1,updatedAt:'2026-09-16T00:00:01.000Z'}),limit:async()=>{}};
+const deps={repositoryFactory:()=>repo};
+test('anonymous cloud profile request is rejected',async()=>assert.equal((await routeDanaoApi(req(),{DB:{}},null,deps)).status,401));
+test('GET returns only Danao cloud profile data',async()=>{const j=await (await routeDanaoApi(req(),{DB:{}},{id:'u1',active:1},deps)).json();assert.deepEqual(Object.keys(j).sort(),['profile','revision','updatedAt']);});
+test('write requires same origin and exact revision/profile fields',async()=>{assert.equal((await routeDanaoApi(req('PUT',{revision:2,profile:defaultProfile()},'https://evil.test'),{DB:{}},{id:'u1',active:1},deps)).status,403);const r=await routeDanaoApi(req('PUT',{revision:2,profile:defaultProfile()}),{DB:{}},{id:'u1',active:1},deps);assert.equal(r.status,200);assert.equal((await r.json()).revision,3);});
