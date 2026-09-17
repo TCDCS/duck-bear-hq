@@ -10,12 +10,14 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 env:
   UNITY_UBA_API: https://build-automation.services.api.unity.com/v2
   UNITY_UBA_AUTH: ${{ secrets.UNITY_UBA_AUTH }}
   UNITY_UBA_ORG_ID: ${{ secrets.UNITY_UBA_ORG_ID }}
   UNITY_UBA_PROJECT_ID: ${{ secrets.UNITY_UBA_PROJECT_ID }}
+  DANAO_RELEASE_ORIGIN: https://duck-bear-hq.zachary-chambers2.workers.dev
 
 jobs:
   build-and-publish:
@@ -25,23 +27,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Check release credentials
+      - name: Check Unity release credentials
         shell: bash
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
           test -n "$UNITY_UBA_AUTH" || { echo 'Missing UNITY_UBA_AUTH'; exit 1; }
           test -n "$UNITY_UBA_ORG_ID" || { echo 'Missing UNITY_UBA_ORG_ID'; exit 1; }
           test -n "$UNITY_UBA_PROJECT_ID" || { echo 'Missing UNITY_UBA_PROJECT_ID'; exit 1; }
-          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing CLOUDFLARE_API_TOKEN'; exit 1; }
-          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo 'Missing CLOUDFLARE_ACCOUNT_ID'; exit 1; }
 
       - name: Resolve Danao WebGL target
         id: target
@@ -193,23 +185,57 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - run: npm ci
+      - name: Wait for Danao release upload route
+        shell: bash
+        run: |
+          set -euo pipefail
+          READY=""
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --show-error "$DANAO_RELEASE_ORIGIN/api/danao/release/health" > release-health.json; then
+              AUTH="$(jq -r '.auth // empty' release-health.json)"
+              if [ "$AUTH" = "github-actions" ]; then
+                READY=1
+                break
+              fi
+            fi
+            echo "Waiting for the merged Worker release route ($attempt/60)"
+            sleep 10
+          done
+          test -n "$READY" || { echo 'Danao release upload route did not become ready.' >&2; exit 1; }
 
       - name: Publish Danao WebGL current channel
         shell: bash
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          for NAME in Danao.loader.js Danao.data Danao.framework.js Danao.wasm; do
+          for NAME in Danao.data Danao.framework.js Danao.wasm Danao.loader.js; do
             FILE="playable/Build/$NAME"
             test -s "$FILE"
-            npx wrangler r2 object put "duck-bear-hq-media/danao/web/current/$NAME" --file "$FILE" --remote
+            case "$NAME" in
+              *.js) TYPE='application/javascript; charset=utf-8' ;;
+              *.wasm) TYPE='application/wasm' ;;
+              *) TYPE='application/octet-stream' ;;
+            esac
+            curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
+              -X PUT \
+              --data-binary "@$FILE" \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "X-Danao-Run-Id: $GITHUB_RUN_ID" \
+              -H "X-Danao-Commit: $GITHUB_SHA" \
+              -H "Content-Type: $TYPE" \
+              "$DANAO_RELEASE_ORIGIN/api/danao/release/$NAME"
+            echo
           done
+
+          for NAME in Danao.loader.js Danao.data Danao.framework.js Danao.wasm; do
+            curl --fail --silent --show-error --head --retry 5 --retry-delay 2 \
+              "$DANAO_RELEASE_ORIGIN/game-builds/danao/web/current/$NAME" >/dev/null
+          done
+
           {
             echo "### Danao production release"
             echo "Unity build **#${{ steps.build.outputs.number }}**"
             echo "Commit: \`$GITHUB_SHA\`"
-            echo "Published to R2 channel **current**."
+            echo "Published through the authenticated Worker route to R2 channel **current**."
           } >> "$GITHUB_STEP_SUMMARY"
