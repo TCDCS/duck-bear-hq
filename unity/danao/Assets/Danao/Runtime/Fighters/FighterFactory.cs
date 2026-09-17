@@ -27,7 +27,7 @@ namespace Danao.Fighters
             root.transform.localScale = character.BodyScale;
             var rootCollider = root.GetComponent<Collider>();
             var rootRenderer = root.GetComponent<Renderer>();
-            rootRenderer.material = MakeMaterial(baseColour);
+            Paint(rootRenderer, baseColour);
 
             var rootBody = root.AddComponent<Rigidbody>();
             var knockdown = root.AddComponent<ArcadeKnockdown>();
@@ -61,7 +61,7 @@ namespace Danao.Fighters
             go.transform.localPosition = new Vector3(0f,1.02f,0f);
             go.transform.localScale = Vector3.one * .68f;
             var renderer = go.GetComponent<Renderer>();
-            renderer.material = MakeMaterial(Color.Lerp(colour, Color.white, .22f));
+            Paint(renderer, Color.Lerp(colour, Color.white, .22f));
             renderers.Add(renderer);
             AddFace(go.transform, accent);
             SetAsRagdollLimb(go, doll, rootBody, rootCollider, 7f, 22f, 28f);
@@ -77,7 +77,7 @@ namespace Danao.Fighters
                 eye.transform.localPosition = new Vector3(x,.08f,.46f);
                 eye.transform.localScale = Vector3.one * .11f;
                 Object.Destroy(eye.GetComponent<Collider>());
-                eye.GetComponent<Renderer>().material = MakeMaterial(new Color(.05f,.05f,.07f));
+                Paint(eye.GetComponent<Renderer>(), new Color(.05f,.05f,.07f));
             }
             var brow = GameObject.CreatePrimitive(PrimitiveType.Cube);
             brow.name = "AccentMark";
@@ -85,7 +85,7 @@ namespace Danao.Fighters
             brow.transform.localPosition = new Vector3(0f,.28f,.43f);
             brow.transform.localScale = new Vector3(.36f,.05f,.05f);
             Object.Destroy(brow.GetComponent<Collider>());
-            brow.GetComponent<Renderer>().material = MakeMaterial(accent);
+            Paint(brow.GetComponent<Renderer>(), accent);
         }
 
         private static void AddLimb(Transform parent, ArcadeKnockdown doll, Rigidbody rootBody, Collider rootCollider, List<Renderer> renderers, string name, Vector3 localPosition, Vector3 scale, Color colour)
@@ -96,7 +96,7 @@ namespace Danao.Fighters
             go.transform.localPosition = localPosition;
             go.transform.localScale = scale;
             var renderer = go.GetComponent<Renderer>();
-            renderer.material = MakeMaterial(colour);
+            Paint(renderer, colour);
             renderers.Add(renderer);
             SetAsRagdollLimb(go, doll, rootBody, rootCollider, 5f, 35f, 45f);
         }
@@ -136,16 +136,12 @@ namespace Danao.Fighters
                 default: go.transform.localPosition=new Vector3(0f,.12f,-.5f); go.transform.localScale=new Vector3(.9f,1.35f,.08f); break;
             }
             Object.Destroy(go.GetComponent<Collider>());
-            go.GetComponent<Renderer>().material=MakeMaterial(accent);
+            Paint(go.GetComponent<Renderer>(), accent);
         }
 
-        private static Material MakeMaterial(Color colour)
+        private static void Paint(Renderer renderer, Color colour)
         {
-            var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
-            var material = new Material(shader);
-            material.color = colour;
-            if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", .22f);
-            return material;
+            RuntimeMaterial.Paint(renderer, colour, .22f);
         }
     }
 }
