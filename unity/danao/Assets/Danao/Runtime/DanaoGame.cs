@@ -246,7 +246,7 @@ namespace Danao
             if (_menuBackdrop != null) return;
             _menuBackdrop = new GameObject("MenuBackdrop");
             var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);floor.name = "BackdropFloor";floor.transform.SetParent(_menuBackdrop.transform, false);floor.transform.position = new Vector3(0f,-1f,0f);floor.transform.localScale = new Vector3(28f,.5f,22f);
-            var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");floor.GetComponent<Renderer>().material = new Material(shader) { color = new Color(.055f,.04f,.09f) };
+            RuntimeMaterial.Paint(floor.GetComponent<Renderer>(), new Color(.055f,.04f,.09f));
             var light = new GameObject("BackdropLight").AddComponent<Light>();light.transform.SetParent(_menuBackdrop.transform, false);light.type = LightType.Directional;light.transform.rotation = Quaternion.Euler(48f,-32f,0f);light.intensity = 1.35f;light.color = new Color(1f,.75f,.52f);
             var cameraGo = new GameObject("MenuCamera");cameraGo.transform.SetParent(_menuBackdrop.transform, false);cameraGo.transform.position = new Vector3(0f,7f,-16f);cameraGo.transform.rotation = Quaternion.Euler(20f,0f,0f);var camera = cameraGo.AddComponent<Camera>();camera.clearFlags = CameraClearFlags.SolidColor;camera.backgroundColor = new Color(.025f,.018f,.05f);camera.fieldOfView = 48f;
         }
