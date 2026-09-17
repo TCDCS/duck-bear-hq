@@ -6,26 +6,39 @@ import path from 'node:path';
 const root=path.resolve(import.meta.dirname,'..');
 const read=rel=>fs.readFileSync(path.join(root,rel),'utf8');
 const has=rel=>fs.existsSync(path.join(root,rel));
+const pkg=JSON.parse(read('package.json'));
 
 const arenaNames=['Wrestling Arena','Dublin Docks','London Underground','Mango Market','Temple Courtyard','Sichuan Tea House','Ice Festival','House Party','Toy Factory','Cruise Ship','Mad Circus'];
 
 function assertId(html,id){assert.match(html,new RegExp(`id=["']${id}["']`),`missing #${id}`);}
 
-test('Danao page is a native Babylon browser shell rather than a Unity startup shell',()=>{
+test('Danao page is a native bundled browser shell rather than a Unity startup shell',()=>{
  const html=read('public/games/danao/index.html');
  assert.match(html,/打闹/);
  assert.match(html,/Dǎnào/);
- assert.match(html,/type=["']module["'][^>]+game\.mjs|game\.mjs[^>]+type=["']module["']/);
+ assert.match(html,/type=["']module["'][^>]+bundle\.js|bundle\.js[^>]+type=["']module["']/);
+ assert.doesNotMatch(html,/cdn\.jsdelivr\.net|game\.mjs["']/);
  for(const id of ['main-menu','local-setup','game-hud','game-canvas','local-play','start-local','return-menu','arena-select','character-select','mode-select'])assertId(html,id);
  assert.doesNotMatch(html,/launcher\.mjs/);
  assert.doesNotMatch(html,/unity-canvas|createUnityInstance/i);
 });
 
-test('Babylon and Rapier runtime is pinned and uses fixed-step physics',()=>{
+test('Babylon and Rapier are pinned npm dependencies and bundled before dev/deploy',()=>{
+ assert.equal(pkg.dependencies?.['@babylonjs/core'],'9.26.2');
+ assert.equal(pkg.dependencies?.['@dimforge/rapier3d-compat'],'0.20.0');
+ assert.ok(pkg.devDependencies?.esbuild,'esbuild must be an explicit dev dependency');
+ assert.match(pkg.scripts?.['build:danao']||'',/build-danao\.mjs/);
+ assert.match(pkg.scripts?.predev||'',/build:danao/);
+ assert.match(pkg.scripts?.predeploy||'',/build:danao/);
+ assert.ok(has('scripts/build-danao.mjs'),'missing Danao bundle build script');
+});
+
+test('Danao source imports local package dependencies and uses fixed-step Rapier physics',()=>{
  assert.ok(has('public/games/danao/game.mjs'),'missing game.mjs');
  const game=read('public/games/danao/game.mjs');
- assert.match(game,/@babylonjs\/core@9\.26\.2/);
- assert.match(game,/@dimforge\/rapier3d-compat@0\.20\.0/);
+ assert.match(game,/from\s+['"]@babylonjs\/core['"]/);
+ assert.match(game,/from\s+['"]@dimforge\/rapier3d-compat['"]/);
+ assert.doesNotMatch(game,/cdn\.jsdelivr\.net|https:\/\//);
  assert.match(game,/RAPIER\.init\s*\(/);
  assert.match(game,/FIXED_STEP\s*=\s*1\s*\/\s*60/);
  assert.match(game,/startLocalMatch/);
@@ -66,9 +79,9 @@ test('local round has CPU fallback and browser-native return-to-menu flow',()=>{
  assert.match(game,/stopMatch/);
 });
 
-test('Danao-only CSP allows pinned engine modules while retaining narrow wasm permission',()=>{
+test('Danao CSP keeps narrow wasm permission with no external engine host',()=>{
  const routes=read('src/game-routes.js');
  assert.match(routes,/wasm-unsafe-eval/);
- assert.match(routes,/cdn\.jsdelivr\.net/);
+ assert.doesNotMatch(routes,/cdn\.jsdelivr\.net/);
  assert.match(routes,/games\/danao/);
 });
