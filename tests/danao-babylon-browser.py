@@ -37,6 +37,12 @@ def wait_match_ready(page,label):
     check(f'{label} Babylon canvas visible',page.locator('#game-canvas').is_visible())
     return detail
 
+def hold_key(page,key,milliseconds=220):
+    page.keyboard.down(key)
+    page.wait_for_timeout(milliseconds)
+    page.keyboard.up(key)
+    page.wait_for_timeout(120)
+
 with sync_playwright() as pw:
     browser=pw.chromium.launch(headless=True,args=['--no-sandbox','--use-angle=swiftshader'])
     context=browser.new_context(viewport={'width':1280,'height':800})
@@ -59,7 +65,7 @@ with sync_playwright() as pw:
         check('HUD starts at 100 HP',page.locator('#p1-hp').inner_text()=='100 HP' and page.locator('#p2-hp').inner_text()=='100 HP')
         check('fighters start with fists',page.locator('#p1-weapon').inner_text()=='FISTS')
         page.locator('#game-canvas').focus()
-        page.keyboard.press('Space');page.wait_for_timeout(450)
+        hold_key(page,'Space',260)
         held=page.locator('#p1-weapon').inner_text()
         check('Player 1 can pick up an arena weapon',held!='FISTS',held)
         page.keyboard.down('KeyD');page.keyboard.down('Space');page.wait_for_timeout(3500);page.keyboard.up('Space');page.keyboard.up('KeyD');page.wait_for_timeout(300)
@@ -76,7 +82,7 @@ with sync_playwright() as pw:
         page.locator('#online-arena').select_option('WrestlingArena')
         page.locator('#online-mode').select_option('OneVsOne')
         page.get_by_role('button',name='CREATE ROOM').click()
-        page.wait_for_function("""() => /^\d{4}$/.test(document.querySelector('#room-code')?.textContent || '')""")
+        page.wait_for_function(r"""() => /^\d{4}$/.test(document.querySelector('#room-code')?.textContent || '')""")
         code=page.locator('#room-code').inner_text().strip()
         check('browser creates a four-digit Danao room',len(code)==4 and code.isdigit(),code)
         check('room secrets are not put in the browser URL','token=' not in page.url and 'pass=' not in page.url,page.url)
@@ -103,7 +109,7 @@ with sync_playwright() as pw:
         guest_online=wait_match_ready(guest,'guest online')
         check('online start loads both host and client Babylon matches',page.locator('#game-screen').is_visible() and guest.locator('#game-screen').is_visible(),{'host':host_online,'guest':guest_online})
         check('online host and client both start with healthy fighters',page.locator('#p1-hp').inner_text()=='100 HP' and guest.locator('#p1-hp').inner_text()=='100 HP')
-        guest.locator('#game-canvas').focus();guest.keyboard.down('KeyD');guest.wait_for_timeout(700);guest.keyboard.up('KeyD');page.wait_for_timeout(500)
+        guest.locator('#game-canvas').focus();hold_key(guest,'KeyD',700);page.wait_for_timeout(500)
         check('online input and snapshot loop stays live after client movement',not page.locator('#fatal').is_visible() and not guest.locator('#fatal').is_visible())
         page.screenshot(path=str(OUT/'online-host-match.png'))
         guest.screenshot(path=str(OUT/'online-guest-match.png'))
