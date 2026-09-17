@@ -27,15 +27,15 @@
       <h1 id="gameTitle"><span lang="zh-Hans">打闹</span></h1>
       <p class="roman">Dǎnào</p>
       <p class="tagline">PHYSICS. BAD DECISIONS. NO HARD FEELINGS.</p>
-      <div class="feature-strip" aria-label="Game features"><span>ARCADE PHYSICS</span><span>11 ARENAS</span><span>8 FIGHTERS</span><span>LOCAL + ONLINE</span></div>
+      <div class="feature-strip" aria-label="Game features"><span>ARCADE PHYSICS</span><span>11 ARENAS</span><span>8 FIGHTERS</span><span>36 SILLY WEAPONS</span></div>
       <div class="menu-actions">
         <button id="local-play" class="play-button" type="button">LOCAL PLAY</button>
         <button id="online-play" class="menu-button" type="button">ONLINE PLAY</button>
         <button id="how-to-play" class="menu-button" type="button">HOW TO PLAY</button>
       </div>
       <div id="how-panel" class="how-panel" hidden>
-        <p><strong>Move:</strong> WASD / arrows or left stick. <strong>Attack:</strong> Space or A / Cross. <strong>Dash:</strong> Shift or shoulder button.</p>
-        <p>Knock the other fighter down to 0 HP. A second controller can take Player 2; otherwise the game supplies a CPU opponent.</p>
+        <p><strong>Move:</strong> WASD / arrows or left stick. <strong>Attack / pick up:</strong> Space or A / Cross. <strong>Dash:</strong> Shift or shoulder button.</p>
+        <p>Walk beside a weapon and attack to grab it. Knock the other fighter down to 0 HP. A second controller can take Player 2; otherwise the game supplies a CPU opponent.</p>
       </div>
       <p id="compatibility" class="compatibility" role="status">Loading browser controls…</p>
     </section>
@@ -58,9 +58,9 @@
     <section id="game-screen" class="game-panel" hidden aria-label="Danao game">
       <canvas id="game-canvas" tabindex="0" aria-label="Danao Babylon game canvas"></canvas>
       <div id="game-hud" class="game-hud">
-        <div class="health-card left"><strong id="p1-name">P1</strong><span id="p1-hp">100 HP</span><div class="health-track"><i id="p1-fill"></i></div></div>
+        <div class="health-card left"><strong id="p1-name">P1</strong><span id="p1-hp">100 HP</span><small id="p1-weapon" class="weapon-label">FISTS</small><div class="health-track"><i id="p1-fill"></i></div></div>
         <div id="round-over" class="round-over" hidden>ROUND OVER</div>
-        <div class="health-card right"><strong id="p2-name">P2</strong><span id="p2-hp">100 HP</span><div class="health-track"><i id="p2-fill"></i></div></div>
+        <div class="health-card right"><strong id="p2-name">P2</strong><span id="p2-hp">100 HP</span><small id="p2-weapon" class="weapon-label">FISTS</small><div class="health-track"><i id="p2-fill"></i></div></div>
         <button id="return-menu" class="mini-button return-menu" type="button">RETURN TO MENU</button>
       </div>
       <div id="loading" class="loading" hidden aria-live="polite"><div class="loading-title"><span lang="zh-Hans">打闹</span> IS LOADING…</div><div id="loading-text" class="loading-text">Loading Babylon + Rapier…</div></div>
