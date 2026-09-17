@@ -37,6 +37,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Assemble staged Danao source
+        run: npm run assemble:danao
       - name: Danao source and server tests
         run: node --test tests/danao-*.test.mjs
       - name: Full repository Node test suite
