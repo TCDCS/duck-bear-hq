@@ -53,3 +53,23 @@ test('Danao keeps WebGL builds on Windows Micro and enforces conservative cost c
   assert.match(workflow, /operatingSystem/);
   assert.match(workflow, /DANAO_WINDOWS_MINUTE_GUARD/);
 });
+
+test('Danao refuses to start a paid Mac build when target-edit permission is unavailable', () => {
+  const workflow = fs.readFileSync(workflowPath, 'utf8');
+  const configureIndex = workflow.indexOf('- name: Configure Danao WebGL for Windows Micro');
+  const startIndex = workflow.indexOf('- name: Start exact main-commit Unity build');
+  assert.notEqual(configureIndex, -1);
+  assert.notEqual(startIndex, -1);
+  assert.ok(configureIndex < startIndex, 'builder verification must run before starting Unity');
+
+  const configureBlock = workflow.slice(configureIndex, startIndex);
+  assert.match(configureBlock, /CURRENT_OS=/);
+  assert.match(configureBlock, /CURRENT_MACHINE=/);
+  assert.match(configureBlock, /already uses Windows Micro/i);
+  assert.match(configureBlock, /if \[ "\$HTTP" = "403" \]/);
+  assert.match(configureBlock, /Unity Dashboard action required/i);
+  assert.match(configureBlock, /ACTIVE_OS/);
+  assert.match(configureBlock, /ACTIVE_MACHINE/);
+  assert.match(configureBlock, /test "\$ACTIVE_OS" = "windows"/);
+  assert.match(configureBlock, /test "\$ACTIVE_MACHINE" = "\$MICRO_LABEL"/);
+});
