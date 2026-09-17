@@ -1,3 +1,4 @@
+using Danao.Core;
 using UnityEngine;
 
 namespace Danao.Weapons
@@ -105,7 +106,7 @@ namespace Danao.Weapons
         private static void Part(Transform parent,PrimitiveType type,Vector3 localPosition,Vector3 localScale,Color colour,Quaternion? rotation=null)
         {
             var go=GameObject.CreatePrimitive(type); go.transform.SetParent(parent,false); go.transform.localPosition=localPosition; go.transform.localRotation=rotation??Quaternion.identity; go.transform.localScale=localScale;
-            Object.Destroy(go.GetComponent<Collider>()); var shader=Shader.Find("Universal Render Pipeline/Lit")??Shader.Find("Standard"); go.GetComponent<Renderer>().material=new Material(shader){color=colour};
+            Object.Destroy(go.GetComponent<Collider>()); RuntimeMaterial.Paint(go.GetComponent<Renderer>(), colour);
         }
     }
 }
