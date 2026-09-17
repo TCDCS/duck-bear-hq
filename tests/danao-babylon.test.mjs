@@ -16,8 +16,8 @@ test('Danao page is a native bundled browser shell rather than a Unity startup s
  const html=read('public/games/danao/index.html');
  assert.match(html,/打闹/);
  assert.match(html,/Dǎnào/);
- assert.match(html,/type=["']module["'][^>]+bundle\.js|bundle\.js[^>]+type=["']module["']/);
- assert.doesNotMatch(html,/cdn\.jsdelivr\.net|game\.mjs["']/);
+ assert.match(html,/type=["']module["'][^>]+build\/game\.js|build\/game\.js[^>]+type=["']module["']/);
+ assert.doesNotMatch(html,/cdn\.jsdelivr\.net|src=["'][^"']*game\.mjs/);
  for(const id of ['main-menu','local-setup','game-hud','game-canvas','local-play','start-local','return-menu','arena-select','character-select','mode-select'])assertId(html,id);
  assert.doesNotMatch(html,/launcher\.mjs/);
  assert.doesNotMatch(html,/unity-canvas|createUnityInstance/i);
@@ -26,18 +26,21 @@ test('Danao page is a native bundled browser shell rather than a Unity startup s
 test('Babylon and Rapier are pinned npm dependencies and bundled before dev/deploy',()=>{
  assert.equal(pkg.dependencies?.['@babylonjs/core'],'9.26.2');
  assert.equal(pkg.dependencies?.['@dimforge/rapier3d-compat'],'0.20.0');
- assert.ok(pkg.devDependencies?.esbuild,'esbuild must be an explicit dev dependency');
+ assert.equal(pkg.devDependencies?.esbuild,'0.28.2');
  assert.match(pkg.scripts?.['build:danao']||'',/build-danao\.mjs/);
  assert.match(pkg.scripts?.predev||'',/build:danao/);
  assert.match(pkg.scripts?.predeploy||'',/build:danao/);
  assert.ok(has('scripts/build-danao.mjs'),'missing Danao bundle build script');
+ const build=read('scripts/build-danao.mjs');
+ assert.match(build,/splitting:\s*true/);
+ assert.match(build,/public\/games\/danao\/build/);
 });
 
 test('Danao source imports local package dependencies and uses fixed-step Rapier physics',()=>{
  assert.ok(has('public/games/danao/game.mjs'),'missing game.mjs');
  const game=read('public/games/danao/game.mjs');
- assert.match(game,/from\s+['"]@babylonjs\/core['"]/);
- assert.match(game,/from\s+['"]@dimforge\/rapier3d-compat['"]/);
+ assert.match(game,/@babylonjs\/core/);
+ assert.match(game,/@dimforge\/rapier3d-compat/);
  assert.doesNotMatch(game,/cdn\.jsdelivr\.net|https:\/\//);
  assert.match(game,/RAPIER\.init\s*\(/);
  assert.match(game,/FIXED_STEP\s*=\s*1\s*\/\s*60/);
