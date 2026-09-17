@@ -46,12 +46,12 @@ test('animated hazard poses preserve the Unity motion formulas',()=>{
 test('radial pulses use Unity falloff damage and knockback',()=>{
  const effects=radialPulseEffects([
   {slot:0,alive:true,x:0,y:1,z:3.8},
-  {slot:1,alive:true,x:3.5,y:1,z:3.8},
+  {slot:1,alive:true,x:2.8,y:1,z:3.8},
   {slot:2,alive:true,x:9,y:1,z:3.8}
  ],{x:0,y:1,z:3.8},7,5,9);
  assert.equal(effects.length,2);
  assert.equal(effects[0].slot,0);assert.equal(effects[0].damage,5);close(effects[0].knockback,9);
- assert.equal(effects[1].slot,1);assert.equal(effects[1].damage,3);close(effects[1].knockback,4.5);
+ assert.equal(effects[1].slot,1);assert.equal(effects[1].damage,3);close(effects[1].knockback,5.4);
 });
 
 test('ice, conveyor, ship and circus environmental velocity changes match Unity',()=>{
