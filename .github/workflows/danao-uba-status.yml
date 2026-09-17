@@ -145,6 +145,24 @@ jobs:
             -H "Authorization: $UNITY_UBA_AUTH" \
             "$URL" > unity-artifacts.json
 
+          download_signed_artifact() {
+            HREF="$1"
+            OUTPUT="$2"
+            MIN_BYTES="$3"
+            test -n "$HREF" || { echo "Missing Unity artifact URL for $OUTPUT" >&2; exit 1; }
+            SIGNED_RESPONSE="$(curl --fail-with-body --silent --show-error \
+              -H "Authorization: $UNITY_UBA_AUTH" \
+              "$HREF")"
+            SIGNED_URL="$(printf '%s' "$SIGNED_RESPONSE" | jq -r 'if type == "string" then . elif .href? then .href elif .url? then .url else empty end')"
+            test -n "$SIGNED_URL" || { echo "Unity did not return a signed download URL for $OUTPUT" >&2; exit 1; }
+            curl --fail-with-body --location --silent --show-error "$SIGNED_URL" -o "$OUTPUT"
+            SIZE="$(stat -c%s "$OUTPUT")"
+            if [ "$SIZE" -lt "$MIN_BYTES" ]; then
+              echo "Downloaded Unity artifact $OUTPUT is too small ($SIZE bytes, expected at least $MIN_BYTES)." >&2
+              exit 1
+            fi
+          }
+
           if [ "$TARGET_ID" = "danao-webgl" ]; then
             mkdir -p playable/Build
             download_webgl_file() {
@@ -152,27 +170,19 @@ jobs:
               OUTPUT_NAME="$2"
               MIN_BYTES="$3"
               HREF="$(jq -r --arg name "$SOURCE_NAME" '[.[] | select(.name == "All Artifacts") | .files[] | select(.filename == $name) | .href][0] // empty' unity-artifacts.json)"
-              test -n "$HREF" || { echo "Missing Unity WebGL artifact: $SOURCE_NAME" >&2; exit 1; }
-
-              SIGNED_RESPONSE="$(curl --fail-with-body --silent --show-error \
-                -H "Authorization: $UNITY_UBA_AUTH" \
-                "$HREF")"
-              SIGNED_URL="$(printf '%s' "$SIGNED_RESPONSE" | jq -r 'if type == "string" then . elif .href? then .href elif .url? then .url else empty end')"
-              test -n "$SIGNED_URL" || { echo "Unity did not return a signed download URL for $SOURCE_NAME" >&2; exit 1; }
-
-              curl --fail-with-body --location --silent --show-error \
-                "$SIGNED_URL" -o "playable/Build/$OUTPUT_NAME"
-              SIZE="$(stat -c%s "playable/Build/$OUTPUT_NAME")"
-              if [ "$SIZE" -lt "$MIN_BYTES" ]; then
-                echo "Downloaded Unity artifact $OUTPUT_NAME is too small ($SIZE bytes, expected at least $MIN_BYTES)." >&2
-                exit 1
-              fi
+              download_signed_artifact "$HREF" "playable/Build/$OUTPUT_NAME" "$MIN_BYTES"
             }
             download_webgl_file 'Danao WebGL/Build/Danao WebGL.loader.js' 'Danao.loader.js' 10000
             download_webgl_file 'Danao WebGL/Build/Danao WebGL.data' 'Danao.data' 1000000
             download_webgl_file 'Danao WebGL/Build/Danao WebGL.framework.js' 'Danao.framework.js' 100000
             download_webgl_file 'Danao WebGL/Build/Danao WebGL.wasm' 'Danao.wasm' 1000000
             ls -lh playable/Build
+          elif [ "$TARGET_ID" = "danao-windows-x64" ]; then
+            mkdir -p playable
+            HREF="$(jq -r '[.[] | select(.primary == true) | .files[] | select(.filename == "Danao Windows x64.zip") | .href][0] // empty' unity-artifacts.json)"
+            download_signed_artifact "$HREF" 'playable/Danao Windows x64.zip' 5000000
+            unzip -t 'playable/Danao Windows x64.zip'
+            ls -lh 'playable/Danao Windows x64.zip'
           fi
 
       - name: Upload playable WebGL build
@@ -181,6 +191,15 @@ jobs:
         with:
           name: danao-webgl-playable-${{ steps.latest.outputs.number }}
           path: playable/Build
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload playable Windows build
+        if: ${{ steps.wait.outputs.status == 'success' && steps.target.outputs.id == 'danao-windows-x64' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: danao-windows-x64-playable-${{ steps.latest.outputs.number }}
+          path: playable/Danao Windows x64.zip
           if-no-files-found: error
           retention-days: 30
 
