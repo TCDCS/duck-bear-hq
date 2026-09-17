@@ -15,8 +15,8 @@ const ZERO_INPUT=ZERO_FRAME;
 const $=id=>document.getElementById(id);
 const ui={
  main:$('main-menu'),setup:$('local-setup'),online:$('online-lobby'),game:$('game-screen'),hud:$('game-hud'),canvas:$('game-canvas'),loading:$('loading'),loadingText:$('loading-text'),error:$('fatal'),errorText:$('fatal-text'),
- arena:$('arena-select'),character:$('character-select'),mode:$('mode-select'),round:$('round-over'),objective:$('objective-status'),p1Name:$('p1-name'),p2Name:$('p2-name'),p1Hp:$('p1-hp'),p2Hp:$('p2-hp'),p1Fill:$('p1-fill'),p2Fill:$('p2-fill'),p1Weapon:$('p1-weapon'),p2Weapon:$('p2-weapon'),pad:$('padState'),status:$('compatibility'),
- onlineName:$('online-name'),onlineCode:$('online-code'),onlineCharacter:$('online-character'),onlineArena:$('online-arena'),onlineMode:$('online-mode'),onlineStatus:$('online-status'),roomCode:$('room-code'),roomPlayers:$('room-players'),roomReady:$('room-ready'),roomStart:$('room-start'),roomLeave:$('room-leave')
+ arena:$('arena-select'),character:$('character-select'),mode:$('mode-select'),healthDamage:$('health-damage'),visibleBruising:$('visible-bruising'),arenaHazards:$('arena-hazards'),friendlyFire:$('friendly-fire'),round:$('round-over'),objective:$('objective-status'),p1Name:$('p1-name'),p2Name:$('p2-name'),p1Hp:$('p1-hp'),p2Hp:$('p2-hp'),p1Fill:$('p1-fill'),p2Fill:$('p2-fill'),p1Weapon:$('p1-weapon'),p2Weapon:$('p2-weapon'),pad:$('padState'),status:$('compatibility'),
+ onlineName:$('online-name'),onlineCode:$('online-code'),onlineCharacter:$('online-character'),onlineArena:$('online-arena'),onlineMode:$('online-mode'),onlineHealthDamage:$('online-health-damage'),onlineVisibleBruising:$('online-visible-bruising'),onlineArenaHazards:$('online-arena-hazards'),onlineFriendlyFire:$('online-friendly-fire'),onlineStatus:$('online-status'),roomCode:$('room-code'),roomPlayers:$('room-players'),roomReady:$('room-ready'),roomStart:$('room-start'),roomLeave:$('room-leave')
 };
 
 let BABYLON=null,RAPIER=null,active=null,lastConfig=null,onlineRoom=null,onlineStarting=false,onlineBusy=false;
@@ -34,6 +34,7 @@ function characterFromNetwork(name){return CHARACTERS.find(item=>item.name===nam
 function fighterForSlot(slot){return active?.fighters?.find(f=>f.slot===slot)||null;}
 function modeKindFromId(id){return byId(MODES,id)?.kind||'OneVsOne';}
 export function localPlayerCount(modeKind){return modeKind==='OneVsOne'?2:4;}
+function normaliseSettings(settings={}){return{healthDamage:settings.healthDamage!==false,visibleBruising:settings.visibleBruising!==false,arenaHazards:settings.arenaHazards!==false,friendlyFire:Boolean(settings.friendlyFire)};}
 
 fillSelect(ui.arena,ARENAS);fillSelect(ui.character,CHARACTERS);fillSelect(ui.mode,MODES);
 fillSelect(ui.onlineCharacter,CHARACTERS.map(item=>({id:item.name,name:item.name})));
@@ -222,7 +223,7 @@ function attemptAttack(attacker,target,input,scene){
 
 function nearestTarget(attacker,fighters){
  let best=null,distance=Infinity;const a=attacker.body.translation();
- for(const fighter of fighters){if(fighter===attacker||!fighter.alive)continue;if(active?.modeRules?.teams&&fighter.team===attacker.team)continue;const b=fighter.body.translation(),d=Math.hypot(b.x-a.x,b.z-a.z);if(d<distance){distance=d;best=fighter;}}
+ for(const fighter of fighters){if(fighter===attacker||!fighter.alive)continue;if(active?.modeRules?.teams&&!active.settings.friendlyFire&&fighter.team===attacker.team)continue;const b=fighter.body.translation(),d=Math.hypot(b.x-a.x,b.z-a.z);if(d<distance){distance=d;best=fighter;}}
  return best;
 }
 
@@ -241,7 +242,7 @@ function handleArenaBounds(fighters){
  for(const f of fighters){
   const p=f.body.translation();
   if(p.y<-3.5&&f.alive){
-   if(active.modeRules.ringOut||active.modeRules.objective)f.applyDamage(100,{x:0,y:0,z:0});
+   if(active.modeRules.ringOut||active.modeRules.objective||active.settings.healthDamage===false)f.eliminate();
    else{f.applyDamage(25,{x:0,y:0,z:0});if(f.alive){f.body.setTranslation(f.spawn,true);f.body.setLinvel({x:0,y:0,z:0},true);}}
   }
   if(!f.alive&&f.heldWeapon)dropHeldWeapon(f,{x:p.x,y:Math.max(.9,p.y),z:p.z});
@@ -251,7 +252,7 @@ function handleArenaBounds(fighters){
 function completeRoundIfNeeded(fighters){
  if(active?.modeRules?.objective)return;
  const result=resolveElimination(active.modeKind,modeViews(fighters));if(!result.finished)return;
- finishMatch({winnerSlot:result.winnerSlot,winnerTeam:result.winnerTeam,reason:active.modeRules.ringOut?'ring-out':'knockout'});
+ finishMatch({winnerSlot:result.winnerSlot,winnerTeam:result.winnerTeam,reason:active.modeRules.ringOut||active.settings.healthDamage===false?'ring-out':'knockout'});
 }
 
 export function tickModeObjectives(dt){
@@ -336,14 +337,14 @@ function cameraTarget(fighters){
  let x=0,z=0;for(const f of source){x+=f.root.position.x;z+=f.root.position.z;}return new BABYLON.Vector3(x/source.length,1.1,z/source.length);
 }
 
-async function launchMatch({arenaDef,fighterSpecs,modeKind='OneVsOne',onlineData=null}){
+async function launchMatch({arenaDef,fighterSpecs,modeKind='OneVsOne',settings={},onlineData=null}){
  await initRuntime();
- const engine=new BABYLON.Engine(ui.canvas,true,{antialias:true,adaptToDeviceRatio:true,preserveDrawingBuffer:false,stencil:false});
+ const matchSettings=normaliseSettings(settings),engine=new BABYLON.Engine(ui.canvas,true,{antialias:true,adaptToDeviceRatio:true,preserveDrawingBuffer:false,stencil:false});
  const {scene,camera}=createScene(engine,arenaDef);const world=new RAPIER.World({x:0,y:-18,z:0});world.timestep=FIXED_STEP;const arena=buildArena(scene,world,arenaDef);
- const fighters=fighterSpecs.map(spec=>createFighter({BABYLON,RAPIER,scene,world,definition:spec.definition,position:arena.spawnPoints[spec.slot%arena.spawnPoints.length],slot:spec.slot}));
+ const fighters=fighterSpecs.map(spec=>createFighter({BABYLON,RAPIER,scene,world,definition:spec.definition,position:arena.spawnPoints[spec.slot%arena.spawnPoints.length],slot:spec.slot,settings:matchSettings}));
  for(const fighter of fighters)fighter.team=modeKind==='TwoVsTwo'?fighter.slot%2:-1;
  const pickups=spawnWeapons({BABYLON,scene,positions:arena.weaponSpawns,arenaId:arenaDef.id});
- active={engine,scene,camera,world,arena,arenaDef,fighters,pickups,roundOver:false,modeKind,modeRules:MODE_RULES[modeKind]||MODE_RULES.OneVsOne,arenaHazards:onlineData?.arenaHazards??true,online:Boolean(onlineData),...(onlineData||{})};setupModeObjectives();setupArenaHazard(active,{BABYLON});
+ active={engine,scene,camera,world,arena,arenaDef,fighters,pickups,settings:matchSettings,roundOver:false,modeKind,modeRules:MODE_RULES[modeKind]||MODE_RULES.OneVsOne,arenaHazards:matchSettings.arenaHazards,online:Boolean(onlineData),...(onlineData||{})};setupModeObjectives();setupArenaHazard(active,{BABYLON});
  if(active.online){active.remoteInputs=new Map();active.latestSnapshot=null;active.snapshotSeq=0;active.appliedSnapshotSeq=-1;active.inputSeq=0;active.nextInputAt=0;active.nextSnapshotAt=0;active.inputLatch={jump:false,attack:false,grab:false,dash:false,fire:false};active.resultSent=false;}
  ui.round.hidden=true;updateHud(fighters);setLoading(false);
  let previous=performance.now()/1000,accumulator=0;
@@ -363,7 +364,7 @@ export async function startLocalMatch(config){
  try{
   const arenaDef=byId(ARENAS,config.arena),characterDef=byId(CHARACTERS,config.character),modeKind=modeKindFromId(config.mode),count=localPlayerCount(modeKind),startIndex=Math.max(0,CHARACTERS.indexOf(characterDef));
   const fighterSpecs=Array.from({length:count},(_,slot)=>({slot,definition:CHARACTERS[(startIndex+slot)%CHARACTERS.length]}));
-  await launchMatch({arenaDef,fighterSpecs,modeKind});
+  await launchMatch({arenaDef,fighterSpecs,modeKind,settings:config.settings});
  }catch(error){console.error(error);setLoading(false);setFatal(error?.message||String(error));}
 }
 
@@ -373,7 +374,7 @@ export async function startOnlineMatch(room=onlineRoom){
   const session=roomSession();if(!session||!Number.isInteger(session.id))throw new Error('Online room session was lost.');
   const players=[...(room.players||[])].sort((a,b)=>a.id-b.id);if(players.length<2)throw new Error('The online room needs at least two players.');
   const arenaDef=arenaFromNetwork(room.settings?.arena),modeKind=room.settings?.mode||'FreeForAll';const fighterSpecs=players.map(player=>({slot:player.id,definition:characterFromNetwork(player.character)}));
-  await launchMatch({arenaDef,fighterSpecs,modeKind,onlineData:{localSlot:session.id,isHost:room.hostId===session.id,hostId:room.hostId,arenaHazards:room.settings?.arenaHazards!==false}});
+  await launchMatch({arenaDef,fighterSpecs,modeKind,settings:room.settings,onlineData:{localSlot:session.id,isHost:room.hostId===session.id,hostId:room.hostId}});
   setOnlineStatus(`ROOM ${room.code} · FIGHT IN PROGRESS`);
  }catch(error){console.error(error);setLoading(false);setFatal(error?.message||String(error));}finally{onlineStarting=false;}
 }
@@ -383,8 +384,9 @@ export function stopMatch(showMenu=true){
  keys.clear();setLoading(false);clearFatal();if(ui.round)ui.round.hidden=true;if(ui.objective){ui.objective.hidden=true;ui.objective.textContent='';}if(showMenu)showOnly(ui.main);
 }
 
-function selectedConfig(){return{arena:ui.arena.value,character:ui.character.value,mode:ui.mode.value};}
+function selectedConfig(){return{arena:ui.arena.value,character:ui.character.value,mode:ui.mode.value,settings:{healthDamage:Boolean(ui.healthDamage?.checked),visibleBruising:Boolean(ui.visibleBruising?.checked),arenaHazards:Boolean(ui.arenaHazards?.checked),friendlyFire:Boolean(ui.friendlyFire?.checked)}};}
 function selfPlayer(){const session=roomSession();return onlineRoom?.players?.find(player=>player.id===session?.id)||null;}
+function syncRoomToggle(control,key,host){if(!control)return;if(typeof onlineRoom?.settings?.[key]==='boolean')control.checked=onlineRoom.settings[key];control.disabled=!host||onlineRoom?.phase==='fight'||onlineBusy;}
 
 function renderRoom(room=onlineRoom){
  if(room)onlineRoom=room;const session=roomSession(),host=Boolean(onlineRoom&&session&&onlineRoom.hostId===session.id),self=selfPlayer();
@@ -396,6 +398,7 @@ function renderRoom(room=onlineRoom){
  if(ui.roomLeave)ui.roomLeave.disabled=!session||onlineBusy;
  if(ui.onlineArena){if(onlineRoom?.settings?.arena)ui.onlineArena.value=onlineRoom.settings.arena;ui.onlineArena.disabled=!host||onlineRoom?.phase==='fight'||onlineBusy;}
  if(ui.onlineMode){if(onlineRoom?.settings?.mode)ui.onlineMode.value=onlineRoom.settings.mode;ui.onlineMode.disabled=!host||onlineRoom?.phase==='fight'||onlineBusy;}
+ syncRoomToggle(ui.onlineHealthDamage,'healthDamage',host);syncRoomToggle(ui.onlineVisibleBruising,'visibleBruising',host);syncRoomToggle(ui.onlineArenaHazards,'arenaHazards',host);syncRoomToggle(ui.onlineFriendlyFire,'friendlyFire',host);
  if(active?.online&&active.isHost&&onlineRoom?.players)for(const player of onlineRoom.players)if(!player.connected)active.remoteInputs.set(player.id,null);
  if(onlineRoom?.phase==='fight'&&!active&&!onlineStarting)void startOnlineMatch(onlineRoom);
  else if(onlineRoom?.phase==='results')setOnlineStatus(`ROOM ${onlineRoom.code} · MATCH FINISHED`);
@@ -422,7 +425,7 @@ async function enterRoom(action){
 
 function leaveOnlineToMain(){stopMatch(false);leaveRoom();onlineRoom=null;renderRoom();showOnly(ui.main);ui.status.textContent='BABYLON + RAPIER BROWSER BUILD READY';ui.status.className='compatibility ok';}
 function leaveActiveMatch(){if(active?.online)leaveOnlineToMain();else stopMatch(true);}
-function sendOnlineSetup(){if(!onlineRoom||roomSession()?.id!==onlineRoom.hostId)return;sendSetup({mode:ui.onlineMode.value,arena:ui.onlineArena.value,healthDamage:true,visibleBruising:true,arenaHazards:true,friendlyFire:false});}
+function sendOnlineSetup(){if(!onlineRoom||roomSession()?.id!==onlineRoom.hostId)return;sendSetup({mode:ui.onlineMode.value,arena:ui.onlineArena.value,healthDamage:Boolean(ui.onlineHealthDamage?.checked),visibleBruising:Boolean(ui.onlineVisibleBruising?.checked),arenaHazards:Boolean(ui.onlineArenaHazards?.checked),friendlyFire:Boolean(ui.onlineFriendlyFire?.checked)});}
 
 $('local-play')?.addEventListener('click',()=>{clearFatal();showOnly(ui.setup);ui.status.textContent='LOCAL SETUP READY · NO UNITY LOAD REQUIRED';ui.status.className='compatibility ok';});
 $('setup-back')?.addEventListener('click',()=>showOnly(ui.main));
@@ -438,6 +441,7 @@ $('room-leave')?.addEventListener('click',leaveOnlineToMain);
 $('online-back')?.addEventListener('click',()=>{if(roomSession())leaveOnlineToMain();else showOnly(ui.main);});
 ui.onlineCharacter?.addEventListener('change',()=>{if(roomSession())sendChoice(ui.onlineCharacter.value,'Arcade');});
 ui.onlineArena?.addEventListener('change',sendOnlineSetup);ui.onlineMode?.addEventListener('change',sendOnlineSetup);
+for(const control of [ui.onlineHealthDamage,ui.onlineVisibleBruising,ui.onlineArenaHazards,ui.onlineFriendlyFire])control?.addEventListener('change',sendOnlineSetup);
 ui.onlineCode?.addEventListener('input',()=>{ui.onlineCode.value=ui.onlineCode.value.replace(/\D/g,'').slice(0,4);});
 $('how-to-play')?.addEventListener('click',()=>{$('how-panel').hidden=!$('how-panel').hidden;});
 $('fullscreen')?.addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{}});
