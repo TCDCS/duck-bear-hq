@@ -2,8 +2,6 @@ import {ARENAS,CHARACTERS,MODES,byId} from './catalog.mjs';
 import {createFighter} from './fighter.mjs';
 import {createBotInput} from './bot.mjs';
 
-const BABYLON_URL='https://cdn.jsdelivr.net/npm/@babylonjs/core@9.26.2/+esm';
-const RAPIER_URL='https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.20.0/+esm';
 export const FIXED_STEP=1/60;
 
 const $=id=>document.getElementById(id);
@@ -55,8 +53,8 @@ export function readPlayerInput(slot){
 }
 
 export async function initRuntime(){
- if(!BABYLON){const mod=await import(BABYLON_URL);BABYLON=mod;}
- if(!RAPIER){const mod=await import(RAPIER_URL);RAPIER=mod.default||mod;await RAPIER.init();}
+ if(!BABYLON)BABYLON=await import('@babylonjs/core');
+ if(!RAPIER){const mod=await import('@dimforge/rapier3d-compat');RAPIER=mod.default||mod;await RAPIER.init();}
  return{BABYLON,RAPIER};
 }
 
