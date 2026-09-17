@@ -1,4 +1,4 @@
-export const MODE_RULES=Object.freeze({
+const ruleTable={
  OneVsOne:Object.freeze({elimination:true,objective:false,teams:false,ringOut:false,respawnSeconds:0}),
  TwoVsTwo:Object.freeze({elimination:true,objective:false,teams:true,ringOut:false,respawnSeconds:0}),
  FreeForAll:Object.freeze({elimination:true,objective:false,teams:false,ringOut:false,respawnSeconds:0}),
@@ -7,7 +7,9 @@ export const MODE_RULES=Object.freeze({
  HotBomb:Object.freeze({elimination:false,objective:true,teams:false,ringOut:false,respawnSeconds:2.2}),
  KingOfRing:Object.freeze({elimination:false,objective:true,teams:false,ringOut:false,respawnSeconds:2.2}),
  Heist:Object.freeze({elimination:false,objective:true,teams:false,ringOut:false,respawnSeconds:2.2})
-});
+};
+Object.defineProperty(ruleTable,'KingOfTheRing',{value:ruleTable.KingOfRing,enumerable:false});
+export const MODE_RULES=Object.freeze(ruleTable);
 
 export const OBJECTIVE_RULES=Object.freeze({
  mangoTarget:10,
