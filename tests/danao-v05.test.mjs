@@ -42,3 +42,15 @@ test('Cloudflare deploy assembles the exact Danao v0.5 release before verificati
   assert.equal(pkg.scripts['assemble:danao'], 'node scripts/assemble-danao-v05.mjs');
   assert.match(read('public/games/danao/release.json'), /"version": "0\.5\.0"/);
 });
+
+test('every repository-wide test entrypoint reconstructs staged Danao source first', () => {
+  const pkg = JSON.parse(read('package.json'));
+  assert.match(pkg.scripts.test, /^npm run assemble:danao && /);
+
+  const unityWorkflow = read('.github/workflows/danao-unity.yml');
+  const assembleAt = unityWorkflow.indexOf('npm run assemble:danao');
+  const directDanaoTestsAt = unityWorkflow.indexOf('node --test tests/danao-*.test.mjs');
+  assert.notEqual(assembleAt, -1);
+  assert.notEqual(directDanaoTestsAt, -1);
+  assert.ok(assembleAt < directDanaoTestsAt);
+});
