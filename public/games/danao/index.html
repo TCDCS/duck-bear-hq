@@ -36,8 +36,8 @@
         <button id="how-to-play" class="menu-button" type="button">HOW TO PLAY</button>
       </div>
       <div id="how-panel" class="how-panel" hidden>
-        <p><strong>Move:</strong> WASD / arrows or left stick. <strong>Attack / pick up:</strong> Space or A / Cross. <strong>Dash:</strong> Shift or shoulder button.</p>
-        <p>Walk beside a weapon and attack to grab it. Knock the other fighter down to 0 HP. A second controller can take Player 2; otherwise the game supplies a CPU opponent.</p>
+        <p><strong>Move:</strong> WASD / arrows or left stick. <strong>Jump:</strong> E or A / Cross. <strong>Punch / use:</strong> Space or X / Square. <strong>Grab / throw:</strong> F or Y / Triangle.</p>
+        <p><strong>Dodge:</strong> Shift or B / Circle. <strong>Fire:</strong> R or right trigger. <strong>Block:</strong> Q or left trigger. Space can still pick up a nearby weapon for quick arcade play.</p>
       </div>
       <p id="compatibility" class="compatibility" role="status">Loading browser controls…</p>
     </section>
@@ -50,7 +50,13 @@
         <label>Fighter<select id="character-select"></select></label>
         <label>Mode<select id="mode-select"></select></label>
       </div>
-      <p class="setup-note">Pick the arena, fighter and match style, then jump straight into the browser-native brawl.</p>
+      <div class="toggle-grid" aria-label="Local match settings">
+        <label class="toggle-option"><input id="health-damage" type="checkbox" checked><span>Health damage</span></label>
+        <label class="toggle-option"><input id="visible-bruising" type="checkbox" checked><span>Visible bruising</span></label>
+        <label class="toggle-option"><input id="arena-hazards" type="checkbox" checked><span>Arena hazards</span></label>
+        <label class="toggle-option"><input id="friendly-fire" type="checkbox"><span>Friendly fire</span></label>
+      </div>
+      <p class="setup-note">Damage can be switched off without removing knockback. Bruising and arena hazards are separate switches.</p>
       <div class="menu-actions">
         <button id="start-local" class="play-button" type="button">START FIGHT</button>
         <button id="setup-back" class="menu-button" type="button">BACK</button>
@@ -76,6 +82,12 @@
         <div class="online-setup-grid">
           <label>Arena<select id="online-arena"></select></label>
           <label>Mode<select id="online-mode"></select></label>
+        </div>
+        <div class="toggle-grid compact" aria-label="Online match settings">
+          <label class="toggle-option"><input id="online-health-damage" type="checkbox" checked><span>Health damage</span></label>
+          <label class="toggle-option"><input id="online-visible-bruising" type="checkbox" checked><span>Visible bruising</span></label>
+          <label class="toggle-option"><input id="online-arena-hazards" type="checkbox" checked><span>Arena hazards</span></label>
+          <label class="toggle-option"><input id="online-friendly-fire" type="checkbox"><span>Friendly fire</span></label>
         </div>
         <div class="menu-actions room-actions">
           <button id="room-ready" class="menu-button" type="button" disabled>READY</button>
