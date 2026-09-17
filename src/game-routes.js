@@ -13,6 +13,12 @@ function headers(url,type='text/plain; charset=utf-8') {
     'Content-Security-Policy':`default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob: https://incompetech.com https://www.incompetech.com; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' ${socket}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'`,
     'Permissions-Policy':'accelerometer=(self), gyroscope=(self), magnetometer=(), camera=(), microphone=(), geolocation=(), payment=(), usb=()'};
 }
+function withDanaoWebAssemblyPolicy(response,url){
+  const h=new Headers(response.headers);
+  const policy=headers(url,'text/html; charset=utf-8')['Content-Security-Policy'].replace("script-src 'self';","script-src 'self' 'wasm-unsafe-eval';");
+  h.set('Content-Security-Policy',policy);
+  return new Response(response.body,{status:response.status,statusText:response.statusText,headers:h});
+}
 function buildType(path){const p=path.replace(/\.(br|gz)$/,'');if(p.endsWith('.wasm'))return'application/wasm';if(p.endsWith('.js'))return'application/javascript; charset=utf-8';if(p.endsWith('.json'))return'application/json; charset=utf-8';if(p.endsWith('.data'))return'application/octet-stream';return'application/octet-stream';}
 async function serveDanaoBuild(request,env,path){
  if(!['GET','HEAD'].includes(request.method))return new Response(null,{status:405,headers:{Allow:'GET, HEAD'}});
@@ -96,6 +102,10 @@ export function createGameHandler({assets,fallback}) {
         const products=(result.results||[]).map(p=>({id:String(p.id),name:String(p.name).slice(0,120),emoji:String(p.emoji).slice(0,20),category:String(p.category).slice(0,60),blurb:String(p.blurb).slice(0,500),pricePence:0}));
         const r=json({products});r.headers.set('Cache-Control','public, max-age=60');return r;
       }catch{return json({error:'The catalogue is temporarily unavailable.'},503);}
+    }
+    if((path==='/games/danao'||path==='/games/danao/'||path==='/games/danao/index.html')&&['GET','HEAD'].includes(request.method)){
+      const response=await fallback.fetch(request,env,ctx);
+      return withDanaoWebAssemblyPolicy(response,url);
     }
     const root=ROOTS.find(p=>path===p||path.startsWith(p+'/'));
     if(!root)return fallback.fetch(request,env,ctx);
