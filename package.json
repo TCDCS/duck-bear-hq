@@ -8,7 +8,7 @@
     "assemble:danao": "node scripts/assemble-danao-v05.mjs",
     "deploy": "npm run assemble:danao && npm test && npm run check && wrangler d1 migrations apply DB --remote && wrangler deploy",
     "check": "node scripts/check.mjs && node scripts/mango-check.mjs",
-    "test": "node --test tests/*.cjs tests/*.mjs",
+    "test": "npm run assemble:danao && node --test tests/*.cjs tests/*.mjs",
     "smoke": "node scripts/smoke.mjs",
     "dev": "wrangler dev",
     "migrate:local": "wrangler d1 migrations apply DB --local"
