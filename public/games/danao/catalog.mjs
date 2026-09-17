@@ -30,7 +30,7 @@ export const MODES=Object.freeze([
  {id:'mode-royal-rumble',name:'Royal Rumble',kind:'RoyalRumble'},
  {id:'mode-mango-grab',name:'Mango Grab',kind:'MangoGrab'},
  {id:'mode-hot-bomb',name:'Hot Bomb',kind:'HotBomb'},
- {id:'mode-king-of-ring',name:'King of the Ring',kind:'KingOfRing'},
+ {id:'mode-king-of-ring',name:'King of the Ring',kind:'KingOfTheRing'},
  {id:'mode-heist',name:'Heist',kind:'Heist'}
 ]);
 
