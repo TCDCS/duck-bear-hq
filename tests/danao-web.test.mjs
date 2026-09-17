@@ -13,10 +13,11 @@ test('games hub links to the Chinese-titled Danao launch page',()=>{
  assert.match(hub,/Dǎnào/);
 });
 
-test('Danao browser shell has WebGL checks, progress UI and a local fallback message',()=>{
+test('Danao browser shell has WebGL checks, progress UI and browser-only fallback messaging',()=>{
  for(const rel of ['public/games/danao/index.html','public/games/danao/danao.css','public/games/danao/launcher.mjs','public/games/danao/release.json'])assert.ok(has(rel),`missing ${rel}`);
  const html=read('public/games/danao/index.html');const js=read('public/games/danao/launcher.mjs');
  assert.match(html,/打闹/);assert.match(html,/loading/i);assert.match(html,/fullscreen/i);assert.match(js,/webgl2/i);assert.match(js,/Build\/Danao\.loader\.js/);assert.match(js,/controller/i);assert.match(js,/not published|unavailable/i);
+ assert.doesNotMatch(js,/Windows build|Windows x64/i);
 });
 
 test('Unity CI is browser-only: tests plus WebGL output with no Windows application build',()=>{
