@@ -102,17 +102,17 @@ jobs:
                 elif (.builds? | type) == "array" then .builds
                 else [] end;
               rows
-              | map(select((.scmCommitId // .commit // .revision // .scmRevision // "") == $commit))
+              | map(select((.requestedRevision // .scmCommitId // .commit // .revision // .scmRevision // "") == $commit))
               | .[0]
               | (.buildNumber // .build // .number // empty)
             ' builds.json)"
             if [ -n "$NUMBER" ] && [ "$NUMBER" != "null" ]; then break; fi
-            echo "Waiting for Unity to register commit $GITHUB_SHA ($attempt/60)"
+            echo "Waiting for Unity to register requestedRevision $GITHUB_SHA ($attempt/60)"
             sleep 5
           done
-          test -n "$NUMBER" && test "$NUMBER" != "null" || { echo "Unity did not register the requested commit." >&2; exit 1; }
+          test -n "$NUMBER" && test "$NUMBER" != "null" || { echo "Unity did not register requestedRevision $GITHUB_SHA." >&2; exit 1; }
           echo "number=$NUMBER" >> "$GITHUB_OUTPUT"
-          echo "Unity build #$NUMBER is tied to $GITHUB_SHA."
+          echo "Unity build #$NUMBER requested $GITHUB_SHA."
 
       - name: Wait for WebGL success
         id: wait
@@ -124,10 +124,16 @@ jobs:
           set -euo pipefail
           URL="$UNITY_UBA_API/orgs/$UNITY_UBA_ORG_ID/projects/$UNITY_UBA_PROJECT_ID/buildtargets/$TARGET_ID/builds/$BUILD_NUMBER"
           STATUS=""
+          REQUESTED_REVISION=""
           for attempt in $(seq 1 120); do
             curl --fail-with-body --silent --show-error \
               -H "Authorization: $UNITY_UBA_AUTH" \
               "$URL" > build.json
+            REQUESTED_REVISION="$(jq -r '.requestedRevision // empty' build.json)"
+            if [ "$REQUESTED_REVISION" != "$GITHUB_SHA" ]; then
+              echo "Unity build #$BUILD_NUMBER requested unexpected revision '$REQUESTED_REVISION' instead of '$GITHUB_SHA'." >&2
+              exit 1
+            fi
             STATUS="$(jq -r '.buildStatus // .status // "unknown"' build.json | tr '[:upper:]' '[:lower:]')"
             echo "Unity build #$BUILD_NUMBER: $STATUS ($attempt/120)"
             case "$STATUS" in
@@ -139,7 +145,13 @@ jobs:
             echo "Unity production build ended with status '$STATUS'." >&2
             exit 1
           fi
+          BUILT_REVISION="$(jq -r '.lastBuiltRevision // empty' build.json)"
+          if [ "$BUILT_REVISION" != "$GITHUB_SHA" ]; then
+            echo "Unity build #$BUILD_NUMBER completed revision '$BUILT_REVISION', expected '$GITHUB_SHA'." >&2
+            exit 1
+          fi
           echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          echo "Unity build #$BUILD_NUMBER verified lastBuiltRevision $BUILT_REVISION."
 
       - name: Download verified WebGL payload
         shell: bash
