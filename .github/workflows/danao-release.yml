@@ -78,12 +78,15 @@ jobs:
             -H 'Content-Type: application/json' \
             --data '{"limit":1}' \
             "$URL")"
-          if [ "$HTTP" -lt 200 ] || [ "$HTTP" -ge 300 ]; then
+          if [ "$HTTP" = "403" ]; then
+            echo "Unity org concurrency is admin-only for this token; continuing with GitHub serialization and stale-build cancellation."
+          elif [ "$HTTP" -lt 200 ] || [ "$HTTP" -ge 300 ]; then
             echo "Could not set Unity concurrency limit to one (HTTP $HTTP)." >&2
             cat concurrency.json >&2 || true
             exit 1
+          else
+            echo "Unity Build Automation concurrency is limited to one build."
           fi
-          echo "Unity Build Automation concurrency is limited to one build."
 
       - name: Cancel stale Danao WebGL builds
         shell: bash
