@@ -14,6 +14,9 @@ unity/danao/Build/
 unity/danao/Builds/
 unity/danao/MemoryCaptures/
 
+# Browser build output
+public/games/danao/build/
+
 # Local test/output files
 playwright-report/
 test-results/
