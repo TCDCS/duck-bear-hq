@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const html=fs.readFileSync('public/games/danao/index.html','utf8');
 const audioPath='public/games/danao/audio.mjs';
+const audio=await import('../public/games/danao/audio.mjs');
 
 test('Danao browser ships original procedural audio with no external media dependency',()=>{
  assert.ok(fs.existsSync(audioPath));
@@ -18,11 +19,11 @@ test('Danao browser ships original procedural audio with no external media depen
 
 test('browser audio is gesture gated and exposes title fight and volume controls',()=>{
  const src=fs.readFileSync(audioPath,'utf8');
- assert.match(src,/unlockAudio/);
+ assert.equal(typeof audio.unlockAudio,'function');
+ assert.equal(typeof audio.playTitleMusic,'function');
+ assert.equal(typeof audio.playFightMusic,'function');
+ assert.equal(typeof audio.setVolumes,'function');
  assert.match(src,/AudioContext/);
- assert.match(src,/playTitleMusic/);
- assert.match(src,/playFightMusic/);
- assert.match(src,/setVolumes/);
  assert.match(src,/pointerdown|keydown/);
  assert.match(html,/id=["']audio-toggle["']/);
  assert.match(html,/audio\.mjs/);
