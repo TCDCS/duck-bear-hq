@@ -106,6 +106,6 @@ test('v0.7 comedy props break and arena dressing is denser without changing pan 
     'courtyard-drum',
     'roof-vent',
     'roof-hanging-sign',
-    'crowd-cheer-arm',
+    'supermarket-ceiling-light',
   ]) assert.ok(visuals.includes(marker), marker);
 });

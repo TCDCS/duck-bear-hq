@@ -20,29 +20,30 @@ test('Danao v0.6 is the physics-chaos build rather than the old ring-out prototy
 });
 
 test('Danao release source is reconstructed byte-for-byte before tests and deploy', () => {
-  assert.equal(sha256('public/games/danao/src/game/runtime.js'), '5e254555f434285104bd2d2e0f7c0224a6322263af29234384508272803c24f2');
-  assert.equal(sha256('public/games/danao/src/game/visuals.js'), '38344470446870e174188d8c2b260042199b1cd41fab96f6b00bf9bbfe752a57');
+  assert.equal(sha256('public/games/danao/src/game/runtime.js'), '1662d42cc25c54421885d6c98a39f6b21a0e8729b400cc89ad1ec14c19d962da');
+  assert.equal(sha256('public/games/danao/src/game/visuals.js'), '4e5fa3818d177f1e61d497b0c827a6910280a429367d4479f9a286ff8c96c9f2');
   assert.equal(sha256('public/games/danao/src/ui/App.js'), '98e729aa045e2094e06272ff91f183a994c069c757e0b46ba51feae7e186fa06');
   assert.equal(sha256('public/games/danao/src/styles.css'), 'c97800b4937d5f3b77dd83d4f4fe3166853f1718064a5ebe5191c407fa8bc725');
 });
 
-test('Wrestling Hall is the default showcase and carries actual brawler props', () => {
+test('Checkout Chaos is the flagship showcase and carries supermarket brawler props', () => {
   const arena = read('public/games/danao/src/game/arena.js');
   const items = read('public/games/danao/src/game/items.js');
-  assert.match(arena, /Wrestling Hall/);
-  assert.match(arena, /folding-chair|chair/);
-  assert.match(arena, /table/);
+  assert.match(arena, /Checkout Chaos/);
+  assert.match(arena, /supermarket/i);
+  assert.match(arena, /baguette/);
   assert.match(arena, /crate/);
+  assert.match(arena, /bin/);
+  assert.match(arena, /cone/);
   assert.match(items, /frying-pan|pan/);
   assert.match(items, /baguette/);
-  assert.match(items, /mallet/);
 });
 
-test('Cloudflare deploy assembles the exact Danao v0.9 release before verification', () => {
+test('Cloudflare deploy assembles the Danao v0.10 visual rebuild before verification', () => {
   const pkg = JSON.parse(read('package.json'));
   assert.match(pkg.scripts.deploy, /^npm run assemble:danao/);
   assert.equal(pkg.scripts['assemble:danao'], 'node scripts/assemble-danao-v05.mjs');
-  assert.match(read('public/games/danao/release.json'), /"version": "0\.9\.0"/);
+  assert.match(read('public/games/danao/release.json'), /"version": "0\.10\.0"/);
 });
 
 test('browser fighter select uses the complete Danao cast instead of generic stand-ins', () => {
@@ -86,8 +87,8 @@ test('Danao v0.6 adds heavier impact feel, destruction feedback and a lower part
   assert.match(runtime, /spawnPropDebris/);
   assert.match(runtime, /updatePropHighlights/);
   assert.match(visuals, /export function spawnPropDebris/);
-  assert.match(visuals, /announcer-desk/);
-  assert.match(visuals, /ring-step/);
+  assert.match(visuals, /supermarket-checkout/);
+  assert.match(visuals, /supermarket-aisle-shelf/);
 });
 
 

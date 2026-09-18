@@ -6,20 +6,22 @@ import { patchDanaoV07Visuals } from './danao-v07-visual-patch.mjs';
 import { patchDanaoV08Runtime } from './danao-v08-runtime-patch.mjs';
 import { patchDanaoV09Runtime } from './danao-v09-runtime-patch.mjs';
 import { patchDanaoV09App } from './danao-v09-app-patch.mjs';
+import { patchDanaoSupermarketVisuals } from './danao-supermarket-visual-patch.mjs';
+import { patchDanaoSupermarketRuntime } from './danao-supermarket-runtime-patch.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const builds = [
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/runtime'),
     output: path.join(root, 'public/games/danao/src/game/runtime.js'),
-    sha256: '5e254555f434285104bd2d2e0f7c0224a6322263af29234384508272803c24f2',
-    transform: (source) => patchDanaoV09Runtime(patchDanaoV08Runtime(source)),
+    sha256: '1662d42cc25c54421885d6c98a39f6b21a0e8729b400cc89ad1ec14c19d962da',
+    transform: (source) => patchDanaoSupermarketRuntime(patchDanaoV09Runtime(patchDanaoV08Runtime(source))),
   },
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/visuals'),
     output: path.join(root, 'public/games/danao/src/game/visuals.js'),
-    sha256: '38344470446870e174188d8c2b260042199b1cd41fab96f6b00bf9bbfe752a57',
-    transform: patchDanaoV07Visuals,
+    sha256: '4e5fa3818d177f1e61d497b0c827a6910280a429367d4479f9a286ff8c96c9f2',
+    transform: (source) => patchDanaoSupermarketVisuals(patchDanaoV07Visuals(source)),
   },
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/app'),

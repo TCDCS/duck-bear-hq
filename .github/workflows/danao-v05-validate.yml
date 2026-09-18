@@ -9,6 +9,7 @@ on:
       - 'scripts/assemble-danao-v05.mjs'
       - 'scripts/danao-v05-gz/**'
       - 'scripts/danao-v*-*.mjs'
+      - 'scripts/danao-*.mjs'
       - 'tests/danao-*.test.mjs'
       - 'package.json'
       - '.github/workflows/danao-v05-validate.yml'
