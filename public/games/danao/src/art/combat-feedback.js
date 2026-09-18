@@ -62,16 +62,20 @@ function makeTextPlane(B, scene, style) {
   mat.emissiveColor = color3(B, style.color).scale(0.8);
   mat.specularColor = B.Color3.Black();
   mat.disableLighting = true;
+  mat.disableDepthWrite = true;
   mat.backFaceCulling = false;
 
   const plane = B.MeshBuilder.CreatePlane(
     'combat-feedback-text',
-    { width: 2.7, height: 0.9 },
+    { width: 3.25, height: 1.05 },
     scene,
   );
   plane.material = mat;
   plane.billboardMode = B.Mesh?.BILLBOARDMODE_ALL ?? 7;
+  plane.renderingGroupId = 2;
   plane.isPickable = false;
+  plane.alwaysSelectAsActiveMesh = true;
+  scene.setRenderingAutoClearDepthStencil?.(2, true, true, true);
 
   return { plane, mat, texture };
 }
