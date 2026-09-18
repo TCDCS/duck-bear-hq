@@ -12,12 +12,12 @@ const replaceRegexRequired = (source, pattern, replacement, label) => {
 const ARM_BEFORE = "const arm = stylizeMesh(B, B.MeshBuilder.CreateCylinder(`${style.id}-arm`, { height: 0.78, diameter: 0.27, tessellation: 12 }, scene));";
 const ARM_AFTER = `const arm = style.id === 'hero'
 ? stylizeMesh(B, B.MeshBuilder.CreateCapsule('hero-arm-soft', { height: 0.86, radius: 0.15, tessellation: 18, capSubdivisions: 6 }, scene))
-: stylizeMesh(B, B.MeshBuilder.CreateCylinder(\`${style.id}-arm\`, { height: 0.78, diameter: 0.27, tessellation: 12 }, scene));`;
+: stylizeMesh(B, B.MeshBuilder.CreateCylinder(\`\${style.id}-arm\`, { height: 0.78, diameter: 0.27, tessellation: 12 }, scene));`;
 
 const LEG_BEFORE = "const leg = stylizeMesh(B, B.MeshBuilder.CreateCylinder(`${style.id}-leg`, { height: 0.7, diameter: 0.33, tessellation: 12 }, scene));";
 const LEG_AFTER = `const leg = style.id === 'hero'
 ? stylizeMesh(B, B.MeshBuilder.CreateCapsule('hero-leg-soft', { height: 0.78, radius: 0.18, tessellation: 18, capSubdivisions: 6 }, scene))
-: stylizeMesh(B, B.MeshBuilder.CreateCylinder(\`${style.id}-leg\`, { height: 0.7, diameter: 0.33, tessellation: 12 }, scene));`;
+: stylizeMesh(B, B.MeshBuilder.CreateCylinder(\`\${style.id}-leg\`, { height: 0.7, diameter: 0.33, tessellation: 12 }, scene));`;
 
 const HERO_BADGE_BEFORE = `const badge = stylizeMesh(B, B.MeshBuilder.CreateSphere('hero-mango-badge', { diameter: 0.22, segments: 10 }, scene));
 badge.parent = root;
