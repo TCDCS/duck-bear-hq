@@ -77,6 +77,7 @@ try {
     host.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 45000 }),
     guest.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 45000 })
   ]);
+  // The visible ONLINE 1V1 launcher is part of the release contract, not a test-only hook.
   await Promise.all([waitGame(host), waitGame(guest)]);
   await Promise.all([
     host.locator('#mw-online-launcher').waitFor({ state: 'visible', timeout: 15000 }),
