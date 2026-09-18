@@ -38,11 +38,11 @@ test('Wrestling Hall is the default showcase and carries actual brawler props', 
   assert.match(items, /mallet/);
 });
 
-test('Cloudflare deploy assembles the exact Danao v0.8 release before verification', () => {
+test('Cloudflare deploy assembles the exact Danao v0.9 release before verification', () => {
   const pkg = JSON.parse(read('package.json'));
   assert.match(pkg.scripts.deploy, /^npm run assemble:danao/);
   assert.equal(pkg.scripts['assemble:danao'], 'node scripts/assemble-danao-v05.mjs');
-  assert.match(read('public/games/danao/release.json'), /"version": "0\.8\.0"/);
+  assert.match(read('public/games/danao/release.json'), /"version": "0\.9\.0"/);
 });
 
 test('browser fighter select uses the complete Danao cast instead of generic stand-ins', () => {
