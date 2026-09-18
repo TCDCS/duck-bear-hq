@@ -164,6 +164,21 @@ jobs:
               });
             });
             await page.waitForTimeout(90);
+            const feedbackProof = await page.evaluate(() => {
+              const scene = globalThis.BABYLON?.EngineStore?.LastCreatedScene;
+              const names = (scene?.meshes || []).map((mesh) => mesh.name);
+              return {
+                textPresent: names.includes('combat-feedback-text'),
+                ringPresent: names.includes('combat-feedback-ring'),
+                eventLogged: Boolean(
+                  globalThis.__DANAO_FEEDBACK_EVENTS?.some?.((event) =>
+                    event.type === 'heavy-hit' && event.text === 'WHAM!'
+                  )
+                ),
+              };
+            });
+            report.feedbackProof = feedbackProof;
+
             await page.locator('#game').screenshot({
               path: OUT + '/combat-feedback.png',
               timeout: 90000,
@@ -203,13 +218,6 @@ jobs:
                   /ring-rope|turnbuckle-pad|crowd-bench|announcer-desk|ring-step/.test(name)
                 ),
                 tescoSignPresent: names.includes('tesco-superstore-sign'),
-                feedbackTextPresent: names.includes('combat-feedback-text'),
-                feedbackRingPresent: names.includes('combat-feedback-ring'),
-                feedbackEventLogged: Boolean(
-                  globalThis.__DANAO_FEEDBACK_EVENTS?.some?.((event) =>
-                    event.type === 'heavy-hit' && event.text === 'WHAM!'
-                  )
-                ),
               };
             });
 
@@ -236,9 +244,9 @@ jobs:
               && sceneState.proceduralMulanEnabled === false;
             report.checks.wrestlingGeometryRemoved = sceneState.wrestlingMeshes.length === 0;
             report.checks.combatFeedbackRendered =
-              sceneState.feedbackTextPresent === true
-              && sceneState.feedbackRingPresent === true
-              && sceneState.feedbackEventLogged === true;
+              feedbackProof.textPresent === true
+              && feedbackProof.ringPresent === true
+              && feedbackProof.eventLogged === true;
             report.checks.noPageErrors = pageErrors.length === 0;
 
             await page.screenshot({
