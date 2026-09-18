@@ -434,6 +434,89 @@ function requestedArena(scene) {
   return ARENAS[scene.arenaIndex] || ARENAS[0];
 }
 
+function saveReleaseSettings() {
+  try {
+    globalThis.localStorage?.setItem('meow-wars-v10-settings', JSON.stringify(globalThis.__MEOW_WARS_SETTINGS || {}));
+  } catch {}
+}
+
+function closeV11Settings(scene) {
+  if(!scene.__mw11SettingsOverlay) return;
+  for(const object of scene.__mw11SettingsOverlay) object?.destroy?.();
+  scene.__mw11SettingsOverlay=null;
+}
+
+function v11SettingLabel(key) {
+  const settings=globalThis.__MEOW_WARS_SETTINGS||{};
+  if(key==='touchMode') return String(settings.touchMode||'auto').toUpperCase();
+  if(key==='fxIntensity') return String(settings.fxIntensity||'full').toUpperCase();
+  return settings[key]===false?'OFF':'ON';
+}
+
+function toggleV11Setting(key) {
+  const settings=globalThis.__MEOW_WARS_SETTINGS;
+  if(!settings) return 'N/A';
+  if(key==='touchMode') settings.touchMode=settings.touchMode==='auto'?'on':settings.touchMode==='on'?'off':'auto';
+  else if(key==='fxIntensity') settings.fxIntensity=settings.fxIntensity==='full'?'reduced':'full';
+  else settings[key]=!settings[key];
+  saveReleaseSettings();
+  return v11SettingLabel(key);
+}
+
+function openV11Settings(scene) {
+  if(scene.__mw11SettingsOverlay) return;
+  const items=[];
+  const dim=scene.add.rectangle(640,360,1280,720,0x06111e,.87).setInteractive().setDepth(980);
+  const panel=scene.add.rectangle(640,350,780,610,0x102a47,.995).setStrokeStyle(4,0x63d8ff,.9).setDepth(981);
+  const title=scene.add.text(640,66,'MEOW WARS v'+MW11_VERSION,{
+    fontFamily:'Arial Black, Arial',fontSize:'32px',color:'#ffd253',stroke:'#13243d',strokeThickness:5
+  }).setOrigin(.5).setDepth(982);
+  const build=scene.add.text(640,98,MW11_BUILD,{
+    fontFamily:'Arial',fontSize:'11px',color:'#a9d9f4'
+  }).setOrigin(.5).setDepth(982);
+  const feature=scene.add.text(640,122,'LIVING BATTLEFIELDS  ·  DETAILED DESTRUCTIBLE PROPS',{
+    fontFamily:'Arial Black, Arial',fontSize:'11px',color:'#8ee7ba'
+  }).setOrigin(.5).setDepth(982);
+  items.push(dim,panel,title,build,feature);
+
+  const rows=[
+    ['AIM ASSIST','aimAssist','Landing / impact reticles for human turns'],
+    ['SCREEN SHAKE','screenShake','Explosion camera shake'],
+    ['SOUND EFFECTS','sfx','Shots, explosions, meows and UI tones'],
+    ['FX INTENSITY','fxIntensity','FULL keeps every effect · REDUCED trims particles'],
+    ['WEAPON DETAIL HUD','hudDetail','Selected weapon name, ammo and description'],
+    ['TOUCH CONTROLS','touchMode','AUTO detects mobile/touch · ON/OFF overrides']
+  ];
+  rows.forEach((row,index)=>{
+    const y=162+index*49;
+    const back=scene.add.rectangle(640,y,650,43,0x0b2038,.96).setStrokeStyle(1,0x5c91b6,.42).setDepth(983);
+    const name=scene.add.text(350,y-7,row[0],{fontFamily:'Arial Black, Arial',fontSize:'14px',color:'#ffffff'}).setDepth(984);
+    const detail=scene.add.text(350,y+10,row[2],{fontFamily:'Arial',fontSize:'9.5px',color:'#9fc4dc'}).setDepth(984);
+    const button=scene.add.rectangle(880,y,122,29,0x173d61,.99).setInteractive({useHandCursor:true}).setDepth(985);
+    const value=scene.add.text(880,y,v11SettingLabel(row[1]),{fontFamily:'Arial Black, Arial',fontSize:'12px',color:'#ffffff'}).setOrigin(.5).setDepth(986);
+    const refresh=()=>{
+      const next=toggleV11Setting(row[1]);value.setText(next);
+      button.setStrokeStyle(2,next==='OFF'?0xe06b6b:(next==='AUTO'||next==='REDUCED')?0x6bcff5:0xffd253,.92);
+    };
+    const initial=value.text;
+    button.setStrokeStyle(2,initial==='OFF'?0xe06b6b:(initial==='AUTO'||initial==='REDUCED')?0x6bcff5:0xffd253,.92);
+    button.on('pointerdown',refresh);
+    items.push(back,name,detail,button,value);
+  });
+
+  const info=scene.add.text(640,480,
+    'v1.1 adds detailed props that can be shot, blasted, damaged and dropped with terrain.\n'+
+    'Keyboard: A/D move · W/S aim · SPACE fire · Q/E weapons   |   Mobile: on-screen controls',{
+      fontFamily:'Arial',fontSize:'11.5px',color:'#d9effc',align:'center',lineSpacing:5
+    }).setOrigin(.5).setDepth(982);
+  const close=scene.add.rectangle(640,594,220,42,0xef5b52,1).setStrokeStyle(2,0xffeee0,1).setInteractive({useHandCursor:true}).setDepth(985);
+  const closeText=scene.add.text(640,594,'CLOSE',{fontFamily:'Arial Black, Arial',fontSize:'17px',color:'#ffffff'}).setOrigin(.5).setDepth(986);
+  dim.on('pointerdown',()=>closeV11Settings(scene));
+  close.on('pointerdown',()=>closeV11Settings(scene));
+  items.push(info,close,closeText);
+  scene.__mw11SettingsOverlay=items;
+}
+
 const v10MenuRefresh=MenuScene.prototype.refresh;
 MenuScene.prototype.refresh=function() {
   v10MenuRefresh.call(this);
@@ -478,6 +561,19 @@ const v10MenuCreate=MenuScene.prototype.create;
 MenuScene.prototype.create=function() {
   this.__mw11Starting=false;
   v10MenuCreate.call(this);
+
+  for(const child of this.children.list) {
+    if(typeof child.text==='string') {
+      if(child.text.includes('MEOW WARS v1.0.0')) child.setText(child.text.replace('MEOW WARS v1.0.0','MEOW WARS v'+MW11_VERSION));
+      if(child.text.includes('mw-v10-release-20260918a')) child.setText(child.text.replace('mw-v10-release-20260918a',MW11_BUILD));
+      if(child.text==='SETTINGS'&&Math.abs((child.x||0)-1160)<3&&Math.abs((child.y||0)-45)<3) child.setVisible(false);
+    }
+    if(child.input&&Math.abs((child.x||0)-1160)<3&&Math.abs((child.y||0)-45)<3) child.disableInteractive?.();
+  }
+  const settingsButton=this.add.rectangle(1160,45,170,36,0x173d61,.99).setStrokeStyle(2,0xffd253,.95).setInteractive({useHandCursor:true}).setDepth(490);
+  this.add.text(1160,45,'SETTINGS',{fontFamily:'Arial Black, Arial',fontSize:'13px',color:'#ffffff'}).setOrigin(.5).setDepth(491);
+  settingsButton.on('pointerdown',()=>openV11Settings(this));
+
   globalThis.__MEOW_WARS_MENU_READY=true;
 };
 
