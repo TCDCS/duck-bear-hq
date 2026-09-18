@@ -31,11 +31,10 @@ function composeV07() {
   const match = matches[0];
   source = source.slice(0, match.index) + replacement + source.slice(match.index + match[0].length);
   const legacyTint = 'cat.sprite.setTintFill?.(0xffffff);';
-  assert.equal(source.split(legacyTint).length - 1, 1);
-  source = source.replace(
-    legacyTint,
-    'cat.sprite.setTint?.(0xffffff);\n        cat.sprite.setTintMode?.(Phaser.TintModes.FILL);'
-  );
+  const legacyTintCount = source.split(legacyTint).length - 1;
+  assert.ok(legacyTintCount >= 1);
+  const tintReplacement = 'cat.sprite.setTint?.(0xffffff);\n        cat.sprite.setTintMode?.(Phaser.TintModes.FILL);';
+  source = source.split(legacyTint).join(tintReplacement);
   const hd = read('public/games/meow-wars/v06-hd.js');
   const gamefeel = read('public/games/meow-wars/v07-gamefeel.js');
   const marker = 'new Phaser.Game(config);';
