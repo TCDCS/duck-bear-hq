@@ -289,7 +289,7 @@ try {
   );
 
   await host.waitForFunction((before) =>
-    globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().x > before + 1,
+    globalThis.__MEOW_WARS_GAME_SCENE?.catById?.('red-1')?.x > before + 1,
     beforeX,
     { timeout: 5000 }
   );
