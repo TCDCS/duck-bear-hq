@@ -14,7 +14,7 @@ export async function smallBody(request,limit=2000){
 }
 export async function routeMultiplayer(request,env){
   const url=new URL(request.url),path=url.pathname;
-  if(path==='/api/races/version'&&request.method==='GET')return json({version:4,maxPlayers:CAPACITY,multiplayer:Boolean(env.WACKY_ROOMS&&env.WACKY_DIRECTORY)});
+  if(path==='/api/races/version'&&request.method==='GET')return json({version:5,maxPlayers:CAPACITY,multiplayer:Boolean(env.WACKY_ROOMS&&env.WACKY_DIRECTORY)});
   const action=path==='/api/races/create'?'create':path==='/api/races/join'?'join':null;
   const socket=path.match(/^\/api\/races\/(\d{4})\/socket$/);
   if(!action&&!socket)return json({error:'Game endpoint not found.'},404);
