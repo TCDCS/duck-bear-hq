@@ -170,6 +170,7 @@ function makePatrolBoat(scene, x, y, {label, direction=1, london=false}) {
   c.add(labelText);
 
   c.setScale(direction,.92);
+  labelText.setScale(direction,1);
   track(scene,c,direction>0?'patrol-boat-right':'patrol-boat-left',{
     speed:london?.020:.023,
     baseY:y,
@@ -200,6 +201,7 @@ function makeDoubleDecker(scene,x,y,{label,color,accent,direction=1}) {
 
   c.add([lower,upper,belt,...windows,...wheels,lamp,tag]);
   c.setScale(direction,1);
+  tag.setScale(direction,1);
   track(scene,c,direction>0?'road-right':'road-left',{speed:.020,baseY:y,wrap:1480});
   stats.roadVehiclesCreated+=1;
   return c;
@@ -224,6 +226,7 @@ function makeSplashTour(scene,x,y,direction=-1) {
   }).setOrigin(.5);
   c.add([body,cabin,stripe,glass1,glass2,glass3,...wheels,horn1,horn2,tag]);
   c.setScale(direction,1);
+  tag.setScale(direction,1);
   track(scene,c,direction>0?'road-right':'road-left',{speed:.016,baseY:y,wrap:1510});
   stats.roadVehiclesCreated+=1;
   return c;
