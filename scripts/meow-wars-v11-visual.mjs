@@ -75,8 +75,7 @@ async function startArena(index) {
 
 async function forceReturnToMenu() {
   await page.evaluate(() => {
-    const game = globalThis.Phaser?.GAMES?.[globalThis.Phaser.GAMES.length - 1];
-    const scene = game?.scene?.getScene('GameScene');
+    const scene = globalThis.__MEOW_WARS_GAME_SCENE;
     if (!scene) throw new Error('GameScene unavailable for menu regression');
     scene.gameOver = true;
   });
@@ -84,8 +83,7 @@ async function forceReturnToMenu() {
   await page.waitForTimeout(110);
   await page.keyboard.up('m');
   await page.waitForFunction(() => {
-    const game = globalThis.Phaser?.GAMES?.[globalThis.Phaser.GAMES.length - 1];
-    return !!game?.scene?.getScene('MenuScene')?.sys?.isActive?.();
+    return !!globalThis.__MEOW_WARS_MENU_SCENE?.sys?.isActive?.();
   }, { timeout: 5000 });
   await page.waitForTimeout(180);
 }
@@ -96,8 +94,7 @@ async function chooseArenaFromReturnedMenu(index) {
     await page.waitForTimeout(70);
   }
   const selected = await page.evaluate(() => {
-    const game = globalThis.Phaser?.GAMES?.[globalThis.Phaser.GAMES.length - 1];
-    const menu = game?.scene?.getScene('MenuScene');
+    const menu = globalThis.__MEOW_WARS_MENU_SCENE;
     return { index: menu?.arenaIndex, name: menu?.arenaText?.text };
   });
   if (selected.index !== index) throw new Error('Returned-menu arena selection mismatch: ' + JSON.stringify(selected));
@@ -125,15 +122,13 @@ try {
 
     if (variant === 'after' && arenaIndex === 0) {
       const beforeProps = await page.evaluate(() => {
-        const game = globalThis.Phaser.GAMES[globalThis.Phaser.GAMES.length - 1];
-        const scene = game.scene.getScene('GameScene');
+        const scene = globalThis.__MEOW_WARS_GAME_SCENE;
         return scene.__mw11Props.map((p) => ({ type:p.type, hp:p.hp, x:p.x, y:p.y }));
       });
       if (beforeProps.length < 4) throw new Error('Garden realistic props missing: ' + JSON.stringify(beforeProps));
 
       await page.evaluate(() => {
-        const game = globalThis.Phaser.GAMES[globalThis.Phaser.GAMES.length - 1];
-        const scene = game.scene.getScene('GameScene');
+        const scene = globalThis.__MEOW_WARS_GAME_SCENE;
         const prop = scene.__mw11Props[0];
         scene.explode(prop.x, prop.y - 18, {
           id:'dynamite',
