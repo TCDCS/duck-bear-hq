@@ -90,7 +90,21 @@ try {
   }
 
   await host.locator('#mw-online-launcher').click();
-  await host.locator('#mw-online-overlay').waitFor({ state: 'visible', timeout: 5000 });
+  await host.waitForTimeout(250);
+  const hostOverlayDiag = await host.evaluate(() => {
+    const overlay = document.getElementById('meow-online-overlay');
+    const launcher = document.getElementById('mw-online-launcher');
+    return {
+      overlayExists: Boolean(overlay),
+      overlayDisplay: overlay ? getComputedStyle(overlay).display : null,
+      overlayChildren: overlay?.children?.length || 0,
+      launcherVisible: launcher ? getComputedStyle(launcher).display : null,
+      hook: typeof globalThis.__MEOW_WARS_OPEN_ONLINE
+    };
+  });
+  if (!hostOverlayDiag.overlayExists || hostOverlayDiag.overlayDisplay === 'none') {
+    throw new Error('Online lobby did not open: ' + JSON.stringify({ hostOverlayDiag, errors }));
+  }
   await host.locator('#mw-online-name').fill('Blue Host');
   await host.locator('#mw-online-create').click();
   await host.waitForFunction(() =>
@@ -104,7 +118,18 @@ try {
   await host.screenshot({ path: out('host-room-created.png'), fullPage: true });
 
   await guest.locator('#mw-online-launcher').click();
-  await guest.locator('#mw-online-overlay').waitFor({ state: 'visible', timeout: 5000 });
+  await guest.waitForTimeout(250);
+  const guestOverlayDiag = await guest.evaluate(() => {
+    const overlay = document.getElementById('meow-online-overlay');
+    return {
+      exists: Boolean(overlay),
+      display: overlay ? getComputedStyle(overlay).display : null,
+      children: overlay?.children?.length || 0
+    };
+  });
+  if (!guestOverlayDiag.exists || guestOverlayDiag.display === 'none') {
+    throw new Error('Guest online lobby did not open: ' + JSON.stringify({ guestOverlayDiag, errors }));
+  }
   await guest.locator('#mw-online-name').fill('Red Mobile');
   await guest.locator('#mw-online-code').fill(code);
   await guest.locator('#mw-online-join').click();
