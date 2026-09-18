@@ -12,6 +12,7 @@ import { patchDanaoRealCharacterVisuals } from './danao-real-character-visual-pa
 import { patchDanaoRealCharacterRuntime } from './danao-real-character-runtime-patch.mjs';
 import { patchDanaoFullCastVisuals } from './danao-full-cast-visual-patch.mjs';
 import { patchDanaoFullCastRuntime } from './danao-full-cast-runtime-patch.mjs';
+import { patchDanaoV0106FeedbackRuntime } from './danao-v0106-feedback-runtime-patch.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const builds = [
@@ -19,7 +20,7 @@ const builds = [
     partsDir: path.join(root, 'scripts/danao-v05-gz/runtime'),
     output: path.join(root, 'public/games/danao/src/game/runtime.js'),
     sha256: '7d131b810bdaa0b8250be7fb7e4937b79e5416cb91cd323c4ad42e1d681aad17',
-    transform: (source) => patchDanaoFullCastRuntime(patchDanaoRealCharacterRuntime(patchDanaoSupermarketRuntime(patchDanaoV09Runtime(patchDanaoV08Runtime(source))))),
+    transform: (source) => patchDanaoV0106FeedbackRuntime(patchDanaoFullCastRuntime(patchDanaoRealCharacterRuntime(patchDanaoSupermarketRuntime(patchDanaoV09Runtime(patchDanaoV08Runtime(source)))))),
   },
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/visuals'),
