@@ -291,6 +291,8 @@ test('v0.9 host transfer applies retained snapshot before enabling Babylon autho
   await bridge.start({ room: { hostId: 0, matchId: 1, players: [{ id: 2, character: 'Mulan' }] }, localPlayerId: 2, arenaId: 'ring' });
   order.length = 0;
   client.isHost = true;
+  handlers.get('room')?.({ hostId: 2, matchId: 1, phase: 'fight', players: [{ id: 2, character: 'Mulan' }] });
+  assert.equal(order.some((entry) => entry[0] === 'authority' && entry[1] === true), false, 'room update must not promote before retained state arrives');
   handlers.get('host')?.({ hostId: 2, state: { seq: 9, fighters: [] } });
   assert.deepEqual(order, [['snapshot', 9, true], ['authority', true]]);
 });
