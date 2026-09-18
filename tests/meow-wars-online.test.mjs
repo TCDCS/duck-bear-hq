@@ -70,6 +70,8 @@ test('Meow Wars online server gates guest intents to the current team', () => {
   };
   assert.equal(R.setHostSnapshot(room, 0, snapshot, now + 11), true);
   assert.equal(room.turnTeam, 1);
+  assert.equal(room.latestSnapshot.aimAngle, 42);
+  assert.equal(room.latestSnapshot.facing, 1);
 
   const intent = R.setIntent(room, 1, {
     seq: 1, kind: 'fire', x: 1010, angle: 51, power: .72, facing: -1, weaponId: 'bazooka'
@@ -124,6 +126,8 @@ test('Meow Wars room supports reconnect and retains latest host snapshot', () =>
   R.setHostSnapshot(room, 0, state, now + 1700);
   const restored = R.restoreRoom(R.persistRoom(room));
   assert.equal(restored.latestSnapshot.seq, 3);
+  assert.equal(restored.latestSnapshot.aimAngle, 51);
+  assert.equal(restored.latestSnapshot.facing, -1);
   assert.equal(restored.latestSnapshot.craters[0].radius, 55);
 });
 
