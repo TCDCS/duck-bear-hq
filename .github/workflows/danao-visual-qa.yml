@@ -1,0 +1,145 @@
+name: Danao Visual QA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'feature/danao-*']
+    paths:
+      - 'public/games/danao/**'
+      - 'scripts/assemble-danao-v05.mjs'
+      - 'scripts/danao-*.mjs'
+      - 'scripts/danao-v05-gz/**'
+      - '.github/workflows/danao-visual-qa.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  checkout-chaos-screenshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Assemble exact Danao release
+        run: npm run assemble:danao
+
+      - name: Install Chromium screenshot runner
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local public site
+        run: |
+          python3 -m http.server 8080 --directory public > /tmp/danao-http.log 2>&1 &
+          echo $! > /tmp/danao-http.pid
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8080/games/danao/release.json >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/danao-http.log
+          exit 1
+
+      - name: Capture Checkout Chaos gameplay
+        run: |
+          mkdir -p artifacts
+          cat > /tmp/danao-visual-qa.mjs <<'EOF'
+          import { chromium } from 'playwright';
+          import fs from 'node:fs';
+
+          const browser = await chromium.launch({
+            headless: true,
+            args: [
+              '--use-angle=swiftshader',
+              '--enable-webgl',
+              '--ignore-gpu-blocklist',
+              '--disable-dev-shm-usage',
+            ],
+          });
+          const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+          const consoleErrors = [];
+          const pageErrors = [];
+          page.on('console', (msg) => {
+            if (msg.type() === 'error') consoleErrors.push(msg.text());
+          });
+          page.on('pageerror', (error) => pageErrors.push(String(error)));
+
+          let passed = false;
+          let observations = {};
+          try {
+            await page.goto('http://127.0.0.1:8080/games/danao/', {
+              waitUntil: 'domcontentloaded',
+              timeout: 60000,
+            });
+            await page.locator('[data-action="play"]').waitFor({ state: 'visible', timeout: 30000 });
+            await page.locator('[data-action="play"]').click();
+            await page.locator('.arena-card.selected').waitFor({ state: 'visible', timeout: 10000 });
+
+            const selectedArena = (await page.locator('.arena-card.selected').innerText()).trim();
+            if (!/Checkout Chaos/i.test(selectedArena)) {
+              throw new Error('Checkout Chaos is not the selected flagship arena: ' + selectedArena);
+            }
+
+            await page.locator('[data-action="start"]').click();
+            await page.waitForTimeout(9000);
+
+            const canvas = page.locator('#game');
+            await canvas.waitFor({ state: 'visible', timeout: 30000 });
+            const box = await canvas.boundingBox();
+            if (!box || box.width < 800 || box.height < 500) {
+              throw new Error('Gameplay canvas did not reach expected size.');
+            }
+
+            const bodyText = await page.locator('body').innerText();
+            if (/could not start|startup failed|runtime error/i.test(bodyText)) {
+              throw new Error('Visible startup/runtime error detected: ' + bodyText.slice(0, 600));
+            }
+
+            observations = {
+              selectedArena,
+              canvas: box,
+              consoleErrors,
+              pageErrors,
+              release: await (await page.request.get('http://127.0.0.1:8080/games/danao/release.json')).json(),
+            };
+            passed = pageErrors.length === 0;
+          } catch (error) {
+            observations = { ...observations, failure: String(error), consoleErrors, pageErrors };
+          } finally {
+            await page.screenshot({
+              path: 'artifacts/danao-checkout-chaos.png',
+              fullPage: true,
+            });
+            fs.writeFileSync(
+              'artifacts/danao-visual-qa.json',
+              JSON.stringify(observations, null, 2),
+            );
+            await browser.close();
+          }
+
+          if (!passed) {
+            console.error(JSON.stringify(observations, null, 2));
+            process.exit(1);
+          }
+          EOF
+          node /tmp/danao-visual-qa.mjs
+
+      - name: Upload Danao visual QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: danao-checkout-chaos-visual-qa
+          path: |
+            artifacts/danao-checkout-chaos.png
+            artifacts/danao-visual-qa.json
+          if-no-files-found: error
+          retention-days: 7
