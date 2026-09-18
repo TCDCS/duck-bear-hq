@@ -1,5 +1,5 @@
 name: Site Deploy
-# Manual content deploy trigger: Danao v0.10.2 full real cast rigs
+# Manual content deploy trigger: Meow Wars v1.1 Living Battlefields
 
 on:
   workflow_dispatch:
