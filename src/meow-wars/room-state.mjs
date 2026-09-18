@@ -157,6 +157,8 @@ function validateSnapshot(data) {
     wind: finite(Number(data.wind), -60, 60, 'wind'),
     timerMs: finite(Number(data.timerMs), 0, 120000, 'timer'),
     selectedWeaponId: String(data.selectedWeaponId || '').slice(0, 40),
+    aimAngle: finite(Number(data.aimAngle), 8, 82, 'aim angle'),
+    facing: integer(Number(data.facing), -1, 1, 'facing'),
     chargePower: finite(Number(data.chargePower), 0.36, 1, 'charge'),
     actionLocked: Boolean(data.actionLocked),
     gameOver: Boolean(data.gameOver),
