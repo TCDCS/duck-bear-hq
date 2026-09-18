@@ -95,6 +95,12 @@ function makeShockRing(B, scene, style) {
   return { ring, mat };
 }
 
+function sceneIsDisposed(scene) {
+  return typeof scene?.isDisposed === 'function'
+    ? scene.isDisposed()
+    : Boolean(scene?.isDisposed);
+}
+
 function disposeFeedback(scene, observer, root, textPart, ringPart) {
   if (observer) scene.onBeforeRenderObservable?.remove?.(observer);
   textPart?.texture?.dispose?.();
@@ -107,7 +113,7 @@ function disposeFeedback(scene, observer, root, textPart, ringPart) {
 
 export function showCombatFeedback(B, scene, event = {}) {
   if (!B || !scene || !B.TransformNode) return false;
-  if (scene.isDisposed?.()) return false;
+  if (sceneIsDisposed(scene)) return false;
 
   const style = feedbackStyleForEvent(event);
   scene.metadata ||= {};
@@ -137,7 +143,7 @@ export function showCombatFeedback(B, scene, event = {}) {
   const start = performance.now();
   let observer = null;
   const tick = () => {
-    if (scene.isDisposed?.()) return;
+    if (sceneIsDisposed(scene)) return;
     const progress = Math.max(0, Math.min(1, (performance.now() - start) / style.duration));
     const pop = 0.72 + Math.sin(Math.min(1, progress * 1.7) * Math.PI) * 0.34;
     root.position.y = y + (event.type === 'ko' ? 1.65 : 1.15) + progress * 0.72;
