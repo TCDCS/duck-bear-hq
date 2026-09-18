@@ -34,7 +34,7 @@ function out(name) {
 async function waitGame(page) {
   await page.locator('canvas').waitFor({ state: 'visible', timeout: 30000 });
   await page.waitForFunction(() =>
-    globalThis.__MEOW_WARS_BUILD === 'mw-v14-atmosphere-materials-20260918a',
+    globalThis.__MEOW_WARS_BUILD === 'mw-v15-scene-depth-20260918a',
     null,
     { timeout: 30000 }
   );
@@ -470,7 +470,7 @@ try {
     }))
   ]);
 
-  if (finalState.some((state) => state.build !== 'mw-v14-atmosphere-materials-20260918a')) {
+  if (finalState.some((state) => state.build !== 'mw-v15-scene-depth-20260918a')) {
     throw new Error('Unexpected online build: ' + JSON.stringify(finalState.map((x) => x.build)));
   }
 
