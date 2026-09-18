@@ -88,7 +88,7 @@ jobs:
             throw new Error('Timed out waiting for ' + label);
           }
 
-          async function capture({ arenaId, ambientMarker, detailMarker, wearMarker, impact }) {
+          async function capture({ arenaId, ambientMarker, detailMarker, wearMarker, impact, expectedWearType }) {
             const page = await context.newPage();
             const pageErrors = [];
             page.on('pageerror', (error) => pageErrors.push(String(error)));
@@ -200,6 +200,7 @@ jobs:
               result.checks.wearReactionLogged = state.wearReactionCount >= 1;
               result.checks.wearReachedBreakState = state.wearHighestState >= 3;
               result.checks.wearTargetRecorded = Boolean(state.wearLastType);
+              result.checks.correctWearTarget = state.wearLastType === expectedWearType;
               result.checks.noPageErrors = pageErrors.length === 0;
 
               await page.locator('#game').screenshot({
@@ -224,9 +225,9 @@ jobs:
           }
 
           const cases = [
-            { arenaId: 'ring', ambientMarker: 'danao-store-scan-glow', detailMarker: 'danao-detail-trolley-frame', wearMarker: 'danao-wear-ring-dent', impact: { x: 8.55, z: 5.7 } },
-            { arenaId: 'courtyard', ambientMarker: 'danao-courtyard-petal', detailMarker: 'danao-detail-gong', wearMarker: 'danao-wear-courtyard-crack', impact: { x: 0, z: 7.15 } },
-            { arenaId: 'rooftop', ambientMarker: 'danao-rooftop-steam', detailMarker: 'danao-detail-rooftop-duct', wearMarker: 'danao-wear-rooftop-spark', impact: { x: -1.2, z: 5.85 } },
+            { arenaId: 'ring', ambientMarker: 'danao-store-scan-glow', detailMarker: 'danao-detail-trolley-frame', wearMarker: 'danao-wear-ring-dent', impact: { x: 8.55, z: 5.7 }, expectedWearType: 'trolley' },
+            { arenaId: 'courtyard', ambientMarker: 'danao-courtyard-petal', detailMarker: 'danao-detail-gong', wearMarker: 'danao-wear-courtyard-crack', impact: { x: 0, z: 7.15 }, expectedWearType: 'gong' },
+            { arenaId: 'rooftop', ambientMarker: 'danao-rooftop-steam', detailMarker: 'danao-detail-rooftop-duct', wearMarker: 'danao-wear-rooftop-spark', impact: { x: -1.2, z: 5.85 }, expectedWearType: 'duct' },
           ];
           const results = [];
           for (const entry of cases) results.push(await capture(entry));
