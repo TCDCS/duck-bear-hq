@@ -211,7 +211,7 @@ try {
   // extra time so screenshot/network diagnostics cannot expire it mid-proof.
   await host.evaluate(() => {
     const scene = globalThis.__MEOW_WARS_GAME_SCENE;
-    scene.endTurn('skip');
+    scene.endTurn('timeout');
     scene.turnRemainingMs = 90000;
   });
   await Promise.all([
@@ -322,7 +322,7 @@ try {
   // screenshots/diagnostics from consuming the same timed turn used for movement.
   await host.evaluate(() => {
     const scene = globalThis.__MEOW_WARS_GAME_SCENE;
-    if (scene.activeCat().team !== 1) scene.endTurn('qa-red-fire');
+    if (scene.activeCat().team !== 1) scene.endTurn('timeout');
     scene.turnRemainingMs = 90000;
   });
   await Promise.all([
@@ -336,7 +336,7 @@ try {
   // FIRE immediately. This isolates real input/network behavior from slow CI image IO.
   await host.evaluate(() => {
     const scene = globalThis.__MEOW_WARS_GAME_SCENE;
-    if (scene.activeCat().team !== 1) scene.endTurn('qa-red-fire-final');
+    if (scene.activeCat().team !== 1) scene.endTurn('timeout');
     scene.turnRemainingMs = 90000;
     scene.actionLocked = false;
   });
