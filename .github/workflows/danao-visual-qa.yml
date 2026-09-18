@@ -152,6 +152,19 @@ jobs:
 
             await page.waitForTimeout(2500);
 
+            await page.evaluate(async () => {
+              const B = globalThis.BABYLON;
+              const scene = B?.EngineStore?.LastCreatedScene;
+              const feedback = await import('/games/danao/src/art/combat-feedback.js');
+              feedback.showCombatFeedback(B, scene, {
+                type: 'heavy-hit',
+                x: 0,
+                y: 1.0,
+                z: -1.5,
+              });
+            });
+            await page.waitForTimeout(90);
+
             const sceneState = await page.evaluate(() => {
               const scene = globalThis.BABYLON?.EngineStore?.LastCreatedScene;
               if (!scene) return { missingScene: true };
@@ -186,6 +199,13 @@ jobs:
                   /ring-rope|turnbuckle-pad|crowd-bench|announcer-desk|ring-step/.test(name)
                 ),
                 tescoSignPresent: names.includes('tesco-superstore-sign'),
+                feedbackTextPresent: names.includes('combat-feedback-text'),
+                feedbackRingPresent: names.includes('combat-feedback-ring'),
+                feedbackEventLogged: Boolean(
+                  globalThis.__DANAO_FEEDBACK_EVENTS?.some?.((event) =>
+                    event.type === 'heavy-hit' && event.text === 'WHAM!'
+                  )
+                ),
               };
             });
 
@@ -211,6 +231,10 @@ jobs:
               && sceneState.proceduralZacharyEnabled === false
               && sceneState.proceduralMulanEnabled === false;
             report.checks.wrestlingGeometryRemoved = sceneState.wrestlingMeshes.length === 0;
+            report.checks.combatFeedbackRendered =
+              sceneState.feedbackTextPresent === true
+              && sceneState.feedbackRingPresent === true
+              && sceneState.feedbackEventLogged === true;
             report.checks.noPageErrors = pageErrors.length === 0;
 
             await page.screenshot({
