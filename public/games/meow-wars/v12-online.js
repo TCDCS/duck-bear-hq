@@ -22,7 +22,10 @@ const stats = globalThis.__MEOW_WARS_V12_STATS = {
   snapshotsReceived: 0,
   snapshotAcks: 0,
   intentsSent: 0,
+  intentAcks: 0,
+  intentsReceived: 0,
   intentsApplied: 0,
+  intentErrors: 0,
   onlineEventsSent: 0,
   onlineEventsReceived: 0,
   guestFrames: 0
@@ -48,7 +51,10 @@ const online = globalThis.__MEOW_WARS_ONLINE = {
   lobbyMessage: '',
   lobbyError: '',
   serverTurnTeam: null,
-  lastSnapshotAck: -1
+  lastSnapshotAck: -1,
+  lastIntentAck: -1,
+  lastIntentReceived: null,
+  lastOnlineError: ''
 };
 
 function loadSession() {
@@ -289,8 +295,16 @@ function handleSocketMessage(message) {
     return;
   }
 
+  if (message.type === 'intent-ack') {
+    online.lastIntentAck = Number(message.seq);
+    stats.intentAcks += 1;
+    return;
+  }
+
   if (message.type === 'intent') {
     if (isHost()) {
+      stats.intentsReceived += 1;
+      online.lastIntentReceived = message.intent || null;
       online.pendingIntents.push(message);
       drainRemoteIntents();
     }
@@ -307,6 +321,8 @@ function handleSocketMessage(message) {
 
   if (message.type === 'error') {
     online.lobbyError = String(message.message || 'Room error.');
+    online.lastOnlineError = online.lobbyError;
+    stats.intentErrors += 1;
     renderLobby();
     setConnectionBanner(online.lobbyError, '#ff8b82');
   }
@@ -747,7 +763,7 @@ function drainRemoteIntents() {
 }
 
 function applyRemoteIntent(scene, intent) {
-  if (!intent || scene.gameOver || scene.activeCat().team !== 1) return;
+  if (!intent || scene.gameOver || scene.activeCat().team !== 1) return false;
   const active = scene.activeCat();
 
   if (intent.kind === 'state') {
@@ -783,6 +799,7 @@ function applyRemoteIntent(scene, intent) {
 
   stats.intentsApplied += 1;
   sendHostSnapshot(scene, true);
+  return true;
 }
 
 function mirrorColor(weaponId) {
