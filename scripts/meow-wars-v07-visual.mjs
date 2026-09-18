@@ -31,7 +31,7 @@ page.on('console', (message) => {
 });
 
 async function openMenu() {
-  await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 45000 });
+  await page.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
   await page.locator('canvas').waitFor({ state: 'visible', timeout: 30000 });
   if (expectedBuild) {
     await page.waitForFunction((build) => globalThis.__MEOW_WARS_BUILD === build, expectedBuild, { timeout: 30000 });
