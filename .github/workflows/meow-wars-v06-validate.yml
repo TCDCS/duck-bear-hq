@@ -1,0 +1,66 @@
+name: Meow Wars v0.6 Validate
+
+on:
+  pull_request:
+    paths:
+      - 'public/games/meow-wars/**'
+      - 'public/games/index.html'
+      - 'tests/meow-wars-v06.test.mjs'
+      - 'scripts/meow-wars-v06-visual.mjs'
+      - '.github/workflows/meow-wars-v06-validate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate production payload patch
+        run: node --test tests/meow-wars-v06.test.mjs
+
+  visual:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install browser test dependency
+        run: |
+          npm install --no-save --package-lock=false playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Prepare current live source for before screenshots
+        run: |
+          git fetch origin main --depth=1
+          git worktree add /tmp/meow-main FETCH_HEAD
+      - name: Start branch and main static servers
+        run: |
+          python3 -m http.server 4173 --directory public > /tmp/meow-v06-server.log 2>&1 &
+          python3 -m http.server 4174 --directory /tmp/meow-main/public > /tmp/meow-v05-server.log 2>&1 &
+          sleep 2
+      - name: Capture current live version
+        env:
+          MEOW_WARS_URL: http://127.0.0.1:4174/games/meow-wars/
+          MEOW_WARS_VARIANT: before
+          MEOW_WARS_ARENAS: 3
+        run: node scripts/meow-wars-v06-visual.mjs
+      - name: Capture v0.6 branch
+        env:
+          MEOW_WARS_URL: http://127.0.0.1:4173/games/meow-wars/
+          MEOW_WARS_VARIANT: after
+          MEOW_WARS_ARENAS: 7
+          MEOW_WARS_BUILD: mw-v06-env-20260918b
+        run: node scripts/meow-wars-v06-visual.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: meow-wars-v06-before-after
+          path: artifacts/meow-wars-v06/
+          if-no-files-found: warn
+          retention-days: 7
