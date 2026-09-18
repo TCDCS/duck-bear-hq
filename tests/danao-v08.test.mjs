@@ -139,3 +139,19 @@ test('v0.8 packaged runtime supplies live world context to bot decisions', async
   ]) assert.ok(runtime.includes(marker), marker);
   assert.doesNotMatch(runtime, /Math\.random\(\) < 0\.012/);
 });
+
+
+test('v0.8 Wrestling Hall offers a deeper mix of props for item-seeking bots', async () => {
+  const { getArena } = await import('../public/games/danao/src/game/arena.js');
+  const ring = getArena('ring');
+  assert.ok(ring.props.length >= 25, `expected at least 25 props, got ${ring.props.length}`);
+  const counts = ring.props.reduce((map, prop) => {
+    map[prop.itemId] = (map[prop.itemId] || 0) + 1;
+    return map;
+  }, {});
+  assert.ok((counts.chair || 0) >= 7);
+  assert.ok((counts.crate || 0) >= 5);
+  assert.ok((counts.mallet || 0) >= 3);
+  assert.ok((counts.cone || 0) >= 2);
+  assert.ok((counts.baguette || 0) >= 2);
+});
