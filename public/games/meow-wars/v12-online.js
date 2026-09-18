@@ -217,7 +217,8 @@ function connectSocket(reconnect = false) {
   });
 
   socket.addEventListener('close', (event) => {
-    if (online.socket === socket) online.socket = null;
+    if (online.socket !== socket) return;
+    online.socket = null;
     online.connected = false;
     if (online.intentionalClose) return;
 
@@ -756,6 +757,9 @@ function applyRemoteIntent(scene, intent) {
     if (index >= 0 && (scene.teamAmmo[1].get(intent.weaponId) ?? 0) !== 0)
       scene.selectedWeaponIndex = index;
   } else if (intent.kind === 'fire') {
+    active.x = clamp(Number(intent.x), 28, WIDTH - 28);
+    const surface = surfaceY(scene.terrain, active.x);
+    if (surface < HEIGHT && active.vy === 0) active.y = surface - CAT_FOOT;
     scene.aimAngleDeg = clamp(Number(intent.angle), 8, 82);
     scene.facing = intent.facing < 0 ? -1 : 1;
     scene.chargePower = clamp(Number(intent.power), .36, 1);
@@ -1131,6 +1135,7 @@ GameScene.prototype.fireCurrentWeapon = function() {
     if (ammo === 0) return;
     const sent = sendIntent({
       kind: 'fire',
+      x: this.activeCat().x,
       angle: this.aimAngleDeg,
       power: this.chargePower,
       facing: this.facing,
@@ -1203,8 +1208,8 @@ GameScene.prototype.checkWin = function() {
   const wasOver = this.gameOver;
   const result = v11CheckWin.call(this);
   if (this.mode === 'online' && isHost() && !wasOver && this.gameOver) {
-    send({ type: 'result', result: { winnerTeam: winnerTeam(this), reason: 'elimination' } });
     sendHostSnapshot(this, true);
+    send({ type: 'result', result: { winnerTeam: winnerTeam(this), reason: 'elimination' } });
   }
   return result;
 };
