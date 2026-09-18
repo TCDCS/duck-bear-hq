@@ -93,7 +93,6 @@ export const ARENAS = Object.freeze([
     ]),
     palette: { floor: '#f3f0e9', trim: '#00539f', accent: '#ee1c25', sky: '#dfeaf4' },
     hazards: [],
-  })
   }),
 ]);
 
