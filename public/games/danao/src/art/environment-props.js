@@ -24,12 +24,21 @@ function color3(B, hex) {
   );
 }
 
-function material(B, scene, name, hex, { emissive = 0, alpha = 1 } = {}) {
+function material(B, scene, name, hex, {
+  emissive = 0,
+  alpha = 1,
+  specular = 0.05,
+  specularPower = 32,
+  ambient = 0.12,
+} = {}) {
   const mat = new B.StandardMaterial(name, scene);
-  mat.diffuseColor = color3(B, hex);
-  mat.specularColor = new B.Color3(0.05, 0.05, 0.05);
+  const base = color3(B, hex);
+  mat.diffuseColor = base;
+  mat.ambientColor = base.scale(ambient);
+  mat.specularColor = new B.Color3(specular, specular, specular);
+  mat.specularPower = specularPower;
   mat.alpha = alpha;
-  if (emissive) mat.emissiveColor = color3(B, hex).scale(emissive);
+  if (emissive) mat.emissiveColor = base.scale(emissive);
   return mat;
 }
 
@@ -121,15 +130,15 @@ function addTrolley(B, scene, root, mats, position, rotationY, index) {
 
 function addStoreDetails(B, scene, root, reactive, materials) {
   const mats = {
-    metal: material(B, scene, 'danao-detail-store-metal', '#aab6bc'),
-    dark: material(B, scene, 'danao-detail-store-dark', '#26333c'),
-    handle: material(B, scene, 'danao-detail-store-handle', '#e73735'),
-    crate: material(B, scene, 'danao-detail-store-crate', '#3279b6'),
-    crateRed: material(B, scene, 'danao-detail-store-crate-red', '#d74642'),
+    metal: material(B, scene, 'danao-detail-store-metal', '#aab6bc', { specular: 0.4, specularPower: 96, ambient: 0.18 }),
+    dark: material(B, scene, 'danao-detail-store-dark', '#26333c', { specular: 0.12, specularPower: 52, ambient: 0.08 }),
+    handle: material(B, scene, 'danao-detail-store-handle', '#e73735', { specular: 0.18, specularPower: 64, ambient: 0.15 }),
+    crate: material(B, scene, 'danao-detail-store-crate', '#3279b6', { specular: 0.14, specularPower: 40, ambient: 0.14 }),
+    crateRed: material(B, scene, 'danao-detail-store-crate-red', '#d74642', { specular: 0.14, specularPower: 40, ambient: 0.14 }),
     productA: material(B, scene, 'danao-detail-store-product-a', '#f2c74f'),
     productB: material(B, scene, 'danao-detail-store-product-b', '#66a85c'),
-    screen: material(B, scene, 'danao-detail-store-screen', '#76d7ff', { emissive: 0.65 }),
-    bezel: material(B, scene, 'danao-detail-store-bezel', '#202a31'),
+    screen: material(B, scene, 'danao-detail-store-screen', '#76d7ff', { emissive: 0.65, specular: 0.28, specularPower: 90, ambient: 0.18 }),
+    bezel: material(B, scene, 'danao-detail-store-bezel', '#202a31', { specular: 0.16, specularPower: 56, ambient: 0.08 }),
   };
   materials.push(...Object.values(mats));
 
@@ -162,14 +171,14 @@ function addStoreDetails(B, scene, root, reactive, materials) {
 
 function addCourtyardDetails(B, scene, root, reactive, materials) {
   const mats = {
-    wood: material(B, scene, 'danao-detail-courtyard-wood', '#6c3628'),
-    dark: material(B, scene, 'danao-detail-courtyard-dark', '#2d2326'),
-    gold: material(B, scene, 'danao-detail-courtyard-gold', '#d8ad38', { emissive: 0.08 }),
-    brass: material(B, scene, 'danao-detail-courtyard-brass', '#b8842f'),
-    drum: material(B, scene, 'danao-detail-courtyard-drum', '#9d302f'),
+    wood: material(B, scene, 'danao-detail-courtyard-wood', '#6c3628', { specular: 0.1, specularPower: 30, ambient: 0.12 }),
+    dark: material(B, scene, 'danao-detail-courtyard-dark', '#2d2326', { specular: 0.08, specularPower: 36, ambient: 0.08 }),
+    gold: material(B, scene, 'danao-detail-courtyard-gold', '#d8ad38', { emissive: 0.08, specular: 0.34, specularPower: 82, ambient: 0.16 }),
+    brass: material(B, scene, 'danao-detail-courtyard-brass', '#b8842f', { specular: 0.42, specularPower: 104, ambient: 0.16 }),
+    drum: material(B, scene, 'danao-detail-courtyard-drum', '#9d302f', { specular: 0.18, specularPower: 52, ambient: 0.14 }),
     drumSkin: material(B, scene, 'danao-detail-courtyard-drum-skin', '#dbc99d'),
-    stone: material(B, scene, 'danao-detail-courtyard-stone', '#c1a374'),
-    lantern: material(B, scene, 'danao-detail-courtyard-lantern', '#e74335', { emissive: 0.24 }),
+    stone: material(B, scene, 'danao-detail-courtyard-stone', '#c1a374', { specular: 0.07, specularPower: 20, ambient: 0.18 }),
+    lantern: material(B, scene, 'danao-detail-courtyard-lantern', '#e74335', { emissive: 0.24, specular: 0.2, specularPower: 64, ambient: 0.14 }),
   };
   materials.push(...Object.values(mats));
 
@@ -235,13 +244,13 @@ function addCourtyardDetails(B, scene, root, reactive, materials) {
 
 function addRooftopDetails(B, scene, root, reactive, materials) {
   const mats = {
-    metal: material(B, scene, 'danao-detail-rooftop-metal', '#76878b'),
-    dark: material(B, scene, 'danao-detail-rooftop-dark', '#26303a'),
-    duct: material(B, scene, 'danao-detail-rooftop-duct-mat', '#9ba6a4'),
-    vent: material(B, scene, 'danao-detail-rooftop-vent-mat', '#69777b'),
-    pipe: material(B, scene, 'danao-detail-rooftop-pipe-mat', '#a85c42'),
-    neon: material(B, scene, 'danao-detail-rooftop-neon', '#f05c68', { emissive: 0.62 }),
-    neonBlue: material(B, scene, 'danao-detail-rooftop-neon-blue', '#5fb6d1', { emissive: 0.58 }),
+    metal: material(B, scene, 'danao-detail-rooftop-metal', '#76878b', { specular: 0.36, specularPower: 92, ambient: 0.16 }),
+    dark: material(B, scene, 'danao-detail-rooftop-dark', '#26303a', { specular: 0.1, specularPower: 44, ambient: 0.08 }),
+    duct: material(B, scene, 'danao-detail-rooftop-duct-mat', '#9ba6a4', { specular: 0.3, specularPower: 82, ambient: 0.16 }),
+    vent: material(B, scene, 'danao-detail-rooftop-vent-mat', '#69777b', { specular: 0.24, specularPower: 72, ambient: 0.13 }),
+    pipe: material(B, scene, 'danao-detail-rooftop-pipe-mat', '#a85c42', { specular: 0.2, specularPower: 58, ambient: 0.13 }),
+    neon: material(B, scene, 'danao-detail-rooftop-neon', '#f05c68', { emissive: 0.62, specular: 0.28, specularPower: 78, ambient: 0.18 }),
+    neonBlue: material(B, scene, 'danao-detail-rooftop-neon-blue', '#5fb6d1', { emissive: 0.58, specular: 0.28, specularPower: 78, ambient: 0.18 }),
   };
   materials.push(...Object.values(mats));
 
