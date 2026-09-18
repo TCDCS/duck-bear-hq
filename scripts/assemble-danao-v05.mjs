@@ -10,20 +10,22 @@ import { patchDanaoSupermarketVisuals } from './danao-supermarket-visual-patch.m
 import { patchDanaoSupermarketRuntime } from './danao-supermarket-runtime-patch.mjs';
 import { patchDanaoRealCharacterVisuals } from './danao-real-character-visual-patch.mjs';
 import { patchDanaoRealCharacterRuntime } from './danao-real-character-runtime-patch.mjs';
+import { patchDanaoFullCastVisuals } from './danao-full-cast-visual-patch.mjs';
+import { patchDanaoFullCastRuntime } from './danao-full-cast-runtime-patch.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const builds = [
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/runtime'),
     output: path.join(root, 'public/games/danao/src/game/runtime.js'),
-    sha256: '9480ec01feacdf7972c2ae77817ccebe53304a3d4b7596e74c6e20f285164d88',
-    transform: (source) => patchDanaoRealCharacterRuntime(patchDanaoSupermarketRuntime(patchDanaoV09Runtime(patchDanaoV08Runtime(source)))),
+    sha256: '7d131b810bdaa0b8250be7fb7e4937b79e5416cb91cd323c4ad42e1d681aad17',
+    transform: (source) => patchDanaoFullCastRuntime(patchDanaoRealCharacterRuntime(patchDanaoSupermarketRuntime(patchDanaoV09Runtime(patchDanaoV08Runtime(source))))),
   },
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/visuals'),
     output: path.join(root, 'public/games/danao/src/game/visuals.js'),
-    sha256: '06fe6956f08e588e53e86849110db8465ce0014ddb22089229c458fc5cc3fa31',
-    transform: (source) => patchDanaoRealCharacterVisuals(patchDanaoSupermarketVisuals(patchDanaoV07Visuals(source))),
+    sha256: 'a07bb66e534dc0ee8afb0899695b6874eb533d5b90752fa76387718a3ab179c0',
+    transform: (source) => patchDanaoFullCastVisuals(patchDanaoRealCharacterVisuals(patchDanaoSupermarketVisuals(patchDanaoV07Visuals(source)))),
   },
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/app'),

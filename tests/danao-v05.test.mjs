@@ -20,8 +20,8 @@ test('Danao v0.6 is the physics-chaos build rather than the old ring-out prototy
 });
 
 test('Danao release source is reconstructed byte-for-byte before tests and deploy', () => {
-  assert.equal(sha256('public/games/danao/src/game/runtime.js'), '9480ec01feacdf7972c2ae77817ccebe53304a3d4b7596e74c6e20f285164d88');
-  assert.equal(sha256('public/games/danao/src/game/visuals.js'), '06fe6956f08e588e53e86849110db8465ce0014ddb22089229c458fc5cc3fa31');
+  assert.equal(sha256('public/games/danao/src/game/runtime.js'), '7d131b810bdaa0b8250be7fb7e4937b79e5416cb91cd323c4ad42e1d681aad17');
+  assert.equal(sha256('public/games/danao/src/game/visuals.js'), 'a07bb66e534dc0ee8afb0899695b6874eb533d5b90752fa76387718a3ab179c0');
   assert.equal(sha256('public/games/danao/src/ui/App.js'), '98e729aa045e2094e06272ff91f183a994c069c757e0b46ba51feae7e186fa06');
   assert.equal(sha256('public/games/danao/src/styles.css'), 'c97800b4937d5f3b77dd83d4f4fe3166853f1718064a5ebe5191c407fa8bc725');
 });
@@ -39,11 +39,11 @@ test('Checkout Chaos is the flagship showcase and carries supermarket brawler pr
   assert.match(items, /baguette/);
 });
 
-test('Cloudflare deploy assembles the Danao v0.10.1 real-Hero benchmark before verification', () => {
+test('Cloudflare deploy assembles the Danao v0.10.2 full-cast rig release before verification', () => {
   const pkg = JSON.parse(read('package.json'));
   assert.match(pkg.scripts.deploy, /^npm run assemble:danao/);
   assert.equal(pkg.scripts['assemble:danao'], 'node scripts/assemble-danao-v05.mjs');
-  assert.match(read('public/games/danao/release.json'), /"version": "0\.10\.1"/);
+  assert.match(read('public/games/danao/release.json'), /"version": "0\.10\.2"/);
 });
 
 test('browser fighter select uses the complete Danao cast instead of generic stand-ins', () => {
