@@ -1,5 +1,5 @@
 name: Site Deploy
-# Manual content deploy trigger: Danao v0.10.7 online combat feedback parity
+# Manual content deploy trigger: Meow Wars v1.2 Online Rooms
 
 on:
   workflow_dispatch:
