@@ -1,6 +1,3 @@
-const MARKER = `props = [];
-spawnArenaProps(arena);`;
-
 const FIXTURES = `for (const fixture of arena.fixtures || []) {
   const size = fixture.size || [1, 1, 1];
   world.createCollider(
@@ -15,6 +12,7 @@ spawnArenaProps(arena);`;
 
 export function patchDanaoSupermarketRuntime(source) {
   const text = String(source);
-  if (!text.includes(MARKER)) throw new Error('Danao supermarket runtime patch marker missing: arena props');
-  return text.replace(MARKER, FIXTURES);
+  const pattern = /props\s*=\s*\[\];\s*spawnArenaProps\(arena\);/;
+  if (!pattern.test(text)) throw new Error('Danao supermarket runtime patch marker missing: arena props');
+  return text.replace(pattern, FIXTURES);
 }
