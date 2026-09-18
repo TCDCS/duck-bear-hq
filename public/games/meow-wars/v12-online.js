@@ -10,6 +10,7 @@ const SESSION_KEY = 'meow-wars-online-v1';
 const NAME_KEY = 'meow-wars-online-name';
 const SNAPSHOT_INTERVAL_MS = 100;
 const STATE_INTENT_INTERVAL_MS = 90;
+const ONLINE_TURN_MS = 45_000;
 
 const stats = globalThis.__MEOW_WARS_V12_STATS = {
   roomsCreated: 0,
@@ -1119,6 +1120,33 @@ const v11IsCpuTurn = GameScene.prototype.isCpuTurn;
 GameScene.prototype.isCpuTurn = function() {
   if (this.mode === 'online') return false;
   return v11IsCpuTurn.call(this);
+};
+
+const v11StartTurn = GameScene.prototype.startTurn;
+GameScene.prototype.startTurn = function(initial = false) {
+  const result = v11StartTurn.call(this, initial);
+  if (this.mode === 'online' && !this.gameOver) {
+    this.turnRemainingMs = ONLINE_TURN_MS;
+  }
+  return result;
+};
+
+const v11UpdateHud = GameScene.prototype.updateHud;
+GameScene.prototype.updateHud = function() {
+  const result = v11UpdateHud.call(this);
+  if (this.mode === 'online') {
+    if (this.hud?.centreText?.text) {
+      this.hud.centreText.setText(this.hud.centreText.text.replace('LOCAL 2P', 'ONLINE'));
+    }
+    if (networkFrozen(this)) {
+      this.hud?.setHelp?.('ONLINE · WAITING FOR RECONNECT…');
+    } else if (this.activeCat().team !== localTeam()) {
+      this.hud?.setHelp?.('ONLINE · OTHER PLAYER TURN');
+    } else {
+      this.hud?.setHelp?.('ONLINE · YOUR TURN');
+    }
+  }
+  return result;
 };
 
 const v11GameCreate = GameScene.prototype.create;
