@@ -1,5 +1,5 @@
 name: Site Deploy
-# Manual content deploy trigger: Meow Wars v1.6 Menu + City Life
+# Manual content deploy trigger: Wacky Races v5 visual and physics upgrade
 
 on:
   workflow_dispatch:
