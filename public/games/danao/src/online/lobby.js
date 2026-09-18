@@ -155,7 +155,7 @@ export function mountOnlineLobby(root, {
     if (!button) return;
     const action = button.dataset.onlineAction;
     if (action === 'open') { open = true; render(); return; }
-    if (action === 'local') { open = false; error = ''; onReturnLocal(); render(); return; }
+    if (action === 'local') { if (client.room) client.leave(); open = false; error = ''; onReturnLocal(); render(); return; }
     if (action === 'create') {
       run(async () => { await client.createRoom(localPlayerPayload()); });
       return;
