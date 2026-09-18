@@ -1,10 +1,10 @@
-/* Meow Wars v0.7.0 game-feel + Dublin landmark pass.
+/* Meow Wars v0.7.1 game-feel + Dublin landmark/branding pass.
    Loaded after v0.6 HD environments and before Phaser boot. */
 (() => {
 'use strict';
 
-const MW07_VERSION = '0.7.0';
-const MW07_BUILD = 'mw-v07-gamefeel-20260918a';
+const MW07_VERSION = '0.7.1';
+const MW07_BUILD = 'mw-v071-dublin-brand-20260918a';
 const DUBLIN_ID = 'oconnell-bridge-spire';
 const VIEW_W = 1280;
 const VIEW_H = 720;
@@ -79,6 +79,60 @@ function storefront(c, x, baseY, w, h, body, trim, sign, signColor, signText) {
   c.font = 'bold 12px Arial';
   c.textAlign = 'center';
   c.fillText(sign, x + w / 2, baseY - 61);
+}
+
+const CENTRA_TEAL = '#138d98';
+const CENTRA_YELLOW = '#efd01f';
+const SUPERVALU_RED = '#c8102e';
+const TEMPLE_RED = '#9a2025';
+const TEMPLE_BLACK = '#1f1a18';
+const TEMPLE_GOLD = '#e2c06d';
+
+function drawCentra(c, x, baseY, w, h) {
+  storefront(c, x, baseY, w, h, '#d2bba4', '#61534c', 'Centra', CENTRA_TEAL, CENTRA_YELLOW);
+  c.fillStyle = CENTRA_TEAL;
+  rr(c, x + 4, baseY - 84, w - 8, 33, 5); c.fill();
+  c.fillStyle = CENTRA_YELLOW;
+  c.font = 'bold 19px Arial';
+  c.textAlign = 'center';
+  c.fillText('Centra', x + w / 2, baseY - 60);
+}
+
+function drawSuperValu(c, x, baseY, w, h) {
+  storefront(c, x, baseY, w, h, '#d0bda6', '#665750', 'SuperValu', SUPERVALU_RED, '#ffffff');
+  c.fillStyle = SUPERVALU_RED;
+  rr(c, x + 3, baseY - 87, w - 6, 36, 4); c.fill();
+  c.fillStyle = '#ffffff';
+  c.font = 'bold 20px Arial';
+  c.textAlign = 'center';
+  c.fillText('SuperValu', x + w / 2, baseY - 61);
+}
+
+function drawTempleBar(c, x, baseY, w, h) {
+  c.fillStyle = TEMPLE_RED;
+  c.fillRect(x, baseY - h, w, h);
+  c.fillStyle = '#6f151b';
+  c.fillRect(x, baseY - h, w, 9);
+  c.fillStyle = TEMPLE_BLACK;
+  rr(c, x + 4, baseY - 88, w - 8, 38, 4); c.fill();
+
+  c.fillStyle = TEMPLE_GOLD;
+  c.font = 'bold 8px Georgia, Times New Roman, serif';
+  c.textAlign = 'center';
+  c.fillText('DUBLIN, IRELAND', x + w / 2, baseY - 78);
+  c.font = 'bold 19px Georgia, Times New Roman, serif';
+  c.fillText('THE TEMPLE BAR', x + w / 2, baseY - 60);
+  c.font = 'bold 8px Georgia, Times New Roman, serif';
+  c.fillText('Est. 1840', x + w / 2, baseY - 49);
+
+  c.fillStyle = '#38201e';
+  c.fillRect(x + 10, baseY - 43, w - 20, 36);
+  for (let px = x + 18; px < x + w - 18; px += 31) {
+    c.fillStyle = '#f2c777';
+    c.fillRect(px, baseY - 36, 17, 22);
+    c.fillStyle = '#9c2a26';
+    c.fillRect(px + 2, baseY - 34, 13, 18);
+  }
 }
 
 function drawSpire(c, x, baseY, height) {
@@ -176,6 +230,16 @@ function drawHapennyBridge(c) {
     rr(c, x - 4, y - 40, 8, 9, 2); c.fill();
   }
 
+  const centreX = (left + right) / 2;
+  const centreY = bridgeY(centreX, left, right, edgeY - 42, crestY - 42);
+  c.fillStyle = '#244b3b';
+  rr(c, centreX - 76, centreY - 35, 152, 25, 5); c.fill();
+  c.strokeStyle = '#f4eee0'; c.lineWidth = 2; c.stroke();
+  c.fillStyle = '#f7f1df';
+  c.font = 'bold 11px Georgia, Times New Roman, serif';
+  c.textAlign = 'center';
+  c.fillText("HA'PENNY BRIDGE", centreX, centreY - 18);
+
   c.restore();
 }
 
@@ -214,23 +278,20 @@ function drawDublinLayer(layer, c) {
     }
 
     // Bigger Spire, deliberately prominent in the skyline.
-    drawSpire(c, 1006, 405, 385);
+    drawSpire(c, 1040, 405, 400);
 
-    // Nearby current supermarket / convenience-store cues.
-    storefront(c, 118, 418, 174, 132, '#cab6a0', '#67554b', 'CENTRA', '#1f568f', '#ffd64f');
-    storefront(c, 824, 418, 190, 138, '#d0bda6', '#665750', 'SUPERVALU', '#267447', '#ffffff');
+    // Reference-matched Dublin storefronts and pub frontage.
+    drawCentra(c, 92, 418, 188, 132);
+    drawTempleBar(c, 312, 418, 308, 143);
+    drawSuperValu(c, 824, 418, 205, 138);
 
-    // Recognisable nearby pub names sit high enough to remain visible above destructible terrain.
-    c.fillStyle = '#5c2b27';
-    rr(c, 330, 326, 214, 28, 4); c.fill();
-    c.fillStyle = '#f2d28c';
-    c.font = 'bold 12px Arial';
-    c.textAlign = 'center';
-    c.fillText("HA'PENNY BRIDGE INN", 437, 345);
+    // Additional pub cue kept readable above destructible terrain.
     c.fillStyle = '#294536';
-    rr(c, 574, 304, 180, 28, 4); c.fill();
+    rr(c, 638, 307, 166, 28, 4); c.fill();
     c.fillStyle = '#f4e1b1';
-    c.fillText("MERCHANT'S ARCH", 664, 323);
+    c.font = 'bold 11px Georgia, Times New Roman, serif';
+    c.textAlign = 'center';
+    c.fillText("MERCHANT'S ARCH", 721, 326);
 
     // Quay architecture and church-like roofline to help the area read as central Dublin.
     c.fillStyle = '#7b7066';
@@ -625,7 +686,7 @@ function openV07Settings(scene) {
     'Build  ' + MW07_BUILD,
     '',
     'Dublin scene        Ha\u2019penny Bridge + enlarged Spire',
-    'Street detail       SuperValu · Centra · pub frontage',
+    'Street detail       reference-matched SuperValu · Centra · Temple Bar',
     'Battle effects      blast smoke · shock rings · debris · weapon trails',
     'Cat reactions       hit callouts · movement bob · impact lean',
     'World ambience      moving details on all 7 battlefields',
@@ -686,6 +747,7 @@ globalThis.__MEOW_WARS_BUILD_INFO = () => {
     version: MW07_VERSION,
     build: MW07_BUILD,
     dublinLandmark: 'Ha\u2019penny Bridge + Spire',
+    dublinBranding: ['Centra teal/yellow','SuperValu red/white','Temple Bar red/black/gold'],
     gameFeel: ['weapon-trails','blast-smoke','shock-rings','cat-reactions','arena-ambience'],
     fxStats: { ...fxStats }
   };
