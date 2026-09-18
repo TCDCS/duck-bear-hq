@@ -384,7 +384,7 @@ GameScene.prototype.paintTerrainTexture=function(){
 `;
 
 
-const ART_PASS_PATCH = String.raw\`
+const ART_PASS_PATCH = String.raw`
 function v06HdTrackObject(scene, obj, factor) {
     if (!obj || !Number.isFinite(obj.x)) return;
     obj.__mwParallaxBaseX = obj.x;
@@ -552,14 +552,14 @@ GameScene.prototype.updateEnvironmentV06=function(time){
     let focus=WIDTH/2;try{const cat=this.activeCat?.();if(cat&&Number.isFinite(cat.x))focus=cat.x;}catch{}
     const n=(focus/WIDTH)-.5;
     for(let i=0;i<(this.v06ParallaxLayers?.length||0);i+=1){const layer=this.v06ParallaxLayers[i],factor=layer.__mwParallaxFactor||0;layer.x=-n*72*factor+Math.sin(time*.00018+i)*4*factor;}
-    for(let i=0;i<(this.v06ParallaxObjects?.length||0);i+=1){const obj=this.v06ParallaxObjects[i],factor=obj.__mwParallaxFactor||0;base=obj.__mwParallaxBaseX;obj.x=base-n*72*factor+Math.sin(time*.00018+i*.7)*4*factor;}
+    for(let i=0;i<(this.v06ParallaxObjects?.length||0);i+=1){const obj=this.v06ParallaxObjects[i],factor=obj.__mwParallaxFactor||0,base=obj.__mwParallaxBaseX;obj.x=base-n*72*factor+Math.sin(time*.00018+i*.7)*4*factor;}
     if(!this.v06Water)return;
     if(!this.v06WaterGraphics)this.v06WaterGraphics=this.add.graphics().setDepth(this.v06Water.depth);
     const g=this.v06WaterGraphics,w=this.v06Water,x0=w.x0??-20,x1=w.x1??1300;
     g.clear();g.lineStyle(2,w.color,.52);
     for(let row=0;row<4;row+=1){const y=w.y+15+row*22;g.beginPath();let first=true;for(let x=x0;x<=x1;x+=16){const yy=y+Math.sin(x*.027+time*w.speed+row)*w.amplitude;if(first){g.moveTo(x,yy);first=false;}else g.lineTo(x,yy);}g.strokePath();}
 };
-\`;
+`;
 
 const MENU_PATCH = String.raw`
 const __mw_v06_MenuScene = __mw_game_MenuScene_js.MenuScene;
