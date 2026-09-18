@@ -556,7 +556,7 @@ GameScene.prototype.create=function(){
   setupScene(this);
   const marker=this.children.getByName('mw-build-marker');
   if(marker?.setText)marker.setText('v'+MW13_VERSION+' · '+MW13_BUILD);
-  const badge=this.add.text(1245,681,this.__mw13EnvironmentName.toUpperCase(),{
+  const badge=this.add.text(1245,148,this.__mw13EnvironmentName.toUpperCase(),{
     fontFamily:'Arial Black, Arial',fontSize:'9px',color:'#dff5ff',
     backgroundColor:'rgba(7,25,43,.62)',padding:{x:6,y:3}
   }).setOrigin(1,.5).setDepth(118);
