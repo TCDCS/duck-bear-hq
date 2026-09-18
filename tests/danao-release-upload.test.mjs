@@ -29,7 +29,7 @@ function githubFetch({mainSha=commit,runOverrides={}}={}){
     head_branch:'main',
     head_sha:commit,
     path:'.github/workflows/danao-release.yml',
-    repository:{full_name:'chambersbtap/duck-bear-hq'},
+    repository:{full_name:'TCDCS/duck-bear-hq'},
     ...runOverrides
    }),{status:200,headers:{'content-type':'application/json'}});
   }

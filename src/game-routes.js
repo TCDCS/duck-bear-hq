@@ -5,7 +5,7 @@ import {routeDanaoApi} from './danao/api.mjs';
 const ROOTS=['/games/wacky-races','/games/proper-karted'];
 const DANAO_RELEASE_PREFIX='/api/danao/release/';
 const DANAO_RELEASE_FILES=new Set(['Danao.loader.js','Danao.data','Danao.framework.js','Danao.wasm']);
-const DANAO_RELEASE_REPO='chambersbtap/duck-bear-hq';
+const DANAO_RELEASE_REPO='TCDCS/duck-bear-hq';
 const DANAO_RELEASE_WORKFLOW='.github/workflows/danao-release.yml';
 function headers(url,type='text/plain; charset=utf-8') {
   const socket=(url.protocol==='https:'?'wss://':'ws://')+url.host;
