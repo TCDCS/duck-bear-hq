@@ -140,6 +140,16 @@ jobs:
               return Boolean(body?.isEnabled?.() && hair?.isEnabled?.());
             }), 90000);
 
+            await poll('all default real cast rigs', async () => page.evaluate(() => {
+              const scene = globalThis.BABYLON?.EngineStore?.LastCreatedScene;
+              const nodeNames = (scene?.transformNodes || []).map((node) => node.name);
+              return [
+                'cast-rig-stephen',
+                'cast-rig-zachary',
+                'cast-rig-mulan',
+              ].every((name) => nodeNames.includes(name));
+            }), 90000);
+
             await page.waitForTimeout(2500);
 
             const sceneState = await page.evaluate(() => {
@@ -163,6 +173,14 @@ jobs:
                 heroBodyEnabled: enabled('Superhero_Female'),
                 heroHairEnabled: enabled('Hair_Buns'),
                 proceduralHeroEnabled: enabled('hero-torso'),
+                proceduralStephenEnabled: enabled('stephen-torso'),
+                proceduralZacharyEnabled: enabled('zachary-torso'),
+                proceduralMulanEnabled: enabled('mulan-torso'),
+                allDefaultRigsLoaded: [
+                  'cast-rig-stephen',
+                  'cast-rig-zachary',
+                  'cast-rig-mulan',
+                ].every((name) => (scene.transformNodes || []).some((node) => node.name === name)),
                 upperarmBonePresent: skeletonBones.includes('upperarm_r') && skeletonBones.includes('upperarm_l'),
                 wrestlingMeshes: names.filter((name) =>
                   /ring-rope|turnbuckle-pad|crowd-bench|announcer-desk|ring-step/.test(name)
@@ -187,6 +205,11 @@ jobs:
               && sceneState.upperarmBonePresent === true;
 
             report.checks.proceduralHeroHidden = sceneState.proceduralHeroEnabled === false;
+            report.checks.allDefaultRigsLoaded =
+              sceneState.allDefaultRigsLoaded === true
+              && sceneState.proceduralStephenEnabled === false
+              && sceneState.proceduralZacharyEnabled === false
+              && sceneState.proceduralMulanEnabled === false;
             report.checks.wrestlingGeometryRemoved = sceneState.wrestlingMeshes.length === 0;
             report.checks.noPageErrors = pageErrors.length === 0;
 
