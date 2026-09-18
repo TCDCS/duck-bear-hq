@@ -1,5 +1,5 @@
 name: Site Deploy
-# Manual content deploy trigger: Danao v0.10.6 combat feedback
+# Manual content deploy trigger: Danao v0.10.7 online combat feedback parity
 
 on:
   workflow_dispatch:
