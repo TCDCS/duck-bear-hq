@@ -574,6 +574,7 @@ MenuScene.prototype.create=function() {
   this.add.text(1160,45,'SETTINGS',{fontFamily:'Arial Black, Arial',fontSize:'13px',color:'#ffffff'}).setOrigin(.5).setDepth(491);
   settingsButton.on('pointerdown',()=>openV11Settings(this));
 
+  globalThis.__MEOW_WARS_MENU_SCENE=this;
   globalThis.__MEOW_WARS_MENU_READY=true;
 };
 
@@ -590,6 +591,7 @@ GameScene.prototype.create=function() {
   cleanupSceneState(this);
   v10GameCreate.call(this);
   createLivingProps(this);
+  globalThis.__MEOW_WARS_GAME_SCENE=this;
   globalThis.__MEOW_WARS_ACTIVE_ARENA=this.arena.id;
   globalThis.__MEOW_WARS_PENDING_ARENA=null;
   globalThis.__MEOW_WARS_LAST_CONFIRMED_ARENA=this.arena.id;
