@@ -42,32 +42,64 @@ function makeTextPlane(B, scene, style) {
     'combat-feedback-texture',
     { width: 768, height: 256 },
     scene,
-    true,
+    false,
   );
   texture.hasAlpha = true;
-  texture.drawText(
-    style.text,
-    null,
-    175,
-    'bold 110px Arial',
-    style.color,
-    'transparent',
-    true,
-    true,
-  );
+  const ctx = texture.getContext?.();
+  if (!ctx) return null;
+
+  ctx.clearRect(0, 0, 768, 256);
+  ctx.save();
+  ctx.translate(384, 128);
+  ctx.beginPath();
+  const points = 22;
+  for (let i = 0; i < points; i++) {
+    const angle = -Math.PI / 2 + (i / points) * Math.PI * 2;
+    const radiusX = i % 2 === 0 ? 354 : 292;
+    const radiusY = i % 2 === 0 ? 116 : 88;
+    const x = Math.cos(angle) * radiusX;
+    const y = Math.sin(angle) * radiusY;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = style.color;
+  ctx.globalAlpha = 0.96;
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = '#fff6dc';
+  ctx.lineWidth = 8;
+  ctx.stroke();
+
+  ctx.font = '900 108px Arial Black, Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#28151d';
+  ctx.lineWidth = 17;
+  ctx.strokeText(style.text, 0, 7);
+  ctx.fillStyle = '#28151d';
+  ctx.fillText(style.text, 0, 7);
+  ctx.restore();
+  texture.update?.(false);
 
   const mat = new B.StandardMaterial('combat-feedback-text-mat', scene);
   mat.diffuseTexture = texture;
-  mat.opacityTexture = texture;
-  mat.emissiveColor = color3(B, style.color).scale(0.8);
+  mat.emissiveTexture = texture;
+  mat.useAlphaFromDiffuseTexture = true;
+  mat.diffuseColor = new B.Color3(1, 1, 1);
+  mat.emissiveColor = new B.Color3(1, 1, 1);
   mat.specularColor = B.Color3.Black();
   mat.disableLighting = true;
   mat.disableDepthWrite = true;
   mat.backFaceCulling = false;
+  if (B.Material?.MATERIAL_ALPHABLEND != null) {
+    mat.transparencyMode = B.Material.MATERIAL_ALPHABLEND;
+  }
 
   const plane = B.MeshBuilder.CreatePlane(
     'combat-feedback-text',
-    { width: 3.25, height: 1.05 },
+    { width: 3.5, height: 1.15 },
     scene,
   );
   plane.material = mat;
