@@ -43,7 +43,7 @@ test('Cloudflare deploy assembles the Danao v0.10.3 presentation-corrected full-
   const pkg = JSON.parse(read('package.json'));
   assert.match(pkg.scripts.deploy, /^npm run assemble:danao/);
   assert.equal(pkg.scripts['assemble:danao'], 'node scripts/assemble-danao-v05.mjs');
-  assert.match(read('public/games/danao/release.json'), /"version": "0\.10\.2"/);
+  assert.match(read('public/games/danao/release.json'), /"version": "0\.10\.3"/);
 });
 
 test('browser fighter select uses the complete Danao cast instead of generic stand-ins', () => {
