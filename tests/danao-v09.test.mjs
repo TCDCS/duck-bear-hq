@@ -313,3 +313,53 @@ test('v0.9 packaged runtime exposes online authority, input and snapshot hooks',
   ]) assert.ok(runtime.includes(marker), marker);
   assert.match(runtime, /if \(!networkMode \|\| networkIsHost\)/);
 });
+
+
+test('v0.9 main mounts room client, online lobby and match bridge without replacing local play', () => {
+  const main = fs.readFileSync(path.join(root, 'public/games/danao/src/main.js'), 'utf8');
+  for (const marker of [
+    "from './online/room-client.js'",
+    "from './online/lobby.js'",
+    "from './online/match-bridge.js'",
+    'mountOnlineLobby',
+    'createOnlineMatchBridge',
+    'onlineBridge.tick',
+    'app?.beginMatch',
+  ]) assert.ok(main.includes(marker), marker);
+});
+
+test('v0.9 packaged app exposes an external beginMatch hook for online room starts', () => {
+  const app = fs.readFileSync(path.join(root, 'public/games/danao/src/ui/App.js'), 'utf8');
+  assert.match(app, /beginMatch/);
+  assert.match(app, /START_MATCH/);
+});
+
+test('v0.9 online bridge can report an authoritative host result through the room service', async () => {
+  const { createOnlineMatchBridge } = await import('../public/games/danao/src/online/match-bridge.js');
+  const sent = [];
+  const client = {
+    playerId: 0,
+    isHost: true,
+    on() { return () => {}; },
+    sendInput() { return true; },
+    sendState() { return true; },
+    sendResult(result) { sent.push(result); return true; },
+  };
+  const runtime = {
+    async startMatch() {},
+    setNetworkAuthority() {},
+    captureNetworkSnapshot() {
+      return { fighters: [{ slot: 0, hp: 50, active: true }, { slot: 1, hp: 0, active: false }] };
+    },
+    stopMatch() {},
+  };
+  const bridge = createOnlineMatchBridge({ client, runtime });
+  await bridge.start({ room: { hostId: 0, matchId: 1, players: [{ id: 0 }, { id: 1 }] }, localPlayerId: 0, arenaId: 'ring' });
+  assert.equal(bridge.reportResult({ winner: 'Hero' }), true);
+  assert.deepEqual(sent, [{ winner: 0, winnerTeam: -1, interrupted: false, reason: '' }]);
+});
+
+test('v0.9 LOCAL PLAY leaves an active online room instead of hiding it in the background', () => {
+  const lobby = fs.readFileSync(path.join(root, 'public/games/danao/src/online/lobby.js'), 'utf8');
+  assert.match(lobby, /if \(client\.room\) client\.leave\(\)/);
+});
