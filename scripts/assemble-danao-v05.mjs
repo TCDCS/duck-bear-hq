@@ -6,9 +6,9 @@ import crypto from 'node:crypto';
 const root = path.resolve(import.meta.dirname, '..');
 const builds = [
   {
-    source: path.join(root, 'scripts/danao-v05-gz/runtime.gz'),
+    partsDir: path.join(root, 'scripts/danao-v05-gz/runtime'),
     output: path.join(root, 'public/games/danao/src/game/runtime.js'),
-    sha256: '7e4f433225347badb7e51217792d278f1e1c84734e8d969d2439cb6ac7484d2a',
+    sha256: '7ac94b21b034514a5ffb9b447d3b38dbd64b008e71e89352bec1a0359f998df4',
   },
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/visuals'),
