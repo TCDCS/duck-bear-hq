@@ -318,6 +318,18 @@ try {
     throw new Error('Guest mobile movement was not applied authoritatively: ' + JSON.stringify({ beforeX, afterX, movementDiag }));
   }
 
+  // FIRE is tested as its own authoritative Red turn. This keeps slow CI
+  // screenshots/diagnostics from consuming the same timed turn used for movement.
+  await host.evaluate(() => {
+    const scene = globalThis.__MEOW_WARS_GAME_SCENE;
+    if (scene.activeCat().team !== 1) scene.endTurn('qa-red-fire');
+    scene.turnRemainingMs = 90000;
+  });
+  await Promise.all([
+    host.waitForFunction(() => globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().team === 1, null, { timeout: 5000 }),
+    guest.waitForFunction(() => globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().team === 1, null, { timeout: 5000 }),
+    host.waitForFunction(() => globalThis.__MEOW_WARS_ONLINE?.serverTurnTeam === 1, null, { timeout: 5000 })
+  ]);
   await guest.screenshot({ path: out('guest-mobile-before-fire.png'), fullPage: true });
 
   const beforeFire = await Promise.all([
