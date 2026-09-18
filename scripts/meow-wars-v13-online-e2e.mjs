@@ -362,6 +362,7 @@ try {
     host.evaluate(() => ({
       intentsReceived: globalThis.__MEOW_WARS_V12_STATS.intentsReceived,
       intentsApplied: globalThis.__MEOW_WARS_V12_STATS.intentsApplied,
+      fireActions: (globalThis.__meowWarsActionLog?.() || []).filter((entry) => entry?.action?.type === 'fire').length,
       activeTeam: globalThis.__MEOW_WARS_GAME_SCENE.activeCat().team,
       actionLocked: globalThis.__MEOW_WARS_GAME_SCENE.actionLocked
     })),
@@ -410,10 +411,9 @@ try {
     beforeFire[0].intentsApplied,
     { timeout: 5000 }
   );
-  await host.waitForFunction(() =>
-    globalThis.__MEOW_WARS_GAME_SCENE?.actionLocked ||
-    globalThis.__MEOW_WARS_GAME_SCENE?.projectiles?.length > 0,
-    null,
+  await host.waitForFunction((before) =>
+    (globalThis.__meowWarsActionLog?.() || []).filter((entry) => entry?.action?.type === 'fire').length > before,
+    beforeFire[0].fireActions,
     { timeout: 5000 }
   );
 
