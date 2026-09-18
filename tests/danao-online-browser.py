@@ -30,6 +30,16 @@ async def check(name, condition):
     print("PASS", name, flush=True)
 
 
+async def evidence_screenshot(page, path, *, full_page=False, timeout=30000):
+    """Capture optional QA evidence without turning rendering latency into a contract failure."""
+    try:
+        await page.screenshot(path=str(path), full_page=full_page, timeout=timeout)
+        return True
+    except Exception as error:
+        print(f"WARN optional screenshot skipped: {path.name}: {error}", flush=True)
+        return False
+
+
 def parse_frame(payload):
     if isinstance(payload, bytes):
         try:
@@ -233,8 +243,8 @@ async def main():
             await check("mobile room actions are all visible without scrolling", mobile_lobby["readyVisible"] and mobile_lobby["leaveVisible"] and mobile_lobby["localVisible"])
             await check("mobile room roster uses two compact columns", len(mobile_lobby["playerColumns"].split()) >= 2)
 
-            await host.screenshot(path=str(OUT / f"{LABEL}-lobby-host.png"))
-            await guest.screenshot(path=str(OUT / f"{LABEL}-lobby-mobile.png"))
+            await evidence_screenshot(host, OUT / f"{LABEL}-lobby-host.png")
+            await evidence_screenshot(guest, OUT / f"{LABEL}-lobby-mobile.png")
 
             await host.locator('[data-online-action="start"]').click()
 
@@ -302,8 +312,8 @@ async def main():
                 any(value.get("type") == "snapshot" for value in guest_net["received"]),
             )
 
-            await host.screenshot(path=str(OUT / f"{LABEL}-fight-host.png"))
-            await guest.screenshot(path=str(OUT / f"{LABEL}-fight-mobile.png"))
+            await evidence_screenshot(host, OUT / f"{LABEL}-fight-host.png")
+            await evidence_screenshot(guest, OUT / f"{LABEL}-fight-mobile.png")
 
             old_guest_id = guest_id
             guest_net["sent"].clear()
@@ -339,7 +349,12 @@ async def main():
                 timeout=30000,
             )
             await check("reconnected mobile guest resumes authoritative snapshots", fighter_x(reconnect_snapshot, old_guest_id) is not None)
-            await guest.screenshot(path=str(OUT / f"{LABEL}-reconnected-mobile.png"))
+            reconnect_evidence = await evidence_screenshot(
+                guest,
+                OUT / f"{LABEL}-reconnected-mobile.png",
+                timeout=15000,
+            )
+            report["reconnectScreenshotCaptured"] = reconnect_evidence
 
             version = await guest_context.request.get(BASE + "/games/danao/release.json")
             release = await version.json()
@@ -370,7 +385,12 @@ async def main():
             report["failure"] = str(error)
             for page, name in [(host, "host"), (guest, "guest")]:
                 try:
-                    await page.screenshot(path=str(OUT / f"{LABEL}-failure-{name}.png"), full_page=True)
+                    await evidence_screenshot(
+                        page,
+                        OUT / f"{LABEL}-failure-{name}.png",
+                        full_page=True,
+                        timeout=10000,
+                    )
                 except Exception:
                     pass
             raise
