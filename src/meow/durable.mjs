@@ -268,6 +268,9 @@ export class MeowRoom {
       } else if (msg.type === 'fire') {
         const action = R.fire(this.room, attachment.id, msg, now);
         this.broadcast({ type: 'action', action });
+      } else if (msg.type === 'pass') {
+        const action = R.passTurn(this.room, attachment.id, msg, now);
+        this.broadcast({ type: 'action', action });
       } else if (msg.type === 'checkpoint') {
         const accepted = R.setCheckpoint(this.room, attachment.id, msg.checkpoint, now);
         if (accepted) this.broadcast({ type: 'checkpoint', checkpoint: this.room.checkpoint }, attachment.id);
