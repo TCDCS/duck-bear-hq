@@ -1,0 +1,111 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+
+import { fighterPose } from '../public/games/danao/src/game/presentation.js';
+
+const root = path.resolve(import.meta.dirname, '..');
+const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
+
+const bounded = (value, name) => {
+  assert.ok(Number.isFinite(value), `${name} must be finite`);
+  assert.ok(value >= -1.001 && value <= 1.001, `${name} must stay bounded: ${value}`);
+};
+
+test('v0.7 attack pose has separate wind-up, contact and recovery phases', () => {
+  const lightUntil = 1000 + 155;
+  const windup = fighterPose({ now: 1000 + 31, attackKind: 'light', attackUntil: lightUntil });
+  const contact = fighterPose({ now: 1000 + 78, attackKind: 'light', attackUntil: lightUntil });
+  const recovery = fighterPose({ now: 1000 + 132, attackKind: 'light', attackUntil: lightUntil });
+
+  assert.ok(windup.attackWindup > 0.45);
+  assert.ok(windup.attackReach < 0.35);
+  assert.ok(contact.attackReach > 0.7);
+  assert.ok(recovery.attackRecovery > 0.5);
+
+  const heavyUntil = 2000 + 250;
+  const heavyWindup = fighterPose({ now: 2000 + 75, attackKind: 'heavy', attackUntil: heavyUntil });
+  assert.ok(heavyWindup.attackWindup > 0.7);
+  assert.ok(Math.abs(heavyWindup.bodyTwist) > 0.35);
+});
+
+test('v0.7 locomotion, jump, dodge and recoil pose values are finite and readable', () => {
+  const running = fighterPose({ now: 900, speed: 5.2, grounded: true, verticalSpeed: 0 });
+  assert.ok(Math.abs(running.stride) > 0.1);
+  assert.ok(running.footLift >= 0);
+
+  const airborne = fighterPose({ now: 900, speed: 3, grounded: false, verticalSpeed: 5.5 });
+  assert.ok(airborne.jumpTuck > 0.4);
+
+  const dodging = fighterPose({ now: 1000, dodgeUntil: 1180 });
+  assert.ok(Math.abs(dodging.dodgeLean) > 0.35);
+
+  const recoiling = fighterPose({ now: 1000, hitStunUntil: 1320 });
+  assert.ok(recoiling.recoil > 0.5);
+
+  for (const [name, value] of Object.entries({ 
+    stride: running.stride,
+    footLift: running.footLift,
+    jumpTuck: airborne.jumpTuck,
+    dodgeLean: dodging.dodgeLean,
+    recoil: recoiling.recoil,
+    attackWindup: recoiling.attackWindup,
+    attackReach: recoiling.attackReach,
+    attackRecovery: recoiling.attackRecovery,
+    bodyTwist: recoiling.bodyTwist,
+  })) bounded(value, name);
+});
+
+
+test('v0.7 packaged runtime consumes the richer combat pose model', () => {
+  const runtime = read('public/games/danao/src/game/runtime.js');
+  for (const marker of [
+    'verticalSpeed: v.y',
+    'grounded: grounded(fighter)',
+    'pose.attackWindup',
+    'pose.attackReach',
+    'pose.attackRecovery',
+    'pose.bodyTwist',
+    'pose.recoil',
+    'pose.footLift',
+    'pose.jumpTuck',
+    'pose.dodgeLean',
+  ]) assert.ok(runtime.includes(marker), marker);
+});
+
+
+test('v0.7 packaged visuals layer impact bursts, shards and floor debris feedback', () => {
+  const visuals = read('public/games/danao/src/game/visuals.js');
+  for (const marker of [
+    'impact-burst',
+    'impact-shard',
+    'impact-core',
+    'debris-floor-burst',
+    'disposeImpactPart',
+  ]) assert.ok(visuals.includes(marker), marker);
+});
+
+
+test('v0.7 comedy props break and arena dressing is denser without changing pan durability', async () => {
+  const { getItemDefinition } = await import('../public/games/danao/src/game/items.js');
+  const { getArena } = await import('../public/games/danao/src/game/arena.js');
+  assert.equal(getItemDefinition('baguette').breakable, true);
+  assert.equal(getItemDefinition('baguette').hp, 10);
+  assert.equal(getItemDefinition('mallet').breakable, true);
+  assert.equal(getItemDefinition('mallet').hp, 22);
+  assert.equal(getItemDefinition('cone').breakable, true);
+  assert.equal(getItemDefinition('cone').hp, 16);
+  assert.notEqual(getItemDefinition('pan').breakable, true);
+  assert.ok(getArena('courtyard').props.length >= 8);
+  assert.ok(getArena('rooftop').props.length >= 8);
+
+  const visuals = read('public/games/danao/src/game/visuals.js');
+  for (const marker of [
+    'courtyard-lantern-string',
+    'courtyard-drum',
+    'roof-vent',
+    'roof-hanging-sign',
+    'crowd-cheer-arm',
+  ]) assert.ok(visuals.includes(marker), marker);
+});

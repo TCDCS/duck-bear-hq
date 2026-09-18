@@ -2,18 +2,20 @@ import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import crypto from 'node:crypto';
+import { patchDanaoV07Visuals } from './danao-v07-visual-patch.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const builds = [
   {
-    source: path.join(root, 'scripts/danao-v05-gz/runtime.gz'),
+    partsDir: path.join(root, 'scripts/danao-v05-gz/runtime'),
     output: path.join(root, 'public/games/danao/src/game/runtime.js'),
-    sha256: '7e4f433225347badb7e51217792d278f1e1c84734e8d969d2439cb6ac7484d2a',
+    sha256: '7ac94b21b034514a5ffb9b447d3b38dbd64b008e71e89352bec1a0359f998df4',
   },
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/visuals'),
     output: path.join(root, 'public/games/danao/src/game/visuals.js'),
-    sha256: '2deca94165ae72f9fa50c9a35394017721ba8c6ce2ccb909435023cc43c15426',
+    sha256: '38344470446870e174188d8c2b260042199b1cd41fab96f6b00bf9bbfe752a57',
+    transform: patchDanaoV07Visuals,
   },
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/app'),
@@ -28,14 +30,17 @@ const builds = [
 ];
 
 function readReleaseSource(build) {
+  let source;
   if (build.partsDir) {
     const names = fs.readdirSync(build.partsDir).filter((name) => name.endsWith('.part')).sort();
     if (!names.length) throw new Error(`No Danao release parts found in ${path.relative(root, build.partsDir)}`);
     const encoded = names.map((name) => fs.readFileSync(path.join(build.partsDir, name), 'utf8').trim()).join('');
-    return zlib.gunzipSync(Buffer.from(encoded, 'base64'));
+    source = zlib.gunzipSync(Buffer.from(encoded, 'base64'));
+  } else {
+    if (!fs.existsSync(build.source)) throw new Error(`Missing Danao release source ${path.relative(root, build.source)}`);
+    source = zlib.gunzipSync(fs.readFileSync(build.source));
   }
-  if (!fs.existsSync(build.source)) throw new Error(`Missing Danao release source ${path.relative(root, build.source)}`);
-  return zlib.gunzipSync(fs.readFileSync(build.source));
+  return build.transform ? Buffer.from(build.transform(source.toString('utf8')), 'utf8') : source;
 }
 
 for (const build of builds) {

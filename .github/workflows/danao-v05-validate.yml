@@ -2,13 +2,13 @@ name: Danao v0.5 Validate
 
 on:
   push:
-    branches: [release/danao-v05, feature/danao-mango-cast]
+    branches: [release/danao-v05, 'feature/danao-*']
     paths:
       - 'public/games/danao/**'
       - 'public/games/index.html'
       - 'scripts/assemble-danao-v05.mjs'
       - 'scripts/danao-v05-gz/**'
-      - 'tests/danao-v05.test.mjs'
+      - 'tests/danao-*.test.mjs'
       - 'package.json'
       - '.github/workflows/danao-v05-validate.yml'
   workflow_dispatch:
