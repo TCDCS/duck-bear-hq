@@ -39,11 +39,11 @@ test('Checkout Chaos is the flagship showcase and carries supermarket brawler pr
   assert.match(items, /baguette/);
 });
 
-test('Cloudflare deploy assembles the exact Danao v0.9 release before verification', () => {
+test('Cloudflare deploy assembles the Danao v0.10 visual rebuild before verification', () => {
   const pkg = JSON.parse(read('package.json'));
   assert.match(pkg.scripts.deploy, /^npm run assemble:danao/);
   assert.equal(pkg.scripts['assemble:danao'], 'node scripts/assemble-danao-v05.mjs');
-  assert.match(read('public/games/danao/release.json'), /"version": "0\.9\.0"/);
+  assert.match(read('public/games/danao/release.json'), /"version": "0\.10\.0"/);
 });
 
 test('browser fighter select uses the complete Danao cast instead of generic stand-ins', () => {
