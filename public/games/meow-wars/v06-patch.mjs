@@ -403,8 +403,8 @@ __mw_v06_MenuScene.prototype.showV06Settings = function() {
     c.add(this.add.rectangle(640,360,1280,720,0x07111f,0.72).setInteractive());
     c.add(this.add.rectangle(640,350,590,420,0x122c4b,0.98).setStrokeStyle(4,0x70d9ff,0.9));
     c.add(this.add.text(640,190,'SETTINGS / BUILD INFO',{fontFamily:'Arial Black, Arial',fontSize:'27px',color:'#ffd253'}).setOrigin(.5));
-    c.add(this.add.text(390,245,'VERSION\\nBUILD\\nGRAPHICS\\nART PIPELINE\\nBATTLEFIELDS\\nCONTROLS',{fontFamily:'Arial Black, Arial',fontSize:'15px',color:'#9edcff',lineSpacing:15}));
-    c.add(this.add.text(545,245,'0.6.0\\nmw-v06-env-20260918a\\nAdaptive HD → 4K render scale\\nVector / procedural 4K-source layers\\n7\\nA/D move · W/S aim · Q/E weapons · Space fire',{fontFamily:'Arial',fontSize:'15px',color:'#ffffff',lineSpacing:15}));
+    c.add(this.add.text(390,245,'VERSION\nBUILD\nGRAPHICS\nART PIPELINE\nBATTLEFIELDS\nCONTROLS',{fontFamily:'Arial Black, Arial',fontSize:'15px',color:'#9edcff',lineSpacing:15}));
+    c.add(this.add.text(545,245,'0.6.0\nmw-v06-env-20260918a\nAdaptive HD → 4K render scale\nVector / procedural 4K-source layers\n7\nA/D move · W/S aim · Q/E weapons · Space fire',{fontFamily:'Arial',fontSize:'15px',color:'#ffffff',lineSpacing:15}));
     const close=this.add.text(640,505,'CLOSE',{fontFamily:'Arial Black, Arial',fontSize:'18px',color:'#ffffff',backgroundColor:'#e1544f',padding:{x:24,y:10}}).setOrigin(.5).setInteractive({useHandCursor:true});
     close.on('pointerdown',()=>{c.destroy(true);this.v06SettingsPanel=null;});
     c.add(close); this.v06SettingsPanel=c;
@@ -419,21 +419,21 @@ export function patchSource(input) {
   source = replaceOnce(
     source,
     "const BY_ID = new Map(ARENAS.map((arena) => [arena.id, arena]));",
-    ARENA_PATCH + "\\nconst BY_ID = new Map(ARENAS.map((arena) => [arena.id, arena]));",
+    ARENA_PATCH + "\nconst BY_ID = new Map(ARENAS.map((arena) => [arena.id, arena]));",
     'arena catalogue'
   );
 
   source = replaceOnce(
     source,
     "// --- game/MenuScene.js ---",
-    RUNTIME_PATCH + "\\n\\n// --- game/MenuScene.js ---",
+    RUNTIME_PATCH + "\n\n// --- game/MenuScene.js ---",
     'runtime patch insertion'
   );
 
   source = replaceOnce(
     source,
     "const __mw_main_js = (() => {",
-    MENU_PATCH + "\\n\\nconst __mw_main_js = (() => {",
+    MENU_PATCH + "\n\nconst __mw_main_js = (() => {",
     'menu patch insertion'
   );
 
@@ -446,8 +446,8 @@ export function patchSource(input) {
 
   source = replacePatternOnce(
     source,
-    /function preferredRenderResolution\\s*\\([^)]*\\)\\s*\\{[\\s\\S]*?\\n\\}/g,
-    "function preferredRenderResolution(devicePixelRatio = 1) {\\n    const viewportScale = Math.max((globalThis.innerWidth || 1280) / 1280, (globalThis.innerHeight || 720) / 720);\\n    const mobileCap = (globalThis.innerWidth || 1280) < 800 ? 2 : 3;\\n    return Math.min(mobileCap, 3, Math.max(1, devicePixelRatio, viewportScale));\\n}",
+    /function preferredRenderResolution\s*\([^)]*\)\s*\{[\s\S]*?\n\}/g,
+    "function preferredRenderResolution(devicePixelRatio = 1) {\n    const viewportScale = Math.max((globalThis.innerWidth || 1280) / 1280, (globalThis.innerHeight || 720) / 720);\n    const mobileCap = (globalThis.innerWidth || 1280) < 800 ? 2 : 3;\n    return Math.min(mobileCap, 3, Math.max(1, devicePixelRatio, viewportScale));\n}",
     'adaptive HD/4K render resolution'
   );
 
