@@ -190,3 +190,29 @@ test('v0.9 room client rate-limits inputs to 30 Hz and host snapshots to 15 Hz',
   assert.deepEqual(inputs.map((m) => m.seq), [1, 2]);
   assert.deepEqual(states.map((m) => m.state.seq), [1, 2]);
 });
+
+
+test('v0.9 online lobby UI is separate from local play and exposes room actions', () => {
+  const lobbyPath = path.join(root, 'public/games/danao/src/online/lobby.js');
+  const cssPath = path.join(root, 'public/games/danao/src/online/online.css');
+  assert.equal(fs.existsSync(lobbyPath), true);
+  assert.equal(fs.existsSync(cssPath), true);
+  const lobby = fs.readFileSync(lobbyPath, 'utf8');
+  for (const text of ['ONLINE PLAY', 'CREATE ROOM', 'JOIN ROOM', 'ROOM CODE', 'LOCAL PLAY']) {
+    assert.ok(lobby.includes(text), text);
+  }
+  const html = fs.readFileSync(path.join(root, 'public/games/danao/index.html'), 'utf8');
+  assert.match(html, /src\/online\/online\.css/);
+  assert.match(html, /id="online-shell"/);
+});
+
+test('v0.9 lobby maps only the three Babylon arenas and eight Mango fighters to server choices', async () => {
+  const lobby = await import('../public/games/danao/src/online/lobby.js');
+  assert.equal(lobby.localArenaToServer('ring'), 'WrestlingArena');
+  assert.equal(lobby.localArenaToServer('courtyard'), 'TempleCourtyard');
+  assert.equal(lobby.localArenaToServer('rooftop'), 'SichuanTeaHouse');
+  assert.equal(lobby.serverArenaToLocal('WrestlingArena'), 'ring');
+  assert.equal(lobby.fighterIdToCharacter('hero'), 'Hero');
+  assert.equal(lobby.fighterIdToCharacter('mulan'), 'Mulan');
+  assert.equal(lobby.fighterIdToCharacter('dad'), 'Dad');
+});
