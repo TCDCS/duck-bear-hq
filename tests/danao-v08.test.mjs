@@ -120,3 +120,22 @@ test('v0.8 bruiser bots pressure nearby opponents with attacks and can grab a do
   );
   assert.equal(grab.grab, true);
 });
+
+
+test('v0.8 packaged runtime supplies live world context to bot decisions', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { default: path } = await import('node:path');
+  const runtime = readFileSync(path.resolve(import.meta.dirname, '../public/games/danao/src/game/runtime.js'), 'utf8');
+  for (const marker of [
+    "import { botIntent, botProfileForSlot } from './bot.js';",
+    "botProfile: control.type === 'bot' ? botProfileForSlot(slot) : null",
+    'arenaSize: currentArena.size',
+    'hazards: hazards.map',
+    'props: props.map',
+    'heldProp: Boolean(fighter.heldPropId)',
+    'holdingFighter: Boolean(fighter.grabbedFighterId)',
+    'targetKnockedDown: target.knockedDown',
+    'profile: fighter.botProfile',
+  ]) assert.ok(runtime.includes(marker), marker);
+  assert.doesNotMatch(runtime, /Math\.random\(\) < 0\.012/);
+});
