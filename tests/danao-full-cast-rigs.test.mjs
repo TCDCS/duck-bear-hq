@@ -10,6 +10,7 @@ test('full cast vendors shared male and accessory rigs plus a real animated Mula
   const files = [
     'public/games/danao/assets/characters/cast/male/male.gltf',
     'public/games/danao/assets/characters/cast/male/male.bin',
+    'public/games/danao/assets/characters/cast/male/male-eye-brown.png',
     'public/games/danao/assets/characters/cast/hair/parted.glb',
     'public/games/danao/assets/characters/cast/hair/buzzed.glb',
     'public/games/danao/assets/characters/cast/hair/buzzed-female.glb',
@@ -25,7 +26,7 @@ test('full cast vendors shared male and accessory rigs plus a real animated Mula
 test('male shared glTF is local and stripped to lightweight toon materials', () => {
   const gltf = JSON.parse(read('public/games/danao/assets/characters/cast/male/male.gltf'));
   assert.equal(gltf.buffers[0].uri, 'male.bin');
-  assert.deepEqual(gltf.images.map((image) => image.uri), ['../../hero/hero-eye-brown.png']);
+  assert.deepEqual(gltf.images.map((image) => image.uri), ['male-eye-brown.png']);
   assert.equal(gltf.materials.length, 3);
   assert.equal(gltf.materials[2].name, 'Danao_Male_Body');
   assert.equal(gltf.materials[2].normalTexture, undefined);
