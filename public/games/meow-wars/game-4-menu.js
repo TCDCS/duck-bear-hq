@@ -69,50 +69,40 @@ class MenuScene extends Phaser.Scene {
     drawGardenBackdrop() {
         this.cameras.main.setBackgroundColor('#62c9f4');
         const g = this.add.graphics().setDepth(-20);
-        g.fillStyle(0x64caf4, 1);
-        g.fillRect(0, 0, 1280, 720);
-        g.fillStyle(0xa8e8ff, 1);
-        g.fillRect(0, 310, 1280, 410);
-        g.fillStyle(0xffe58b, 1);
-        g.fillCircle(1110, 82, 64);
-        this.drawCloud(95, 82, 0.9);
-        this.drawCloud(300, 120, 0.65);
-        this.drawCloud(965, 105, 0.7);
-        this.drawCloud(1200, 150, 0.55);
-        const houseColors = [0xffd78d, 0xf7ad9d, 0xc7d6ff, 0xf2d3a5, 0xdac2ef];
-        for (let i = 0; i < 8; i += 1) {
-            const x = 40 + i * 175;
-            const y = 315 + (i % 2) * 24;
-            g.fillStyle(houseColors[i % houseColors.length], 0.92);
-            g.fillRect(x, y, 118, 125);
-            g.fillStyle(i % 2 ? 0x38597d : 0xc85c4f, 1);
-            g.fillTriangle(x - 12, y, x + 59, y - 58, x + 130, y);
-            g.fillStyle(0x72a4c9, 0.78);
-            g.fillRect(x + 20, y + 30, 22, 31);
-            g.fillRect(x + 75, y + 30, 22, 31);
-            g.fillStyle(0xd66e69, 0.8);
-            g.fillRoundedRect(x + 49, y + 77, 28, 48, 5);
+        const skyBands = [0x5fc3ee,0x68c8ef,0x73cdf1,0x7ed2f2,0x8ad7f4,0x97dcf5,0xa5e1f7,0xb4e6f8,0xc3ebf9,0xd3f0fa,0xe3f6fc];
+        skyBands.forEach((c,i)=>{ g.fillStyle(c,1); g.fillRect(0,i*34,1280,36); });
+        g.fillStyle(0xffe58b,1); g.fillCircle(1110,82,64);
+        this.drawCloud(95,82,.9); this.drawCloud(300,120,.65); this.drawCloud(965,105,.7); this.drawCloud(1200,150,.55);
+        g.fillStyle(0xb1dcae,1); g.fillEllipse(180,365,520,190); g.fillEllipse(650,350,610,230); g.fillEllipse(1120,360,530,205);
+        g.fillStyle(0x82c79a,1); g.fillEllipse(80,405,520,190); g.fillEllipse(500,400,580,210); g.fillEllipse(940,405,630,220); g.fillEllipse(1280,415,480,185);
+        const houseColors=[0xf4b96e,0xea8f87,0xaebfe7,0xe8c48b,0xbfa5d7,0xe69d79];
+        for(let i=0;i<10;i+=1){
+            const x=-30+i*145, y=322+(i%3)*18, w=122, h=132+(i%2)*14;
+            g.fillStyle(0x52677c,.18); g.fillRect(x+8,y+8,w,h);
+            g.fillStyle(houseColors[i%houseColors.length],.98); g.fillRect(x,y,w,h);
+            g.fillStyle(i%2?0x4e6686:0xb95649,1); g.fillTriangle(x-12,y,x+w/2,y-62,x+w+12,y);
+            g.fillStyle(0xf6efdc,1); g.fillRect(x+10,y+12,w-20,6);
+            for(let wx=x+20;wx<x+w-18;wx+=43){
+                g.fillStyle(0x5e96bd,1); g.fillRoundedRect(wx,y+34,24,31,3);
+                g.fillStyle(0xdaf5ff,.85); g.fillRect(wx+5,y+39,7,10);
+            }
+            g.fillStyle(0x86523d,1); g.fillRoundedRect(x+w*.42,y+h-50,27,50,4);
+            if(i%3===0){ g.fillStyle(0x80513f,1); g.fillRect(x+w*.73,y-37,16,38); g.fillRect(x+w*.70,y-41,22,6); }
         }
-        for (const [x, s] of [[60, 1.1], [220, .8], [470, 1.0], [805, .95], [1130, 1.15]])
-            this.drawTree(x, 370, s);
-        g.fillStyle(0xf8f0d8, 1);
-        for (let x = 0; x < 1280; x += 42) {
-            g.fillRoundedRect(x, 442, 9, 82, 3);
-            g.fillTriangle(x, 442, x + 4.5, 432, x + 9, 442);
+        for(const [x,sc] of [[40,1.0],[210,.75],[420,.9],[690,.8],[920,1.0],[1160,.9]]) this.drawTree(x,385,sc);
+        g.fillStyle(0x396f43,1); for(let x=20;x<1280;x+=105){ g.fillCircle(x,438,26); g.fillCircle(x+24,441,23); g.fillCircle(x+10,420,24); }
+        g.fillStyle(0xf8f0d8,1);
+        for(let x=0;x<1280;x+=42){ g.fillRoundedRect(x,442,9,82,3); g.fillTriangle(x,442,x+4.5,432,x+9,442); }
+        g.fillRect(0,463,1280,8); g.fillRect(0,500,1280,8);
+        g.fillStyle(0x55b84d,1); g.fillRect(0,500,1280,220);
+        g.fillStyle(0x329243,1); g.fillRect(0,532,1280,188);
+        g.fillStyle(0x2b7c39,.55); for(let x=0;x<1280;x+=32) g.fillTriangle(x,545,x+8,520,x+16,545);
+        for(let i=0;i<82;i+=1){
+            const x=10+((i*97)%1270), y=505+((i*53)%112);
+            this.drawFlower(x,y,[0xff6f80,0xffcf4f,0xffffff,0x7dcbff][i%4],.65+(i%3)*.15);
         }
-        g.fillRect(0, 463, 1280, 8);
-        g.fillRect(0, 500, 1280, 8);
-        g.fillStyle(0x4fae48, 1);
-        g.fillRect(0, 500, 1280, 220);
-        g.fillStyle(0x2f8b3d, 1);
-        g.fillRect(0, 532, 1280, 188);
-        for (let i = 0; i < 64; i += 1) {
-            const x = 10 + ((i * 97) % 1270);
-            const y = 505 + ((i * 53) % 112);
-            this.drawFlower(x, y, [0xff6f80, 0xffcf4f, 0xffffff, 0x7dcbff][i % 4], 0.65 + (i % 3) * 0.15);
-        }
-        this.drawWoodSign(78, 238, ['SAME CATS', 'BIGGER BOOMS']);
-        this.drawWoodSign(1196, 252, ['PLAN', 'AIM', 'YEET']);
+        this.drawWoodSign(78,238,['SAME CATS','BIGGER BOOMS']);
+        this.drawWoodSign(1196,252,['PLAN','AIM','YEET']);
     }
     drawCloud(x, y, scale) {
         const g = this.add.graphics().setDepth(-18);
