@@ -46,7 +46,7 @@ jobs:
           LIVE_URL: https://duck-bear-hq.zachary-chambers2.workers.dev/games/meow-wars/
         run: |
           mkdir -p verification/meow-v06
-          cat > /tmp/meow-qa.mjs <<'JS'
+          cat > ./meow-qa.mjs <<'JS'
           import { chromium } from 'playwright';
           import fs from 'node:fs/promises';
 
@@ -117,7 +117,7 @@ jobs:
           }
           console.log(JSON.stringify(report,null,2));
           JS
-          node /tmp/meow-qa.mjs
+          node ./meow-qa.mjs
       - name: Upload visual QA
         if: always()
         uses: actions/upload-artifact@v4
