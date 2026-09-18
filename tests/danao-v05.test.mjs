@@ -89,3 +89,29 @@ test('Danao v0.6 adds heavier impact feel, destruction feedback and a lower part
   assert.match(visuals, /announcer-desk/);
   assert.match(visuals, /ring-step/);
 });
+
+
+test('Danao fighters preserve the established Mango Mayhem visual identities', () => {
+  const visuals = read('public/games/danao/src/game/visuals.js');
+  const app = read('public/games/danao/src/ui/App.js');
+  const css = read('public/games/danao/src/styles.css');
+
+  assert.match(visuals, /const MANGO_IDENTITIES = Object\.freeze/);
+  assert.match(visuals, /sourceId: 'guannan'/);
+  for (const marker of [
+    'hero-bun',
+    'stephen-glasses',
+    'gaby-sunglasses',
+    'zachary-beard',
+    'sara-long-hair',
+    'mulan-dog-muzzle',
+    'mum-bob-hair',
+    'dad-glasses',
+  ]) assert.match(visuals, new RegExp(marker));
+
+  assert.match(app, /fighter-avatar fighter-avatar-\$\{fighter\.id\}/);
+  assert.match(app, /hud-avatar fighter-avatar fighter-avatar-\$\{fighter\.id\}/);
+  assert.match(css, /\.fighter-avatar-mulan/);
+  assert.match(css, /\.fighter-avatar-stephen/);
+  assert.match(css, /\.hud-avatar/);
+});
