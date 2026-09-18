@@ -4,14 +4,16 @@ import zlib from 'node:zlib';
 import crypto from 'node:crypto';
 import { patchDanaoV07Visuals } from './danao-v07-visual-patch.mjs';
 import { patchDanaoV08Runtime } from './danao-v08-runtime-patch.mjs';
+import { patchDanaoV09Runtime } from './danao-v09-runtime-patch.mjs';
+import { patchDanaoV09App } from './danao-v09-app-patch.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const builds = [
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/runtime'),
     output: path.join(root, 'public/games/danao/src/game/runtime.js'),
-    sha256: '5c39cd73da0c5cfb8ad749c6371008991b7b8b94b63cc239fdc9f533747cf5f5',
-    transform: patchDanaoV08Runtime,
+    sha256: '5e254555f434285104bd2d2e0f7c0224a6322263af29234384508272803c24f2',
+    transform: (source) => patchDanaoV09Runtime(patchDanaoV08Runtime(source)),
   },
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/visuals'),
@@ -22,7 +24,8 @@ const builds = [
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/app'),
     output: path.join(root, 'public/games/danao/src/ui/App.js'),
-    sha256: '02732a964fb06df125aea06e20d734507c460dd61521f84fd83f1646a9215268',
+    sha256: '98e729aa045e2094e06272ff91f183a994c069c757e0b46ba51feae7e186fa06',
+    transform: patchDanaoV09App,
   },
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/styles'),

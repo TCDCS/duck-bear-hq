@@ -20,9 +20,9 @@ test('Danao v0.6 is the physics-chaos build rather than the old ring-out prototy
 });
 
 test('Danao release source is reconstructed byte-for-byte before tests and deploy', () => {
-  assert.equal(sha256('public/games/danao/src/game/runtime.js'), '5c39cd73da0c5cfb8ad749c6371008991b7b8b94b63cc239fdc9f533747cf5f5');
+  assert.equal(sha256('public/games/danao/src/game/runtime.js'), '5e254555f434285104bd2d2e0f7c0224a6322263af29234384508272803c24f2');
   assert.equal(sha256('public/games/danao/src/game/visuals.js'), '38344470446870e174188d8c2b260042199b1cd41fab96f6b00bf9bbfe752a57');
-  assert.equal(sha256('public/games/danao/src/ui/App.js'), '02732a964fb06df125aea06e20d734507c460dd61521f84fd83f1646a9215268');
+  assert.equal(sha256('public/games/danao/src/ui/App.js'), '98e729aa045e2094e06272ff91f183a994c069c757e0b46ba51feae7e186fa06');
   assert.equal(sha256('public/games/danao/src/styles.css'), 'c97800b4937d5f3b77dd83d4f4fe3166853f1718064a5ebe5191c407fa8bc725');
 });
 
@@ -38,11 +38,11 @@ test('Wrestling Hall is the default showcase and carries actual brawler props', 
   assert.match(items, /mallet/);
 });
 
-test('Cloudflare deploy assembles the exact Danao v0.8 release before verification', () => {
+test('Cloudflare deploy assembles the exact Danao v0.9 release before verification', () => {
   const pkg = JSON.parse(read('package.json'));
   assert.match(pkg.scripts.deploy, /^npm run assemble:danao/);
   assert.equal(pkg.scripts['assemble:danao'], 'node scripts/assemble-danao-v05.mjs');
-  assert.match(read('public/games/danao/release.json'), /"version": "0\.8\.0"/);
+  assert.match(read('public/games/danao/release.json'), /"version": "0\.9\.0"/);
 });
 
 test('browser fighter select uses the complete Danao cast instead of generic stand-ins', () => {
