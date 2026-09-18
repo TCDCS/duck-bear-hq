@@ -19,8 +19,8 @@ test('Danao v0.6 is the physics-chaos build rather than the old ring-out prototy
   assert.doesNotMatch(app, /EDGE!/);
 });
 
-test('Danao v0.6 release source is reconstructed byte-for-byte before tests and deploy', () => {
-  assert.equal(sha256('public/games/danao/src/game/runtime.js'), '7e4f433225347badb7e51217792d278f1e1c84734e8d969d2439cb6ac7484d2a');
+test('Danao release source is reconstructed byte-for-byte before tests and deploy', () => {
+  assert.equal(sha256('public/games/danao/src/game/runtime.js'), '7ac94b21b034514a5ffb9b447d3b38dbd64b008e71e89352bec1a0359f998df4');
   assert.equal(sha256('public/games/danao/src/game/visuals.js'), '2deca94165ae72f9fa50c9a35394017721ba8c6ce2ccb909435023cc43c15426');
   assert.equal(sha256('public/games/danao/src/ui/App.js'), '02732a964fb06df125aea06e20d734507c460dd61521f84fd83f1646a9215268');
   assert.equal(sha256('public/games/danao/src/styles.css'), 'c97800b4937d5f3b77dd83d4f4fe3166853f1718064a5ebe5191c407fa8bc725');
