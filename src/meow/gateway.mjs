@@ -74,7 +74,7 @@ function createPayload(body) {
 function joinPayload(body) {
   const allowed = new Set(['code', 'name']);
   for (const key of Object.keys(body)) if (!allowed.has(key)) throw error(400, 'Unknown room field.');
-  if (!/^d{4}$/.test(String(body.code || ''))) throw error(400, 'Enter exactly four digits, including any leading zero.');
+  if (!/^\d{4}$/.test(String(body.code || ''))) throw error(400, 'Enter exactly four digits, including any leading zero.');
   return { code: String(body.code), name: cleanName(body.name) };
 }
 async function clientHash(request) {
@@ -97,7 +97,7 @@ export async function routeMeowMultiplayer(request, env) {
   }
 
   const action = path === '/api/meow/create' ? 'create' : path === '/api/meow/join' ? 'join' : null;
-  const socket = path.match(/^/api/meow/(d{4})/socket$/);
+  const socket = path.match(/^\/api\/meow\/(\d{4})\/socket$/);
   if (!action && !socket) return json({ error: 'Meow Wars endpoint not found.' }, 404);
 
   const origin = request.headers.get('Origin');
@@ -109,7 +109,7 @@ export async function routeMeowMultiplayer(request, env) {
         return json({ error: 'A WebSocket connection is required.' }, 426);
       }
       const token = url.searchParams.get('token');
-      if (!/^[a-fd-]{36}$/i.test(token || '')) return json({ error: 'Join the room first.' }, 401);
+      if (!/^[a-f\d-]{36}$/i.test(token || '')) return json({ error: 'Join the room first.' }, 401);
       if (!env.MEOW_ROOMS) return json({ error: 'Meow Wars online rooms are unavailable. Local play still works.' }, 503);
       const stub = env.MEOW_ROOMS.get(env.MEOW_ROOMS.idFromName('meow-v1:' + socket[1]));
       return stub.fetch(request);
