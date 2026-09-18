@@ -211,8 +211,30 @@ try {
   await host.evaluate(() => globalThis.__MEOW_WARS_GAME_SCENE.endTurn('skip'));
   await Promise.all([
     host.waitForFunction(() => globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().team === 1, null, { timeout: 5000 }),
-    guest.waitForFunction(() => globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().team === 1, null, { timeout: 5000 })
+    guest.waitForFunction(() => globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().team === 1, null, { timeout: 5000 }),
+    host.waitForFunction(() =>
+      globalThis.__MEOW_WARS_ONLINE?.serverTurnTeam === 1 &&
+      globalThis.__MEOW_WARS_V12_STATS?.snapshotAcks > 0,
+      null,
+      { timeout: 5000 }
+    )
   ]);
+
+  const authorityDiag = await Promise.all([
+    host.evaluate(() => ({
+      serverTurnTeam: globalThis.__MEOW_WARS_ONLINE.serverTurnTeam,
+      error: globalThis.__MEOW_WARS_ONLINE.lobbyError,
+      stats: globalThis.__MEOW_WARS_V12_STATS
+    })),
+    guest.evaluate(() => ({
+      error: globalThis.__MEOW_WARS_ONLINE.lobbyError,
+      connected: globalThis.__MEOW_WARS_ONLINE.connected,
+      activeTeam: globalThis.__MEOW_WARS_GAME_SCENE.activeCat().team
+    }))
+  ]);
+  if (authorityDiag[0].error || authorityDiag[1].error) {
+    throw new Error('Online authority reported an error before Red input: ' + JSON.stringify(authorityDiag));
+  }
 
   const beforeMove = await Promise.all([
     host.evaluate(() => ({
