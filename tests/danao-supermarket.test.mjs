@@ -48,7 +48,7 @@ test('supermarket visual rebuild removes wrestling scenery and authors a recogni
 test('Tesco branding uses the supplied logo as an in-game texture asset', () => {
   const brand = read('public/games/danao/src/art/tesco-brand.js');
   assert.match(brand, /TESCO_LOGO_DATA_URI/);
-  assert.match(brand, /data:image\\/svg\\+xml/);
+  assert.match(brand, /data:image\/svg\+xml/);
   const visuals = read('public/games/danao/src/game/visuals.js');
   assert.match(visuals, /TESCO_LOGO_DATA_URI/);
   assert.match(visuals, /new B\.Texture\(TESCO_LOGO_DATA_URI/);
