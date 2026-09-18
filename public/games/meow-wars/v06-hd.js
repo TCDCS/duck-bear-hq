@@ -1,6 +1,6 @@
 /* Meow Wars v0.6 HD environment upgrade. Load after battle-d.js, before game-4-menu.js. */
 (() => {
-const V='0.6.0',B='20260918-HD1',SW=3840,DW=1360,T=Math.PI*2;
+const V='0.6.0',B='20260918-HD2',SW=3840,DW=1360,T=Math.PI*2;
 globalThis.MEOW_WARS_VERSION=V;globalThis.MEOW_WARS_BUILD=B;globalThis.__MEOW_WARS_BUILD__=V+'+'+B;
 const extra=[
 {id:'taj-mahal',name:'Taj Mahal',tagline:'Marble, fountains and zero respect for symmetry.',seed:1632,windMultiplier:.78,terrainSkin:'taj-garden',water:{y:414,height:68},terrainProfile:{baseRatio:.71,waveAAmplitudeRatio:.028,waveAFrequency:.014,waveBAmplitudeRatio:.012,waveBFrequency:.033,moundAmplitudeRatio:.018,minSurfaceRatio:.56,maxSurfaceRatio:.82},spawnFractions:[.08,.23,.38,.62,.77,.92],palette:{skyTop:'#72cdf4',skyBottom:'#d9f4ff',sun:'#fff0aa',terrainTop:'#896641',terrainDeep:'#5d452e',grass:'#5daa52',accent:'#f2d3a3'}},
