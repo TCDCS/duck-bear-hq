@@ -105,10 +105,10 @@ jobs:
                 return Boolean(scene?.metadata?.danaoEnvironmentReactionController);
               }));
 
-              await poll(page, arenaId + ' ambient marker', async (marker) => page.evaluate((name) => {
+              await poll(page, arenaId + ' ambient marker', async () => page.evaluate((name) => {
                 const scene = globalThis.BABYLON?.EngineStore?.LastCreatedScene;
                 return (scene?.meshes || []).some((mesh) => mesh.name === name);
-              }, marker), ambientMarker);
+              }, ambientMarker));
 
               await page.waitForTimeout(1200);
 
