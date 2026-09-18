@@ -24,7 +24,7 @@ const builds = [
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/app'),
     output: path.join(root, 'public/games/danao/src/ui/App.js'),
-    sha256: '02732a964fb06df125aea06e20d734507c460dd61521f84fd83f1646a9215268',
+    sha256: '98e729aa045e2094e06272ff91f183a994c069c757e0b46ba51feae7e186fa06',
     transform: patchDanaoV09App,
   },
   {
