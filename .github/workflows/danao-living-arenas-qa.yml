@@ -1,0 +1,207 @@
+name: Danao Living Arenas QA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'feature/danao-*']
+    paths:
+      - 'public/games/danao/src/art/environment-reactions.js'
+      - 'public/games/danao/src/main.js'
+      - 'public/games/danao/release.json'
+      - 'tests/danao-v01010-living-arenas.test.mjs'
+      - '.github/workflows/danao-living-arenas-qa.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: danao-living-arenas-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  living-arenas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Assemble exact Danao release
+        run: npm run assemble:danao
+
+      - name: Install Chromium
+        run: |
+          npm install --no-save --package-lock=false playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local Danao site
+        run: |
+          python3 -m http.server 8080 --directory public > /tmp/danao-living-http.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8080/games/danao/release.json >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/danao-living-http.log
+          exit 1
+
+      - name: Capture ambient and reactive arena effects
+        run: |
+          mkdir -p verification/danao-living
+          cat > verification/danao-living/living-runner.mjs <<'EOF'
+          import { chromium } from 'playwright';
+          import fs from 'node:fs';
+
+          const BASE = 'http://127.0.0.1:8080';
+          const OUT = 'verification/danao-living';
+          const browser = await chromium.launch({
+            headless: true,
+            args: [
+              '--no-sandbox',
+              '--use-angle=swiftshader',
+              '--enable-unsafe-swiftshader',
+              '--enable-webgl',
+              '--ignore-gpu-blocklist',
+              '--disable-dev-shm-usage',
+            ],
+          });
+          const context = await browser.newContext({
+            viewport: { width: 1440, height: 900 },
+            serviceWorkers: 'block',
+          });
+
+          async function poll(page, label, fn, timeout = 90000) {
+            const deadline = Date.now() + timeout;
+            while (Date.now() < deadline) {
+              try { if (await fn()) return; } catch {}
+              await page.waitForTimeout(200);
+            }
+            throw new Error('Timed out waiting for ' + label);
+          }
+
+          async function capture({ arenaId, ambientMarker }) {
+            const page = await context.newPage();
+            const pageErrors = [];
+            page.on('pageerror', (error) => pageErrors.push(String(error)));
+            const result = { arenaId, checks: {}, pageErrors, passed: false };
+
+            try {
+              await page.goto(BASE + '/games/danao/', {
+                waitUntil: 'domcontentloaded',
+                timeout: 90000,
+              });
+              await page.locator('[data-action="play"]').waitFor({ state: 'visible', timeout: 30000 });
+              await page.locator('[data-action="play"]').click();
+              await page.locator('[data-arena="' + arenaId + '"]').click();
+              await page.locator('[data-action="start"]').click();
+
+              await poll(page, arenaId + ' living controller', async () => page.evaluate(() => {
+                const scene = globalThis.BABYLON?.EngineStore?.LastCreatedScene;
+                return Boolean(scene?.metadata?.danaoEnvironmentReactionController);
+              }));
+
+              await poll(page, arenaId + ' ambient marker', async () => page.evaluate((name) => {
+                const scene = globalThis.BABYLON?.EngineStore?.LastCreatedScene;
+                return (scene?.meshes || []).some((mesh) => mesh.name === name);
+              }, ambientMarker));
+
+              await page.waitForTimeout(1200);
+
+              const fired = await page.evaluate(() => {
+                const scene = globalThis.BABYLON?.EngineStore?.LastCreatedScene;
+                return scene?.metadata?.danaoEnvironmentReactionController?.onFeedback?.({
+                  type: 'prop-break',
+                  x: 0,
+                  y: 1,
+                  z: 0,
+                  seq: 41,
+                }) === true;
+              });
+              result.checks.reactionAccepted = fired;
+              await page.waitForTimeout(100);
+
+              const state = await page.evaluate((marker) => {
+                const scene = globalThis.BABYLON?.EngineStore?.LastCreatedScene;
+                const meshes = scene?.meshes || [];
+                return {
+                  ambientCount: meshes.filter((mesh) => mesh.name === marker).length,
+                  visibleDebris: meshes.filter((mesh) =>
+                    mesh.name === 'danao-reactive-debris' && mesh.visibility > 0.05
+                  ).length,
+                  visiblePuffs: meshes.filter((mesh) =>
+                    mesh.name === 'danao-reactive-puff' && mesh.visibility > 0.05
+                  ).length,
+                  reactionCount: Number(scene?.metadata?.danaoEnvironmentReactionCount || 0),
+                  arenaId: scene?.metadata?.danaoEnvironmentReactionController?.arenaId || '',
+                };
+              }, ambientMarker);
+
+              result.state = state;
+              result.checks.correctArenaController = state.arenaId === arenaId;
+              result.checks.ambientAlive = state.ambientCount > 0;
+              result.checks.debrisVisible = state.visibleDebris > 0;
+              result.checks.puffVisible = state.visiblePuffs > 0;
+              result.checks.reactionLogged = state.reactionCount >= 1;
+              result.checks.noPageErrors = pageErrors.length === 0;
+
+              await page.locator('#game').screenshot({
+                path: OUT + '/' + arenaId + '-reaction.png',
+                timeout: 90000,
+              });
+
+              result.passed = Object.values(result.checks).every(Boolean);
+            } catch (error) {
+              result.failure = String(error);
+              try {
+                await page.screenshot({
+                  path: OUT + '/' + arenaId + '-failure.png',
+                  fullPage: true,
+                  timeout: 30000,
+                });
+              } catch {}
+            } finally {
+              await page.close();
+            }
+            return result;
+          }
+
+          const cases = [
+            { arenaId: 'ring', ambientMarker: 'danao-store-scan-glow' },
+            { arenaId: 'courtyard', ambientMarker: 'danao-courtyard-petal' },
+            { arenaId: 'rooftop', ambientMarker: 'danao-rooftop-steam' },
+          ];
+          const results = [];
+          for (const entry of cases) results.push(await capture(entry));
+
+          const release = await (await context.request.get(BASE + '/games/danao/release.json')).json();
+          const report = {
+            release,
+            results,
+            passed: (() => {
+              const [major, minor, patch] = release.version.split('.').map(Number);
+              return major * 1_000_000 + minor * 1_000 + patch >= 10_010
+                && results.every((result) => result.passed);
+            })(),
+          };
+          fs.writeFileSync(OUT + '/living-arenas-qa.json', JSON.stringify(report, null, 2));
+          await browser.close();
+
+          console.log(JSON.stringify(report, null, 2));
+          if (!report.passed) process.exit(1);
+          EOF
+
+          node verification/danao-living/living-runner.mjs
+
+      - name: Upload living arena QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: danao-living-arenas-qa
+          path: verification/danao-living/
+          if-no-files-found: error
+          retention-days: 7
