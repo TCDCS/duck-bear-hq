@@ -78,6 +78,10 @@ try {
     guest.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 45000 })
   ]);
   await Promise.all([waitGame(host), waitGame(guest)]);
+  await Promise.all([
+    host.waitForFunction(() => globalThis.__MEOW_WARS_MENU_SCENE?.__mw12OnlineButton?.active === true, null, { timeout: 15000 }),
+    guest.waitForFunction(() => globalThis.__MEOW_WARS_MENU_SCENE?.__mw12OnlineButton?.active === true, null, { timeout: 15000 })
+  ]);
 
   // Host chooses Ha'penny Bridge before creating the room.
   for (let i = 0; i < 4; i += 1) {
