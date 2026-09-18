@@ -52,7 +52,7 @@ jobs:
       - name: Capture Checkout Chaos gameplay
         run: |
           mkdir -p artifacts
-          cat > /tmp/danao-visual-qa.mjs <<'EOF'
+          cat > artifacts/danao-visual-qa-runner.mjs <<'EOF'
           import { chromium } from 'playwright';
           import fs from 'node:fs';
 
@@ -131,7 +131,7 @@ jobs:
             process.exit(1);
           }
           EOF
-          node /tmp/danao-visual-qa.mjs
+          node artifacts/danao-visual-qa-runner.mjs
 
       - name: Upload Danao visual QA
         if: always()
