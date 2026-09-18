@@ -19,18 +19,18 @@ void main(){
   float distanceToEye=distance(vWorld,uEye);
   if(uShadowPass>.5){gl_FragColor=packDepth(gl_FragCoord.z);return;}
   vec3 n=normalize(vNormal),base=vColour,view=normalize(uEye-vWorld),sun=normalize(vec3(-.4,.85,.3));float rough=.85,shine=.05;
-  if(vMaterial>.5&&vMaterial<1.5){float grain=hash(floor(vWorld.xz*26.));float patches=noise(vWorld.xz*.19);base*=.96+.045*grain+.045*patches;rough=.90;shine=.08;}
+  if(vMaterial>.5&&vMaterial<1.5){float grain=hash(floor(vWorld.xz*26.));float patches=noise(vWorld.xz*.19),fine=noise(vWorld.xz*1.7);base*=.935+.045*grain+.055*patches+.025*fine;rough=.88;shine=.09;}
   else if(vMaterial>1.5&&vMaterial<2.5){float horizontal=dot(vWorld.xz,vec2(-n.z,n.x));vec2 uv=vec2(horizontal,vWorld.y)*vec2(1.65,4.2);float row=floor(uv.y);uv.x+=mod(row,2.)*.5;vec2 brick=fract(uv);float mortar=max(step(brick.x,.048),step(brick.y,.095));base=mix(base*(.86+.22*hash(floor(uv))),vec3(.47,.46,.40),mortar*.48);}
   else if(vMaterial>2.5&&vMaterial<3.5){base*=.87+.20*noise(vec2(vWorld.y*4.,(vWorld.x+vWorld.z)*18.));}
   else if(vMaterial>3.5&&vMaterial<4.5){base*=.90+.12*noise(vWorld.xz*.31)+.035*hash(floor(vWorld.xz*9.));}
-  else if(vMaterial>4.5&&vMaterial<5.5){float fresnel=pow(1.-max(dot(n,view),0.),3.);vec3 sky=mix(vec3(.39,.49,.56),uFog,.68);base=mix(base,sky,.25+fresnel*.60);base*=.94+.06*sin(vWorld.y*2.);rough=.19;shine=.48;}
-  else if(vMaterial>5.5&&vMaterial<6.5){n=normalize(n+vec3(sin(vWorld.x*.72+uTime)*.10,0.,cos(vWorld.z*.83+uTime*.8)*.12));float fresnel=pow(1.-max(dot(n,view),0.),3.);base=mix(base,uFog,.24+fresnel*.48);base*=.93+.07*sin(vWorld.x*1.7+vWorld.z*1.4+uTime*1.8);rough=.18;shine=.65;}
-  else if(vMaterial>6.5&&vMaterial<7.5){rough=.26;shine=.30;}
+  else if(vMaterial>4.5&&vMaterial<5.5){float fresnel=pow(1.-max(dot(n,view),0.),3.);vec3 sky=mix(vec3(.36,.48,.57),uFog,.72);float pane=.965+.035*noise(vWorld.xz*.7+vWorld.yy*.35);base=mix(base,sky,.27+fresnel*.62)*pane;rough=.17;shine=.54;}
+  else if(vMaterial>5.5&&vMaterial<6.5){float w1=sin(vWorld.x*.72+vWorld.z*.19+uTime*1.15),w2=cos(vWorld.z*.83-vWorld.x*.14+uTime*.86),w3=sin((vWorld.x+vWorld.z)*1.55-uTime*.55);n=normalize(n+vec3(w1*.085+w3*.025,0.,w2*.10-w3*.022));float fresnel=pow(1.-max(dot(n,view),0.),3.);float ripple=.5+.5*sin(vWorld.x*1.7+vWorld.z*1.4+uTime*1.8);base=mix(base,uFog,.20+fresnel*.51);base*=.91+.075*ripple+.025*noise(vWorld.xz*2.4+uTime*.04);rough=.14;shine=.76;}
+  else if(vMaterial>6.5&&vMaterial<7.5){float brushed=.97+.035*noise(vec2(vWorld.y*2.3,(vWorld.x+vWorld.z)*3.1));base*=brushed;rough=.23;shine=.36;}
   else if(vMaterial>7.5&&vMaterial<8.5){gl_FragColor=vec4(mix(base,uFog,smoothstep(140.,620.,distanceToEye)),uAlpha);return;}
   else if(vMaterial>9.5){float leaf=noise(vWorld.xz*5.+vWorld.yy*1.8);base*=.91+.16*leaf;n=normalize(n+vec3((leaf-.5)*.17,.02,(leaf-.5)*.11));}
-  else if(vMaterial>8.5){float grain=hash(floor(vWorld.xz*34.+vWorld.yy*7.));base*=.95+grain*.08;}
-  float diffuse=max(dot(n,sun),0.),occlusion=shadow(n);vec3 hemi=mix(vec3(.36,.36,.30),vec3(.58,.65,.72),n.y*.5+.5);
-  vec3 colour=base*(hemi+vec3(.66,.62,.49)*diffuse*occlusion);
+  else if(vMaterial>8.5){float grain=hash(floor(vWorld.xz*34.+vWorld.yy*7.)),soft=noise(vWorld.xz*.28+vWorld.yy*.11);base*=.925+grain*.065+soft*.055;}
+  float diffuse=max(dot(n,sun),0.),occlusion=shadow(n);vec3 hemi=mix(vec3(.35,.36,.31),vec3(.59,.66,.73),n.y*.5+.5);
+  vec3 colour=base*(hemi+vec3(.69,.64,.50)*diffuse*occlusion);
   float spec=pow(max(dot(n,normalize(sun+view)),0.),mix(110.,5.,rough));colour+=vec3(1.,.93,.78)*spec*shine*occlusion;
   colour=mix(colour,uFog,smoothstep(130.,600.,distanceToEye));colour=pow(max(colour,vec3(0.)),vec3(.93));
   gl_FragColor=vec4(clamp(colour,0.,1.),uAlpha);

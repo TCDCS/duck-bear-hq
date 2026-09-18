@@ -9,8 +9,17 @@
     const info={objects:[],labels:[],triangles:0},half=t.width/2,park=t.id===3,regent=t.id===4,irish=t.country==='IE';
     const surface=(id,fn)=>{const old=m.material;m.material=id;fn();m.material=old;};
     const closest=(x,z)=>{let distance=Infinity;for(const p of t.samples)distance=Math.min(distance,Math.hypot(p.x-x,p.z-z));return distance;};
-    const allowed=(x,z,r)=>closest(x,z)>=half+4+r&&(!irish||!globalThis.WackyModels.reserves.some(q=>Math.hypot(x-q.x,z-q.z)<q.r+r));
-    const register=(kind,x,z,r)=>{if(!allowed(x,z,r))return false;info.objects.push({kind,x,z,radius:r});return true;};
+    // Hero reserves keep procedural filler out of the landmark view. Manual hero models can opt in with force=true.
+    const heroReserves=[
+      [{x:-140,z:208,r:31},{x:-175,z:210,r:40}],
+      [{x:-160,z:184,r:34}],
+      [{x:-44,z:228,r:25},{x:44,z:228,r:25}],
+      [{x:-145,z:174,r:31}],
+      [{x:-145,z:220,r:43}],
+      [{x:-125,z:205,r:24},{x:-160,z:207,r:34}]
+    ][t.id]||[];
+    const allowed=(x,z,r,force=false)=>force||(closest(x,z)>=half+4+r&&!heroReserves.some(q=>Math.hypot(x-q.x,z-q.z)<q.r+r)&&(!irish||!globalThis.WackyModels.reserves.some(q=>Math.hypot(x-q.x,z-q.z)<q.r+r)));
+    const register=(kind,x,z,r,force=false)=>{if(!allowed(x,z,r,force))return false;info.objects.push({kind,x,z,radius:r});return true;};
     const at=(x,z,rot,a,b)=>[x+a*Math.cos(rot)+b*Math.sin(rot),z-a*Math.sin(rot)+b*Math.cos(rot)];
     const slab=(a,b,lo,hi,y,col)=>{const p=(q,x)=>[q.x-q.tz*x,y,q.z+q.tx*x];m.quad(p(a,lo),p(a,hi),p(b,hi),p(b,lo),col);};
     surface(M.grass,()=>m.box(0,-.35,0,1800,.5,1800,t.ground));
@@ -33,6 +42,9 @@
     for(const side of [-1,1]){const q=C.sampleTrack(t,0,side*(half+5.0));register('start support',q.x,q.z,.37);surface(M.metal,()=>m.box(q.x,4.2,q.z,.52,8.4,.52,'#263b3d',yaw));}
     m.box(start.x,8.1,start.z,t.width+10.6,1.7,.6,'#f37f2f',yaw);
     info.labels.push({x:start.x,y:8.1,z:start.z,text:'WACKY RACES',width:t.width+9,type:'gantry'});
+    // Sparse detail is enough at racing speed; crossings and drains break up the flat road without becoming obstacles.
+    for(let s=145,k=0;s<t.length-90;s+=285,k++){crossing(s);roadDetail(s+72,k);}
+
     function shadow(x,z,r){surface(M.plain,()=>m.cylinder([x,-.089,z],[x,-.087,z],r,park?'#526c42':'#666e61',m.low?8:16));}
     function tree(x,z,scale=1){
       const radius=4.1*scale;if(!register('tree',x,z,radius))return;
@@ -53,6 +65,34 @@
       surface(M.wood,()=>{for(let i=0;i<4;i++)box(0,.58,-.35+i*.22,3.0,.12,.16,'#95724b');for(let i=0;i<3;i++)box(0,.91+i*.22,-.46,3,.16,.09,'#896941');});
       surface(M.metal,()=>{for(const a of [-1.14,1.14]){box(a,.32,0,.10,.64,.65,'#303c38');box(a,1.02,-.49,.11,1.32,.10,'#303c38');}});
     }
+    function bin(x,z,rot){
+      if(!register('street bin',x,z,.55))return;
+      surface(M.metal,()=>{m.roundBox(x,.62,z,.62,1.22,.58,irish?'#31584c':'#374b4b',.08,rot);m.box(x,1.22,z,.68,.10,.64,'#202d2f',rot);});
+    }
+    function bollard(x,z,rot){
+      if(!register('bollard',x,z,.30))return;
+      surface(M.metal,()=>{m.cylinder([x,0,z],[x,.92,z],.14,irish?'#324d44':'#303a3d',8,.11);m.cylinder([x,.92,z],[x,1.03,z],.18,'#d9cfaa',8,.14);});
+    }
+    function busStop(x,z,rot){
+      if(!register('bus stop',x,z,.65))return;
+      surface(M.metal,()=>m.cylinder([x,0,z],[x,3.65,z],.08,'#3b4645',8));
+      surface(M.light,()=>{m.roundBox(x,3.33,z,.72,.82,.12,irish?'#e5d749':'#e9e5d0',.05,rot);m.roundBox(x,2.65,z,.52,.78,.11,irish?'#27835f':'#d33d36',.04,rot);});
+    }
+    function trafficLight(x,z,rot){
+      if(!register('traffic light',x,z,.75))return;
+      surface(M.metal,()=>{m.cylinder([x,0,z],[x,4.55,z],.09,'#313b3c',8);const q=at(x,z,rot,0,.18);m.roundBox(q[0],4.22,q[1],.62,1.72,.48,'#293235',.08,rot);});
+      const q=at(x,z,rot,0,.43);for(const [y,col] of [[4.70,'#e34e40'],[4.22,'#e8b943'],[3.74,'#4caf66']])surface(M.light,()=>m.sphere(q[0],y,q[1],.16,col,8));
+    }
+    function crossing(s){
+      const centre=C.sampleTrack(t,s),yaw=Math.atan2(centre.tx,centre.tz);
+      for(let i=-4;i<=4;i++){const q=C.sampleTrack(t,s+i*1.55,0);surface(M.plain,()=>m.box(q.x,.094,q.z,t.width*.76,.018,.72,'#eee8d7',yaw));}
+      for(const side of [-1,1]){const q=C.sampleTrack(t,s,side*(half-.65));surface(M.metal,()=>m.box(q.x,.13,q.z,.20,.05,2.0,'#c9b56b',yaw));}
+    }
+    function roadDetail(s,index){
+      const side=index%2?1:-1,q=C.sampleTrack(t,s,side*(half*.48)),yaw=Math.atan2(q.tx,q.tz);
+      surface(M.metal,()=>m.roundBox(q.x,.102,q.z,1.00,.025,.68,'#4d5558',.10,yaw));
+      if(index%2===0){const d=C.sampleTrack(t,s+7,side*(half-.78));surface(M.metal,()=>{for(let j=-2;j<=2;j++)m.box(d.x+d.tx*j*.22,.105,d.z+d.tz*j*.22,.055,.02,.46,'#464c4e',yaw);});}
+    }
     function phone(x,z,rot){if(irish)return;
       if(!register('telephone box',x,z,1.55))return;
       const box=(a,y,b,w,h,d,col)=>{const q=at(x,z,rot,a,b);m.box(q[0],y,q[1],w,h,d,col,rot);};
@@ -61,17 +101,59 @@
       const q=at(x,z,rot,0,.95);info.labels.push({x:q[0],y:3.22,z:q[1],text:'TELEPHONE',width:1.5,type:'small'});
     }
     function bus(x,z,rot,taxi=false){
-      if(!register(taxi?'black cab':'double-decker',x,z,taxi?2.6:5.0))return;
-      const box=(a,y,b,w,h,d,col)=>{const q=at(x,z,rot,a,b);m.roundBox(q[0],y,q[1],w,h,d,col,.16,rot);};
-      const col=taxi?'#263239':irish?'#1e9b70':'#ec3b35',w=taxi?2.1:3.0,h=taxi?1.5:4.6,d=taxi?4.5:9.3;
-      surface(M.metal,()=>{box(0,h/2+.38,0,w,h,d,col);box(0,h+.4,0,w*.96,.14,d*.96,col);box(0,.49,d/2+.06,w,.16,.16,'#bcb9ab');});
-      surface(M.glass,()=>{box(0,h*.77,d/2+.025,w*.88,h*.27,.045,'#4c6874');for(const side of [-1,1])for(let b=-d*.34;b<d*.4;b+=taxi?1.4:1.85){const q=at(x,z,rot,side*(w/2+.025),b);m.box(q[0],taxi?1.43:1.68,q[1],.04,taxi?.52:1.03,taxi?1.1:1.55,'#577986',rot);if(!taxi)m.box(q[0],3.48,q[1],.04,1.09,1.55,'#52717d',rot);}});
-      for(const side of [-1,1])for(const b of [-d*.32,d*.32]){const a=at(x,z,rot,side*(w/2-.15),b),c=at(x,z,rot,side*(w/2+.15),b);m.cylinder([a[0],.55,a[1]],[c[0],.55,c[1]],taxi?.43:.59,'#202729',12);}
-      surface(M.light,()=>{for(const a of [-w*.35,w*.35])box(a,.90,d/2+.06,.25,.18,.035,'#f4e5b3');});
-      if(taxi){box(0,h+.62,0,.68,.18,.31,'#ecd38d');}else{box(0,2.72,d/2+.05,2.35,.41,.035,'#242d29');const q=at(x,z,rot,0,d/2+.15);info.labels.push({x:q[0],y:2.75,z:q[1],text:irish?'DUBLIN  46A':'LONDON  9',width:2.2,type:'small'});}
+      if(taxi){
+        if(!register('black cab',x,z,2.7))return;
+        const box=(a,y,b,w,h,d,col,r=.13)=>{const q=at(x,z,rot,a,b);m.roundBox(q[0],y,q[1],w,h,d,col,r,rot);};
+        surface(M.metal,()=>{box(0,.88,0,2.16,1.36,4.55,'#273137',.18);box(0,1.61,-.28,1.86,.82,2.63,'#273137',.18);box(0,.53,2.03,2.03,.23,.28,'#1e292d',.08);});
+        surface(M.glass,()=>{box(0,1.60,1.12,1.62,.60,.08,'#4e707c',.035);for(const side of [-1,1]){const q=at(x,z,rot,side*1.09,-.15);m.roundBox(q[0],1.55,q[1],.035,.54,1.32,'#526f7a',.02,rot);}});
+        for(const side of [-1,1])for(const b of [-1.45,1.45]){const a=at(x,z,rot,side*.94,b),c=at(x,z,rot,side*1.19,b);surface(M.plain,()=>m.cylinder([a[0],.50,a[1]],[c[0],.50,c[1]],.43,'#202729',12));}
+        box(0,2.13,-.12,.72,.18,.34,'#e7ce82',.06);
+        return;
+      }
+      const d=9.4,w=3.05,kind=irish?'Dublin bus':'London bus';
+      if(!register(kind,x,z,5.05))return;
+      const box=(a,y,b,ww,h,dd,col,r=.12)=>{const q=at(x,z,rot,a,b);m.roundBox(q[0],y,q[1],ww,h,dd,col,r,rot);};
+      if(irish){
+        // Dublin-inspired double-decker: modern dark mask, green lower body and lime upper panels.
+        surface(M.metal,()=>{box(0,.82,0,w,1.08,d,'#2b946b',.22);box(0,2.45,-.12,w*.98,2.25,d-.20,'#2b946b',.18);box(0,4.48,-.14,w*.97,1.50,d-.25,'#d0c94d',.18);box(0,5.31,-.25,w*.92,.18,d-.52,'#d5ce55',.08);});
+        surface(M.glass,()=>{box(0,3.98,d/2-.08,w*.86,1.22,.09,'#224b5d',.04);box(0,1.96,d/2-.08,w*.88,1.06,.10,'#285766',.04);for(const side of [-1,1])for(const y of [2.05,4.08])for(let b=-3.45;b<3.45;b+=1.42){const q=at(x,z,rot,side*(w/2+.018),b);m.roundBox(q[0],y,q[1],.04,.93,1.13,'#285a68',.025,rot);}});
+        box(0,3.05,d/2+.03,w*.88,.42,.055,'#202b31',.02);box(0,1.00,d/2+.06,w*.82,.22,.06,'#bdc34c',.025);
+      }else{
+        // London double-decker: unmistakable bright red and more upright front treatment.
+        surface(M.metal,()=>{box(0,.80,0,w,1.04,d,'#dc3732',.14);box(0,2.38,-.05,w*.99,2.16,d-.16,'#dc3732',.11);box(0,4.35,-.08,w*.98,1.65,d-.20,'#dc3732',.10);box(0,5.29,-.12,w*.96,.16,d-.40,'#c92e2b',.07);});
+        surface(M.glass,()=>{for(const a of [-.72,.72]){box(a,3.98,d/2-.06,1.20,1.12,.085,'#244f61',.025);box(a,1.83,d/2-.06,1.20,1.10,.09,'#295969',.025);}for(const side of [-1,1])for(const y of [2.00,3.98])for(let b=-3.50;b<3.35;b+=1.36){const q=at(x,z,rot,side*(w/2+.018),b);m.roundBox(q[0],y,q[1],.04,.91,1.05,'#285968',.02,rot);}});
+        box(0,3.04,d/2+.03,w*.90,.48,.055,'#232b2c',.02);box(0,3.04,d/2+.06,w*.61,.26,.022,'#d8c89b',.01);box(0,.99,0,w+.01,.15,d-.42,'#e4c690',.035);
+      }
+      for(const side of [-1,1])for(const b of [-3.02,3.02]){const a=at(x,z,rot,side*(w/2-.15),b),c=at(x,z,rot,side*(w/2+.18),b);surface(M.plain,()=>m.cylinder([a[0],.58,a[1]],[c[0],.58,c[1]],.61,'#202729',14));}
+      surface(M.light,()=>{for(const a of [-w*.34,w*.34])box(a,.93,d/2+.06,.27,.18,.035,'#f5e7b8',.035);});
+      const q=at(x,z,rot,0,d/2+.15);info.labels.push({x:q[0],y:irish?3.06:3.06,z:q[1],text:irish?'DUBLIN  46A':'LONDON  24',width:2.35,type:'small'});
     }
-    function building(x,z,w,h,d,rot,index=0,distant=false){
-      if(!register('building',x,z,Math.hypot(w,d)/2))return;
+    function serviceCar(x,z,rot,kind='police'){
+      const ambulance=kind==='ambulance',name=ambulance?(irish?'Irish ambulance':'London ambulance'):(irish?'Garda car':'London police');
+      const radius=ambulance?2.8:2.4;if(!register(name,x,z,radius))return;
+      const w=ambulance?2.05:irish?2.02:1.94,d=ambulance?5.05:irish?4.45:4.25;
+      const box=(a,y,b,ww,h,dd,col,r=.12)=>{const q=at(x,z,rot,a,b);m.roundBox(q[0],y,q[1],ww,h,dd,col,r,rot);};
+      if(ambulance){
+        const body=irish?'#f3f0df':'#e9e650',green=irish?'#268764':'#20874d';
+        surface(M.metal,()=>{box(0,.82,0,w,.82,d,body,.16);box(0,2.00,-.45,w*.97,2.08,d*.62,body,.15);box(0,1.42,1.53,w*.94,1.10,1.20,body,.14);});
+        surface(M.glass,()=>box(0,1.72,d/2-.08,w*.80,.64,.09,'#285766',.035));
+        for(const side of [-1,1]){for(let i=0;i<7;i++)box(side*(w/2+.026),1.04,-1.62+i*.54,.038,.31,.50,i%2?green:'#f1e74a',.012);box(side*(w/2+.03),1.63,-.52,.04,.18,1.45,green,.012);}
+        surface(M.metal,()=>box(0,3.10,-.55,1.36,.16,.34,'#263844',.05));surface(M.light,()=>{for(const a of [-.42,.42])box(a,3.22,-.55,.39,.14,.27,irish?'#4bbcff':'#4387ff',.05);});
+      }else if(irish){
+        surface(M.metal,()=>{box(0,.72,.04,w,.62,d,'#f0f1e8',.17);box(0,1.47,-.42,w*.94,1.32,d*.58,'#eef0e9',.17);box(0,1.12,1.42,w*.95,.54,1.08,'#eef0e9',.14);});
+        surface(M.glass,()=>box(0,1.60,d/2-.07,w*.77,.56,.08,'#255365',.035));
+        for(const side of [-1,1]){for(let i=0;i<6;i++)box(side*(w/2+.026),1.06,-1.35+i*.52,.038,.32,.48,i%2?'#225daf':'#e8eb47',.012);box(side*(w/2+.03),1.34,-.38,.04,.18,1.28,'#1f539e',.012);}
+        surface(M.metal,()=>box(0,2.26,-.34,1.28,.14,.34,'#263844',.05));surface(M.light,()=>{for(const a of [-.40,.40])box(a,2.37,-.34,.37,.14,.27,'#45a9ff',.05);});
+      }else{
+        surface(M.metal,()=>{box(0,.70,.03,w,.58,d,'#f3f4ef',.16);box(0,1.39,-.30,w*.95,1.13,d*.64,'#f3f4ef',.15);box(0,1.04,1.38,w*.95,.46,1.02,'#f3f4ef',.13);});
+        surface(M.glass,()=>box(0,1.49,d/2-.07,w*.78,.52,.08,'#27586a',.03));
+        for(const side of [-1,1])for(let i=0;i<6;i++)box(side*(w/2+.026),1.03,-1.30+i*.49,.038,.31,.46,i%2?'#2362ae':'#edf04a',.012);
+        surface(M.metal,()=>box(0,2.02,-.31,1.30,.14,.34,'#263544',.05));surface(M.light,()=>{for(const a of [-.42,.42])box(a,2.13,-.31,.39,.14,.27,'#4387ff',.05);});
+      }
+      for(const side of [-1,1])for(const b of [-d*.31,d*.31]){const a=at(x,z,rot,side*(w/2-.12),b),c=at(x,z,rot,side*(w/2+.16),b);surface(M.plain,()=>m.cylinder([a[0],.52,a[1]],[c[0],.52,c[1]],ambulance?.48:.44,'#202729',12));}
+    }
+    function building(x,z,w,h,d,rot,index=0,distant=false,force=false){
+      if(!register('building',x,z,Math.hypot(w,d)/2,force))return;
       const box=(a,y,b,ww,hh,dd,col)=>{const q=at(x,z,rot,a,b);m.box(q[0],y,q[1],ww,hh,dd,col,rot);};
       const stone=regent||park,col=stone?['#c4bcab','#cec6b6','#bbb4a5'][index%3]:['#a27c63','#b79072','#a59686','#957969'][index%4];
       surface(stone?M.stone:M.brick,()=>box(0,h/2,0,w,h,d,col));
@@ -118,7 +200,11 @@
         if(index%2===0)lamp(p.x,p.z,rot);if(index%3===1){const q=C.sampleTrack(t,s+4,side*(half+6.25));pedestrian(q.x,q.z,index);}
         else if(park){bench(p.x,p.z,rot);}
         if(index%7===0&&!park&&!irish){const q=C.sampleTrack(t,s+7,side*(half+6.9));phone(q.x,q.z,rot);}
+        if(index%5===2&&!park){const q=C.sampleTrack(t,s+3,side*(half+6.15));bin(q.x,q.z,rot);}
+        if(index%9===4&&!park){const q=C.sampleTrack(t,s+5,side*(half+6.05));busStop(q.x,q.z,rot);}
+        if(index%11===6&&!park){const q=C.sampleTrack(t,s+2,side*(half+6.35));trafficLight(q.x,q.z,rot);}
         if(index%4===0){const q=C.sampleTrack(t,s+10,side*(half+11.5));tree(q.x,q.z,.86+rand()*.22);}
+        if(index%6===3&&!park){const q=C.sampleTrack(t,s+8,side*(half+5.85));bollard(q.x,q.z,rot);}
         if(park&&index%3===0){const q=C.sampleTrack(t,s,side*(half+10.1));rail(q.x,q.z,Math.atan2(q.tx,q.tz));}
       }
     }
@@ -136,6 +222,14 @@
       surface(M.stone,()=>{for(let i=0;i<ring.length;i++){const a=ring[i],b=ring[(i+1)%ring.length];const out=p=>[centre[0]+(p[0]-centre[0])*1.03,.02,centre[1]+(p[1]-centre[1])*1.08];m.quad([a[0],.02,a[1]],out(a),out(b),[b[0],.02,b[1]],'#a2a08c');}});
       surface(M.water,()=>{for(let i=0;i<ring.length;i++){const a=ring[i],b=ring[(i+1)%ring.length];m.tri([centre[0],.005,centre[1]],[b[0],.005,b[1]],[a[0],.005,a[1]],'#2da6ad');}});
       for(let i=0;i<(m.low?100:140);i++){const x=(rand()-.5)*650,z=(rand()-.5)*530;if((x*x/130**2+(z+14)**2/65**2)<1)continue;tree(x,z,.75+rand()*.85);}
+      // A Marble Arch-inspired park gateway gives the opening approach a clear left-side landmark.
+      const ax=-145,az=174;register('park arch',ax,az,20,true);
+      surface(M.stone,()=>{
+        m.box(ax-10,6.5,az,7,13,8,'#d8cfbd');m.box(ax+10,6.5,az,7,13,8,'#d8cfbd');m.box(ax,11.0,az,26,4,8,'#e2d9c7');
+        m.box(ax-13.5,1.0,az,3.3,2,9,'#c8bfac');m.box(ax+13.5,1.0,az,3.3,2,9,'#c8bfac');m.box(ax,13.4,az,29,1.0,9,'#ece1cd');
+      });
+      for(const side of [-1,1])surface(M.stone,()=>m.cylinder([ax+side*7.0,0,az-4.2],[ax+side*7.0,9.0,az-4.2],.75,'#e8deca',16));
+      info.labels.push({x:ax,y:11.0,z:az-4.2,text:'HYDE PARK',width:18,type:'shop'});
       // Bandstand, picnic spots and background terraces.
       const bx=62,bz=76;
       if(register('bandstand',bx,bz,9)){
@@ -151,16 +245,34 @@
         const w=regent?18:17,d=regent?14:13,p=C.sampleTrack(t,s,side*(half+22)),rot=Math.atan2(p.tx,p.tz)+side*Math.PI/2;
         building(p.x,p.z,w,(regent?22:14)+(index%3)*3.1,d,rot,index);
         if(index%2===0){const q=C.sampleTrack(t,s,side*(half+51));building(q.x,q.z,24,20+(index%4)*6,18,rot,index+3,true);}
-        if(index%8===0){const q=C.sampleTrack(t,s+9,side*(half+10.5));bus(q.x,q.z,Math.atan2(q.tx,q.tz),index%16!==0);}
+        if(index%8===0){
+          const q=C.sampleTrack(t,s+9,side*(half+10.5)),rrot=Math.atan2(q.tx,q.tz),cycle=index%(irish?24:32);
+          if(irish){if(cycle===0)bus(q.x,q.z,rrot,false);else serviceCar(q.x,q.z,rrot,cycle===8?'police':'ambulance');}
+          else{if(cycle===0)bus(q.x,q.z,rrot,false);else if(cycle===16)serviceCar(q.x,q.z,rrot,'police');else if(cycle===24)serviceCar(q.x,q.z,rrot,'ambulance');else bus(q.x,q.z,rrot,true);}
+        }
       }
       for(let i=0;i<45;i++){const x=(rand()-.5)*450,z=(rand()-.5)*380;tree(x,z,.75+rand()*.45);}
       if(t.id===0){
-        const x=-53,z=-60;
-        surface(M.stone,()=>{m.box(x,23,z,8,46,8,'#cdb78e');m.box(x,39,z,10.3,9,10.3,'#d7c398');m.box(x,45,z,9.3,3,9.3,'#bda678');});
-        m.pyramid(x,46.5,z,8,12,8,'#566666');m.cylinder([x,57,z],[x,62,z],.19,'#baa578',8);
-        for(const side of [-1,1]){m.box(x,39,z+side*5.19,6.2,6.2,.1,'#f1e8d0');m.box(x,39.9,z+side*5.26,.20,2.1,.06,'#304148');m.box(x+1.1,39,z+side*5.26,2.3,.20,.06,'#304148');}
-        building(-108,-62,65,17,18,0,0);
+        // Westminster hero reveal: Elizabeth Tower and Parliament sit ahead-left of the opening straight.
+        const x=-140,z=208;
+        register('Elizabeth Tower',x,z,8,true);
+        surface(M.stone,()=>{
+          m.box(x,23,z,9.5,46,9.5,'#cbb58b');m.box(x,9,z,10.5,1.0,10.5,'#d7c49b');m.box(x,23,z,10.2,.8,10.2,'#d8c39a');
+          m.box(x,38.2,z,10.7,1.0,10.7,'#dfcda7');m.box(x,42.0,z,9.9,7.0,9.9,'#d6c099');m.box(x,46.0,z,10.5,.8,10.5,'#bca67e');
+        });
+        // Four oversized clock faces keep the tower readable at racing speed.
+        for(const side of [-1,1]){
+          surface(M.light,()=>{m.box(x,41.8,z+side*5.02,6.5,6.5,.12,'#f4ecd2');m.box(x+side*5.02,41.8,z,.12,6.5,6.5,'#f4ecd2');});
+          surface(M.metal,()=>{m.box(x,42.5,z+side*5.10,.20,2.25,.08,'#304148');m.box(x+1.15,41.8,z+side*5.10,2.45,.20,.08,'#304148');});
+        }
+        surface(M.metal,()=>{m.pyramid(x,46.4,z,9.0,12.5,9.0,'#506366');m.cylinder([x,58.5,z],[x,64,z],.19,'#baa578',8);});
+        info.labels.push({x,y:48.5,z:z-5.2,text:'BIG BEN',width:8,type:'shop'});
+        // Parliament forms a long stone backdrop behind the clock tower and faces the road.
+        building(-176,210,69,20,19,Math.PI,0,false,true);
+        building(-208,213,28,25,17,Math.PI,2,false,true);
+        // London Eye remains a second landmark deeper into the lap.
         const ex=64,ez=-17,ey=36,rad=28;
+        register('London Eye',ex,ez,31,true);
         for(let i=0;i<64;i++){const a=i/64*Math.PI*2,b=(i+1)/64*Math.PI*2;surface(M.metal,()=>m.cylinder([ex+Math.cos(a)*rad,ey+Math.sin(a)*rad,ez],[ex+Math.cos(b)*rad,ey+Math.sin(b)*rad,ez],.42,'#dfdfd5',6));if(i%4===0){m.cylinder([ex,ey,ez],[ex+Math.cos(a)*rad,ey+Math.sin(a)*rad,ez],.10,'#e6e4d6',4);surface(M.glass,()=>m.sphere(ex+Math.cos(a)*(rad+1),ey+Math.sin(a)*(rad+1),ez,1.5,'#829ca4',8));}}
         for(const side of [-1,1])m.cylinder([ex+side*14,0,ez+8],[ex,ey,ez],.55,'#d7ded5',8);
       }
@@ -169,10 +281,24 @@
           m.box(x,1,z,10,2,4,'#947957');m.box(x,3.5,z,12,.16,7,i%2?'#a6574c':'#4e7164');for(let j=0;j<6;j++)m.box(x-5+j*2,3.59,z,.9,.02,7,'#decda6');for(const side of [-1,1])m.cylinder([x+side*5,0,z+2],[x+side*5,3.5,z+2],.06,'#41483e',6);
           info.labels.push({x,y:2.8,z:z+2.2,text:i%2?'CAMDEN MARKET':'TEA & BISCUITS',width:9,type:'shop'});
         }
+        const gx=-160,gz=184;register('Camden gateway',gx,gz,20,true);
+        surface(M.brick,()=>{m.box(gx-13,6,gz,7,12,7,'#7e493d');m.box(gx+13,6,gz,7,12,7,'#7e493d');m.box(gx,11.2,gz,32,4.1,5.3,'#3f4d52');});
+        surface(M.metal,()=>{for(const a of [-13,13])m.pyramid(gx+a,12,gz,7.8,4.2,7.8,'#334b50');});
+        for(let i=0;i<7;i++)m.box(gx-14+i*4.7,7.7,gz-3.6,2.1,1.0,.10,['#e76050','#e6b044','#3d9e79','#567fc2'][i%4]);
+        info.labels.push({x:gx,y:11.3,z:gz-2.9,text:'CAMDEN MARKET',width:25,type:'shop'});
+      }
+      if(t.id===4){
+        const cx=-145,cz=220;
+        for(let i=-3;i<=3;i++){
+          const a=i*.12,bx=cx+i*14.2,bz=cz+Math.abs(i)*2.1;
+          building(bx,bz,13.8,26+(3-Math.abs(i))*1.4,13.5,Math.PI+a,20+i,false,true);
+          if(!m.low){const fx=bx+Math.sin(a)*7.1,fz=bz-Math.cos(a)*7.1;surface(M.metal,()=>m.cylinder([fx,7.0,fz],[fx,11.0,fz],.055,'#4c5550',6));m.box(fx+1.2,10.3,fz,2.4,.75,.05,i%2?'#385a9c':'#b64e49',a);}
+        }
+        info.labels.push({x:cx,y:20,z:cz-8,text:'REGENT STREET',width:30,type:'shop'});
       }
       if(t.id===2){
-        for(const x of [-44,44])for(const z of [135,228]){register('bridge tower',x,z,6.4);surface(M.stone,()=>m.box(x,15,z,8,30,8,'#c8bca5'));m.pyramid(x,30,z,9,12,9,'#456579');}
-        for(const z of [135,228]){m.box(0,28,z,96,2,2,'#799aa1');for(const side of [-1,1])m.cylinder([side*44,29,z],[side*97,2,z],.5,'#668896',8);}
+        for(const x of [-44,44])for(const z of [135,228]){register('bridge tower',x,z,6.4,true);surface(M.stone,()=>{m.box(x,15,z,8,30,8,'#c8bca5');m.box(x,8,z,10,.8,10,'#ded2b9');m.box(x,22,z,9,.7,9,'#dfd1b7');});m.pyramid(x,30,z,9,12,9,'#456579');}
+        for(const z of [135,228]){m.box(0,28,z,96,2,2,'#799aa1');for(const side of [-1,1])m.cylinder([side*44,29,z],[side*97,2,z],.5,'#668896',8);}info.labels.push({x:-44,y:23,z:232,text:'TOWER BRIDGE',width:22,type:'shop'});
         surface(M.glass,()=>{m.pyramid(63,0,-43,24,100,25,'#839faa');m.pyramid(62,0,-42,10,114,11,'#b3c6cd');});
       }
     }
