@@ -260,10 +260,21 @@ try {
   );
 
   await guest.waitForFunction((before) =>
-    globalThis.__MEOW_WARS_V12_STATS?.intentAcks > before,
+    globalThis.__MEOW_WARS_V12_STATS?.intentAcks > before ||
+    Boolean(globalThis.__MEOW_WARS_ONLINE?.lastOnlineError),
     beforeMove[1].intentAcks,
     { timeout: 5000 }
   );
+  const guestAck = await guest.evaluate(() => ({
+    ack: globalThis.__MEOW_WARS_ONLINE.lastIntentAck,
+    accepted: globalThis.__MEOW_WARS_ONLINE.lastIntentAccepted,
+    turnTeam: globalThis.__MEOW_WARS_ONLINE.lastIntentAckTurnTeam,
+    error: globalThis.__MEOW_WARS_ONLINE.lastOnlineError,
+    stats: globalThis.__MEOW_WARS_V12_STATS
+  }));
+  if (guestAck.error || guestAck.accepted !== true) {
+    throw new Error('Server rejected Red mobile intent: ' + JSON.stringify(guestAck));
+  }
 
   await host.waitForFunction((before) =>
     globalThis.__MEOW_WARS_V12_STATS?.intentsReceived > before,
