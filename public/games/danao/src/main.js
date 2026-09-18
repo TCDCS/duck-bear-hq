@@ -7,11 +7,15 @@ import { createOnlineMatchBridge } from './online/match-bridge.js';
 import { polishCheckoutChaos } from './art/store-polish.js';
 import { polishDanaoArena } from './art/arena-polish.js';
 import { showCombatFeedback } from './art/combat-feedback.js';
+import { mountTouchControls } from './mobile/touch-controls.js';
 
 const canvas = document.getElementById('game');
 const root = document.getElementById('app');
 const onlineRoot = document.getElementById('online-shell');
 const status = document.getElementById('boot-status');
+const touchControls = mountTouchControls({
+  forceVisible: new URLSearchParams(globalThis.location?.search || '').get('touch') === '1',
+});
 
 const buildVersion = document.createElement('div');
 buildVersion.id = 'build-version';
@@ -55,6 +59,7 @@ const runtime = createDanaoRuntime(canvas, {
   onBanner(text) { app?.showRoundResult(text); },
   onBannerClear() { app?.clearBanner(); },
   onResult(result) {
+    touchControls.setActive(false);
     app?.showMatchResult(result);
     if (onlineBridge?.active && onlineClient.isHost) onlineBridge.reportResult(result);
   },
@@ -74,6 +79,7 @@ onlineBridge = createOnlineMatchBridge({
     app?.showError?.(message);
   },
   onResult(result) {
+    touchControls.setActive(false);
     const winnerPlayer = onlineClient.room?.players?.find?.((player) => player.id === result?.winner);
     onlineBridge.stop();
     onlineClient.leave();
@@ -92,6 +98,7 @@ function polishActiveArena(arenaId) {
 }
 
 async function startFromState(state) {
+  touchControls.setActive(false);
   if (onlineBridge?.active) onlineBridge.stop();
   onlineRoot.hidden = true;
   status.style.display = 'block';
@@ -103,7 +110,9 @@ async function startFromState(state) {
       settings: state.settings,
     });
     polishActiveArena(state.arenaId);
+    touchControls.setActive(true);
   } catch (error) {
+    touchControls.setActive(false);
     onlineRoot.hidden = false;
     throw error;
   }
@@ -116,11 +125,14 @@ app = mountApp(root, {
   onPause(paused) {
     if (onlineBridge?.active) {
       if (paused) app?.setPaused?.(false);
+      touchControls.setPaused(false);
       return;
     }
+    touchControls.setPaused(paused);
     runtime.setPaused(paused);
   },
   onQuit() {
+    touchControls.setActive(false);
     if (onlineBridge?.active) onlineBridge.stop();
     if (onlineClient.room) onlineClient.leave();
     runtime.stopMatch();
@@ -150,8 +162,10 @@ onlineLobby = mountOnlineLobby(onlineRoot, {
         settings: state.settings || {},
       });
       polishActiveArena(arenaId);
+      touchControls.setActive(true);
       status.style.display = 'none';
     } catch (error) {
+      touchControls.setActive(false);
       onlineBridge.stop();
       onlineRoot.hidden = false;
       app?.returnToMenu?.();
@@ -160,6 +174,7 @@ onlineLobby = mountOnlineLobby(onlineRoot, {
     }
   },
   onReturnLocal() {
+    touchControls.setActive(false);
     if (onlineBridge?.active) onlineBridge.stop();
     onlineRoot.hidden = false;
     app?.returnToMenu?.();
@@ -191,6 +206,7 @@ window.addEventListener('beforeunload', () => {
   onlineBridge?.dispose?.();
   onlineClient.close?.();
   app?.dispose?.();
+  touchControls.dispose();
   runtime.dispose();
 }, { once: true });
 

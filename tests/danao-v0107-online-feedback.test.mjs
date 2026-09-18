@@ -159,8 +159,10 @@ test('browser main records authoritative feedback and renders guest feedback thr
   assert.match(main, /onFeedback\(event\) \{\n    renderCombatFeedback\(event\);\n  \},/);
 });
 
-test('online feedback parity release is Danao 0.10.7', () => {
+test('online feedback parity remains part of Danao 0.10.7 and later releases', () => {
   const release = JSON.parse(read('public/games/danao/release.json'));
-  assert.equal(release.version, '0.10.7');
+  const [major, minor, patch] = release.version.split('.').map(Number);
+  const numericVersion = major * 1_000_000 + minor * 1_000 + patch;
+  assert.ok(numericVersion >= 10_007, release.version);
   assert.equal(release.engine, 'Babylon.js + Rapier');
 });
