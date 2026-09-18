@@ -4,6 +4,7 @@ import zlib from 'node:zlib';
 import crypto from 'node:crypto';
 import { patchDanaoV07Visuals } from './danao-v07-visual-patch.mjs';
 import { patchDanaoV08Runtime } from './danao-v08-runtime-patch.mjs';
+import { patchDanaoV09Runtime } from './danao-v09-runtime-patch.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const builds = [
@@ -11,7 +12,7 @@ const builds = [
     partsDir: path.join(root, 'scripts/danao-v05-gz/runtime'),
     output: path.join(root, 'public/games/danao/src/game/runtime.js'),
     sha256: '5c39cd73da0c5cfb8ad749c6371008991b7b8b94b63cc239fdc9f533747cf5f5',
-    transform: patchDanaoV08Runtime,
+    transform: (source) => patchDanaoV09Runtime(patchDanaoV08Runtime(source)),
   },
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/visuals'),
