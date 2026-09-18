@@ -47,7 +47,7 @@ function setupPresentation(scene) {
       stroke: '#12314a',
       strokeThickness: 2
     }).setDepth(-3).setAlpha(.08 + (i % 2) * .025);
-    scene.__mw09WindMarks.push({ object: mark, phase: i * 37 });
+    scene.__mw09WindMarks.push({ object: mark, phase: i * 37, baseY: mark.y });
   }
 }
 
@@ -66,7 +66,7 @@ function updateWindVisual(scene, time, delta) {
       mark.x += direction * speed * delta * 10;
       if (mark.x > 1390) mark.x = -90;
       if (mark.x < -90) mark.x = 1390;
-      mark.y += Math.sin(time * .0017 + item.phase) * .025 * delta;
+      mark.y = item.baseY + Math.sin(time * .0017 + item.phase) * 5;
     }
   }
   stats.windVisualTicks += 1;
@@ -154,7 +154,7 @@ function updateAimAssist(scene) {
     const y = surfaceY(scene.terrain, x);
     drawReticle(g, x, y - 8, 0xffd66a, 10, .72);
   } else if (weapon.behaviour === 'ground-runner') {
-    const y = surfaceY(scene.terrain, cat.x + scene.facing * 70);
+    const runnerX = Math.max(0, Math.min(WIDTH, cat.x + scene.facing * 70));\n    const y = surfaceY(scene.terrain, runnerX);
     g.lineStyle(2, guideColor, .55);
     g.beginPath();
     g.moveTo(cat.x + scene.facing * 24, cat.y - 4);
