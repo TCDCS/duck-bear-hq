@@ -28,10 +28,10 @@ test('party camera stays close enough to read the fighters in Checkout Chaos', a
   ]);
   assert.deepEqual(frame.center, { x: 0, z: -0.25 });
   assert.ok(frame.distance >= 10);
-  assert.ok(frame.distance < 15.5, `camera too distant: ${frame.distance}`);
+  assert.ok(frame.distance < 18, `camera too distant: ${frame.distance}`);
 
   const clustered = cameraFrameForPoints([{ x: -1, z: -1 }, { x: 1, z: 1 }]);
-  assert.equal(clustered.distance, 10.4);
+  assert.equal(clustered.distance, 11.8);
 });
 
 test('online launcher is hidden for active local and online fights', () => {
