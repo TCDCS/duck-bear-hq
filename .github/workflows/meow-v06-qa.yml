@@ -1,0 +1,128 @@
+name: Meow Wars v0.6 Visual QA
+
+on:
+  push:
+    branches: [meow-wars-v06-hd]
+    paths:
+      - 'public/games/meow-wars/**'
+      - '.github/workflows/meow-v06-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  visual-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install browser QA dependency
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Pin Phaser locally for branch render
+        run: |
+          curl -fsSL https://cdnjs.cloudflare.com/ajax/libs/phaser/4.2.1/phaser.min.js -o public/games/meow-wars/phaser.min.js
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('public/games/meow-wars/index.html')
+          s=p.read_text()
+          s=s.replace('https://cdnjs.cloudflare.com/ajax/libs/phaser/4.2.1/phaser.min.js','./phaser.min.js')
+          p.write_text(s)
+          PY
+      - name: Start branch server
+        run: |
+          python3 -m http.server 8000 --directory public > /tmp/meow-server.log 2>&1 &
+          echo $! > /tmp/meow-server.pid
+          sleep 2
+      - name: Capture before and after
+        env:
+          LIVE_URL: https://duck-bear-hq.zachary-chambers2.workers.dev/games/meow-wars/
+        run: |
+          mkdir -p verification/meow-v06
+          cat > /tmp/meow-qa.mjs <<'JS'
+          import { chromium } from 'playwright';
+          import fs from 'node:fs/promises';
+
+          const out='verification/meow-v06';
+          const browser=await chromium.launch({headless:true});
+          const page=await browser.newPage({viewport:{width:1280,height:720},deviceScaleFactor:1});
+          const errors=[];
+          page.on('pageerror',e=>errors.push('pageerror: '+e.message));
+          page.on('console',m=>{ if(m.type()==='error') errors.push('console: '+m.text()); });
+
+          async function canvasShot(name){
+            const canvas=page.locator('canvas').first();
+            await canvas.waitFor({state:'visible',timeout:20000});
+            await page.waitForTimeout(900);
+            await canvas.screenshot({path:out+'/'+name});
+          }
+          async function open(url){
+            await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});
+            await page.locator('canvas').first().waitFor({state:'visible',timeout:20000});
+            await page.waitForTimeout(1000);
+          }
+          async function clickGame(x,y){
+            const box=await page.locator('canvas').first().boundingBox();
+            if(!box) throw new Error('Game canvas missing');
+            const sx=box.width/1280, sy=box.height/720;
+            await page.mouse.click(box.x+x*sx,box.y+y*sy);
+            await page.waitForTimeout(350);
+          }
+
+          // Current production v0.5 baseline.
+          try {
+            await open(process.env.LIVE_URL);
+            await canvasShot('00-live-v05-menu.png');
+            await clickGame(640,603);
+            await page.waitForTimeout(1200);
+            await canvasShot('01-live-v05-garden.png');
+          } catch(e) {
+            errors.push('live baseline: '+e.message);
+          }
+
+          const branch='http://127.0.0.1:8000/games/meow-wars/';
+          await open(branch);
+          const build=await page.evaluate(()=>globalThis.__MEOW_WARS_BUILD__ || null);
+          const arenas=await page.evaluate(()=>globalThis.__mw_core_arenas_js?.ARENAS?.map(a=>a.id) || []);
+          if(build!=='0.6.0+20260918-HD1') errors.push('wrong build marker: '+build);
+          if(arenas.length!==7) errors.push('expected 7 arenas, got '+arenas.length);
+          await canvasShot('10-v06-menu.png');
+          await clickGame(82,29);
+          await canvasShot('11-v06-settings.png');
+
+          const ids=['garden-siege','rooftop-rumble','junkyard-jamboree','taj-mahal','oconnell-bridge','westminster-bridge','donabate-beach'];
+          for(let i=0;i<ids.length;i++){
+            await open(branch);
+            for(let n=0;n<i;n++) await clickGame(955,257);
+            const selected=await page.evaluate(()=>globalThis.__mw_core_arenas_js?.ARENAS?.map(a=>a.id) || []);
+            if(selected.length!==7) errors.push('arena list changed during '+ids[i]);
+            await clickGame(640,603);
+            await page.waitForTimeout(1100);
+            await canvasShot(String(20+i).padStart(2,'0')+'-'+ids[i]+'.png');
+          }
+
+          const report={build,arenas,errors,generatedAt:new Date().toISOString()};
+          await fs.writeFile(out+'/report.json',JSON.stringify(report,null,2));
+          await browser.close();
+          if(errors.length) {
+            console.error(JSON.stringify(report,null,2));
+            process.exit(1);
+          }
+          console.log(JSON.stringify(report,null,2));
+          JS
+          node /tmp/meow-qa.mjs
+      - name: Upload visual QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: meow-wars-v06-visual-qa
+          path: verification/meow-v06
+          if-no-files-found: error
+          retention-days: 14
