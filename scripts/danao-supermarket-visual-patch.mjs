@@ -187,7 +187,12 @@ export function patchDanaoSupermarketVisuals(source) {
   }
   out = replaceRequired(out, ARM_BEFORE, ARM_AFTER, 'hero arm');
   out = replaceRequired(out, LEG_BEFORE, LEG_AFTER, 'hero leg');
-  out = replaceRequired(out, HERO_BADGE_BEFORE, HERO_BADGE_AFTER, 'hero face');
+  out = replaceRegexRequired(
+    out,
+    /(const badge = stylizeMesh\(B, B\.MeshBuilder\.CreateSphere\('hero-mango-badge',[\s\S]*?badge\.material = accent;)/,
+    (match) => match + HERO_BADGE_AFTER.slice(HERO_BADGE_BEFORE.length),
+    'hero face',
+  );
   out = replaceRegexRequired(
     out,
     /if \(arena\.id === 'ring' && arena\.ring\) \{[\s\S]*?\n\} else \{\nfloor = box\('arena-floor'/,
