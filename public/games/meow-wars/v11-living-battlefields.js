@@ -14,7 +14,9 @@ const stats = globalThis.__MEOW_WARS_V11_STATS = {
   propsDamaged: 0,
   propsDestroyed: 0,
   propFalls: 0,
-  propDebris: 0
+  propDebris: 0,
+  propGunHits: 0,
+  ambientPropFrames: 0
 };
 
 const PROP_DEFS = {
@@ -322,6 +324,27 @@ function defScale(prop) {
   return prop.scale||1;
 }
 
+function damagePropAtPoint(scene,x,y,weapon) {
+  if(!scene.__mw11Props||!weapon) return;
+  let nearest=null;
+  let nearestDistance=Infinity;
+  for(const prop of scene.__mw11Props) {
+    if(prop.destroyed||!prop.image?.active) continue;
+    const d=Math.hypot(prop.x-x,(prop.y-28)-y);
+    if(d<nearestDistance){nearestDistance=d;nearest=prop;}
+  }
+  if(!nearest||nearestDistance>34) return;
+  const amount=Math.max(8,(weapon.damage||20)*.72);
+  nearest.hp=Math.max(0,nearest.hp-amount);
+  nearest.image.angle+=(x<nearest.x?1:-1)*(2+Math.min(6,amount/12));
+  nearest.image.setTint?.(0xc8b7a7);
+  scene.time.delayedCall(120,()=>nearest.image?.active&&nearest.image.clearTint?.());
+  spawnPropDebris(scene,nearest,.45);
+  stats.propsDamaged+=1;
+  stats.propGunHits+=1;
+  if(nearest.hp<=0) destroyLivingProp(scene,nearest,.9);
+}
+
 function destroyLivingProp(scene,prop,intensity=1) {
   if(prop.destroyed) return;
   prop.destroyed=true;
@@ -344,6 +367,7 @@ function destroyLivingProp(scene,prop,intensity=1) {
 function updateLivingProps(scene,delta) {
   if(!scene.__mw11Props) return;
   const dt=Math.min(delta,40)/1000;
+  const now=scene.time.now;
   for(const prop of scene.__mw11Props) {
     if(prop.destroyed||!prop.image?.active) continue;
     const ground=surfaceY(scene.terrain,prop.x);
@@ -361,6 +385,20 @@ function updateLivingProps(scene,delta) {
     } else {
       prop.y=ground+2;
       prop.image.y=prop.y;
+    }
+
+    if(!prop.falling) {
+      if(prop.type==='dish') {
+        prop.image.angle=prop.baseRotation+Math.sin(now*.00115+prop.x)*1.15;
+      } else if(prop.type==='scrap-magnet') {
+        prop.image.angle=prop.baseRotation+Math.sin(now*.0014)*2.1;
+        prop.image.x=prop.x+Math.sin(now*.00105)*5;
+      } else if(prop.type==='beach-sign') {
+        prop.image.angle=prop.baseRotation+Math.sin(now*.0018+prop.x)*.85;
+      } else if(prop.type.includes('lamp')) {
+        prop.image.alpha=.94+Math.sin(now*.0023+prop.x)*.045;
+      }
+      stats.ambientPropFrames+=1;
     }
     if(prop.falling) stats.propFalls+=1;
   }
@@ -469,6 +507,13 @@ const v10GameUpdate=GameScene.prototype.update;
 GameScene.prototype.update=function(time,delta) {
   v10GameUpdate.call(this,time,delta);
   updateLivingProps(this,delta);
+};
+
+const v10DrawTracer=GameScene.prototype.drawTracer;
+GameScene.prototype.drawTracer=function(x1,y1,x2,y2,color) {
+  const result=v10DrawTracer.call(this,x1,y1,x2,y2,color);
+  if(this.__mw08HitscanWeapon) damagePropAtPoint(this,x2,y2,this.__mw08HitscanWeapon);
+  return result;
 };
 
 const v10Explode=GameScene.prototype.explode;
