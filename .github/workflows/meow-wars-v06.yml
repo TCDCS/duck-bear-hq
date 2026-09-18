@@ -1,0 +1,57 @@
+name: Meow Wars v0.6 HD verification
+
+on:
+  pull_request:
+    paths:
+      - 'public/games/meow-wars/**'
+      - 'public/games/index.html'
+      - 'tests/meow-wars-v06*'
+      - '.github/workflows/meow-wars-v06.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: meow-wars-v06-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hd-browser-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install local verification tools
+        run: |
+          npm ci --no-audit --no-fund
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Check Meow Wars source and Worker bundle
+        run: |
+          mkdir -p verification/meow-wars-v06
+          node --test tests/meow-wars-v06.test.mjs | tee verification/meow-wars-v06/static-tests.tap
+          npx wrangler deploy --dry-run --outdir /tmp/meow-wars-v06-build
+      - name: Render all seven arenas locally
+        run: |
+          npx wrangler dev --ip 127.0.0.1 --port 8787 > verification/meow-wars-v06/wrangler.log 2>&1 &
+          SERVER=$!
+          trap 'kill $SERVER 2>/dev/null || true' EXIT
+          for i in $(seq 1 90); do
+            if curl -sf http://127.0.0.1:8787/games/meow-wars/ >/dev/null; then break; fi
+            sleep 1
+          done
+          python tests/meow-wars-v06-browser.py
+      - name: Save Meow Wars screenshots and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: meow-wars-v06-hd-proof
+          path: verification/meow-wars-v06/
+          retention-days: 7
