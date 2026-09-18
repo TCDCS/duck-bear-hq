@@ -1,12 +1,18 @@
-name: Meow Wars v1.1 Validate
+name: Meow Wars v1.2 Validate
 
 on:
   pull_request:
     paths:
       - 'public/games/meow-wars/**'
       - 'public/games/index.html'
-      - 'tests/meow-wars-v11.test.mjs'
-      - 'scripts/meow-wars-v11-visual.mjs'
+      - 'src/meow-wars/**'
+      - 'src/game-routes.js'
+      - 'src/worker-games.js'
+      - 'wrangler.jsonc'
+      - 'tests/meow-wars-v12.test.mjs'
+      - 'tests/meow-wars-online.test.mjs'
+      - 'scripts/meow-wars-v12-visual.mjs'
+      - 'scripts/meow-wars-v12-online-e2e.mjs'
       - '.github/workflows/meow-wars-v06-validate.yml'
 
 permissions:
@@ -20,8 +26,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Validate production payload and v1.1 living-world layer
-        run: node --test tests/meow-wars-v11.test.mjs tests/danao-release-upload.test.mjs
+      - name: Install repository dependencies
+        run: npm ci
+      - name: Validate production payload, online state and repo transfer guard
+        run: node --test tests/meow-wars-v12.test.mjs tests/meow-wars-online.test.mjs tests/danao-release-upload.test.mjs
+      - name: Compile Worker and Durable Object bindings
+        run: npx wrangler deploy --dry-run --outdir /tmp/meow-worker-dryrun
 
   visual:
     needs: validate
@@ -41,7 +51,7 @@ jobs:
           git worktree add /tmp/meow-main FETCH_HEAD
       - name: Start branch and main static servers
         run: |
-          python3 -m http.server 4173 --directory public > /tmp/meow-v11-server.log 2>&1 &
+          python3 -m http.server 4173 --directory public > /tmp/meow-v12-server.log 2>&1 &
           python3 -m http.server 4174 --directory /tmp/meow-main/public > /tmp/meow-main-server.log 2>&1 &
           sleep 2
       - name: Capture current production state
@@ -49,18 +59,58 @@ jobs:
           MEOW_WARS_URL: http://127.0.0.1:4174/games/meow-wars/
           MEOW_WARS_VARIANT: before
           MEOW_WARS_ARENAS: 7
-        run: node scripts/meow-wars-v11-visual.mjs
-      - name: Capture and exercise v1.1 branch
+        run: node scripts/meow-wars-v12-visual.mjs
+      - name: Capture and exercise v1.2 branch
         env:
           MEOW_WARS_URL: http://127.0.0.1:4173/games/meow-wars/
           MEOW_WARS_VARIANT: after
           MEOW_WARS_ARENAS: 7
-          MEOW_WARS_BUILD: mw-v11-living-battlefields-20260918a
-        run: node scripts/meow-wars-v11-visual.mjs
+          MEOW_WARS_BUILD: mw-v12-online-rooms-20260918a
+        run: node scripts/meow-wars-v12-visual.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: meow-wars-v11-before-after
-          path: artifacts/meow-wars-v11/
+          name: meow-wars-v12-before-after
+          path: artifacts/meow-wars-v12/
+          if-no-files-found: warn
+          retention-days: 7
+
+  online:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Worker and browser dependencies
+        run: |
+          npm ci
+          npm install --no-save --package-lock=false playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Start real local Cloudflare Worker
+        run: |
+          npx wrangler dev --ip 127.0.0.1 --port 8787 > /tmp/meow-v12-wrangler.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8787/api/meow-wars/version > /tmp/meow-version.json; then
+              cat /tmp/meow-version.json
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/meow-v12-wrangler.log
+          exit 1
+      - name: Create, join, play and reconnect two-browser room
+        env:
+          MEOW_WARS_URL: http://127.0.0.1:8787/games/meow-wars/
+        run: node scripts/meow-wars-v12-online-e2e.mjs
+      - name: Print Worker log on failure
+        if: failure()
+        run: tail -n 300 /tmp/meow-v12-wrangler.log || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: meow-wars-v12-online-proof
+          path: artifacts/meow-wars-v12-online/
           if-no-files-found: warn
           retention-days: 7
