@@ -165,7 +165,8 @@ function validateSnapshot(data) {
     deployables: [],
     runners: [],
     craters: [],
-    props: []
+    props: [],
+    ammo: [{}, {}]
   };
 
   if (!Array.isArray(data.cats) || data.cats.length > 6) fail(400, 'Invalid cat snapshot.');
@@ -217,6 +218,17 @@ function validateSnapshot(data) {
     destroyed: Boolean(p?.destroyed),
     angle: finite(Number(p?.angle || 0), -360, 360, 'prop angle')
   }));
+
+  if (!Array.isArray(data.ammo) || data.ammo.length !== 2) fail(400, 'Invalid ammo snapshot.');
+  out.ammo = data.ammo.map((team) => {
+    if (!team || typeof team !== 'object' || Array.isArray(team)) fail(400, 'Invalid ammo snapshot.');
+    const result = {};
+    for (const [weaponId, amount] of Object.entries(team)) {
+      if (!/^[a-z0-9-]{2,40}$/.test(weaponId)) fail(400, 'Invalid ammo weapon.');
+      result[weaponId] = integer(Number(amount), -1, 99, 'ammo');
+    }
+    return result;
+  });
   return out;
 }
 
