@@ -55,6 +55,15 @@ function hideNamedMeshes(scene, name) {
   return count;
 }
 
+function setNamedMaterialColor(B, scene, name, hex, ambient = 0.22) {
+  const mat = scene.getMaterialByName?.(name);
+  if (!mat?.diffuseColor) return false;
+  const next = color3(B, hex);
+  mat.diffuseColor = next;
+  if (mat.ambientColor) mat.ambientColor = next.scale(ambient);
+  return true;
+}
+
 function box(B, scene, name, size, position, mat, rotation = null) {
   const mesh = B.MeshBuilder.CreateBox(name, {
     width: size[0],
@@ -135,13 +144,6 @@ function addCourtyardArchitecture(B, scene, mats, animated) {
     }
   }
 
-  for (const z of [-7.45, 7.45]) {
-    box(B, scene, 'courtyard-polish-beam-x', [15.25, 0.28, 0.35], [0, 3.95, z], mats.dark);
-  }
-  for (const x of [-7.45, 7.45]) {
-    box(B, scene, 'courtyard-polish-beam-z', [0.35, 0.28, 15.25], [x, 3.95, 0], mats.dark);
-  }
-
   for (const [x, z, yaw] of [
     [-10.5, 11.6, 0.04],
     [0, 12.0, 0],
@@ -179,8 +181,11 @@ function addCourtyardArchitecture(B, scene, mats, animated) {
 
 function polishCourtyard(B, scene) {
   hideNamedMeshes(scene, 'courtyard-roof-silhouette');
-  recolorMatchingMaterials(B, scene, '#d8b06a', '#c99d5b', 0.11);
-  recolorMatchingMaterials(B, scene, '#f4ce46', '#e5bc42', 0.1);
+  setNamedMaterialColor(B, scene, 'floor', '#b78950', 0.26);
+  setNamedMaterialColor(B, scene, 'trim', '#7f2f33', 0.24);
+  setNamedMaterialColor(B, scene, 'accent', '#d0a83d', 0.28);
+  recolorMatchingMaterials(B, scene, '#d8b06a', '#b78950', 0.11);
+  recolorMatchingMaterials(B, scene, '#f4ce46', '#d0a83d', 0.1);
   const mats = {
     dark: material(B, scene, 'courtyard-polish-dark', PALETTE.ink),
     red: material(B, scene, 'courtyard-polish-red', PALETTE.courtyardRed),
@@ -289,9 +294,12 @@ function addRooftopDetails(B, scene, mats, animated) {
 }
 
 function polishRooftop(B, scene) {
-  recolorMatchingMaterials(B, scene, '#4b6f73', '#365a60', 0.11);
-  recolorMatchingMaterials(B, scene, '#bc382f', '#91373b', 0.11);
-  recolorMatchingMaterials(B, scene, '#f3d94c', '#d8bd4f', 0.11);
+  setNamedMaterialColor(B, scene, 'floor', '#31535a', 0.2);
+  setNamedMaterialColor(B, scene, 'trim', '#7d343a', 0.2);
+  setNamedMaterialColor(B, scene, 'accent', '#c9a943', 0.24);
+  recolorMatchingMaterials(B, scene, '#4b6f73', '#31535a', 0.11);
+  recolorMatchingMaterials(B, scene, '#bc382f', '#7d343a', 0.11);
+  recolorMatchingMaterials(B, scene, '#f3d94c', '#c9a943', 0.11);
   const mats = {
     dark: material(B, scene, 'rooftop-polish-dark', PALETTE.ink),
     tileLine: material(B, scene, 'rooftop-polish-tile-line', '#314d56'),
