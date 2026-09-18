@@ -1,5 +1,5 @@
 name: Site Deploy
-# Manual content deploy trigger: Meow Wars v1.3 Environment Depth
+# Manual content deploy trigger: Danao v0.10.11 Environment Detail
 
 on:
   workflow_dispatch:
