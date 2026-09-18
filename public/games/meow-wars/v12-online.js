@@ -1011,10 +1011,10 @@ function ensureOnlineLauncher() {
     'background:rgba(18,107,104,.96)','color:#fff','font:900 13px Arial','letter-spacing:.3px',
     'box-shadow:0 5px 20px rgba(0,0,0,.35)','cursor:pointer','touch-action:manipulation'
   ].join(';');
+  // A single click path avoids opening on pointer-up and then immediately
+  // treating the trailing synthesized click as a backdrop click on mobile.
   const activate = () => showLobby();
-  button.onclick = activate;
-  button.addEventListener('pointerup', activate);
-  button.addEventListener('touchend', activate, { passive: true });
+  button.addEventListener('click', activate);
   globalThis.__MEOW_WARS_OPEN_ONLINE = activate;
   document.body.appendChild(button);
   return button;
