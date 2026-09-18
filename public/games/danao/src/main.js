@@ -40,6 +40,12 @@ let onlineLobby;
 let onlineBridge;
 const onlineClient = createDanaoRoomClient();
 
+function renderCombatFeedback(event) {
+  const B = globalThis.BABYLON;
+  const scene = B?.EngineStore?.LastCreatedScene;
+  showCombatFeedback(B, scene, event);
+}
+
 const runtime = createDanaoRuntime(canvas, {
   onStatus(text) {
     status.textContent = text;
@@ -53,15 +59,17 @@ const runtime = createDanaoRuntime(canvas, {
     if (onlineBridge?.active && onlineClient.isHost) onlineBridge.reportResult(result);
   },
   onFeedback(event) {
-    const B = globalThis.BABYLON;
-    const scene = B?.EngineStore?.LastCreatedScene;
-    showCombatFeedback(B, scene, event);
+    renderCombatFeedback(event);
+    onlineBridge?.recordFeedback?.(event);
   },
 });
 
 onlineBridge = createOnlineMatchBridge({
   client: onlineClient,
   runtime,
+  onFeedback(event) {
+    renderCombatFeedback(event);
+  },
   onError(message) {
     app?.showError?.(message);
   },
