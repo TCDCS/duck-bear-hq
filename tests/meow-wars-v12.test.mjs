@@ -93,7 +93,12 @@ test('Meow Wars v1.2 uses host-authoritative snapshots with server-gated guest i
     '__mw12Craters',
     'applyCraterSnapshot',
     'applyPropSnapshot',
-    'networkFrozen'
+    'networkFrozen',
+    'ONLINE_TURN_MS = 45_000',
+    "replace('LOCAL 2P', 'ONLINE')",
+    'ONLINE · WAITING FOR RECONNECT',
+    'ONLINE · OTHER PLAYER TURN',
+    'ONLINE · YOUR TURN'
   ]) assert.ok(source.includes(marker), marker);
 
   assert.match(source, /if \(this\.mode === 'online' && !isHost\(\)\) return;/);
