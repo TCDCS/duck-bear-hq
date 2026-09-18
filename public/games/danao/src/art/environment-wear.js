@@ -335,8 +335,6 @@ function setWearState(entry, nextState, now) {
 }
 
 function worldPosition(node) {
-  const value = node?.getAbsolutePosition?.();
-  if (value) return value;
   return node?.position || { x: 0, y: 0, z: 0 };
 }
 
