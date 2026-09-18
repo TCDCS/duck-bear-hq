@@ -7,6 +7,15 @@ const MALE_FILE = 'male.gltf';
 const HAIR_ROOT = '/games/danao/assets/characters/cast/hair/';
 const DOG_ROOT = '/games/danao/assets/characters/cast/mulan/';
 const DOG_FILE = 'mulan-dog.glb';
+const HUMAN_BODY_MESH_NAMES = Object.freeze(['Superhero_Female', 'Superhero_Male', 'SuperHero_Male']);
+const DOG_CLIP_NAMES = Object.freeze([
+  'AnimalArmature|Idle',
+  'AnimalArmature|Walk',
+  'AnimalArmature|Gallop',
+  'AnimalArmature|Gallop_Jump',
+  'AnimalArmature|Attack',
+  'AnimalArmature|Idle_HitReact_Left',
+]);
 
 const GLTF_LOADER_URLS = Object.freeze([
   'https://cdn.jsdelivr.net/npm/babylonjs-loaders@9.26.2/babylonjs.loaders.min.js',
@@ -318,8 +327,7 @@ function importedRoot(result) {
 
 function findBodyMesh(result) {
   return result?.meshes?.find?.((mesh) =>
-    mesh.name === 'Superhero_Female'
-    || mesh.name === 'SuperHero_Male'
+    HUMAN_BODY_MESH_NAMES.includes(mesh.name)
     || mesh.name === 'Sphere.005_Retopology.004'
   ) || result?.meshes?.find?.((mesh) => (mesh.getTotalVertices?.() || 0) > 5000);
 }
