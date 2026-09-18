@@ -22,6 +22,7 @@ const stats = globalThis.__MEOW_WARS_V10_STATS = {
   settingsApplied: 0,
   touchUiCreated: 0,
   touchInputFrames: 0,
+  touchControlEvents: 0,
   forcedShakeBlocks: 0,
   audioBlocks: 0,
   fxTrimmed: 0
@@ -234,6 +235,7 @@ function makeTouchButton(scene, x, y, w, h, text, onDown, onUp = null) {
   rect.on('pointerdown', (pointer) => {
     pointer?.event?.preventDefault?.();
     rect.setFillStyle(0x236b9f, .8);
+    stats.touchControlEvents += 1;
     onDown?.();
   });
 
