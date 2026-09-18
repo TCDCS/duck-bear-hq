@@ -320,10 +320,11 @@ Do not add a dependency-heavy external 3D engine.
 High quality:
 - hero landmark geometry may be substantially richer
 - procedural filler remains economical
-- scene must remain below the existing 500,000-triangle test ceiling
-- keep draw architecture compatible with current single-world mesh approach
+- keep draw architecture compatible with the current single-world mesh approach
+- use the existing per-track full-detail baseline rather than forcing an artificial 500,000 ceiling; Hyde Park is already the heaviest full-detail scene because of its trees
 
 Low quality:
+- remain below the existing 500,000-triangle automated test ceiling on every circuit
 - reduce round-box subdivisions
 - reduce cylinders/spheres
 - reduce decorative props
@@ -386,3 +387,39 @@ Visual:
 8. Full regression tests.
 9. Before/after browser screenshots.
 10. Merge/deploy only after the visual difference is obvious and the physics tests remain green.
+
+
+## 12. Progress — 18 September 2026
+
+Completed on the upgrade branch:
+- first 85%-arcade physics pass in both browser and multiplayer cores
+- progressive drift-grip blend
+- speed-sensitive steering with vehicle-specific response
+- stronger mass differences, lower-bounce collisions and improved wall scraping
+- vehicle-specific roll/pitch/heave response
+- separate London and Dublin moving police/Garda, ambulance and bus geometry
+- separate country-correct parked buses and emergency/service vehicles
+- protected hero-landmark reserves
+- Westminster left-side Big Ben/Parliament opening reveal
+- Camden market gateway
+- Docklands Tower Bridge hero treatment
+- Hyde Park entrance landmark
+- Regent Street grand crescent approach
+- Dublin Spire/GPO left-side opening reveal
+- crossings, drains, bins, bollards, bus stops and traffic lights
+- automated tests expanded for drift blend, hero landmarks and geometry-level country differences
+
+Direct branch validation completed:
+- deterministic replay smoke check
+- 30/60/120 Hz equivalence smoke check
+- all six low-detail scenes remain under the existing 500,000-triangle test ceiling
+- London/Dublin bus, police/Garda and ambulance meshes differ in geometry, not only colour
+- bus AI completes three laps on all six circuits with zero recoveries
+
+Still to do before merge/deploy:
+- renderer/material polish
+- visual browser review at desktop and mobile sizes
+- adjust any landmark placement revealed as weak by actual chase-camera screenshots
+- before/after screenshots
+- full repository CI when available
+- final merge/deploy only after visual review
