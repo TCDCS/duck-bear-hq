@@ -381,6 +381,10 @@ function renderLobby() {
 
 function scheduleReconnect() {
   if (online.manualClose || !online.session || online.reconnectTimer) return;
+  if (online.reconnectAttempt >= 8) {
+    clearOnlineSession('Room could not be restored. Join again.');
+    return;
+  }
   const delay = Math.min(10000, 800 * Math.pow(1.65, online.reconnectAttempt++));
   setStatus('Connection lost — reconnecting…');
   online.reconnectTimer = setTimeout(() => {
@@ -785,6 +789,7 @@ function applyAction(action) {
 
   scene.__mw12ApplyingAction = true;
   scene.__mw12FirePending = false;
+  scene.actionLocked = false;
   try { v11FireCurrentWeapon.call(scene); }
   finally { scene.__mw12ApplyingAction = false; }
   stats.actionsApplied += 1;
