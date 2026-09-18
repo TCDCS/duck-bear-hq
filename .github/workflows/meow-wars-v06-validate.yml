@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: 22
       - name: Validate production payload and v0.7.1 layers
-        run: node --test tests/meow-wars-v07.test.mjs
+        run: node --test tests/meow-wars-v07.test.mjs tests/danao-release-upload.test.mjs
 
   visual:
     needs: validate
