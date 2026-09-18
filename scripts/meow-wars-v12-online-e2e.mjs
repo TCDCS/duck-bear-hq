@@ -313,6 +313,8 @@ try {
     throw new Error('Guest mobile movement was not applied authoritatively: ' + JSON.stringify({ beforeX, afterX, movementDiag }));
   }
 
+  await guest.screenshot({ path: out('guest-mobile-before-fire.png'), fullPage: true });
+
   const beforeFire = await Promise.all([
     host.evaluate(() => ({
       intentsReceived: globalThis.__MEOW_WARS_V12_STATS.intentsReceived,
