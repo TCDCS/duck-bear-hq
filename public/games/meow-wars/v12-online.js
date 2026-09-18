@@ -44,7 +44,7 @@ const online = globalThis.__MEOW_WARS_ONLINE = {
 function readSession() {
   try {
     const value = JSON.parse(globalThis.localStorage?.getItem(SESSION_KEY) || 'null');
-    if (!value || !/^d{4}$/.test(String(value.code || '')) || !/^[a-fd-]{36}$/i.test(String(value.token || ''))) return null;
+    if (!value || !/^\d{4}$/.test(String(value.code || '')) || !/^[a-f\d-]{36}$/i.test(String(value.token || ''))) return null;
     if (![0, 1].includes(Number(value.id))) return null;
     return {
       code: String(value.code),
@@ -221,7 +221,7 @@ function openOnlinePanel(prefill = '') {
   const code = inputBox('4827', 4);
   code.inputMode = 'numeric';
   code.pattern = '[0-9]*';
-  code.value = /^d{4}$/.test(String(prefill || '')) ? String(prefill) : '';
+  code.value = /^\d{4}$/.test(String(prefill || '')) ? String(prefill) : '';
   card.appendChild(code);
 
   const join = button('JOIN ROOM', true);
@@ -264,7 +264,7 @@ function openOnlinePanel(prefill = '') {
     try {
       create.disabled = join.disabled = true;
       const roomCode = code.value.replace(/D/g, '').slice(0, 4);
-      if (!/^d{4}$/.test(roomCode)) throw new Error('Enter all four digits.');
+      if (!/^\d{4}$/.test(roomCode)) throw new Error('Enter all four digits.');
       setStatus('Joining room…');
       const playerName = validName();
       const data = await postJson('/api/meow/join', { code: roomCode, name: playerName });
@@ -842,7 +842,7 @@ MenuScene.prototype.create = function() {
     setTimeout(() => connectSocket(true), 60);
   } else {
     const invite = new URLSearchParams(location.search).get('meowRoom');
-    if (invite && /^d{4}$/.test(invite) && !online.session) setTimeout(() => openOnlinePanel(invite), 100);
+    if (invite && /^\d{4}$/.test(invite) && !online.session) setTimeout(() => openOnlinePanel(invite), 100);
   }
 };
 
