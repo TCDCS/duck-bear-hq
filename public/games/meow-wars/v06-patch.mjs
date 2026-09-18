@@ -238,7 +238,6 @@ function v06DrawGarden(scene, far, mid, near) {
 function v06DrawRooftop(scene, far, mid, near) {
     for (const [x,y,s] of [[120,100,.6],[520,132,.7],[1010,88,.62]]) v06Cloud(far,x,y,s,.28);
     const colors=[0x485677,0x576784,0x394866,0x66718b,0x4a5270];
-    for(let i=0;i<12;i+=1) v06CityBlock(far,-0+i*0+480,i*108-22,0,0,0);
     for(let i=0;i<12;i+=1){const w=96+(i%3)*18,h=125+(i%5)*26;v06CityBlock(far,i*112-25,480,w,h,colors[i%colors.length]);}
     mid.fillStyle(0x6f7c8b,1); mid.fillEllipse(700,282,108,52); mid.fillRect(646,281,108,42);
     mid.lineStyle(7,0x4f5968,1); mid.beginPath(); mid.moveTo(660,323);mid.lineTo(646,382);mid.moveTo(740,323);mid.lineTo(754,382);mid.strokePath();
@@ -309,6 +308,7 @@ GameScene.prototype.createSky = function() {
     const p = this.arena.palette;
     this.v06ParallaxLayers = [];
     this.v06Water = null;
+    this.v06WaterGraphics = null;
     this.cameras.main.setBackgroundColor(p.skyTop);
     for (let i=0;i<12;i+=1) {
         const t=i/11;
