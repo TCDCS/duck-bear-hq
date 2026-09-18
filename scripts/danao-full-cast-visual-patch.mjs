@@ -12,7 +12,7 @@ export function patchDanaoFullCastVisuals(source) {
   out = out.replace(pattern, (match, heroBlock, ret) => `${heroBlock}if (style.id !== 'hero') {
 const proceduralBaseMeshes = root.getChildMeshes?.(false)?.filter((mesh) => {
   if (mesh.name.includes('-marker')) return false;
-  if (style.id !== 'mulan' && PRESERVED_ACCESSORY.test(mesh.name)) return false;
+  if (style.id !== 'mulan' && /stephen-glasses|zachary-sash|gaby-sunglasses|gaby-nose-ring|sara-scarf|mum-collar|dad-glasses/.test(mesh.name)) return false;
   return true;
 }) || [];
 const rigPromise = style.id === 'mulan'
