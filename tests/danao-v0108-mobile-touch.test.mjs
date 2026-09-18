@@ -87,8 +87,10 @@ test('v0.10.8 browser entry mounts touch controls for local and online matches',
   assert.match(html, /src\/mobile\/touch-controls\.css/);
 });
 
-test('mobile touch release is Danao 0.10.8', () => {
+test('mobile touch remains part of Danao 0.10.8 and later releases', () => {
   const release = JSON.parse(read('public/games/danao/release.json'));
-  assert.equal(release.version, '0.10.8');
+  const [major, minor, patch] = release.version.split('.').map(Number);
+  const numericVersion = major * 1_000_000 + minor * 1_000 + patch;
+  assert.ok(numericVersion >= 10_008, release.version);
   assert.equal(release.engine, 'Babylon.js + Rapier');
 });
