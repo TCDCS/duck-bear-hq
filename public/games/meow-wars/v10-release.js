@@ -11,6 +11,7 @@ const DEFAULT_SETTINGS = Object.freeze({
   aimAssist: true,
   screenShake: true,
   sfx: true,
+  fxIntensity: 'full',
   hudDetail: true,
   touchMode: 'auto'
 });
@@ -22,7 +23,8 @@ const stats = globalThis.__MEOW_WARS_V10_STATS = {
   touchUiCreated: 0,
   touchInputFrames: 0,
   forcedShakeBlocks: 0,
-  audioBlocks: 0
+  audioBlocks: 0,
+  fxTrimmed: 0
 };
 
 function copyDefaults() {
@@ -38,6 +40,7 @@ function loadSettings() {
       if (typeof saved.aimAssist === 'boolean') settings.aimAssist = saved.aimAssist;
       if (typeof saved.screenShake === 'boolean') settings.screenShake = saved.screenShake;
       if (typeof saved.sfx === 'boolean') settings.sfx = saved.sfx;
+      if (['full', 'reduced'].includes(saved.fxIntensity)) settings.fxIntensity = saved.fxIntensity;
       if (typeof saved.hudDetail === 'boolean') settings.hudDetail = saved.hudDetail;
       if (['auto', 'on', 'off'].includes(saved.touchMode)) settings.touchMode = saved.touchMode;
     }
@@ -80,12 +83,16 @@ function touchEnabled() {
 function settingLabel(key) {
   if (key === 'touchMode')
     return settings.touchMode.toUpperCase();
+  if (key === 'fxIntensity')
+    return settings.fxIntensity.toUpperCase();
   return settings[key] ? 'ON' : 'OFF';
 }
 
 function toggleSetting(key) {
   if (key === 'touchMode') {
     settings.touchMode = settings.touchMode === 'auto' ? 'on' : settings.touchMode === 'on' ? 'off' : 'auto';
+  } else if (key === 'fxIntensity') {
+    settings.fxIntensity = settings.fxIntensity === 'full' ? 'reduced' : 'full';
   } else {
     settings[key] = !settings[key];
   }
@@ -145,7 +152,7 @@ function settingsRow(scene, items, y, label, key, detail) {
     value.setText(next);
     button.setStrokeStyle(
       2,
-      next === 'OFF' ? 0xe06b6b : next === 'AUTO' ? 0x6bcff5 : 0xffd253,
+      next === 'OFF' ? 0xe06b6b : (next === 'AUTO' || next === 'REDUCED') ? 0x6bcff5 : 0xffd253,
       .9
     );
   });
@@ -178,13 +185,14 @@ function openSettings(scene) {
 
   items.push(dim, panel, title, build);
 
-  settingsRow(scene, items, 170, 'AIM ASSIST', 'aimAssist', 'Landing / impact reticles for human turns');
-  settingsRow(scene, items, 226, 'SCREEN SHAKE', 'screenShake', 'Explosion camera shake');
-  settingsRow(scene, items, 282, 'SOUND EFFECTS', 'sfx', 'Shots, explosions, meows and UI tones');
-  settingsRow(scene, items, 338, 'WEAPON DETAIL HUD', 'hudDetail', 'Selected weapon name, ammo and description');
-  settingsRow(scene, items, 394, 'TOUCH CONTROLS', 'touchMode', 'AUTO detects touch/small screens · ON/OFF overrides');
+  settingsRow(scene, items, 154, 'AIM ASSIST', 'aimAssist', 'Landing / impact reticles for human turns');
+  settingsRow(scene, items, 204, 'SCREEN SHAKE', 'screenShake', 'Explosion camera shake');
+  settingsRow(scene, items, 254, 'SOUND EFFECTS', 'sfx', 'Shots, explosions, meows and UI tones');
+  settingsRow(scene, items, 304, 'FX INTENSITY', 'fxIntensity', 'FULL keeps every effect · REDUCED trims extra blast particles');
+  settingsRow(scene, items, 354, 'WEAPON DETAIL HUD', 'hudDetail', 'Selected weapon name, ammo and description');
+  settingsRow(scene, items, 404, 'TOUCH CONTROLS', 'touchMode', 'AUTO detects touch/small screens · ON/OFF overrides');
 
-  const note = scene.add.text(640, 455,
+  const note = scene.add.text(640, 474,
     'Keyboard: A/D move · W/S aim · SPACE charge/fire · Q/E weapons\n' +
     'Gamepad: left stick move/aim · A fire · LB/RB weapons\n' +
     'Touch: movement, aim, fire and weapon buttons appear in battle', {
@@ -195,11 +203,11 @@ function openSettings(scene) {
       lineSpacing: 6
     }).setOrigin(.5).setDepth(902);
 
-  const close = scene.add.rectangle(640, 565, 220, 44, 0xef5b52, 1)
+  const close = scene.add.rectangle(640, 590, 220, 44, 0xef5b52, 1)
     .setStrokeStyle(2, 0xffeee0, 1)
     .setInteractive({ useHandCursor: true })
     .setDepth(905);
-  const closeText = scene.add.text(640, 565, 'CLOSE', {
+  const closeText = scene.add.text(640, 590, 'CLOSE', {
     fontFamily: 'Arial Black, Arial',
     fontSize: '18px',
     color: '#ffffff'
@@ -302,6 +310,15 @@ function applyTouchInput(scene, delta) {
       active.x = nextX;
       if (active.vy === 0)
         active.y = nextSurface - CAT_FOOT;
+      if (Math.abs(active.x - scene.lastLoggedMoveX) >= 12) {
+        scene.actionLog.append(scene.turnNumber, {
+          type: 'move',
+          actorId: active.id,
+          x: Math.round(active.x * 10) / 10,
+          facing: scene.facing
+        });
+        scene.lastLoggedMoveX = active.x;
+      }
     }
   }
 
@@ -309,6 +326,15 @@ function applyTouchInput(scene, delta) {
     scene.aimAngleDeg = Math.max(8, Math.min(82, scene.aimAngleDeg + 52 * dt));
   if (touch.down)
     scene.aimAngleDeg = Math.max(8, Math.min(82, scene.aimAngleDeg - 52 * dt));
+  if (Math.abs(scene.aimAngleDeg - scene.lastLoggedAim) >= 3) {
+    scene.actionLog.append(scene.turnNumber, {
+      type: 'aim',
+      actorId: active.id,
+      angleDeg: Math.round(scene.aimAngleDeg * 10) / 10,
+      facing: scene.facing
+    });
+    scene.lastLoggedAim = scene.aimAngleDeg;
+  }
 
   if (touch.fire) {
     scene.chargePower = Math.max(.36, Math.min(1, scene.chargePower + Math.min(delta, 40) * .00055));
@@ -402,21 +428,37 @@ GameScene.prototype.update = function(time, delta) {
   refreshTouchSetting(this);
 };
 
+function trimExplosionFx(scene, beforeChildren) {
+  if (settings.fxIntensity !== 'reduced') return;
+  const created = scene.children.list.filter((child) => !beforeChildren.has(child));
+  let alternate = false;
+  for (const child of created) {
+    const depth = Number(child.depth || 0);
+    if (depth < 34 || depth > 47) continue;
+    alternate = !alternate;
+    if (!alternate) continue;
+    child.destroy?.();
+    stats.fxTrimmed += 1;
+  }
+}
+
 const v09Explode = GameScene.prototype.explode;
 GameScene.prototype.explode = function(x, y, weapon, ownerId) {
-  if (settings.screenShake)
-    return v09Explode.call(this, x, y, weapon, ownerId);
-
+  const beforeChildren = new Set(this.children.list);
   const camera = this.cameras?.main;
   const originalShake = camera?.shake;
-  if (camera && typeof originalShake === 'function') {
+
+  if (!settings.screenShake && camera && typeof originalShake === 'function') {
     camera.shake = function() { return camera; };
     stats.forcedShakeBlocks += 1;
   }
+
   try {
-    return v09Explode.call(this, x, y, weapon, ownerId);
+    const result = v09Explode.call(this, x, y, weapon, ownerId);
+    trimExplosionFx(this, beforeChildren);
+    return result;
   } finally {
-    if (camera && originalShake)
+    if (!settings.screenShake && camera && originalShake)
       camera.shake = originalShake;
   }
 };
