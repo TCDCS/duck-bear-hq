@@ -4,26 +4,98 @@
   function vehicle(profile,low=false,country='GB'){
     const G=globalThis.KartGeometry,m=new G.Mesh(low),type=profile.vehicle||'kart',irish=country==='IE';
     const bus=type==='bus',ambulance=type==='ambulance',police=type==='police';
-    const col=bus?(irish?'#1d9770':'#e43731'):ambulance?(irish?'#f1f1d9':'#eff052'):'#f3f4ea';
-    const stripe=police?'#2362ae':'#238448',length=bus?3.95:ambulance?3.65:3.3,height=bus?3.2:ambulance?2.35:1.35,width=bus?2.0:1.88;
-    m.material=7;m.roundBox(0,.55,0,width,.42,length,col,.16);m.roundBox(0,.76+height/2,-.12,width,height,length-.26,col,.18);
-    m.material=5;m.roundBox(0,1.35,length/2-.10,width-.24,.68,.12,'#195264',.05);
-    if(bus)m.roundBox(0,2.73,length/2-.12,width-.24,.65,.13,'#245f74',.06);
-    for(const side of [-1,1]){
-      if(bus){for(const y of [1.48,2.6])for(let z=-1.35;z<1.4;z+=.72)m.roundBox(side*(width/2+.005),y,z,.04,.63,.56,'#276579',.025);}
-      else m.roundBox(side*(width/2+.006),1.38,.96,.035,.65,.71,'#286c83',.02);
-      m.material=0;
-      if(bus)m.box(side*(width/2+.03),.9,0,.025,.29,length-.4,irish?'#eede46':'#f3d3aa');
-      else for(let i=0;i<6;i++)m.box(side*(width/2+.035),.93,-1.4+i*.51,.035,.30,.50,i%2?stripe:'#f1eb43');
-      if(ambulance&&irish)m.box(side*(width/2+.042),1.43,-.65,.04,.15,1.1,'#238448');
-      for(const z of [-length*.32,length*.32]){m.cylinder([side*(width/2-.1),.44,z],[side*(width/2+.17),.44,z],.43,'#212c31',low?12:24);m.material=7;m.cylinder([side*(width/2+.173),.44,z],[side*(width/2+.19),.44,z],.22,'#b5c7d1',low?12:24);m.material=0;}
-      m.roundBox(side*.63,.69,length/2+.035,.35,.14,.08,'#fff4bc',.04);m.roundBox(side*.66,.7,-length/2-.02,.29,.17,.065,'#f54538',.035);
+    const wheel=(x,z,r=.43)=>{m.material=0;m.cylinder([x-.18,.44,z],[x+.18,.44,z],r,'#20272b',low?10:20);m.material=7;m.cylinder([x-.187,.44,z],[x+.187,.44,z],r*.52,'#aeb8bd',low?10:18);};
+    const sidePanel=(side,y,z,w,h,col)=>{m.material=0;m.roundBox(side*w,y,z,.035,h,.54,col,.015);};
+    let width=bus?2.04:ambulance?1.96:police&&irish?1.94:1.86;
+    let length=bus?4.05:ambulance?3.72:police&&irish?3.52:3.38;
+    let roof=bus?3.36:ambulance?2.42:police&&irish?1.82:1.55;
+    const londonRed='#d93632',dublinGreen='#2a956c',dublinLime='#d3cf49',window='#214f62';
+
+    if(bus){
+      if(irish){
+        // Dublin bus: modern rounded nose, dark front mask and green/lime lower body.
+        m.material=7;
+        m.roundBox(0,.70,0,width,.62,length,dublinGreen,.20);
+        m.roundBox(0,1.68,-.08,width*.98,1.45,length-.22,dublinGreen,.18);
+        m.roundBox(0,2.92,-.11,width*.97,1.08,length-.25,dublinLime,.18);
+        m.roundBox(0,3.52,-.20,width*.94,.18,length-.48,dublinLime,.09);
+        m.material=5;
+        m.roundBox(0,2.72,length/2-.075,width*.89,1.12,.10,'#193f52',.045);
+        m.roundBox(0,1.52,length/2-.070,width*.90,1.02,.11,'#214f61',.045);
+        m.material=0;
+        m.roundBox(0,2.18,length/2+.005,width*.92,.34,.055,'#202b32',.025);
+        m.roundBox(0,.86,length/2+.045,width*.84,.18,.07,'#bfc64d',.035);
+        for(const side of [-1,1]){
+          for(const y of [1.50,2.78])for(let z=-1.32;z<1.28;z+=.68){m.material=5;m.roundBox(side*(width/2+.006),y,z,.035,.63,.53,window,.02);}
+          m.material=0;m.roundBox(side*(width/2+.027),.82,-.08,.035,.22,length-.60,dublinLime,.015);
+          m.roundBox(side*(width/2+.030),1.03,.72,.038,.14,.95,'#243f69',.012);
+        }
+      }else{
+        // London bus: bright red, upright double-decker with cream trim and black destination mask.
+        m.material=7;
+        m.roundBox(0,.67,0,width,.58,length,londonRed,.15);
+        m.roundBox(0,1.66,-.04,width*.99,1.46,length-.18,londonRed,.12);
+        m.roundBox(0,2.91,-.08,width*.98,1.12,length-.20,londonRed,.12);
+        m.roundBox(0,3.53,-.12,width*.96,.16,length-.38,londonRed,.08);
+        m.material=5;
+        for(const x of [-.46,.46]){m.roundBox(x,2.82,length/2-.064,.80,.80,.085,'#244f60',.025);m.roundBox(x,1.45,length/2-.060,.80,.82,.09,'#29596a',.025);}
+        m.material=0;
+        m.roundBox(0,2.23,length/2+.006,width*.91,.42,.055,'#222b2d',.02);
+        m.roundBox(0,2.23,length/2+.040,width*.62,.24,.020,'#d8c89d',.01);
+        for(const side of [-1,1]){
+          for(const y of [1.48,2.72])for(let z=-1.34;z<1.25;z+=.66){m.material=5;m.roundBox(side*(width/2+.006),y,z,.035,.62,.51,window,.018);}
+          m.material=0;m.roundBox(side*(width/2+.028),.92,0,.036,.15,length-.46,'#e8ca95',.012);
+        }
+      }
+      for(const side of [-1,1])for(const z of [-1.22,1.20])wheel(side*(width/2-.11),z,.51);
+      m.material=8;for(const x of [-.66,.66])m.roundBox(x,.72,length/2+.045,.28,.13,.055,'#fff1b7',.025);
+      m.material=0;for(const x of [-.68,.68])m.roundBox(x,.71,-length/2-.025,.27,.14,.055,'#ed4d40',.02);
+    }else if(ambulance){
+      // Ambulances share a gameplay class but use country-specific bodies and liveries.
+      const body=irish?'#f4f1df':'#e9e854',stripe=irish?'#23865f':'#278b50',dark=irish?'#23566b':'#275b65';
+      m.material=7;m.roundBox(0,.61,.10,width,.52,length,body,.16);m.roundBox(0,1.54,-.22,width*.97,1.86,length*.70,body,.16);m.roundBox(0,1.12,1.17,width*.94,1.00,1.02,body,.14);
+      if(irish){m.roundBox(0,2.53,-.55,width*.82,.20,length*.37,'#f7f4e8',.08);}else{m.roundBox(0,2.53,-.55,width*.86,.22,length*.39,'#e6e650',.08);}
+      m.material=5;m.roundBox(0,1.39,length/2-.075,width*.83,.60,.10,dark,.04);
+      for(const side of [-1,1]){
+        for(let z=-1.35;z<1.3;z+=.58){m.material=0;m.roundBox(side*(width/2+.027),.93,z,.038,.28,.50,(Math.round((z+1.35)/.58)%2)?stripe:'#f0e84e',.012);}
+        m.material=0;m.roundBox(side*(width/2+.031),1.58,-.47,.038,.18,1.35,irish?'#2e9872':'#19824d',.012);
+        for(const z of [-1.23,1.18])wheel(side*(width/2-.10),z,.45);
+      }
+      m.material=7;m.roundBox(0,2.63,-.42,1.40,.15,.34,'#263844',.055);
+      m.material=8;for(const x of [-.44,.44])m.roundBox(x,2.74,-.42,.40,.15,.28,irish?'#4bbcff':'#4288ff',.05);
+    }else if(police){
+      if(irish){
+        // Garda-inspired SUV stance: taller cabin, chunkier nose and blue/yellow high-visibility blocks.
+        m.material=7;m.roundBox(0,.58,.08,width,.48,length,'#f1f1e8',.17);m.roundBox(0,1.18,-.32,width*.94,1.18,length*.60,'#edf0ea',.18);m.roundBox(0,.94,1.15,width*.95,.48,.92,'#eef0ea',.15);
+        m.material=5;m.roundBox(0,1.37,1.48,width*.78,.53,.08,'#204f61',.035);
+        for(const side of [-1,1]){
+          for(let i=0;i<5;i++)sidePanel(side,.90,-1.02+i*.52,width/2+.022,.30,i%2?'#1f5cb3':'#e8ec45');
+          m.material=0;m.roundBox(side*(width/2+.028),1.15,-.42,.035,.18,1.18,'#1d4f9d',.012);
+          for(const z of [-1.05,1.02])wheel(side*(width/2-.11),z,.44);
+        }
+        m.material=0;m.roundBox(0,.75,length/2+.035,width*.70,.18,.07,'#1c3850',.025);
+        m.material=7;m.roundBox(0,1.96,-.26,1.28,.13,.32,'#24394a',.05);
+        m.material=8;for(const x of [-.40,.40])m.roundBox(x,2.07,-.26,.37,.14,.27,'#45a9ff',.05);
+      }else{
+        // London police: lower estate profile with blue/yellow Battenburg-style blocks.
+        m.material=7;m.roundBox(0,.57,0,width,.46,length,'#f4f5ef',.16);m.roundBox(0,1.15,-.18,width*.95,1.03,length*.68,'#f3f4ef',.15);m.roundBox(0,.88,1.18,width*.95,.39,.88,'#f3f4ef',.12);
+        m.material=5;m.roundBox(0,1.31,1.47,width*.80,.49,.08,'#22536a',.03);
+        for(const side of [-1,1]){
+          for(let i=0;i<6;i++)sidePanel(side,.89,-1.29+i*.51,width/2+.022,.30,i%2?'#2362ae':'#edf04a');
+          for(const z of [-1.04,1.04])wheel(side*(width/2-.11),z,.42);
+        }
+        m.material=7;m.roundBox(0,1.73,-.25,1.31,.13,.32,'#263544',.05);
+        m.material=8;for(const x of [-.43,.43])m.roundBox(x,1.84,-.25,.40,.15,.27,'#4387ff',.05);
+      }
+    }else{
+      // Fallback service body for any future non-kart type.
+      m.material=7;m.roundBox(0,.58,0,width,.48,length,'#f3f4ea',.16);m.roundBox(0,1.18,-.12,width*.94,1.06,length-.35,'#f3f4ea',.16);
+      for(const side of [-1,1])for(const z of [-1.05,1.05])wheel(side*(width/2-.1),z,.42);
     }
-    if(!bus){m.material=7;m.roundBox(0,height+1.02,-.24,1.32,.15,.33,'#263544',.06);m.material=8;for(const x of [-.43,.43])m.roundBox(x,height+1.13,-.24,.4,.15,.27,irish?'#46bcff':'#4387ff',.06);}
-    else{m.material=0;m.roundBox(0,2.04,length/2+.02,1.2,.21,.06,'#20302b',.025);}
-    // Driver visible from the chase camera through a playful open roof hatch.
-    m.material=0;const y=height+.85,skin=profile.avatar==='dark-beard'?'#996440':'#e1b38b';
-    m.roundBox(0,y-.09,-.55,.7,.45,.53,profile.color||'#f39436',.13);
+
+    // Driver remains visible from the chase camera through the playful roof hatch.
+    m.material=0;const y=bus?3.45:ambulance?2.48:police&&irish?1.90:1.72,skin=profile.avatar==='dark-beard'?'#996440':'#e1b38b';
+    m.roundBox(0,y-.09,-.55,.68,.44,.52,profile.color||'#f39436',.13);
     if(profile.avatar==='dog'){
       m.sphere(0,y+.5,-.48,.36,'#a6744c',16);m.sphere(0,y+.39,-.16,.24,'#f7edcf',16);for(const x of [-.28,.28])m.ellipsoid(x,y+.44,-.57,.17,.25,.13,'#865436');m.sphere(0,y+.45,.025,.085,'#633e39',12);
     }else{
