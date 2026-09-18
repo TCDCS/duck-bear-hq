@@ -20,6 +20,7 @@ const stats = globalThis.__MEOW_WARS_V12_STATS = {
   battlesStarted: 0,
   snapshotsSent: 0,
   snapshotsReceived: 0,
+  snapshotAcks: 0,
   intentsSent: 0,
   intentsApplied: 0,
   onlineEventsSent: 0,
@@ -45,7 +46,9 @@ const online = globalThis.__MEOW_WARS_ONLINE = {
   overlay: null,
   banner: null,
   lobbyMessage: '',
-  lobbyError: ''
+  lobbyError: '',
+  serverTurnTeam: null,
+  lastSnapshotAck: -1
 };
 
 function loadSession() {
@@ -276,6 +279,13 @@ function handleSocketMessage(message) {
       stats.snapshotsReceived += 1;
       applyGuestSnapshot(message.state, false);
     }
+    return;
+  }
+
+  if (message.type === 'snapshot-ack') {
+    online.serverTurnTeam = Number(message.turnTeam);
+    online.lastSnapshotAck = Number(message.seq);
+    stats.snapshotAcks += 1;
     return;
   }
 
