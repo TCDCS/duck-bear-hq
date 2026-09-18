@@ -4,11 +4,35 @@ import { mountApp } from './ui/App.js';
 import { createDanaoRoomClient } from './online/room-client.js';
 import { mountOnlineLobby } from './online/lobby.js';
 import { createOnlineMatchBridge } from './online/match-bridge.js';
+import { polishCheckoutChaos } from './art/store-polish.js';
+import { polishDanaoArena } from './art/arena-polish.js';
 
 const canvas = document.getElementById('game');
 const root = document.getElementById('app');
 const onlineRoot = document.getElementById('online-shell');
 const status = document.getElementById('boot-status');
+
+const buildVersion = document.createElement('div');
+buildVersion.id = 'build-version';
+buildVersion.textContent = 'DANAO';
+document.body.appendChild(buildVersion);
+fetch('./release.json', { cache: 'no-store' })
+  .then((response) => response.ok ? response.json() : null)
+  .then((release) => {
+    if (release?.version) buildVersion.textContent = `DANAO v${release.version}`;
+  })
+  .catch(() => {});
+
+const CURRENT_ARENA_COPY = 'Checkout Chaos · Lantern Courtyard · Teahouse Rooftop';
+function refreshMenuCopy() {
+  for (const hint of root.querySelectorAll?.('.menu-btn small') || []) {
+    if (/Wrestling Hall/i.test(hint.textContent || '')) hint.textContent = CURRENT_ARENA_COPY;
+  }
+}
+const menuCopyObserver = globalThis.MutationObserver
+  ? new MutationObserver(refreshMenuCopy)
+  : null;
+menuCopyObserver?.observe(root, { childList: true, subtree: true });
 
 let app;
 let onlineLobby;
@@ -46,15 +70,29 @@ onlineBridge = createOnlineMatchBridge({
   },
 });
 
+function polishActiveArena(arenaId) {
+  const B = globalThis.BABYLON;
+  const scene = B?.EngineStore?.LastCreatedScene;
+  polishCheckoutChaos(B, scene, arenaId);
+  polishDanaoArena(B, scene, arenaId);
+}
+
 async function startFromState(state) {
   if (onlineBridge?.active) onlineBridge.stop();
+  onlineRoot.hidden = true;
   status.style.display = 'block';
-  await runtime.startMatch({
-    arenaId: state.arenaId,
-    fighterId: state.fighterId,
-    botCount: state.botCount,
-    settings: state.settings,
-  });
+  try {
+    await runtime.startMatch({
+      arenaId: state.arenaId,
+      fighterId: state.fighterId,
+      botCount: state.botCount,
+      settings: state.settings,
+    });
+    polishActiveArena(state.arenaId);
+  } catch (error) {
+    onlineRoot.hidden = false;
+    throw error;
+  }
 }
 
 app = mountApp(root, {
@@ -73,6 +111,7 @@ app = mountApp(root, {
     if (onlineClient.room) onlineClient.leave();
     runtime.stopMatch();
     runtime.startMenuAudio();
+    onlineRoot.hidden = false;
     status.style.display = 'none';
   },
   onSettings(next) {
@@ -85,6 +124,7 @@ onlineLobby = mountOnlineLobby(onlineRoot, {
   getLocalState: () => app?.getState?.() || {},
   async onStartOnline({ room, localPlayerId, arenaId }) {
     const state = app?.getState?.() || {};
+    onlineRoot.hidden = true;
     app?.beginMatch?.();
     status.textContent = 'Connecting online fight…';
     status.style.display = 'block';
@@ -95,9 +135,11 @@ onlineLobby = mountOnlineLobby(onlineRoot, {
         arenaId,
         settings: state.settings || {},
       });
+      polishActiveArena(arenaId);
       status.style.display = 'none';
     } catch (error) {
       onlineBridge.stop();
+      onlineRoot.hidden = false;
       app?.returnToMenu?.();
       status.style.display = 'none';
       throw error;
@@ -105,6 +147,7 @@ onlineLobby = mountOnlineLobby(onlineRoot, {
   },
   onReturnLocal() {
     if (onlineBridge?.active) onlineBridge.stop();
+    onlineRoot.hidden = false;
     app?.returnToMenu?.();
     runtime.startMenuAudio();
     status.style.display = 'none';
@@ -129,6 +172,7 @@ window.addEventListener('keydown', unlockMenuAudio, { once: true });
 
 window.addEventListener('beforeunload', () => {
   if (onlineFrameId) globalThis.cancelAnimationFrame?.(onlineFrameId);
+  menuCopyObserver?.disconnect?.();
   onlineLobby?.dispose?.();
   onlineBridge?.dispose?.();
   onlineClient.close?.();
@@ -136,5 +180,6 @@ window.addEventListener('beforeunload', () => {
   runtime.dispose();
 }, { once: true });
 
+refreshMenuCopy();
 status.textContent = 'Ready — choose Play';
 setTimeout(() => { if (!app.getState().inMatch) status.style.display = 'none'; }, 850);

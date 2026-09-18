@@ -180,7 +180,8 @@ function makePoseRig(B, bodyResult, hairResult) {
     attackKind = '',
   } = {}) => {
     const heavy = attackKind === 'heavy';
-    const armDrop = 1.04;
+    // The imported rig rests in a T-pose; negative roll drops both arms into a low arcade guard.
+    const armDrop = -1.04;
 
     rotate('upperarm_l',
       -stride * 0.24 - (heavy ? punch * 0.42 : punch * 0.08),
