@@ -83,6 +83,17 @@ export function createOnlineMatchBridge({
       const input = runtime.readNetworkInput?.();
       return input ? client.sendInput(input, at) : false;
     },
+    reportResult(result = {}) {
+      if (!active || !client.isHost) return false;
+      const snapshot = runtime.captureNetworkSnapshot?.();
+      const winner = snapshot?.fighters?.find?.((fighter) => fighter?.active && Number(fighter.hp) > 0) || null;
+      return client.sendResult?.({
+        winner: Number.isInteger(winner?.slot) ? winner.slot : -1,
+        winnerTeam: -1,
+        interrupted: false,
+        reason: '',
+      }) || false;
+    },
     stop() {
       active = false;
       runtime.setNetworkAuthority?.({ enabled: false, isHost: false, localSlot: -1, players: [], matchId: 0 });
