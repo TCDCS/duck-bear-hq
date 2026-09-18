@@ -220,6 +220,18 @@ function drawDublinLayer(layer, c) {
     storefront(c, 118, 418, 174, 132, '#cab6a0', '#67554b', 'CENTRA', '#1f568f', '#ffd64f');
     storefront(c, 824, 418, 190, 138, '#d0bda6', '#665750', 'SUPERVALU', '#267447', '#ffffff');
 
+    // Recognisable nearby pub names sit high enough to remain visible above destructible terrain.
+    c.fillStyle = '#5c2b27';
+    rr(c, 330, 326, 214, 28, 4); c.fill();
+    c.fillStyle = '#f2d28c';
+    c.font = 'bold 12px Arial';
+    c.textAlign = 'center';
+    c.fillText("HA'PENNY BRIDGE INN", 437, 345);
+    c.fillStyle = '#294536';
+    rr(c, 574, 304, 180, 28, 4); c.fill();
+    c.fillStyle = '#f4e1b1';
+    c.fillText("MERCHANT'S ARCH", 664, 323);
+
     // Quay architecture and church-like roofline to help the area read as central Dublin.
     c.fillStyle = '#7b7066';
     c.fillRect(1040, 306, 180, 112);
@@ -624,11 +636,11 @@ function openV07Settings(scene) {
     'ESC pause   R rematch   M main menu'
   ];
   const info = scene.add.text(350, 205, copy.join('\n'), {
-    fontFamily: 'Arial', fontSize: '17px', color: '#edf9ff', lineSpacing: 8
+    fontFamily: 'Arial', fontSize: '16px', color: '#edf9ff', lineSpacing: 6
   }).setDepth(602);
-  const close = scene.add.rectangle(640, 548, 220, 48, 0xef5b52, 1)
+  const close = scene.add.rectangle(640, 560, 220, 44, 0xef5b52, 1)
     .setStrokeStyle(2, 0xffeee0, 1).setInteractive({ useHandCursor: true }).setDepth(603);
-  const closeText = scene.add.text(640, 548, 'CLOSE', {
+  const closeText = scene.add.text(640, 560, 'CLOSE', {
     fontFamily: 'Arial Black, Arial', fontSize: '18px', color: '#ffffff'
   }).setOrigin(.5).setDepth(604);
   dim.on('pointerdown', () => closeV07Settings(scene));
