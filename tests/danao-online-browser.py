@@ -207,6 +207,32 @@ async def main():
                 timeout=30000,
             )
             await check("host cannot start until mobile guest is ready", await host.locator('[data-online-action="start"]').is_enabled())
+
+            mobile_lobby = await guest.evaluate("""() => {
+              const panel = document.querySelector('.online-panel');
+              const ready = document.querySelector('[data-online-action="ready"]');
+              const leave = document.querySelector('[data-online-action="leave"]');
+              const local = document.querySelector('.online-local');
+              const inside = (el) => {
+                if (!el) return false;
+                const r = el.getBoundingClientRect();
+                return r.top >= 0 && r.left >= 0 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1;
+              };
+              return {
+                scrollFree: Boolean(panel && panel.scrollHeight <= panel.clientHeight + 1),
+                panelHeight: panel?.getBoundingClientRect().height || 0,
+                viewportHeight: innerHeight,
+                readyVisible: inside(ready),
+                leaveVisible: inside(leave),
+                localVisible: inside(local),
+                playerColumns: panel ? getComputedStyle(document.querySelector('.online-player-grid')).gridTemplateColumns : '',
+              };
+            }""")
+            report["mobileLobby"] = mobile_lobby
+            await check("mobile online lobby fits without vertical scrolling", mobile_lobby["scrollFree"])
+            await check("mobile room actions are all visible without scrolling", mobile_lobby["readyVisible"] and mobile_lobby["leaveVisible"] and mobile_lobby["localVisible"])
+            await check("mobile room roster uses two compact columns", len(mobile_lobby["playerColumns"].split()) >= 2)
+
             await host.screenshot(path=str(OUT / f"{LABEL}-lobby-host.png"))
             await guest.screenshot(path=str(OUT / f"{LABEL}-lobby-mobile.png"))
 
@@ -318,7 +344,7 @@ async def main():
             version = await guest_context.request.get(BASE + "/games/danao/release.json")
             release = await version.json()
             report["release"] = release
-            await check("two-browser proof runs against Danao 0.10.8 or later", tuple(map(int, release["version"].split("."))) >= (0, 10, 8))
+            await check("two-browser proof runs against Danao 0.10.9 or later", tuple(map(int, release["version"].split("."))) >= (0, 10, 9))
             await check("no uncaught Danao browser errors", not page_errors)
 
             report.update(
