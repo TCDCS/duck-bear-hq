@@ -1,3 +1,4 @@
+# Production verification trigger: Danao v0.10.12 environment wear
 name: Danao Two-Browser Online QA
 
 on:
