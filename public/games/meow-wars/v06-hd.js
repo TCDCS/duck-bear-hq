@@ -1045,16 +1045,9 @@ function settingsOverlay(scene) {
   scene.__mwSettingsObjects=list;
 }
 
-const originalMenuRefresh = MenuScene.prototype.refresh;
-MenuScene.prototype.refresh = function() {
-  originalMenuRefresh.call(this);
-  menuBackdrop(this);
-};
-
 const originalMenuCreate = MenuScene.prototype.create;
 MenuScene.prototype.create = function() {
   originalMenuCreate.call(this);
-  menuBackdrop(this);
   for (const child of this.children.list) {
     if (typeof child.text === 'string' && child.text.includes('3 BATTLEFIELDS')) {
       child.setText(child.text.replace('3 BATTLEFIELDS','7 BATTLEFIELDS'));
