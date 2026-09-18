@@ -766,7 +766,9 @@ function applyRemoteIntent(scene, intent) {
     const index = WEAPONS.findIndex((weapon) => weapon.id === intent.weaponId);
     if (index >= 0 && (scene.teamAmmo[1].get(intent.weaponId) ?? 0) !== 0)
       scene.selectedWeaponIndex = index;
-    scene.fireCurrentWeapon();
+    // Execute the preserved authoritative fire path directly; the public v1.2
+    // wrapper intentionally blocks the host's own controls on the remote Red turn.
+    v11FireCurrentWeapon.call(scene);
   }
 
   stats.intentsApplied += 1;
