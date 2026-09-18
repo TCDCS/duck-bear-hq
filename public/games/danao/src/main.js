@@ -7,6 +7,7 @@ import { createOnlineMatchBridge } from './online/match-bridge.js';
 import { polishCheckoutChaos } from './art/store-polish.js';
 import { polishDanaoArena } from './art/arena-polish.js';
 import { showCombatFeedback } from './art/combat-feedback.js';
+import { mountEnvironmentReactions } from './art/environment-reactions.js';
 import { mountTouchControls } from './mobile/touch-controls.js';
 
 const canvas = document.getElementById('game');
@@ -42,12 +43,14 @@ menuCopyObserver?.observe(root, { childList: true, subtree: true });
 let app;
 let onlineLobby;
 let onlineBridge;
+let environmentReaction = null;
 const onlineClient = createDanaoRoomClient();
 
 function renderCombatFeedback(event) {
   const B = globalThis.BABYLON;
   const scene = B?.EngineStore?.LastCreatedScene;
   showCombatFeedback(B, scene, event);
+  environmentReaction?.onFeedback?.(event);
 }
 
 const runtime = createDanaoRuntime(canvas, {
@@ -95,9 +98,11 @@ function polishActiveArena(arenaId) {
   const scene = B?.EngineStore?.LastCreatedScene;
   polishCheckoutChaos(B, scene, arenaId);
   polishDanaoArena(B, scene, arenaId);
+  environmentReaction = mountEnvironmentReactions(B, scene, arenaId);
 }
 
 async function startFromState(state) {
+  environmentReaction = null;
   touchControls.setActive(false);
   if (onlineBridge?.active) onlineBridge.stop();
   onlineRoot.hidden = true;
@@ -132,6 +137,7 @@ app = mountApp(root, {
     runtime.setPaused(paused);
   },
   onQuit() {
+    environmentReaction = null;
     touchControls.setActive(false);
     if (onlineBridge?.active) onlineBridge.stop();
     if (onlineClient.room) onlineClient.leave();
@@ -174,6 +180,7 @@ onlineLobby = mountOnlineLobby(onlineRoot, {
     }
   },
   onReturnLocal() {
+    environmentReaction = null;
     touchControls.setActive(false);
     if (onlineBridge?.active) onlineBridge.stop();
     onlineRoot.hidden = false;
@@ -206,6 +213,8 @@ window.addEventListener('beforeunload', () => {
   onlineBridge?.dispose?.();
   onlineClient.close?.();
   app?.dispose?.();
+  environmentReaction?.dispose?.();
+  environmentReaction = null;
   touchControls.dispose();
   runtime.dispose();
 }, { once: true });

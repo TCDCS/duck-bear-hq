@@ -1,5 +1,5 @@
 name: Site Deploy
-# Manual content deploy trigger: Danao v0.10.9 mobile online lobby polish
+# Manual content deploy trigger: Danao v0.10.10 living arenas
 
 on:
   workflow_dispatch:

@@ -23,8 +23,10 @@ test('v0.10.9 real-browser contract rejects mobile lobby scrolling', () => {
   assert.match(browser, /panel\.scrollHeight <= panel\.clientHeight \+ 1/);
 });
 
-test('mobile online lobby polish release is Danao 0.10.9', () => {
+test('mobile online lobby polish remains part of Danao 0.10.9 and later releases', () => {
   const release = JSON.parse(read('public/games/danao/release.json'));
-  assert.equal(release.version, '0.10.9');
+  const [major, minor, patch] = release.version.split('.').map(Number);
+  const numericVersion = major * 1_000_000 + minor * 1_000 + patch;
+  assert.ok(numericVersion >= 10_009, release.version);
   assert.equal(release.engine, 'Babylon.js + Rapier');
 });
