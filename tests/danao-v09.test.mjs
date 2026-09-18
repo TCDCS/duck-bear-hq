@@ -216,3 +216,100 @@ test('v0.9 lobby maps only the three Babylon arenas and eight Mango fighters to 
   assert.equal(lobby.fighterIdToCharacter('mulan'), 'Mulan');
   assert.equal(lobby.fighterIdToCharacter('dad'), 'Dad');
 });
+
+
+test('v0.9 online match bridge module exists', () => {
+  assert.equal(fs.existsSync(path.join(root, 'public/games/danao/src/online/match-bridge.js')), true);
+});
+
+test('v0.9 match bridge starts Babylon with room slots and routes host/non-host traffic', async () => {
+  const { createOnlineMatchBridge } = await import('../public/games/danao/src/online/match-bridge.js');
+  const handlers = new Map();
+  const sent = { input: [], state: [] };
+  const client = {
+    playerId: 1,
+    isHost: false,
+    on(type, fn) { handlers.set(type, fn); return () => handlers.delete(type); },
+    sendInput(value, at) { sent.input.push({ value, at }); return true; },
+    sendState(value, at) { sent.state.push({ value, at }); return true; },
+  };
+  const calls = [];
+  const runtime = {
+    async startMatch(options) { calls.push(['start', options]); },
+    setNetworkAuthority(value) { calls.push(['authority', value]); },
+    readNetworkInput() { return { moveX: 0.5, moveZ: -0.25, light: true }; },
+    setRemoteInput(slot, frame) { calls.push(['remoteInput', slot, frame]); },
+    captureNetworkSnapshot() { return { fighters: [{ slot: 0, hp: 88 }] }; },
+    applyNetworkSnapshot(state, exact) { calls.push(['snapshot', state.seq, exact]); },
+    stopMatch() { calls.push(['stop']); },
+  };
+  const bridge = createOnlineMatchBridge({ client, runtime });
+  const room = {
+    code: '1111', hostId: 0, matchId: 2, phase: 'fight',
+    players: [
+      { id: 0, name: 'Hero', character: 'Hero', connected: true },
+      { id: 1, name: 'Gaby', character: 'Gaby', connected: true },
+    ],
+  };
+  await bridge.start({ room, localPlayerId: 1, arenaId: 'ring', settings: {} });
+  assert.equal(calls[0][0], 'start');
+  assert.equal(calls[0][1].online.localPlayerId, 1);
+  assert.equal(calls[0][1].online.isHost, false);
+  assert.deepEqual(calls[0][1].online.players.map((p) => p.id), [0, 1]);
+  bridge.tick(1000);
+  assert.equal(sent.input.length, 1);
+  handlers.get('snapshot')?.({ seq: 5, fighters: [] });
+  assert.deepEqual(calls.at(-1), ['snapshot', 5, false]);
+
+  client.isHost = true;
+  handlers.get('input')?.({ id: 1, frame: { seq: 4, moveX: 1, moveY: 0 } });
+  assert.equal(calls.at(-1)[0], 'remoteInput');
+  bridge.tick(1100);
+  assert.equal(sent.state.length, 1);
+});
+
+test('v0.9 host transfer applies retained snapshot before enabling Babylon authority', async () => {
+  const { createOnlineMatchBridge } = await import('../public/games/danao/src/online/match-bridge.js');
+  const handlers = new Map();
+  const order = [];
+  const client = {
+    playerId: 2,
+    isHost: false,
+    on(type, fn) { handlers.set(type, fn); return () => handlers.delete(type); },
+    sendInput() { return true; },
+    sendState() { return true; },
+  };
+  const runtime = {
+    async startMatch() {},
+    setNetworkAuthority(value) { order.push(['authority', value.isHost]); },
+    readNetworkInput() { return {}; },
+    setRemoteInput() {},
+    captureNetworkSnapshot() { return { fighters: [] }; },
+    applyNetworkSnapshot(state, exact) { order.push(['snapshot', state.seq, exact]); },
+  };
+  const bridge = createOnlineMatchBridge({ client, runtime });
+  await bridge.start({ room: { hostId: 0, matchId: 1, players: [{ id: 2, character: 'Mulan' }] }, localPlayerId: 2, arenaId: 'ring' });
+  order.length = 0;
+  client.isHost = true;
+  handlers.get('host')?.({ hostId: 2, state: { seq: 9, fighters: [] } });
+  assert.deepEqual(order, [['snapshot', 9, true], ['authority', true]]);
+});
+
+test('v0.9 packaged runtime exposes online authority, input and snapshot hooks', () => {
+  const runtime = fs.readFileSync(path.join(root, 'public/games/danao/src/game/runtime.js'), 'utf8');
+  for (const marker of [
+    'networkMode',
+    'networkIsHost',
+    'networkLocalSlot',
+    'remoteInputs',
+    'options.online',
+    "type: 'remote'",
+    "type: 'network-local'",
+    'setRemoteInput',
+    'readNetworkInput',
+    'captureNetworkSnapshot',
+    'applyNetworkSnapshot',
+    'setNetworkAuthority',
+  ]) assert.ok(runtime.includes(marker), marker);
+  assert.match(runtime, /if \(!networkMode \|\| networkIsHost\)/);
+});
