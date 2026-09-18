@@ -2,11 +2,11 @@
  * Preserves the proven v0.5 gameplay payload, then layers v0.6 HD art
  * and the v0.7 landmark/game-feel pass before Phaser boots.
  */
-const VERSION = '0.7.0';
-const BUILD = 'mw-v07-gamefeel-20260918a';
+const VERSION = '0.7.1';
+const BUILD = 'mw-v071-dublin-brand-20260918a';
 
 async function readProductionSource() {
-  const urls = Array.from({ length: 6 }, (_, i) => './v05-payload-' + (i + 1) + '.txt?v=7a');
+  const urls = Array.from({ length: 6 }, (_, i) => './v05-payload-' + (i + 1) + '.txt?v=71a');
   const parts = await Promise.all(urls.map(async (url) => {
     const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) throw new Error('Missing Meow Wars production payload: ' + url);
@@ -60,8 +60,8 @@ function composeSource(v05Source, hdSource, gamefeelSource) {
 async function start() {
   const [v05Source, hdSource, gamefeelSource] = await Promise.all([
     readProductionSource(),
-    readLayer('./v06-hd.js?v=7a', 'v0.6 HD layer'),
-    readLayer('./v07-gamefeel.js?v=7a', 'v0.7 game-feel layer')
+    readLayer('./v06-hd.js?v=71a', 'v0.6 HD layer'),
+    readLayer('./v07-gamefeel.js?v=71a', 'v0.7 game-feel layer')
   ]);
   const source = composeSource(v05Source, hdSource, gamefeelSource);
   globalThis.__MEOW_WARS_LOADER_VERSION = VERSION;
