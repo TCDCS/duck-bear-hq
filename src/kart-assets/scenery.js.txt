@@ -11,12 +11,12 @@
     const closest=(x,z)=>{let distance=Infinity;for(const p of t.samples)distance=Math.min(distance,Math.hypot(p.x-x,p.z-z));return distance;};
     // Hero reserves keep procedural filler out of the landmark view. Manual hero models can opt in with force=true.
     const heroReserves=[
-      [{x:-110,z:222,r:31},{x:-148,z:218,r:39}],
+      [{x:-140,z:208,r:31},{x:-175,z:210,r:40}],
       [{x:-160,z:184,r:34}],
       [{x:-44,z:228,r:25},{x:44,z:228,r:25}],
       [{x:-145,z:174,r:31}],
       [{x:-145,z:220,r:43}],
-      [{x:-105,z:222,r:24},{x:-145,z:218,r:34}]
+      [{x:-125,z:205,r:24},{x:-160,z:207,r:34}]
     ][t.id]||[];
     const allowed=(x,z,r,force=false)=>force||(closest(x,z)>=half+4+r&&!heroReserves.some(q=>Math.hypot(x-q.x,z-q.z)<q.r+r)&&(!irish||!globalThis.WackyModels.reserves.some(q=>Math.hypot(x-q.x,z-q.z)<q.r+r)));
     const register=(kind,x,z,r,force=false)=>{if(!allowed(x,z,r,force))return false;info.objects.push({kind,x,z,radius:r});return true;};
@@ -254,7 +254,7 @@
       for(let i=0;i<45;i++){const x=(rand()-.5)*450,z=(rand()-.5)*380;tree(x,z,.75+rand()*.45);}
       if(t.id===0){
         // Westminster hero reveal: Elizabeth Tower and Parliament sit ahead-left of the opening straight.
-        const x=-110,z=222;
+        const x=-140,z=208;
         register('Elizabeth Tower',x,z,8,true);
         surface(M.stone,()=>{
           m.box(x,23,z,9.5,46,9.5,'#cbb58b');m.box(x,9,z,10.5,1.0,10.5,'#d7c49b');m.box(x,23,z,10.2,.8,10.2,'#d8c39a');
@@ -268,8 +268,8 @@
         surface(M.metal,()=>{m.pyramid(x,46.4,z,9.0,12.5,9.0,'#506366');m.cylinder([x,58.5,z],[x,64,z],.19,'#baa578',8);});
         info.labels.push({x,y:48.5,z:z-5.2,text:'BIG BEN',width:8,type:'shop'});
         // Parliament forms a long stone backdrop behind the clock tower and faces the road.
-        building(-151,218,69,20,19,Math.PI,0,false,true);
-        building(-183,221,28,25,17,Math.PI,2,false,true);
+        building(-176,210,69,20,19,Math.PI,0,false,true);
+        building(-208,213,28,25,17,Math.PI,2,false,true);
         // London Eye remains a second landmark deeper into the lap.
         const ex=64,ez=-17,ey=36,rad=28;
         register('London Eye',ex,ez,31,true);
