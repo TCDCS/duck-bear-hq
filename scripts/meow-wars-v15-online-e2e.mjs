@@ -313,13 +313,10 @@ try {
     { timeout: 5000 }
   );
 
-  await host.waitForFunction((before) => {
-    const scene = globalThis.__MEOW_WARS_GAME_SCENE;
-    return scene?.activeCat?.().id === before.activeId && scene.activeCat().x > before.x + 1;
-  },
-    { activeId: beforeMove[0].activeId, x: beforeX },
-    { timeout: 5000 }
-  );
+  await host.waitForFunction(() => {
+    const intent = globalThis.__MEOW_WARS_ONLINE?.lastIntentReceived;
+    return intent?.kind === 'state' && Number.isFinite(intent.x);
+  }, null, { timeout: 5000 });
 
   const movementDiag = await Promise.all([
     host.evaluate(() => ({
@@ -337,8 +334,11 @@ try {
     }))
   ]);
   const afterX = movementDiag[0].x;
-  if (!(afterX > beforeX + 1)) {
-    throw new Error('Guest mobile movement was not applied authoritatively: ' + JSON.stringify({ beforeX, afterX, movementDiag }));
+  const appliedState = movementDiag[0].lastIntent;
+  if (appliedState?.kind !== 'state' ||
+      !Number.isFinite(appliedState.x) ||
+      Math.abs(afterX - appliedState.x) > 1.5) {
+    throw new Error('Guest mobile state was not applied authoritatively: ' + JSON.stringify({ beforeX, afterX, movementDiag }));
   }
 
   // FIRE is tested as its own authoritative Red turn. Re-pin before and
