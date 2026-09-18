@@ -1,5 +1,5 @@
 export function cameraFrameForPoints(points = []) {
-  if (!points.length) return { center: { x: 0, z: 0 }, distance: 14 };
+  if (!points.length) return { center: { x: 0, z: 0 }, distance: 16 };
   const xs = points.map((p) => p.x);
   const zs = points.map((p) => p.z);
   const minX = Math.min(...xs);
@@ -9,7 +9,7 @@ export function cameraFrameForPoints(points = []) {
   const spread = Math.max(maxX - minX, maxZ - minZ);
   return {
     center: { x: (minX + maxX) / 2, z: (minZ + maxZ) / 2 },
-    distance: Math.max(10.4, 8.4 + spread * 0.44),
+    distance: Math.max(11.8, 9.4 + spread * 0.56),
   };
 }
 
