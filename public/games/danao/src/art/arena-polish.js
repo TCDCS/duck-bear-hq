@@ -30,6 +30,31 @@ function material(B, scene, name, hex, emissive = 0, alpha = 1) {
   return mat;
 }
 
+function colorDistance(a, b) {
+  if (!a || !b) return Infinity;
+  return Math.hypot(a.r - b.r, a.g - b.g, a.b - b.b);
+}
+
+function recolorMatchingMaterials(B, scene, fromHex, toHex, tolerance = 0.08) {
+  const from = color3(B, fromHex);
+  const to = color3(B, toHex);
+  for (const mat of scene.materials || []) {
+    if (!mat?.diffuseColor || colorDistance(mat.diffuseColor, from) > tolerance) continue;
+    mat.diffuseColor = to.clone?.() || to;
+    if (mat.ambientColor) mat.ambientColor = to.scale(0.24);
+  }
+}
+
+function hideNamedMeshes(scene, name) {
+  let count = 0;
+  for (const mesh of scene.meshes || []) {
+    if (mesh.name !== name) continue;
+    mesh.setEnabled?.(false);
+    count += 1;
+  }
+  return count;
+}
+
 function box(B, scene, name, size, position, mat, rotation = null) {
   const mesh = B.MeshBuilder.CreateBox(name, {
     width: size[0],
@@ -153,6 +178,9 @@ function addCourtyardArchitecture(B, scene, mats, animated) {
 }
 
 function polishCourtyard(B, scene) {
+  hideNamedMeshes(scene, 'courtyard-roof-silhouette');
+  recolorMatchingMaterials(B, scene, '#d8b06a', '#c99d5b', 0.11);
+  recolorMatchingMaterials(B, scene, '#f4ce46', '#e5bc42', 0.1);
   const mats = {
     dark: material(B, scene, 'courtyard-polish-dark', PALETTE.ink),
     red: material(B, scene, 'courtyard-polish-red', PALETTE.courtyardRed),
@@ -261,6 +289,9 @@ function addRooftopDetails(B, scene, mats, animated) {
 }
 
 function polishRooftop(B, scene) {
+  recolorMatchingMaterials(B, scene, '#4b6f73', '#365a60', 0.11);
+  recolorMatchingMaterials(B, scene, '#bc382f', '#91373b', 0.11);
+  recolorMatchingMaterials(B, scene, '#f3d94c', '#d8bd4f', 0.11);
   const mats = {
     dark: material(B, scene, 'rooftop-polish-dark', PALETTE.ink),
     tileLine: material(B, scene, 'rooftop-polish-tile-line', '#314d56'),
