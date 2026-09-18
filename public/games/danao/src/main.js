@@ -8,6 +8,7 @@ import { polishCheckoutChaos } from './art/store-polish.js';
 import { polishDanaoArena } from './art/arena-polish.js';
 import { showCombatFeedback } from './art/combat-feedback.js';
 import { mountEnvironmentReactions } from './art/environment-reactions.js';
+import { mountEnvironmentDetails } from './art/environment-props.js';
 import { mountTouchControls } from './mobile/touch-controls.js';
 
 const canvas = document.getElementById('game');
@@ -44,6 +45,7 @@ let app;
 let onlineLobby;
 let onlineBridge;
 let environmentReaction = null;
+let environmentDetails = null;
 const onlineClient = createDanaoRoomClient();
 
 function renderCombatFeedback(event) {
@@ -51,6 +53,7 @@ function renderCombatFeedback(event) {
   const scene = B?.EngineStore?.LastCreatedScene;
   showCombatFeedback(B, scene, event);
   environmentReaction?.onFeedback?.(event);
+  environmentDetails?.onFeedback?.(event);
 }
 
 const runtime = createDanaoRuntime(canvas, {
@@ -99,10 +102,12 @@ function polishActiveArena(arenaId) {
   polishCheckoutChaos(B, scene, arenaId);
   polishDanaoArena(B, scene, arenaId);
   environmentReaction = mountEnvironmentReactions(B, scene, arenaId);
+  environmentDetails = mountEnvironmentDetails(B, scene, arenaId);
 }
 
 async function startFromState(state) {
   environmentReaction = null;
+  environmentDetails = null;
   touchControls.setActive(false);
   if (onlineBridge?.active) onlineBridge.stop();
   onlineRoot.hidden = true;
@@ -138,6 +143,7 @@ app = mountApp(root, {
   },
   onQuit() {
     environmentReaction = null;
+    environmentDetails = null;
     touchControls.setActive(false);
     if (onlineBridge?.active) onlineBridge.stop();
     if (onlineClient.room) onlineClient.leave();
@@ -181,6 +187,7 @@ onlineLobby = mountOnlineLobby(onlineRoot, {
   },
   onReturnLocal() {
     environmentReaction = null;
+    environmentDetails = null;
     touchControls.setActive(false);
     if (onlineBridge?.active) onlineBridge.stop();
     onlineRoot.hidden = false;
@@ -215,6 +222,8 @@ window.addEventListener('beforeunload', () => {
   app?.dispose?.();
   environmentReaction?.dispose?.();
   environmentReaction = null;
+  environmentDetails?.dispose?.();
+  environmentDetails = null;
   touchControls.dispose();
   runtime.dispose();
 }, { once: true });
