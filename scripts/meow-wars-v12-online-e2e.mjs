@@ -214,18 +214,37 @@ try {
     guest.waitForFunction(() => globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().team === 1, null, { timeout: 5000 })
   ]);
 
-  const beforeX = await host.evaluate(() => globalThis.__MEOW_WARS_GAME_SCENE.activeCat().x);
+  const beforeMove = await Promise.all([
+    host.evaluate(() => ({
+      x: globalThis.__MEOW_WARS_GAME_SCENE.activeCat().x,
+      intentsApplied: globalThis.__MEOW_WARS_V12_STATS.intentsApplied
+    })),
+    guest.evaluate(() => ({
+      intentsSent: globalThis.__MEOW_WARS_V12_STATS.intentsSent,
+      touchEvents: globalThis.__MEOW_WARS_V10_STATS.touchControlEvents
+    }))
+  ]);
+  const beforeX = beforeMove[0].x;
 
-  // Use the actual mobile right-arrow control long enough to produce a state intent.
+  // Use the actual mobile right-arrow control long enough to produce a fresh state intent.
   await logicalHold(guest, 126, 565, 420);
   await Promise.all([
-    guest.waitForFunction(() =>
-      globalThis.__MEOW_WARS_V12_STATS?.intentsSent > 0 &&
-      globalThis.__MEOW_WARS_V10_STATS?.touchControlEvents > 0,
-      null,
+    guest.waitForFunction((before) =>
+      globalThis.__MEOW_WARS_V12_STATS?.intentsSent > before.intentsSent &&
+      globalThis.__MEOW_WARS_V10_STATS?.touchControlEvents > before.touchEvents,
+      beforeMove[1],
       { timeout: 5000 }
     ),
-    host.waitForFunction(() => globalThis.__MEOW_WARS_V12_STATS?.intentsApplied > 0, null, { timeout: 5000 })
+    host.waitForFunction((before) =>
+      globalThis.__MEOW_WARS_V12_STATS?.intentsApplied > before,
+      beforeMove[0].intentsApplied,
+      { timeout: 5000 }
+    ),
+    host.waitForFunction((before) =>
+      globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().x > before + 1,
+      beforeX,
+      { timeout: 5000 }
+    )
   ]);
 
   const afterX = await host.evaluate(() => globalThis.__MEOW_WARS_GAME_SCENE.activeCat().x);
