@@ -73,3 +73,15 @@ test('v0.7 packaged runtime consumes the richer combat pose model', () => {
     'pose.dodgeLean',
   ]) assert.ok(runtime.includes(marker), marker);
 });
+
+
+test('v0.7 packaged visuals layer impact bursts, shards and floor debris feedback', () => {
+  const visuals = read('public/games/danao/src/game/visuals.js');
+  for (const marker of [
+    'impact-burst',
+    'impact-shard',
+    'impact-core',
+    'debris-floor-burst',
+    'disposeImpactPart',
+  ]) assert.ok(visuals.includes(marker), marker);
+});
