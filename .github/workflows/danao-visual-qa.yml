@@ -230,6 +230,9 @@ jobs:
           } catch (error) {
             report.failure = String(error);
             try {
+              report.castLoadDiagnostics = await page.evaluate(() => globalThis.__DANAO_CAST_LOADS || {});
+            } catch {}
+            try {
               await page.screenshot({
                 path: OUT + '/checkout-chaos-failure.png',
                 fullPage: true,
