@@ -10,6 +10,16 @@ function replaceOnce(source, needle, replacement, label) {
   return source.slice(0, index) + replacement + source.slice(index + needle.length);
 }
 
+
+function replacePatternOnce(source, pattern, replacement, label) {
+  const matches = [...source.matchAll(pattern)];
+  if (!matches.length) throw new Error('Meow Wars v0.6 patch anchor missing: ' + label);
+  if (matches.length !== 1) throw new Error('Meow Wars v0.6 patch anchor is ambiguous: ' + label);
+  const match = matches[0];
+  const index = match.index;
+  return source.slice(0, index) + replacement + source.slice(index + match[0].length);
+}
+
 const ARENA_PATCH = String.raw`
 Object.assign(ARENAS[0], { terrainSkin: 'garden-loam', environment: 'garden', waterStyle: null, artPipeline: 'vector-4k' });
 Object.assign(ARENAS[1], { terrainSkin: 'roof-gravel', environment: 'rooftop', waterStyle: null, artPipeline: 'vector-4k' });
@@ -434,10 +444,10 @@ export function patchSource(input) {
     'battlefield count'
   );
 
-  source = replaceOnce(
+  source = replacePatternOnce(
     source,
-    "return Math.min(2, Math.max(1, devicePixelRatio));",
-    "const viewportScale = Math.max((globalThis.innerWidth || 1280) / 1280, (globalThis.innerHeight || 720) / 720);\\n    const mobileCap = (globalThis.innerWidth || 1280) < 800 ? 2 : 3;\\n    return Math.min(mobileCap, 3, Math.max(1, devicePixelRatio, viewportScale));",
+    /function preferredRenderResolution\\s*\\([^)]*\\)\\s*\\{[\\s\\S]*?\\n\\}/g,
+    "function preferredRenderResolution(devicePixelRatio = 1) {\\n    const viewportScale = Math.max((globalThis.innerWidth || 1280) / 1280, (globalThis.innerHeight || 720) / 720);\\n    const mobileCap = (globalThis.innerWidth || 1280) < 800 ? 2 : 3;\\n    return Math.min(mobileCap, 3, Math.max(1, devicePixelRatio, viewportScale));\\n}",
     'adaptive HD/4K render resolution'
   );
 
