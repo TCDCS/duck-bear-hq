@@ -1,4 +1,4 @@
-/* Meow Wars v0.3 bundle part. Load in numeric order after Phaser 4.2.1. */
+/* Meow Wars v0.6 menu. Load after v06-hd.js. */
 // --- game/MenuScene.js ---
 const __mw_game_MenuScene_js = (() => {
 const { ARENAS } = __mw_core_arenas_js;
@@ -24,6 +24,10 @@ class MenuScene extends Phaser.Scene {
         this.redSquadIndex = 1;
         this.drawGardenBackdrop();
         this.drawLogo();
+        this.add.text(1252, 12, 'v' + (globalThis.MEOW_WARS_VERSION || '0.6.0') + '  •  BUILD ' + (globalThis.MEOW_WARS_BUILD || 'DEV'), { fontFamily: 'Arial Black, Arial', fontSize: '10px', color: '#e8f7ff', backgroundColor: '#102e52cc', padding: { x: 8, y: 4 } }).setOrigin(1, 0).setDepth(30);
+        const settingsButton = this.add.rectangle(82, 29, 132, 34, 0x183457, 0.96).setStrokeStyle(2, 0xbfe8ff, 0.6).setInteractive({ useHandCursor: true }).setDepth(30);
+        this.add.text(82, 29, '⚙  SETTINGS', { fontFamily: 'Arial Black, Arial', fontSize: '11px', color: '#ffffff' }).setOrigin(0.5).setDepth(31);
+        settingsButton.on('pointerdown', () => { this.sfx.click(); this.showSettings(); });
         this.cpuButton = this.makeToggle(500, 167, '🐾  PLAYER vs CPU', () => { this.mode = 'cpu'; this.refresh(); });
         this.localButton = this.makeToggle(780, 167, '🐾🐾  LOCAL 2 PLAYER', () => { this.mode = 'local'; this.refresh(); });
         this.add.text(640, 211, 'BATTLEFIELD', {
@@ -41,7 +45,7 @@ class MenuScene extends Phaser.Scene {
         this.createSquadCard(330, 430, 0);
         this.createSquadCard(950, 430, 1);
         this.makeButton(640, 603, 'START BATTLE', 0xf05a4f, () => this.start());
-        this.add.text(640, 651, `${CAT_ROSTER.length} CAT TYPES  •  ${SQUADS.length} SQUADS  •  3 BATTLEFIELDS  •  16 WEAPONS`, {
+        this.add.text(640, 651, `${CAT_ROSTER.length} CAT TYPES  •  ${SQUADS.length} SQUADS  •  7 BATTLEFIELDS  •  16 WEAPONS`, {
             fontFamily: 'Arial Black, Arial', fontSize: '12px', color: '#153555', backgroundColor: '#ffffffcc', padding: { x: 12, y: 5 }
         }).setOrigin(0.5).setDepth(20);
         this.add.text(640, 686, 'A/D move  •  W/S aim  •  hold SPACE to charge, release to fire  •  Q/E weapons', {
@@ -156,6 +160,21 @@ class MenuScene extends Phaser.Scene {
             g.strokeRoundedRect(x - 68, y + i * 34, 136, 29, 4);
             this.add.text(x, y + 14 + i * 34, line, { fontFamily: 'Arial Black, Arial', fontSize: '12px', color: '#2d2430' }).setOrigin(0.5).setDepth(3);
         });
+    }
+    showSettings() {
+        if (this.settingsLayer)
+            return;
+        const layer = this.add.container(0, 0).setDepth(220);
+        const shade = this.add.rectangle(640, 360, 1280, 720, 0x08101f, 0.76).setInteractive();
+        const panel = this.add.rectangle(640, 350, 620, 360, 0x10294a, 0.98).setStrokeStyle(4, 0x66d4ff, 0.9);
+        const title = this.add.text(640, 224, 'SETTINGS & BUILD INFO', { fontFamily: 'Arial Black, Arial', fontSize: '26px', color: '#ffe36e' }).setOrigin(0.5);
+        const version = this.add.text(640, 276, 'MEOW WARS v' + (globalThis.MEOW_WARS_VERSION || '0.6.0') + '\nBUILD ' + (globalThis.MEOW_WARS_BUILD || 'DEV'), { fontFamily: 'Arial Black, Arial', fontSize: '17px', color: '#ffffff', align: 'center', lineSpacing: 8 }).setOrigin(0.5);
+        const details = this.add.text(640, 367, 'GRAPHICS  •  4K SOURCE ART\nPARALLAX  •  ON\nFLOWING WATER  •  ON\nSFX  •  ON', { fontFamily: 'Arial', fontSize: '16px', color: '#cfeeff', align: 'center', lineSpacing: 10 }).setOrigin(0.5);
+        const close = this.add.rectangle(640, 472, 220, 48, 0xf05a4f, 1).setStrokeStyle(3, 0xfff0dc, 0.9).setInteractive({ useHandCursor: true });
+        const closeText = this.add.text(640, 472, 'CLOSE', { fontFamily: 'Arial Black, Arial', fontSize: '18px', color: '#ffffff' }).setOrigin(0.5);
+        layer.add([shade, panel, title, version, details, close, closeText]);
+        this.settingsLayer = layer;
+        close.on('pointerdown', () => { this.sfx.click(); layer.destroy(true); this.settingsLayer = null; });
     }
     createSquadCard(x, y, team) {
         const color = team === 0 ? 0x2898ee : 0xf04f6d;
