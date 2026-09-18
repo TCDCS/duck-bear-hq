@@ -54,8 +54,10 @@ test('v0.10.10 main applies the same environment reaction presenter to local and
   assert.ok((main.match(/polishActiveArena\(/g) || []).length >= 3);
 });
 
-test('living arena reaction release is Danao 0.10.10', () => {
+test('living arena reactions remain part of Danao 0.10.10 and later releases', () => {
   const release = JSON.parse(read('public/games/danao/release.json'));
-  assert.equal(release.version, '0.10.10');
+  const [major, minor, patch] = release.version.split('.').map(Number);
+  const numericVersion = major * 1_000_000 + minor * 1_000 + patch;
+  assert.ok(numericVersion >= 10_010, release.version);
   assert.equal(release.engine, 'Babylon.js + Rapier');
 });
