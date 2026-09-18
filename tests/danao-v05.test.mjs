@@ -26,16 +26,17 @@ test('Danao release source is reconstructed byte-for-byte before tests and deplo
   assert.equal(sha256('public/games/danao/src/styles.css'), 'c97800b4937d5f3b77dd83d4f4fe3166853f1718064a5ebe5191c407fa8bc725');
 });
 
-test('Wrestling Hall is the default showcase and carries actual brawler props', () => {
+test('Checkout Chaos is the flagship showcase and carries supermarket brawler props', () => {
   const arena = read('public/games/danao/src/game/arena.js');
   const items = read('public/games/danao/src/game/items.js');
-  assert.match(arena, /Wrestling Hall/);
-  assert.match(arena, /folding-chair|chair/);
-  assert.match(arena, /table/);
+  assert.match(arena, /Checkout Chaos/);
+  assert.match(arena, /supermarket/i);
+  assert.match(arena, /baguette/);
   assert.match(arena, /crate/);
+  assert.match(arena, /bin/);
+  assert.match(arena, /cone/);
   assert.match(items, /frying-pan|pan/);
   assert.match(items, /baguette/);
-  assert.match(items, /mallet/);
 });
 
 test('Cloudflare deploy assembles the exact Danao v0.9 release before verification', () => {
@@ -86,8 +87,8 @@ test('Danao v0.6 adds heavier impact feel, destruction feedback and a lower part
   assert.match(runtime, /spawnPropDebris/);
   assert.match(runtime, /updatePropHighlights/);
   assert.match(visuals, /export function spawnPropDebris/);
-  assert.match(visuals, /announcer-desk/);
-  assert.match(visuals, /ring-step/);
+  assert.match(visuals, /supermarket-checkout/);
+  assert.match(visuals, /supermarket-aisle-shelf/);
 });
 
 
