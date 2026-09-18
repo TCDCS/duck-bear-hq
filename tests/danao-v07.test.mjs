@@ -85,3 +85,27 @@ test('v0.7 packaged visuals layer impact bursts, shards and floor debris feedbac
     'disposeImpactPart',
   ]) assert.ok(visuals.includes(marker), marker);
 });
+
+
+test('v0.7 comedy props break and arena dressing is denser without changing pan durability', async () => {
+  const { getItemDefinition } = await import('../public/games/danao/src/game/items.js');
+  const { getArena } = await import('../public/games/danao/src/game/arena.js');
+  assert.equal(getItemDefinition('baguette').breakable, true);
+  assert.equal(getItemDefinition('baguette').hp, 10);
+  assert.equal(getItemDefinition('mallet').breakable, true);
+  assert.equal(getItemDefinition('mallet').hp, 22);
+  assert.equal(getItemDefinition('cone').breakable, true);
+  assert.equal(getItemDefinition('cone').hp, 16);
+  assert.notEqual(getItemDefinition('pan').breakable, true);
+  assert.ok(getArena('courtyard').props.length >= 8);
+  assert.ok(getArena('rooftop').props.length >= 8);
+
+  const visuals = read('public/games/danao/src/game/visuals.js');
+  for (const marker of [
+    'courtyard-lantern-string',
+    'courtyard-drum',
+    'roof-vent',
+    'roof-hanging-sign',
+    'crowd-cheer-arm',
+  ]) assert.ok(visuals.includes(marker), marker);
+});
