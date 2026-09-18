@@ -124,6 +124,7 @@ function validateIntent(data, player, room, now) {
       intent.weaponId = weaponId;
     }
   } else if (kind === 'fire') {
+    intent.x = finite(Number(data.x), 12, 1268, 'x');
     intent.angle = finite(Number(data.angle), 8, 82, 'aim angle');
     intent.power = finite(Number(data.power), 0.36, 1, 'fire power');
     intent.facing = integer(Number(data.facing), -1, 1, 'facing');
