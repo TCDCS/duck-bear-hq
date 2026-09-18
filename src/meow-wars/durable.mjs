@@ -300,11 +300,16 @@ export class MeowWarsRoom {
 
       if (data.type === 'intent') {
         const intent = R.setIntent(this.room, attachment.id, data, now);
+        this.send(socket, {
+          type: 'intent-ack',
+          seq: Number(data.seq),
+          accepted: Boolean(intent),
+          turnTeam: this.room.turnTeam
+        });
         if (intent) {
           const host = this.hostSocket();
           if (!host) throw new R.RoomError(409, 'Host is reconnecting.');
           this.send(host, { type: 'intent', id: attachment.id, intent });
-          this.send(socket, { type: 'intent-ack', seq: intent.seq });
         }
         save = false;
         broadcastRoom = false;
