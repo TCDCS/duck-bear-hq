@@ -61,14 +61,56 @@
       const q=at(x,z,rot,0,.95);info.labels.push({x:q[0],y:3.22,z:q[1],text:'TELEPHONE',width:1.5,type:'small'});
     }
     function bus(x,z,rot,taxi=false){
-      if(!register(taxi?'black cab':'double-decker',x,z,taxi?2.6:5.0))return;
-      const box=(a,y,b,w,h,d,col)=>{const q=at(x,z,rot,a,b);m.roundBox(q[0],y,q[1],w,h,d,col,.16,rot);};
-      const col=taxi?'#263239':irish?'#1e9b70':'#ec3b35',w=taxi?2.1:3.0,h=taxi?1.5:4.6,d=taxi?4.5:9.3;
-      surface(M.metal,()=>{box(0,h/2+.38,0,w,h,d,col);box(0,h+.4,0,w*.96,.14,d*.96,col);box(0,.49,d/2+.06,w,.16,.16,'#bcb9ab');});
-      surface(M.glass,()=>{box(0,h*.77,d/2+.025,w*.88,h*.27,.045,'#4c6874');for(const side of [-1,1])for(let b=-d*.34;b<d*.4;b+=taxi?1.4:1.85){const q=at(x,z,rot,side*(w/2+.025),b);m.box(q[0],taxi?1.43:1.68,q[1],.04,taxi?.52:1.03,taxi?1.1:1.55,'#577986',rot);if(!taxi)m.box(q[0],3.48,q[1],.04,1.09,1.55,'#52717d',rot);}});
-      for(const side of [-1,1])for(const b of [-d*.32,d*.32]){const a=at(x,z,rot,side*(w/2-.15),b),c=at(x,z,rot,side*(w/2+.15),b);m.cylinder([a[0],.55,a[1]],[c[0],.55,c[1]],taxi?.43:.59,'#202729',12);}
-      surface(M.light,()=>{for(const a of [-w*.35,w*.35])box(a,.90,d/2+.06,.25,.18,.035,'#f4e5b3');});
-      if(taxi){box(0,h+.62,0,.68,.18,.31,'#ecd38d');}else{box(0,2.72,d/2+.05,2.35,.41,.035,'#242d29');const q=at(x,z,rot,0,d/2+.15);info.labels.push({x:q[0],y:2.75,z:q[1],text:irish?'DUBLIN  46A':'LONDON  9',width:2.2,type:'small'});}
+      if(taxi){
+        if(!register('black cab',x,z,2.7))return;
+        const box=(a,y,b,w,h,d,col,r=.13)=>{const q=at(x,z,rot,a,b);m.roundBox(q[0],y,q[1],w,h,d,col,r,rot);};
+        surface(M.metal,()=>{box(0,.88,0,2.16,1.36,4.55,'#273137',.18);box(0,1.61,-.28,1.86,.82,2.63,'#273137',.18);box(0,.53,2.03,2.03,.23,.28,'#1e292d',.08);});
+        surface(M.glass,()=>{box(0,1.60,1.12,1.62,.60,.08,'#4e707c',.035);for(const side of [-1,1]){const q=at(x,z,rot,side*1.09,-.15);m.roundBox(q[0],1.55,q[1],.035,.54,1.32,'#526f7a',.02,rot);}});
+        for(const side of [-1,1])for(const b of [-1.45,1.45]){const a=at(x,z,rot,side*.94,b),c=at(x,z,rot,side*1.19,b);surface(M.plain,()=>m.cylinder([a[0],.50,a[1]],[c[0],.50,c[1]],.43,'#202729',12));}
+        box(0,2.13,-.12,.72,.18,.34,'#e7ce82',.06);
+        return;
+      }
+      const d=9.4,w=3.05,kind=irish?'Dublin bus':'London bus';
+      if(!register(kind,x,z,5.05))return;
+      const box=(a,y,b,ww,h,dd,col,r=.12)=>{const q=at(x,z,rot,a,b);m.roundBox(q[0],y,q[1],ww,h,dd,col,r,rot);};
+      if(irish){
+        // Dublin-inspired double-decker: modern dark mask, green lower body and lime upper panels.
+        surface(M.metal,()=>{box(0,.82,0,w,1.08,d,'#2b946b',.22);box(0,2.45,-.12,w*.98,2.25,d-.20,'#2b946b',.18);box(0,4.48,-.14,w*.97,1.50,d-.25,'#d0c94d',.18);box(0,5.31,-.25,w*.92,.18,d-.52,'#d5ce55',.08);});
+        surface(M.glass,()=>{box(0,3.98,d/2-.08,w*.86,1.22,.09,'#224b5d',.04);box(0,1.96,d/2-.08,w*.88,1.06,.10,'#285766',.04);for(const side of [-1,1])for(const y of [2.05,4.08])for(let b=-3.45;b<3.45;b+=1.42){const q=at(x,z,rot,side*(w/2+.018),b);m.roundBox(q[0],y,q[1],.04,.93,1.13,'#285a68',.025,rot);}});
+        box(0,3.05,d/2+.03,w*.88,.42,.055,'#202b31',.02);box(0,1.00,d/2+.06,w*.82,.22,.06,'#bdc34c',.025);
+      }else{
+        // London double-decker: unmistakable bright red and more upright front treatment.
+        surface(M.metal,()=>{box(0,.80,0,w,1.04,d,'#dc3732',.14);box(0,2.38,-.05,w*.99,2.16,d-.16,'#dc3732',.11);box(0,4.35,-.08,w*.98,1.65,d-.20,'#dc3732',.10);box(0,5.29,-.12,w*.96,.16,d-.40,'#c92e2b',.07);});
+        surface(M.glass,()=>{for(const a of [-.72,.72]){box(a,3.98,d/2-.06,1.20,1.12,.085,'#244f61',.025);box(a,1.83,d/2-.06,1.20,1.10,.09,'#295969',.025);}for(const side of [-1,1])for(const y of [2.00,3.98])for(let b=-3.50;b<3.35;b+=1.36){const q=at(x,z,rot,side*(w/2+.018),b);m.roundBox(q[0],y,q[1],.04,.91,1.05,'#285968',.02,rot);}});
+        box(0,3.04,d/2+.03,w*.90,.48,.055,'#232b2c',.02);box(0,3.04,d/2+.06,w*.61,.26,.022,'#d8c89b',.01);box(0,.99,0,w+.01,.15,d-.42,'#e4c690',.035);
+      }
+      for(const side of [-1,1])for(const b of [-3.02,3.02]){const a=at(x,z,rot,side*(w/2-.15),b),c=at(x,z,rot,side*(w/2+.18),b);surface(M.plain,()=>m.cylinder([a[0],.58,a[1]],[c[0],.58,c[1]],.61,'#202729',14));}
+      surface(M.light,()=>{for(const a of [-w*.34,w*.34])box(a,.93,d/2+.06,.27,.18,.035,'#f5e7b8',.035);});
+      const q=at(x,z,rot,0,d/2+.15);info.labels.push({x:q[0],y:irish?3.06:3.06,z:q[1],text:irish?'DUBLIN  46A':'LONDON  24',width:2.35,type:'small'});
+    }
+    function serviceCar(x,z,rot,kind='police'){
+      const ambulance=kind==='ambulance',name=ambulance?(irish?'Irish ambulance':'London ambulance'):(irish?'Garda car':'London police');
+      const radius=ambulance?2.8:2.4;if(!register(name,x,z,radius))return;
+      const w=ambulance?2.05:irish?2.02:1.94,d=ambulance?5.05:irish?4.45:4.25;
+      const box=(a,y,b,ww,h,dd,col,r=.12)=>{const q=at(x,z,rot,a,b);m.roundBox(q[0],y,q[1],ww,h,dd,col,r,rot);};
+      if(ambulance){
+        const body=irish?'#f3f0df':'#e9e650',green=irish?'#268764':'#20874d';
+        surface(M.metal,()=>{box(0,.82,0,w,.82,d,body,.16);box(0,2.00,-.45,w*.97,2.08,d*.62,body,.15);box(0,1.42,1.53,w*.94,1.10,1.20,body,.14);});
+        surface(M.glass,()=>box(0,1.72,d/2-.08,w*.80,.64,.09,'#285766',.035));
+        for(const side of [-1,1]){for(let i=0;i<7;i++)box(side*(w/2+.026),1.04,-1.62+i*.54,.038,.31,.50,i%2?green:'#f1e74a',.012);box(side*(w/2+.03),1.63,-.52,.04,.18,1.45,green,.012);}
+        surface(M.metal,()=>box(0,3.10,-.55,1.36,.16,.34,'#263844',.05));surface(M.light,()=>{for(const a of [-.42,.42])box(a,3.22,-.55,.39,.14,.27,irish?'#4bbcff':'#4387ff',.05);});
+      }else if(irish){
+        surface(M.metal,()=>{box(0,.72,.04,w,.62,d,'#f0f1e8',.17);box(0,1.47,-.42,w*.94,1.32,d*.58,'#eef0e9',.17);box(0,1.12,1.42,w*.95,.54,1.08,'#eef0e9',.14);});
+        surface(M.glass,()=>box(0,1.60,d/2-.07,w*.77,.56,.08,'#255365',.035));
+        for(const side of [-1,1]){for(let i=0;i<6;i++)box(side*(w/2+.026),1.06,-1.35+i*.52,.038,.32,.48,i%2?'#225daf':'#e8eb47',.012);box(side*(w/2+.03),1.34,-.38,.04,.18,1.28,'#1f539e',.012);}
+        surface(M.metal,()=>box(0,2.26,-.34,1.28,.14,.34,'#263844',.05));surface(M.light,()=>{for(const a of [-.40,.40])box(a,2.37,-.34,.37,.14,.27,'#45a9ff',.05);});
+      }else{
+        surface(M.metal,()=>{box(0,.70,.03,w,.58,d,'#f3f4ef',.16);box(0,1.39,-.30,w*.95,1.13,d*.64,'#f3f4ef',.15);box(0,1.04,1.38,w*.95,.46,1.02,'#f3f4ef',.13);});
+        surface(M.glass,()=>box(0,1.49,d/2-.07,w*.78,.52,.08,'#27586a',.03));
+        for(const side of [-1,1])for(let i=0;i<6;i++)box(side*(w/2+.026),1.03,-1.30+i*.49,.038,.31,.46,i%2?'#2362ae':'#edf04a',.012);
+        surface(M.metal,()=>box(0,2.02,-.31,1.30,.14,.34,'#263544',.05));surface(M.light,()=>{for(const a of [-.42,.42])box(a,2.13,-.31,.39,.14,.27,'#4387ff',.05);});
+      }
+      for(const side of [-1,1])for(const b of [-d*.31,d*.31]){const a=at(x,z,rot,side*(w/2-.12),b),c=at(x,z,rot,side*(w/2+.16),b);surface(M.plain,()=>m.cylinder([a[0],.52,a[1]],[c[0],.52,c[1]],ambulance?.48:.44,'#202729',12));}
     }
     function building(x,z,w,h,d,rot,index=0,distant=false){
       if(!register('building',x,z,Math.hypot(w,d)/2))return;
@@ -151,7 +193,11 @@
         const w=regent?18:17,d=regent?14:13,p=C.sampleTrack(t,s,side*(half+22)),rot=Math.atan2(p.tx,p.tz)+side*Math.PI/2;
         building(p.x,p.z,w,(regent?22:14)+(index%3)*3.1,d,rot,index);
         if(index%2===0){const q=C.sampleTrack(t,s,side*(half+51));building(q.x,q.z,24,20+(index%4)*6,18,rot,index+3,true);}
-        if(index%8===0){const q=C.sampleTrack(t,s+9,side*(half+10.5));bus(q.x,q.z,Math.atan2(q.tx,q.tz),index%16!==0);}
+        if(index%8===0){
+          const q=C.sampleTrack(t,s+9,side*(half+10.5)),rrot=Math.atan2(q.tx,q.tz),cycle=index%(irish?24:32);
+          if(irish){if(cycle===0)bus(q.x,q.z,rrot,false);else serviceCar(q.x,q.z,rrot,cycle===8?'police':'ambulance');}
+          else{if(cycle===0)bus(q.x,q.z,rrot,false);else if(cycle===16)serviceCar(q.x,q.z,rrot,'police');else if(cycle===24)serviceCar(q.x,q.z,rrot,'ambulance');else bus(q.x,q.z,rrot,true);}
+        }
       }
       for(let i=0;i<45;i++){const x=(rand()-.5)*450,z=(rand()-.5)*380;tree(x,z,.75+rand()*.45);}
       if(t.id===0){
