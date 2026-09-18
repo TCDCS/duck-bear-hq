@@ -969,6 +969,7 @@ GameScene.prototype.createSky = function() {
 const originalGameCreate = GameScene.prototype.create;
 GameScene.prototype.create = function() {
   originalGameCreate.call(this);
+  globalThis.__MEOW_WARS_ACTIVE_ARENA = this.arena.id;
   this.add.text(1270, 708, 'v' + MW_VERSION + ' · ' + MW_BUILD, {
     fontFamily:'Arial', fontSize:'10px', color:'#d9f3ff',
     backgroundColor:'rgba(11,25,43,.72)', padding:{x:5,y:3}
@@ -984,6 +985,7 @@ GameScene.prototype.update = function(time, delta) {
 
 function menuBackdrop(scene) {
   const arena = ARENAS[scene.arenaIndex] || ARENAS[0];
+  globalThis.__MEOW_WARS_SELECTED_ARENA = arena.id;
   updateBackdropTextures(scene, arena);
   scene.__mwHdBackdrop.forEach((image, i) => {
     image.x = 640 + Math.sin(scene.time.now * .0001 + i) * (i + 1);
