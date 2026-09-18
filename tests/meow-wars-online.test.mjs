@@ -70,10 +70,10 @@ test('Meow Wars online server gates guest intents to the current team', () => {
   assert.equal(room.turnTeam, 1);
 
   const intent = R.setIntent(room, 1, {
-    seq: 1, kind: 'fire', angle: 51, power: .72, facing: -1, weaponId: 'bazooka'
+    seq: 1, kind: 'fire', x: 1010, angle: 51, power: .72, facing: -1, weaponId: 'bazooka'
   }, now + 12);
   assert.deepEqual(intent, {
-    seq: 1, kind: 'fire', angle: 51, power: .72, facing: -1, weaponId: 'bazooka'
+    seq: 1, kind: 'fire', x: 1010, angle: 51, power: .72, facing: -1, weaponId: 'bazooka'
   });
 });
 
