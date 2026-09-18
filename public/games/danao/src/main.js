@@ -9,6 +9,7 @@ import { polishDanaoArena } from './art/arena-polish.js';
 import { showCombatFeedback } from './art/combat-feedback.js';
 import { mountEnvironmentReactions } from './art/environment-reactions.js';
 import { mountEnvironmentDetails } from './art/environment-props.js';
+import { mountEnvironmentWear } from './art/environment-wear.js';
 import { mountTouchControls } from './mobile/touch-controls.js';
 
 const canvas = document.getElementById('game');
@@ -46,6 +47,7 @@ let onlineLobby;
 let onlineBridge;
 let environmentReaction = null;
 let environmentDetails = null;
+let environmentWear = null;
 const onlineClient = createDanaoRoomClient();
 
 function renderCombatFeedback(event) {
@@ -54,6 +56,7 @@ function renderCombatFeedback(event) {
   showCombatFeedback(B, scene, event);
   environmentReaction?.onFeedback?.(event);
   environmentDetails?.onFeedback?.(event);
+  environmentWear?.onFeedback?.(event);
 }
 
 const runtime = createDanaoRuntime(canvas, {
@@ -103,11 +106,13 @@ function polishActiveArena(arenaId) {
   polishDanaoArena(B, scene, arenaId);
   environmentReaction = mountEnvironmentReactions(B, scene, arenaId);
   environmentDetails = mountEnvironmentDetails(B, scene, arenaId);
+  environmentWear = mountEnvironmentWear(B, scene, arenaId);
 }
 
 async function startFromState(state) {
   environmentReaction = null;
   environmentDetails = null;
+  environmentWear = null;
   touchControls.setActive(false);
   if (onlineBridge?.active) onlineBridge.stop();
   onlineRoot.hidden = true;
@@ -144,6 +149,7 @@ app = mountApp(root, {
   onQuit() {
     environmentReaction = null;
     environmentDetails = null;
+    environmentWear = null;
     touchControls.setActive(false);
     if (onlineBridge?.active) onlineBridge.stop();
     if (onlineClient.room) onlineClient.leave();
@@ -188,6 +194,7 @@ onlineLobby = mountOnlineLobby(onlineRoot, {
   onReturnLocal() {
     environmentReaction = null;
     environmentDetails = null;
+    environmentWear = null;
     touchControls.setActive(false);
     if (onlineBridge?.active) onlineBridge.stop();
     onlineRoot.hidden = false;
@@ -224,6 +231,8 @@ window.addEventListener('beforeunload', () => {
   environmentReaction = null;
   environmentDetails?.dispose?.();
   environmentDetails = null;
+  environmentWear?.dispose?.();
+  environmentWear = null;
   touchControls.dispose();
   runtime.dispose();
 }, { once: true });
