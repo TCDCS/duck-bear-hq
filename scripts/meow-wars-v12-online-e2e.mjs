@@ -79,8 +79,8 @@ try {
   ]);
   await Promise.all([waitGame(host), waitGame(guest)]);
   await Promise.all([
-    host.waitForFunction(() => globalThis.__MEOW_WARS_MENU_SCENE?.__mw12OnlineButton?.active === true, null, { timeout: 15000 }),
-    guest.waitForFunction(() => globalThis.__MEOW_WARS_MENU_SCENE?.__mw12OnlineButton?.active === true, null, { timeout: 15000 })
+    host.locator('#mw-online-launcher').waitFor({ state: 'visible', timeout: 15000 }),
+    guest.locator('#mw-online-launcher').waitFor({ state: 'visible', timeout: 15000 })
   ]);
 
   // Host chooses Ha'penny Bridge before creating the room.
@@ -89,7 +89,7 @@ try {
     await host.waitForTimeout(80);
   }
 
-  await logicalClick(host, 115, 45);
+  await host.locator('#mw-online-launcher').click();
   await host.locator('#mw-online-overlay').waitFor({ state: 'visible', timeout: 5000 });
   await host.locator('#mw-online-name').fill('Blue Host');
   await host.locator('#mw-online-create').click();
@@ -103,7 +103,7 @@ try {
 
   await host.screenshot({ path: out('host-room-created.png'), fullPage: true });
 
-  await logicalClick(guest, 115, 45);
+  await guest.locator('#mw-online-launcher').click();
   await guest.locator('#mw-online-overlay').waitFor({ state: 'visible', timeout: 5000 });
   await guest.locator('#mw-online-name').fill('Red Mobile');
   await guest.locator('#mw-online-code').fill(code);
