@@ -1,6 +1,7 @@
 // Public games and catalogue; all private account routes retain the original Worker.
 import {routeMultiplayer,json} from './multiplayer/gateway.mjs';
 import {routeDanaoMultiplayer} from './danao/gateway.mjs';
+import {routeMeowMultiplayer} from './meow/gateway.mjs';
 import {routeDanaoApi} from './danao/api.mjs';
 const ROOTS=['/games/wacky-races','/games/proper-karted'];
 const DANAO_RELEASE_PREFIX='/api/danao/release/';
@@ -84,6 +85,7 @@ export function createGameHandler({assets,fallback}) {
     const url=new URL(request.url);let path;try{path=decodeURIComponent(url.pathname);}catch{path=url.pathname;}
     if(path.startsWith('/game-builds/danao/web/'))return serveDanaoBuild(request,env,path);
     if(path.startsWith('/api/races/'))return routeMultiplayer(request,env);
+    if(path.startsWith('/api/meow/'))return routeMeowMultiplayer(request,env);
     if(path.startsWith(DANAO_RELEASE_PREFIX))return routeDanaoRelease(request,env,path);
     if(path==='/api/danao/profile'){
       let user=null;try{user=await currentUser(request,env);}catch{/* API returns signed-out semantics when session lookup is unavailable. */}
