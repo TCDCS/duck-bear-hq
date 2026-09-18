@@ -1057,6 +1057,10 @@ GameScene.prototype.create = function() {
   this.__mw12ResultShown = false;
   this.__mw12LastSnapshotAt = 0;
   cleanupMirrors(this);
+  this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+    cleanupMirrors(this);
+    if (online.scene === this) online.scene = null;
+  });
   createOnlineHud(this);
   stats.battlesStarted += 1;
 
@@ -1255,6 +1259,11 @@ GameScene.prototype.update = function(time, delta) {
     v11GameUpdate.call(this, time, delta);
   } finally {
     if (!localOwnsTurn) this.__mw10Touch = savedTouch;
+  }
+
+  if (!localOwnsTurn && !isHost()) {
+    this.aimGraphics?.clear?.();
+    this.__mw09AimGuide?.clear?.();
   }
 
   online.scene = this;
