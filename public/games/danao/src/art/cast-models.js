@@ -411,7 +411,7 @@ async function importHuman(B, scene, styleId, config, visualRoot) {
   }
 
   const pose = makeHumanPoseRig(B, [bodyResult, ...accessoryResults]);
-  noteCastLoad(styleId, 'ready', body?.name || styleId);
+  noteCastLoad(styleId, 'ready', findBodyMesh(bodyResult)?.name || styleId);
 
   return {
     kind: 'human',
