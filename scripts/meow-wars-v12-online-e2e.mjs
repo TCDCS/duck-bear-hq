@@ -313,11 +313,56 @@ try {
     throw new Error('Guest mobile movement was not applied authoritatively: ' + JSON.stringify({ beforeX, afterX, movementDiag }));
   }
 
-  const intentsBeforeFire = await host.evaluate(() => globalThis.__MEOW_WARS_V12_STATS.intentsApplied);
+  const beforeFire = await Promise.all([
+    host.evaluate(() => ({
+      intentsReceived: globalThis.__MEOW_WARS_V12_STATS.intentsReceived,
+      intentsApplied: globalThis.__MEOW_WARS_V12_STATS.intentsApplied,
+      activeTeam: globalThis.__MEOW_WARS_GAME_SCENE.activeCat().team,
+      actionLocked: globalThis.__MEOW_WARS_GAME_SCENE.actionLocked
+    })),
+    guest.evaluate(() => ({
+      intentsSent: globalThis.__MEOW_WARS_V12_STATS.intentsSent,
+      intentAcks: globalThis.__MEOW_WARS_V12_STATS.intentAcks,
+      touchEvents: globalThis.__MEOW_WARS_V10_STATS.touchControlEvents,
+      activeTeam: globalThis.__MEOW_WARS_GAME_SCENE.activeCat().team,
+      actionLocked: globalThis.__MEOW_WARS_GAME_SCENE.actionLocked
+    }))
+  ]);
+
   await logicalHold(guest, 1198, 585, 520);
+
+  await guest.waitForFunction((before) =>
+    globalThis.__MEOW_WARS_V10_STATS?.touchControlEvents > before.touchEvents &&
+    globalThis.__MEOW_WARS_V12_STATS?.intentsSent > before.intentsSent,
+    beforeFire[1],
+    { timeout: 5000 }
+  );
+
+  await guest.waitForFunction((before) =>
+    globalThis.__MEOW_WARS_V12_STATS?.intentAcks > before ||
+    Boolean(globalThis.__MEOW_WARS_ONLINE?.lastOnlineError),
+    beforeFire[1].intentAcks,
+    { timeout: 5000 }
+  );
+  const fireAck = await guest.evaluate(() => ({
+    ack: globalThis.__MEOW_WARS_ONLINE.lastIntentAck,
+    accepted: globalThis.__MEOW_WARS_ONLINE.lastIntentAccepted,
+    turnTeam: globalThis.__MEOW_WARS_ONLINE.lastIntentAckTurnTeam,
+    error: globalThis.__MEOW_WARS_ONLINE.lastOnlineError,
+    stats: globalThis.__MEOW_WARS_V12_STATS
+  }));
+  if (fireAck.error || fireAck.accepted !== true) {
+    throw new Error('Server rejected Red fire intent: ' + JSON.stringify(fireAck));
+  }
+
+  await host.waitForFunction((before) =>
+    globalThis.__MEOW_WARS_V12_STATS?.intentsReceived > before,
+    beforeFire[0].intentsReceived,
+    { timeout: 5000 }
+  );
   await host.waitForFunction((before) =>
     globalThis.__MEOW_WARS_V12_STATS?.intentsApplied > before,
-    intentsBeforeFire,
+    beforeFire[0].intentsApplied,
     { timeout: 5000 }
   );
   await host.waitForFunction(() =>
