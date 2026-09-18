@@ -32,6 +32,16 @@ function upgradeRenderResolution(source) {
   return source.slice(0, match.index) + replacement + source.slice(match.index + match[0].length);
 }
 
+function upgradePhaser4Tint(source) {
+  const legacy = 'cat.sprite.setTintFill?.(0xffffff);';
+  const occurrences = source.split(legacy).length - 1;
+  if (occurrences !== 1) throw new Error('Meow Wars Phaser 4 tint anchor mismatch');
+  return source.replace(
+    legacy,
+    'cat.sprite.setTint?.(0xffffff);\n        cat.sprite.setTintMode?.(Phaser.TintModes.FILL);'
+  );
+}
+
 async function readLayer(url, label) {
   const response = await fetch(url, { cache: 'no-store' });
   if (!response.ok) throw new Error('Missing Meow Wars ' + label);
@@ -39,7 +49,7 @@ async function readLayer(url, label) {
 }
 
 function composeSource(v05Source, hdSource, gamefeelSource) {
-  const upgraded = upgradeRenderResolution(v05Source);
+  const upgraded = upgradePhaser4Tint(upgradeRenderResolution(v05Source));
   const marker = 'new Phaser.Game(config);';
   const index = upgraded.lastIndexOf(marker);
   if (index < 0) throw new Error('Meow Wars Phaser boot anchor missing');
