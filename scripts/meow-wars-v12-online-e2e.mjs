@@ -238,7 +238,7 @@ try {
 
   const beforeMove = await Promise.all([
     host.evaluate(() => ({
-      x: globalThis.__MEOW_WARS_GAME_SCENE.activeCat().x,
+      x: globalThis.__MEOW_WARS_GAME_SCENE.catById('red-1').x,
       intentsReceived: globalThis.__MEOW_WARS_V12_STATS.intentsReceived,
       intentsApplied: globalThis.__MEOW_WARS_V12_STATS.intentsApplied
     })),
@@ -296,7 +296,7 @@ try {
 
   const movementDiag = await Promise.all([
     host.evaluate(() => ({
-      x: globalThis.__MEOW_WARS_GAME_SCENE.activeCat().x,
+      x: globalThis.__MEOW_WARS_GAME_SCENE.catById('red-1').x,
       activeTeam: globalThis.__MEOW_WARS_GAME_SCENE.activeCat().team,
       stats: globalThis.__MEOW_WARS_V12_STATS,
       lastIntent: globalThis.__MEOW_WARS_ONLINE.lastIntentReceived,
