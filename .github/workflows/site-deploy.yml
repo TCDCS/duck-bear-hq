@@ -1,5 +1,5 @@
 name: Site Deploy
-# Manual content deploy trigger: Meow Wars v0.7.1 after TCDCS transfer
+# Manual content deploy trigger: Danao v0.10.0 Checkout Chaos
 
 on:
   workflow_dispatch:
