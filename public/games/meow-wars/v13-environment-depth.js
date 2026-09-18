@@ -39,6 +39,7 @@ function cleanup(scene) {
   safeDestroy(scene.__mw13Water);
   safeDestroy(scene.__mw13Weather);
   safeDestroy(scene.__mw13Static);
+  safeDestroy(scene.__mw13Surface);
   safeDestroy(scene.__mw13Front);
   safeDestroy(scene.__mw13Steam);
   scene.__mw13Ambient = [];
@@ -46,6 +47,7 @@ function cleanup(scene) {
   scene.__mw13Water = null;
   scene.__mw13Weather = null;
   scene.__mw13Static = null;
+  scene.__mw13Surface = null;
   scene.__mw13Front = null;
   scene.__mw13Steam = null;
 }
@@ -166,9 +168,72 @@ function drawBeachStatic(scene, g) {
   }
 }
 
+function drawSurfaceDetail(scene,g) {
+  const id=scene.arena.id;
+  const sample=(x)=>surfaceY(scene.terrain,x);
+
+  if(id==='garden-siege'){
+    for(let x=35;x<1260;x+=78){
+      const y=sample(x);
+      if(y>=HEIGHT)continue;
+      g.fillStyle(x%3?0x87a96c:0xd8c8a2,.16);
+      g.fillEllipse(x,y+5,14+(x%4),4);
+    }
+  }else if(id==='rooftop-rumble'){
+    for(let x=30;x<1260;x+=74){
+      const y=sample(x);
+      if(y>=HEIGHT)continue;
+      line(g,x,y+3,x+42,y+4,0xd5dbe0,.16,1);
+      line(g,x+42,y+4,x+58,y+16,0x38434b,.14,1);
+    }
+  }else if(id==='junkyard-jamboree'){
+    for(let x=28;x<1260;x+=83){
+      const y=sample(x);
+      if(y>=HEIGHT)continue;
+      g.fillStyle(x%2?0x6e4f3c:0xb16d3d,.13);
+      g.fillEllipse(x,y+7,28+(x%17),7);
+      g.fillStyle(0x262d31,.18);g.fillCircle(x+12,y+5,2+(x%3));
+    }
+  }else if(id==='taj-mahal'){
+    for(let x=35;x<1260;x+=68){
+      const y=sample(x);
+      if(y>=HEIGHT)continue;
+      line(g,x,y+4,x+48,y+4,0xfff5df,.18,1);
+      line(g,x+24,y+4,x+24,y+11,0xb9a98c,.12,1);
+    }
+  }else if(id==='oconnell-bridge-spire'){
+    for(let x=20;x<1270;x+=58){
+      const y=sample(x);
+      if(y>=HEIGHT)continue;
+      line(g,x,y+3,x+40,y+3,0xe8eef0,.13,1);
+      line(g,x+18,y+3,x+8,y+15,0x292f33,.12,1);
+      g.fillStyle(0xd9f7ff,.045);g.fillRoundedRect(x,y+6,36,7,3);
+    }
+  }else if(id==='westminster-bridge-big-ben'){
+    for(let x=24;x<1260;x+=62){
+      const y=sample(x);
+      if(y>=HEIGHT)continue;
+      line(g,x,y+3,x+44,y+3,0xdde5e0,.14,1);
+      line(g,x+22,y+3,x+22,y+13,0x39433f,.12,1);
+    }
+  }else if(id==='donabate-beach'){
+    for(let x=10;x<1280;x+=52){
+      const y=sample(x);
+      if(y>=HEIGHT)continue;
+      const shimmer=.035+((x/52)%3)*.012;
+      line(g,x,y+3,x+34+(x%19),y+3,0xffffff,shimmer,2);
+      if(x%104===10){
+        g.fillStyle(0xe8d0ae,.22);g.fillEllipse(x+18,y+7,7,3);
+      }
+    }
+  }
+}
+
 function createStaticDetail(scene) {
   const g=scene.add.graphics().setDepth(-2);
+  const surface=scene.add.graphics().setDepth(2);
   scene.__mw13Static=g;
+  scene.__mw13Surface=surface;
   const id=scene.arena.id;
   if(id==='garden-siege') drawGardenStatic(scene,g);
   else if(id==='rooftop-rumble') drawRooftopStatic(scene,g);
@@ -177,6 +242,7 @@ function createStaticDetail(scene) {
   else if(id==='oconnell-bridge-spire') drawDublinStatic(scene,g);
   else if(id==='westminster-bridge-big-ben') drawWestminsterStatic(scene,g);
   else if(id==='donabate-beach') drawBeachStatic(scene,g);
+  drawSurfaceDetail(scene,surface);
 }
 
 function makeBoat(scene, x, y, scale, palette, direction=1) {
