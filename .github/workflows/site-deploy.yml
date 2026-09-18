@@ -1,5 +1,5 @@
 name: Site Deploy
-# Manual content deploy trigger: Danao v0.10.0 Checkout Chaos
+# Manual content deploy trigger: credentials restored — Meow Wars v0.7.1 + Danao v0.10.0
 
 on:
   workflow_dispatch:
