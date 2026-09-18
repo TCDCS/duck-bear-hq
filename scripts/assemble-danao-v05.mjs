@@ -13,7 +13,7 @@ const builds = [
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/visuals'),
     output: path.join(root, 'public/games/danao/src/game/visuals.js'),
-    sha256: 'f722361e63c82936ca2e17d9b65b8059d4d042892e9fb4eda05d3181d1c55be2',
+    sha256: '38344470446870e174188d8c2b260042199b1cd41fab96f6b00bf9bbfe752a57',
   },
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/app'),
