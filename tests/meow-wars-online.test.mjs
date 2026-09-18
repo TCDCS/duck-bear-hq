@@ -63,7 +63,8 @@ test('Meow Wars online server gates guest intents to the current team', () => {
       { id:'blue-1',team:0,x:150,y:500,vx:0,vy:0,health:100,alive:true },
       { id:'red-1',team:1,x:1030,y:500,vx:0,vy:0,health:100,alive:true }
     ],
-    projectiles:[],deployables:[],runners:[],craters:[],props:[]
+    projectiles:[],deployables:[],runners:[],craters:[],props:[],
+    ammo:[{bazooka:-1},{bazooka:-1}]
   };
   assert.equal(R.setHostSnapshot(room, 0, snapshot, now + 11), true);
   assert.equal(room.turnTeam, 1);
@@ -113,7 +114,8 @@ test('Meow Wars room supports reconnect and retains latest host snapshot', () =>
     projectiles:[{id:'p1',weaponId:'grenade',x:600,y:320,rotation:.5}],
     deployables:[],runners:[],
     craters:[{x:700,y:520,radius:55}],
-    props:[{type:'driftwood',x:190,y:545,hp:20,destroyed:false,angle:4}]
+    props:[{type:'driftwood',x:190,y:545,hp:20,destroyed:false,angle:4}],
+    ammo:[{bazooka:-1,grenade:5},{bazooka:-1,grenade:5}]
   };
   R.setHostSnapshot(room, 0, state, now + 1700);
   const restored = R.restoreRoom(R.persistRoom(room));
