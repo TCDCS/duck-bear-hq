@@ -164,6 +164,7 @@
 @media (orientation: portrait) and (pointer: coarse) {
   .danao-touch-shell.is-active .danao-rotate-hint {
     display: block;
+    bottom: calc(162px + env(safe-area-inset-bottom));
   }
 }
 
