@@ -11,7 +11,7 @@ const builds = [
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/runtime'),
     output: path.join(root, 'public/games/danao/src/game/runtime.js'),
-    sha256: '5c39cd73da0c5cfb8ad749c6371008991b7b8b94b63cc239fdc9f533747cf5f5',
+    sha256: '00e76da6da5e30cad4cad40f748e29947f8949a0e29e706e1ccce3688b7cb7c0',
     transform: (source) => patchDanaoV09Runtime(patchDanaoV08Runtime(source)),
   },
   {
