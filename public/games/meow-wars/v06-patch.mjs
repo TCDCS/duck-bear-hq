@@ -1,5 +1,5 @@
 export const VERSION = '0.6.0';
-export const BUILD = 'mw-v06-env-20260918a';
+export const BUILD = 'mw-v06-env-20260918b';
 
 function replaceOnce(source, needle, replacement, label) {
   const index = source.indexOf(needle);
@@ -102,7 +102,7 @@ ARENAS.push(
 
 const RUNTIME_PATCH = String.raw`
 const __mw_v06_version = '0.6.0';
-const __mw_v06_build = 'mw-v06-env-20260918a';
+const __mw_v06_build = 'mw-v06-env-20260918b';
 
 function v06Hex(value) {
     return Number.parseInt(String(value).replace('#', ''), 16);
@@ -566,7 +566,7 @@ const __mw_v06_MenuScene = __mw_game_MenuScene_js.MenuScene;
 const __mw_v06_menuCreate = __mw_v06_MenuScene.prototype.create;
 __mw_v06_MenuScene.prototype.create = function() {
     __mw_v06_menuCreate.call(this);
-    this.add.text(18, 14, 'v0.6.0  •  mw-v06-env-20260918a', {
+    this.add.text(18, 14, 'v0.6.0  •  mw-v06-env-20260918b', {
         fontFamily: 'Arial', fontSize: '11px', color: '#f5fbff',
         backgroundColor: '#153555cc', padding: { x: 7, y: 4 }
     }).setDepth(60);
@@ -583,7 +583,7 @@ __mw_v06_MenuScene.prototype.showV06Settings = function() {
     c.add(this.add.rectangle(640,350,590,420,0x122c4b,0.98).setStrokeStyle(4,0x70d9ff,0.9));
     c.add(this.add.text(640,190,'SETTINGS / BUILD INFO',{fontFamily:'Arial Black, Arial',fontSize:'27px',color:'#ffd253'}).setOrigin(.5));
     c.add(this.add.text(390,245,'VERSION\nBUILD\nGRAPHICS\nART PIPELINE\nBATTLEFIELDS\nCONTROLS',{fontFamily:'Arial Black, Arial',fontSize:'15px',color:'#9edcff',lineSpacing:15}));
-    c.add(this.add.text(545,245,'0.6.0\nmw-v06-env-20260918a\nAdaptive HD → 4K render scale\nVector / procedural 4K-source layers\n7\nA/D move · W/S aim · Q/E weapons · Space fire',{fontFamily:'Arial',fontSize:'15px',color:'#ffffff',lineSpacing:15}));
+    c.add(this.add.text(545,245,'0.6.0\nmw-v06-env-20260918b\nAdaptive HD → 4K render scale\nVector / procedural 4K-source layers\n7\nA/D move · W/S aim · Q/E weapons · Space fire',{fontFamily:'Arial',fontSize:'15px',color:'#ffffff',lineSpacing:15}));
     const close=this.add.text(640,505,'CLOSE',{fontFamily:'Arial Black, Arial',fontSize:'18px',color:'#ffffff',backgroundColor:'#e1544f',padding:{x:24,y:10}}).setOrigin(.5).setInteractive({useHandCursor:true});
     close.on('pointerdown',()=>{c.destroy(true);this.v06SettingsPanel=null;});
     c.add(close); this.v06SettingsPanel=c;
