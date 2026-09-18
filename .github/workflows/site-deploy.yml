@@ -1,5 +1,5 @@
 name: Site Deploy
-# Manual content deploy trigger: Danao v0.10.3 presentation correction
+# Manual content deploy trigger: Danao v0.10.4 Checkout Chaos store polish
 
 on:
   workflow_dispatch:
