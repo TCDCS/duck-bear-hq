@@ -15,14 +15,18 @@ function productionV05Source() {
 
 function composeV06() {
   let source = productionV05Source();
-  const renderAnchor = 'return Math.min(2, Math.max(1, devicePixelRatio));';
+  const renderPattern = /function preferredRenderResolution\s*\([^)]*\)\s*\{[\s\S]*?\n\}/g;
   assert.match(source, /new Phaser\.Game\(config\);/);
-  assert.ok(source.includes(renderAnchor));
-  source = source.replace(renderAnchor,
-    "const viewportScale = Math.max((globalThis.innerWidth || 1280) / 1280, (globalThis.innerHeight || 720) / 720);\n" +
+  const matches = [...source.matchAll(renderPattern)];
+  assert.equal(matches.length, 1);
+  const replacement =
+    "function preferredRenderResolution(devicePixelRatio = 1) {\n" +
+    "    const viewportScale = Math.max((globalThis.innerWidth || 1280) / 1280, (globalThis.innerHeight || 720) / 720);\n" +
     "    const mobileCap = (globalThis.innerWidth || 1280) < 800 ? 2 : 3;\n" +
-    "    return Math.min(mobileCap, 3, Math.max(1, devicePixelRatio, viewportScale));"
-  );
+    "    return Math.min(mobileCap, 3, Math.max(1, devicePixelRatio, viewportScale));\n" +
+    "}";
+  const match = matches[0];
+  source = source.slice(0, match.index) + replacement + source.slice(match.index + match[0].length);
   const hd = read('public/games/meow-wars/v06-hd.js');
   const marker = 'new Phaser.Game(config);';
   const index = source.lastIndexOf(marker);
