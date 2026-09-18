@@ -106,7 +106,7 @@ for (let x = -10; x <= 10; x += 4) {
   }
 }
 for (const [x, z] of [[-8,-4],[0,-4],[8,-4],[-8,4],[0,4],[8,4]]) {
-  const light = new B.PointLight(`supermarket-light-${x}-${z}`, new B.Vector3(x, 4.7, z), scene);
+  const light = new B.PointLight('supermarket-light-' + x + '-' + z, new B.Vector3(x, 4.7, z), scene);
   light.diffuse = new B.Color3(1.0, 0.97, 0.9);
   light.intensity = 0.25;
   light.range = 10;
@@ -130,7 +130,7 @@ for (let aisleIndex = 0; aisleIndex < aisleXs.length; aisleIndex++) {
       }
     }
   }
-  sign('supermarket-aisle-sign', `AISLE ${aisleIndex + 1}`, [x, 3.65, -1.65], [2.2, 0.7], Math.PI, '#00539f', '#ffffff');
+  sign('supermarket-aisle-sign', 'AISLE ' + (aisleIndex + 1), [x, 3.65, -1.65], [2.2, 0.7], Math.PI, '#00539f', '#ffffff');
 }
 
 for (const [index, x] of [-5.6, -1.8, 2.0].entries()) {
