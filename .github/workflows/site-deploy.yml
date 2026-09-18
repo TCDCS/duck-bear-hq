@@ -1,5 +1,5 @@
 name: Site Deploy
-# Manual content deploy trigger: Meow Wars v1.1 Living Battlefields
+# Manual content deploy trigger: Danao v0.10.3 presentation correction
 
 on:
   workflow_dispatch:
