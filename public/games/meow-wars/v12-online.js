@@ -684,6 +684,8 @@ function makeHostSnapshot(scene) {
     wind: scene.wind,
     timerMs: Math.max(0, scene.turnRemainingMs),
     selectedWeaponId: WEAPONS[scene.selectedWeaponIndex]?.id || 'bazooka',
+    aimAngle: Number.isFinite(scene.aimAngleDeg) ? clamp(scene.aimAngleDeg, 8, 82) : 42,
+    facing: scene.facing < 0 ? -1 : 1,
     chargePower: scene.chargePower,
     actionLocked: scene.actionLocked,
     gameOver: scene.gameOver,
@@ -899,6 +901,8 @@ function applyGuestSnapshot(state, immediate) {
   scene.wind = state.wind;
   scene.turnRemainingMs = state.timerMs;
   scene.actionLocked = state.actionLocked;
+  scene.aimAngleDeg = Number.isFinite(state.aimAngle) ? clamp(state.aimAngle, 8, 82) : 42;
+  scene.facing = state.facing < 0 ? -1 : 1;
   scene.chargePower = state.chargePower;
 
   const weaponIndex = WEAPONS.findIndex((weapon) => weapon.id === state.selectedWeaponId);
@@ -932,6 +936,22 @@ function applyGuestSnapshot(state, immediate) {
   );
 
   if (state.activeId && previousActive !== state.activeId) {
+    // A new network turn must start from a clean local input edge. This prevents
+    // a pointer/key release from the previous turn becoming an accidental shot.
+    const touch = scene.__mw10Touch;
+    if (touch) {
+      touch.left = false;
+      touch.right = false;
+      touch.up = false;
+      touch.down = false;
+      touch.fire = false;
+      touch.prevFire = false;
+    }
+    scene.lastFire = false;
+    scene.lastPrev = false;
+    scene.lastNext = false;
+    scene.lastLoggedMoveX = scene.activeCat().x;
+    scene.lastLoggedAim = scene.aimAngleDeg;
     try { scene.showTurnBanner(scene.activeCat()); } catch {}
     online.lastStateSignature = '';
   }
