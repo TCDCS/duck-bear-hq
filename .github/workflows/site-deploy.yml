@@ -1,5 +1,5 @@
 name: Site Deploy
-# Manual content deploy trigger: Meow Wars v1.2 retry after stale-test cleanup
+# Manual content deploy trigger: Danao v0.10.8 mobile touch controls
 
 on:
   workflow_dispatch:
