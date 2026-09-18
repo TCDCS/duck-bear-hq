@@ -9,6 +9,7 @@ export function createOnlineMatchBridge({
   let active = false;
   let localPlayerId = -1;
   let currentRoom = null;
+  let simulationHost = false;
   const unsubs = [];
 
   const role = (isHost = client.isHost) => ({
@@ -19,18 +20,19 @@ export function createOnlineMatchBridge({
     matchId: currentRoom?.matchId || 0,
   });
 
-  const applyRole = (isHost = client.isHost) => {
+  const applyRole = (isHost = simulationHost) => {
     if (!active) return;
-    runtime.setNetworkAuthority?.(role(isHost));
+    simulationHost = Boolean(isHost);
+    runtime.setNetworkAuthority?.(role(simulationHost));
   };
 
   unsubs.push(client.on('input', ({ id, frame } = {}) => {
-    if (!active || !client.isHost || !Number.isInteger(id) || !frame) return;
+    if (!active || !simulationHost || !Number.isInteger(id) || !frame) return;
     runtime.setRemoteInput?.(id, frame);
   }));
 
   unsubs.push(client.on('snapshot', (state) => {
-    if (!active || client.isHost || !state) return;
+    if (!active || simulationHost || !state) return;
     runtime.applyNetworkSnapshot?.(state, false);
   }));
 
@@ -44,8 +46,12 @@ export function createOnlineMatchBridge({
 
   unsubs.push(client.on('room', (room) => {
     if (!room) return;
+    const wasSimulationHost = simulationHost;
     currentRoom = room;
-    if (active) applyRole(room.hostId === localPlayerId);
+    if (!active) return;
+    const roomSaysLocalHost = room.hostId === localPlayerId;
+    if (!roomSaysLocalHost && wasSimulationHost) applyRole(false);
+    else if (roomSaysLocalHost && wasSimulationHost) applyRole(true);
   }));
 
   unsubs.push(client.on('result', (result) => {
@@ -61,6 +67,7 @@ export function createOnlineMatchBridge({
       currentRoom = room;
       localPlayerId = Number.isInteger(slot) ? slot : client.playerId;
       active = true;
+      simulationHost = room.hostId === localPlayerId;
       await runtime.startMatch({
         arenaId,
         settings,
@@ -71,12 +78,12 @@ export function createOnlineMatchBridge({
           matchId: room.matchId || 0,
         },
       });
-      applyRole(room.hostId === localPlayerId);
+      applyRole(simulationHost);
       return true;
     },
     tick(at = globalThis.performance?.now?.() ?? Date.now()) {
       if (!active) return false;
-      if (client.isHost) {
+      if (simulationHost) {
         const snapshot = runtime.captureNetworkSnapshot?.();
         return snapshot ? client.sendState(snapshot, at) : false;
       }
@@ -84,7 +91,7 @@ export function createOnlineMatchBridge({
       return input ? client.sendInput(input, at) : false;
     },
     reportResult(result = {}) {
-      if (!active || !client.isHost) return false;
+      if (!active || !simulationHost) return false;
       const snapshot = runtime.captureNetworkSnapshot?.();
       const winner = snapshot?.fighters?.find?.((fighter) => fighter?.active && Number(fighter.hp) > 0) || null;
       return client.sendResult?.({
@@ -96,6 +103,7 @@ export function createOnlineMatchBridge({
     },
     stop() {
       active = false;
+      simulationHost = false;
       runtime.setNetworkAuthority?.({ enabled: false, isHost: false, localSlot: -1, players: [], matchId: 0 });
       runtime.stopMatch?.();
     },
@@ -103,6 +111,7 @@ export function createOnlineMatchBridge({
     get room() { return currentRoom; },
     dispose() {
       active = false;
+      simulationHost = false;
       for (const unsub of unsubs) unsub?.();
     },
   };
