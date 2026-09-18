@@ -195,7 +195,7 @@ export function patchDanaoSupermarketVisuals(source) {
   );
   out = replaceRegexRequired(
     out,
-    /if \(arena\.id === 'ring' && arena\.ring\) \{[\s\S]*?\n\} else \{\nfloor = box\('arena-floor'/,
+    /if \(arena\.id === 'ring' && arena\.ring\) \{[\s\S]*?\}\s*else\s*\{\s*floor = box\('arena-floor'/,
     SUPERMARKET_BLOCK + "\n} else {\nfloor = box('arena-floor'",
     'wrestling arena block',
   );
