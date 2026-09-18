@@ -11,3 +11,7 @@
 .online-player-grid{display:grid;gap:8px}.online-player{position:relative;display:grid;grid-template-columns:46px 1fr;gap:2px 8px;padding:11px;border-radius:10px;background:#1b141c;border:1px solid rgba(255,255,255,.08)}.online-player.offline{opacity:.55}.online-slot{grid-row:1/3;align-self:center;font-weight:900;color:#e7bd4c}.online-player small{opacity:.65}.online-player em{position:absolute;right:10px;top:10px;color:#efc94f;font-size:9px;font-style:normal;font-weight:900}
 .online-room-actions{margin-top:16px}.online-wait{display:block;text-align:center;margin:12px 0;color:#cbbcc0;font-size:12px}.online-error{padding:10px;border-radius:8px;background:rgba(177,39,46,.22);color:#ffc7c9;font-size:12px}
 @media(max-width:640px){#online-shell{left:12px;bottom:12px}.online-launch{min-width:170px}.online-panel{padding:18px}.online-room-head strong{font-size:28px}}
+
+
+#build-version{position:fixed;right:14px;bottom:12px;z-index:4;pointer-events:none;padding:5px 8px;border:1px solid rgba(255,240,210,.24);border-radius:7px;background:rgba(20,15,17,.62);color:rgba(255,240,210,.72);font:800 10px/1 Inter,system-ui,sans-serif;letter-spacing:.08em}
+@media(max-width:640px){#build-version{right:9px;bottom:9px;font-size:9px}}
