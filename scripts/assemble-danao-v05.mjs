@@ -13,17 +13,17 @@ const builds = [
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/visuals'),
     output: path.join(root, 'public/games/danao/src/game/visuals.js'),
-    sha256: '5b58adde9afeecda68d38436005029e42fc5dbf82fec9a9255246ffdd7c250f3',
+    sha256: '2deca94165ae72f9fa50c9a35394017721ba8c6ce2ccb909435023cc43c15426',
   },
   {
-    source: path.join(root, 'scripts/danao-v05-gz/App.js.gz'),
+    partsDir: path.join(root, 'scripts/danao-v05-gz/app'),
     output: path.join(root, 'public/games/danao/src/ui/App.js'),
-    sha256: 'c730de0d72c26a484c035b824a03a28c18f372375b403d9258498c454e093053',
+    sha256: '02732a964fb06df125aea06e20d734507c460dd61521f84fd83f1646a9215268',
   },
   {
-    source: path.join(root, 'scripts/danao-v05-gz/styles.css.gz'),
+    partsDir: path.join(root, 'scripts/danao-v05-gz/styles'),
     output: path.join(root, 'public/games/danao/src/styles.css'),
-    sha256: '1df1da15140da03a84734fc0ea366abf35592a1c079c65b22a06673be2ad3f1b',
+    sha256: 'c97800b4937d5f3b77dd83d4f4fe3166853f1718064a5ebe5191c407fa8bc725',
   },
 ];
 
