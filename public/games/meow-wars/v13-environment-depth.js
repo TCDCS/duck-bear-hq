@@ -229,6 +229,13 @@ function drawSurfaceDetail(scene,g) {
   }
 }
 
+function refreshSurfaceDetail(scene) {
+  const surface=scene.__mw13Surface;
+  if(!surface||!scene.terrain)return;
+  surface.clear();
+  drawSurfaceDetail(scene,surface);
+}
+
 function createStaticDetail(scene) {
   const g=scene.add.graphics().setDepth(-2);
   const surface=scene.add.graphics().setDepth(2);
@@ -242,7 +249,7 @@ function createStaticDetail(scene) {
   else if(id==='oconnell-bridge-spire') drawDublinStatic(scene,g);
   else if(id==='westminster-bridge-big-ben') drawWestminsterStatic(scene,g);
   else if(id==='donabate-beach') drawBeachStatic(scene,g);
-  drawSurfaceDetail(scene,surface);
+  refreshSurfaceDetail(scene);
 }
 
 function makeBoat(scene, x, y, scale, palette, direction=1) {
@@ -535,6 +542,13 @@ function setupScene(scene) {
   }[scene.arena.id]||'Living World';
   stats.scenesEnhanced+=1;
 }
+
+const v12PaintTerrainTexture=GameScene.prototype.paintTerrainTexture;
+GameScene.prototype.paintTerrainTexture=function(){
+  const result=v12PaintTerrainTexture.call(this);
+  refreshSurfaceDetail(this);
+  return result;
+};
 
 const v12Create=GameScene.prototype.create;
 GameScene.prototype.create=function(){
