@@ -41,8 +41,10 @@ test('online launcher is hidden for active local and online fights', () => {
   assert.ok(source.indexOf('onlineRoot.hidden = true;') < source.indexOf('await runtime.startMatch'));
 });
 
-test('presentation correction is released as Danao 0.10.3', () => {
+test('presentation correction remains part of later Danao releases', () => {
   const release = JSON.parse(read('public/games/danao/release.json'));
-  assert.equal(release.version, '0.10.3');
+  const [major, minor, patch] = release.version.split('.').map(Number);
+  const numericVersion = major * 1_000_000 + minor * 1_000 + patch;
+  assert.ok(numericVersion >= 10_003, release.version);
   assert.equal(release.engine, 'Babylon.js + Rapier');
 });
