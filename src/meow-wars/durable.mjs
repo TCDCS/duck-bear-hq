@@ -311,6 +311,11 @@ export class MeowWarsRoom {
       } else if (data.type === 'snapshot') {
         const accepted = R.setHostSnapshot(this.room, attachment.id, data.state || data, now);
         if (accepted) {
+          this.send(socket, {
+            type: 'snapshot-ack',
+            seq: this.room.snapshotSeq,
+            turnTeam: this.room.turnTeam
+          });
           this.broadcast({ type: 'snapshot', state: this.room.latestSnapshot }, attachment.id);
           if (now - this.lastSnapshotSave >= 1000) {
             this.lastSnapshotSave = now;
