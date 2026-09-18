@@ -182,7 +182,11 @@ jobs:
           const report = {
             release,
             results,
-            passed: release.version === '0.10.10' && results.every((result) => result.passed),
+            passed: (() => {
+              const [major, minor, patch] = release.version.split('.').map(Number);
+              return major * 1_000_000 + minor * 1_000 + patch >= 10_010
+                && results.every((result) => result.passed);
+            })(),
           };
           fs.writeFileSync(OUT + '/living-arenas-qa.json', JSON.stringify(report, null, 2));
           await browser.close();
