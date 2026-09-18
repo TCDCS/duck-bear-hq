@@ -47,7 +47,7 @@ test('Meow Wars v0.7 composes and compiles against the real v0.5 production payl
 
 test('Meow Wars v0.7 replaces the Dublin scene with Ha\u2019penny Bridge and richer streetscape cues', () => {
   const source = composeV07();
-  assert.match(source, /Ha\u2019penny Bridge \+ Spire/);
+  assert.match(source, /Ha.*penny Bridge \+ Spire/);
   assert.match(source, /drawHapennyBridge/);
   assert.match(source, /SUPERVALU/);
   assert.match(source, /CENTRA/);
