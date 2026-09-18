@@ -1,0 +1,90 @@
+name: Danao Two-Browser Online QA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'feature/danao-*']
+    paths:
+      - 'public/games/danao/src/online/**'
+      - 'public/games/danao/src/mobile/**'
+      - 'public/games/danao/src/main.js'
+      - 'public/games/danao/release.json'
+      - 'src/danao/**'
+      - 'src/worker-games.js'
+      - 'wrangler.jsonc'
+      - 'tests/danao-online-browser.py'
+      - '.github/workflows/danao-online-browser-qa.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: danao-online-browser-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  two-browser-online:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install test tools
+        run: |
+          npm ci --no-audit --no-fund
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Assemble Danao and prepare local Worker
+        run: |
+          npm run assemble:danao
+          npx wrangler deploy --dry-run --outdir /tmp/danao-online-build
+          npx wrangler d1 migrations apply DB --local
+
+      - name: Run two real browsers against local Durable Objects
+        env:
+          BASE_URL: http://127.0.0.1:8787
+          DANAO_RUN_LABEL: local
+        run: |
+          mkdir -p verification/danao-online
+          npx wrangler dev --ip 127.0.0.1 --port 8787 > verification/danao-online/wrangler.log 2>&1 &
+          SERVER=$!
+          trap 'kill $SERVER 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 90); do
+            if curl -sf http://127.0.0.1:8787/api/danao/version >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then
+            cat verification/danao-online/wrangler.log
+            exit 1
+          fi
+          python tests/danao-online-browser.py
+
+      - name: Run the same two-browser contract against production
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          BASE_URL: https://duck-bear-hq.zachary-chambers2.workers.dev
+          DANAO_RUN_LABEL: live
+        run: python tests/danao-online-browser.py
+
+      - name: Upload Danao online browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: danao-two-browser-online-qa
+          path: verification/danao-online/
+          if-no-files-found: error
+          retention-days: 7
