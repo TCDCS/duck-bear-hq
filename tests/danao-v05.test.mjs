@@ -21,9 +21,9 @@ test('Danao v0.6 is the physics-chaos build rather than the old ring-out prototy
 
 test('Danao v0.6 release source is reconstructed byte-for-byte before tests and deploy', () => {
   assert.equal(sha256('public/games/danao/src/game/runtime.js'), '7e4f433225347badb7e51217792d278f1e1c84734e8d969d2439cb6ac7484d2a');
-  assert.equal(sha256('public/games/danao/src/game/visuals.js'), '5b58adde9afeecda68d38436005029e42fc5dbf82fec9a9255246ffdd7c250f3');
-  assert.equal(sha256('public/games/danao/src/ui/App.js'), 'c730de0d72c26a484c035b824a03a28c18f372375b403d9258498c454e093053');
-  assert.equal(sha256('public/games/danao/src/styles.css'), '1df1da15140da03a84734fc0ea366abf35592a1c079c65b22a06673be2ad3f1b');
+  assert.equal(sha256('public/games/danao/src/game/visuals.js'), '2deca94165ae72f9fa50c9a35394017721ba8c6ce2ccb909435023cc43c15426');
+  assert.equal(sha256('public/games/danao/src/ui/App.js'), '02732a964fb06df125aea06e20d734507c460dd61521f84fd83f1646a9215268');
+  assert.equal(sha256('public/games/danao/src/styles.css'), 'c97800b4937d5f3b77dd83d4f4fe3166853f1718064a5ebe5191c407fa8bc725');
 });
 
 test('Wrestling Hall is the default showcase and carries actual brawler props', () => {
@@ -42,7 +42,7 @@ test('Cloudflare deploy assembles the exact Danao v0.6 release before verificati
   const pkg = JSON.parse(read('package.json'));
   assert.match(pkg.scripts.deploy, /^npm run assemble:danao/);
   assert.equal(pkg.scripts['assemble:danao'], 'node scripts/assemble-danao-v05.mjs');
-  assert.match(read('public/games/danao/release.json'), /"version": "0\.6\.0"/);
+  assert.match(read('public/games/danao/release.json'), /"version": "0\.6\.1"/);
 });
 
 test('browser fighter select uses the complete Danao cast instead of generic stand-ins', () => {
