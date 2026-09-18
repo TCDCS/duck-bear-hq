@@ -1,7 +1,0 @@
-{
-  "name": "Danao.PlayModeTests",
-  "rootNamespace": "Danao.Tests.PlayMode",
-  "references": ["Danao.Runtime"],
-  "optionalUnityReferences": ["TestAssemblies"],
-  "autoReferenced": false
-}

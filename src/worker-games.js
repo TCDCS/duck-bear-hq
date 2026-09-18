@@ -17,7 +17,6 @@ import asset12 from "./kart-assets/host.js.txt";
 import asset13 from "./kart-assets/network.js.txt";
 import asset14 from "./kart-assets/friends.js.txt";
 export {WackyDirectory,WackyRoom} from "./multiplayer/durable.mjs";
-export {DanaoDirectory,DanaoRoom} from "./danao/durable.mjs";
 export {MeowWarsDirectory,MeowWarsRoom} from "./meow-wars/durable.mjs";
 import raceOrder from './kart-assets/race-order.js.txt';
 const assets=new Map([
