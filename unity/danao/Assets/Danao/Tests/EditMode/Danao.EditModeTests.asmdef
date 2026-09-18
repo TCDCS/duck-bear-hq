@@ -1,8 +1,0 @@
-{
-  "name": "Danao.EditModeTests",
-  "rootNamespace": "Danao.Tests.EditMode",
-  "references": ["Danao.Runtime"],
-  "includePlatforms": ["Editor"],
-  "optionalUnityReferences": ["TestAssemblies"],
-  "autoReferenced": false
-}
