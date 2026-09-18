@@ -55,7 +55,7 @@ jobs:
           MEOW_WARS_URL: http://127.0.0.1:4173/games/meow-wars/
           MEOW_WARS_VARIANT: after
           MEOW_WARS_ARENAS: 7
-          MEOW_WARS_BUILD: mw-v06-env-20260918a
+          MEOW_WARS_BUILD: mw-v06-env-20260918b
         run: node scripts/meow-wars-v06-visual.mjs
       - uses: actions/upload-artifact@v4
         if: always()
