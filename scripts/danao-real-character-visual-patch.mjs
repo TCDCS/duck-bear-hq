@@ -4,7 +4,7 @@ export function patchDanaoRealCharacterVisuals(source) {
   let out = String(source);
   if (!out.includes('mountHeroRenderModel')) out = IMPORT_LINE + out;
 
-  const pattern = /(root\.metadata = \{[^\n]*heldAnchor[^\n]*\};\nroot\.scaling\.setAll\(1\.08\);\n)(return root;)/;
+  const pattern = /(root\.scaling\.setAll\(1\.08\);\s*)(return root;)/;
   if (!pattern.test(out)) throw new Error('Danao real-character visual patch marker missing');
 
   out = out.replace(pattern, (match, before, ret) => `${before}if (style.id === 'hero') {
