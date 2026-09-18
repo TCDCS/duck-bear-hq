@@ -13,7 +13,7 @@ expected = {
     '/games/wacky-races/network.js': Path('src/kart-assets/network.js.txt').read_bytes(),
     '/': Path('public/index.html').read_bytes(),
 }
-headers = {'Cache-Control': 'no-cache', 'User-Agent': 'Duck-Bear-release-check/4'}
+headers = {'Cache-Control': 'no-cache', 'User-Agent': 'Duck-Bear-release-check/5'}
 
 def read_public(path):
     # Use the same client identity for every request, including the version API.
@@ -34,7 +34,7 @@ for attempt in range(60):
         if matches:
             path = '/api/races/version'
             version = json.loads(read_public(path))
-            if version.get('version') == 4 and version.get('multiplayer'):
+            if version.get('version') == 5 and version.get('multiplayer'):
                 print('Published source and online-room bindings verified at ' + base, flush=True)
                 break
             print('Waiting for online-room bindings: ' + json.dumps(version), flush=True)
