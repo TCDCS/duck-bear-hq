@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 
 import { fighterPose } from '../public/games/danao/src/game/presentation.js';
+
+const root = path.resolve(import.meta.dirname, '..');
+const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
 
 const bounded = (value, name) => {
   assert.ok(Number.isFinite(value), `${name} must be finite`);
@@ -50,4 +55,21 @@ test('v0.7 locomotion, jump, dodge and recoil pose values are finite and readabl
     attackRecovery: recoiling.attackRecovery,
     bodyTwist: recoiling.bodyTwist,
   })) bounded(value, name);
+});
+
+
+test('v0.7 packaged runtime consumes the richer combat pose model', () => {
+  const runtime = read('public/games/danao/src/game/runtime.js');
+  for (const marker of [
+    'verticalSpeed: v.y',
+    'grounded: grounded(fighter)',
+    'pose.attackWindup',
+    'pose.attackReach',
+    'pose.attackRecovery',
+    'pose.bodyTwist',
+    'pose.recoil',
+    'pose.footLift',
+    'pose.jumpTuck',
+    'pose.dodgeLean',
+  ]) assert.ok(runtime.includes(marker), marker);
 });
