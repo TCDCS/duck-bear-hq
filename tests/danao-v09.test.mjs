@@ -262,8 +262,10 @@ test('v0.9 match bridge starts Babylon with room slots and routes host/non-host 
   assert.deepEqual(calls.at(-1), ['snapshot', 5, false]);
 
   client.isHost = true;
-  handlers.get('input')?.({ id: 1, frame: { seq: 4, moveX: 1, moveY: 0 } });
+  handlers.get('host')?.({ hostId: 1, state: { seq: 6, fighters: [] } });
+  handlers.get('input')?.({ id: 0, frame: { seq: 4, moveX: 1, moveY: 0 } });
   assert.equal(calls.at(-1)[0], 'remoteInput');
+  assert.equal(calls.at(-1)[1], 0);
   bridge.tick(1100);
   assert.equal(sent.state.length, 1);
 });
