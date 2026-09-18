@@ -1,5 +1,5 @@
 name: Site Deploy
-# Manual content deploy trigger: Danao v0.10.1 real rigged Hero
+# Manual content deploy trigger: Meow Wars v0.8 battle polish
 
 on:
   workflow_dispatch:
