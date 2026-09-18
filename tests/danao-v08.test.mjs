@@ -141,17 +141,17 @@ test('v0.8 packaged runtime supplies live world context to bot decisions', async
 });
 
 
-test('v0.8 Wrestling Hall offers a deeper mix of props for item-seeking bots', async () => {
+test('v0.8 Checkout Chaos keeps a deep supermarket prop mix for item-seeking bots', async () => {
   const { getArena } = await import('../public/games/danao/src/game/arena.js');
   const ring = getArena('ring');
+  assert.equal(ring.name, 'Checkout Chaos');
   assert.ok(ring.props.length >= 25, `expected at least 25 props, got ${ring.props.length}`);
   const counts = ring.props.reduce((map, prop) => {
     map[prop.itemId] = (map[prop.itemId] || 0) + 1;
     return map;
   }, {});
-  assert.ok((counts.chair || 0) >= 7);
-  assert.ok((counts.crate || 0) >= 5);
-  assert.ok((counts.mallet || 0) >= 3);
-  assert.ok((counts.cone || 0) >= 2);
-  assert.ok((counts.baguette || 0) >= 2);
+  assert.ok((counts.crate || 0) >= 7);
+  assert.ok((counts.baguette || 0) >= 6);
+  assert.ok((counts.cone || 0) >= 5);
+  assert.ok((counts.bin || 0) >= 4);
 });
