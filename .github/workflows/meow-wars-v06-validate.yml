@@ -1,12 +1,12 @@
-name: Meow Wars v0.6 Validate
+name: Meow Wars v0.7 Validate
 
 on:
   pull_request:
     paths:
       - 'public/games/meow-wars/**'
       - 'public/games/index.html'
-      - 'tests/meow-wars-v06.test.mjs'
-      - 'scripts/meow-wars-v06-visual.mjs'
+      - 'tests/meow-wars-v07.test.mjs'
+      - 'scripts/meow-wars-v07-visual.mjs'
       - '.github/workflows/meow-wars-v06-validate.yml'
 
 permissions:
@@ -20,8 +20,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Validate production payload patch
-        run: node --test tests/meow-wars-v06.test.mjs
+      - name: Validate production payload and v0.7 layers
+        run: node --test tests/meow-wars-v07.test.mjs
 
   visual:
     needs: validate
@@ -41,26 +41,26 @@ jobs:
           git worktree add /tmp/meow-main FETCH_HEAD
       - name: Start branch and main static servers
         run: |
-          python3 -m http.server 4173 --directory public > /tmp/meow-v06-server.log 2>&1 &
-          python3 -m http.server 4174 --directory /tmp/meow-main/public > /tmp/meow-v05-server.log 2>&1 &
+          python3 -m http.server 4173 --directory public > /tmp/meow-v07-server.log 2>&1 &
+          python3 -m http.server 4174 --directory /tmp/meow-main/public > /tmp/meow-v06-server.log 2>&1 &
           sleep 2
-      - name: Capture current live version
+      - name: Capture current v0.6 production state
         env:
           MEOW_WARS_URL: http://127.0.0.1:4174/games/meow-wars/
           MEOW_WARS_VARIANT: before
-          MEOW_WARS_ARENAS: 3
-        run: node scripts/meow-wars-v06-visual.mjs
-      - name: Capture v0.6 branch
+          MEOW_WARS_ARENAS: 7
+        run: node scripts/meow-wars-v07-visual.mjs
+      - name: Capture and exercise v0.7 branch
         env:
           MEOW_WARS_URL: http://127.0.0.1:4173/games/meow-wars/
           MEOW_WARS_VARIANT: after
           MEOW_WARS_ARENAS: 7
-          MEOW_WARS_BUILD: mw-v06-env-20260918b
-        run: node scripts/meow-wars-v06-visual.mjs
+          MEOW_WARS_BUILD: mw-v07-gamefeel-20260918a
+        run: node scripts/meow-wars-v07-visual.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: meow-wars-v06-before-after
-          path: artifacts/meow-wars-v06/
+          name: meow-wars-v07-before-after
+          path: artifacts/meow-wars-v07/
           if-no-files-found: warn
           retention-days: 7
