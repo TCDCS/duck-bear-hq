@@ -301,6 +301,10 @@ function handleSocketMessage(message) {
     online.lastIntentAck = Number(message.seq);
     online.lastIntentAccepted = Boolean(message.accepted);
     online.lastIntentAckTurnTeam = Number(message.turnTeam);
+    if (message.accepted) {
+      online.lastOnlineError = '';
+      online.lobbyError = '';
+    }
     stats.intentAcks += 1;
     return;
   }
@@ -748,11 +752,13 @@ function sendGuestState(scene, force = false) {
 
   online.lastStateIntentAt = now;
   online.lastStateSignature = signature;
+  const safeAngle = Number.isFinite(scene.aimAngleDeg) ? clamp(scene.aimAngleDeg, 8, 82) : 42;
+  const safeX = Number.isFinite(active.x) ? clamp(active.x, 28, WIDTH - 28) : WIDTH * .75;
   sendIntent({
     kind: 'state',
-    x: active.x,
-    angle: scene.aimAngleDeg,
-    facing: scene.facing,
+    x: safeX,
+    angle: safeAngle,
+    facing: scene.facing < 0 ? -1 : 1,
     weaponId
   });
 }
@@ -1190,10 +1196,10 @@ GameScene.prototype.fireCurrentWeapon = function() {
     if (ammo === 0) return;
     const sent = sendIntent({
       kind: 'fire',
-      x: this.activeCat().x,
-      angle: this.aimAngleDeg,
-      power: this.chargePower,
-      facing: this.facing,
+      x: Number.isFinite(this.activeCat().x) ? clamp(this.activeCat().x, 28, WIDTH - 28) : WIDTH * .75,
+      angle: Number.isFinite(this.aimAngleDeg) ? clamp(this.aimAngleDeg, 8, 82) : 42,
+      power: Number.isFinite(this.chargePower) ? clamp(this.chargePower, .36, 1) : .36,
+      facing: this.facing < 0 ? -1 : 1,
       weaponId: weapon.id
     });
     if (sent) {
