@@ -19,13 +19,17 @@ async function readProductionSource() {
 }
 
 function upgradeRenderResolution(source) {
-  const anchor = 'return Math.min(2, Math.max(1, devicePixelRatio));';
-  if (!source.includes(anchor)) throw new Error('Meow Wars render-resolution anchor missing');
-  return source.replace(anchor,
-    "const viewportScale = Math.max((globalThis.innerWidth || 1280) / 1280, (globalThis.innerHeight || 720) / 720);\n" +
+  const pattern = /function preferredRenderResolution\s*\([^)]*\)\s*\{[\s\S]*?\n\}/g;
+  const matches = [...source.matchAll(pattern)];
+  if (matches.length !== 1) throw new Error('Meow Wars render-resolution anchor mismatch');
+  const replacement =
+    "function preferredRenderResolution(devicePixelRatio = 1) {\n" +
+    "    const viewportScale = Math.max((globalThis.innerWidth || 1280) / 1280, (globalThis.innerHeight || 720) / 720);\n" +
     "    const mobileCap = (globalThis.innerWidth || 1280) < 800 ? 2 : 3;\n" +
-    "    return Math.min(mobileCap, 3, Math.max(1, devicePixelRatio, viewportScale));"
-  );
+    "    return Math.min(mobileCap, 3, Math.max(1, devicePixelRatio, viewportScale));\n" +
+    "}";
+  const match = matches[0];
+  return source.slice(0, match.index) + replacement + source.slice(match.index + match[0].length);
 }
 
 async function readHdLayer() {
