@@ -154,7 +154,8 @@ function updateAimAssist(scene) {
     const y = surfaceY(scene.terrain, x);
     drawReticle(g, x, y - 8, 0xffd66a, 10, .72);
   } else if (weapon.behaviour === 'ground-runner') {
-    const runnerX = Math.max(0, Math.min(WIDTH, cat.x + scene.facing * 70));\n    const y = surfaceY(scene.terrain, runnerX);
+    const runnerX = Math.max(0, Math.min(WIDTH, cat.x + scene.facing * 70));
+    const y = surfaceY(scene.terrain, runnerX);
     g.lineStyle(2, guideColor, .55);
     g.beginPath();
     g.moveTo(cat.x + scene.facing * 24, cat.y - 4);
