@@ -10,7 +10,7 @@ function replaceOnce(source, needle, replacement, label) {
   return source.slice(0, index) + replacement + source.slice(index + needle.length);
 }
 
-const ARENA_PATCH = String.raw\`
+const ARENA_PATCH = String.raw`
 Object.assign(ARENAS[0], { terrainSkin: 'garden-loam', environment: 'garden', waterStyle: null, artPipeline: 'vector-4k' });
 Object.assign(ARENAS[1], { terrainSkin: 'roof-gravel', environment: 'rooftop', waterStyle: null, artPipeline: 'vector-4k' });
 Object.assign(ARENAS[2], { terrainSkin: 'rust-earth', environment: 'junkyard', waterStyle: null, artPipeline: 'vector-4k' });
@@ -88,9 +88,9 @@ ARENAS.push(
         terrainSkin: 'beach-sand', environment: 'donabate', waterStyle: 'irish-sea', artPipeline: 'vector-4k'
     }
 );
-\`;
+`;
 
-const RUNTIME_PATCH = String.raw\`
+const RUNTIME_PATCH = String.raw`
 const __mw_v06_version = '0.6.0';
 const __mw_v06_build = 'mw-v06-env-20260918a';
 
@@ -370,9 +370,9 @@ GameScene.prototype.paintTerrainTexture=function(){
     }
     texture.refresh();
 };
-\`;
+`;
 
-const MENU_PATCH = String.raw\`
+const MENU_PATCH = String.raw`
 const __mw_v06_MenuScene = __mw_game_MenuScene_js.MenuScene;
 const __mw_v06_menuCreate = __mw_v06_MenuScene.prototype.create;
 __mw_v06_MenuScene.prototype.create = function() {
@@ -399,7 +399,7 @@ __mw_v06_MenuScene.prototype.showV06Settings = function() {
     close.on('pointerdown',()=>{c.destroy(true);this.v06SettingsPanel=null;});
     c.add(close); this.v06SettingsPanel=c;
 };
-\`;
+`;
 
 export function patchSource(input) {
   if (typeof input !== 'string' || input.length < 1000) throw new Error('Invalid Meow Wars production source');
