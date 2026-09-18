@@ -136,7 +136,7 @@ jobs:
 
               await page.waitForTimeout(1200);
 
-              const fired = await page.evaluate(() => {
+              const fired = await page.evaluate((impact) => {
                 const scene = globalThis.BABYLON?.EngineStore?.LastCreatedScene;
                 const event = {
                   type: 'prop-break',
