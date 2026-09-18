@@ -13,11 +13,12 @@
     {name:'Dublin - Liffey Lunacy',country:'IE',area:'DUBLIN · LIFFEY LOOP',tag:'Grand stretch in the lead',description:'The Spire, Georgian doors, harp bridges and a sheep with right of way.',width:19,sky:'#4ebdf1',ground:'#69b844',accent:'#ff9e38',points:[[0,180],[-140,175],[-220,95],[-230,-30],[-150,-140],[-10,-170],[135,-155],[225,-65],[215,85],[120,175]]}
   ];
   const DEFAULTS=[['Zachary','#b94535','bald-beard'],['Guannan','#367e56','long-hair'],['Sara','#8179b0','long-hair'],['Samy','#d5ae58','dark-beard'],['Mulan','#bd8060','dog'],['The Cabbie','#343e53','cap'],['Tea Bandit','#e4b43c','helmet'],['Queue Jumper','#d780a0','helmet']];
+  // Arcade-first handling: weight and chassis response add character without turning the game into a sim.
   const VEHICLES={
-    kart:{name:'Racing kart',mass:180,top:36,accel:18,grip:6.2,width:1.7,length:2.8},
-    police:{name:'Police / Garda',mass:350,top:37,accel:16.5,grip:5.7,width:1.85,length:3.4},
-    ambulance:{name:'Ambulance',mass:560,top:32,accel:14,grip:5.1,width:1.95,length:3.7},
-    bus:{name:'Double-decker',mass:820,top:30,accel:12.5,grip:4.5,width:2.05,length:4.0}
+    kart:{name:'Racing kart',mass:180,top:37,accel:19.5,grip:6.6,steer:1.08,response:9.6,driftGrip:.46,roll:1.00,width:1.7,length:2.8},
+    police:{name:'Police / Garda',mass:340,top:38,accel:18.0,grip:6.1,steer:.99,response:8.7,driftGrip:.50,roll:1.08,width:1.85,length:3.4},
+    ambulance:{name:'Ambulance',mass:570,top:33,accel:14.8,grip:5.6,steer:.89,response:7.4,driftGrip:.55,roll:1.23,width:1.95,length:3.7},
+    bus:{name:'Double-decker',mass:900,top:30.5,accel:12.8,grip:5.1,steer:.79,response:6.5,driftGrip:.60,roll:1.38,width:2.05,length:4.0}
   };
   const SNACKS={mango:{name:'Mango',icon:'🥭',points:2},icecream:{name:'Chocolate ice cream',icon:'🍦',points:1},blueberry:{name:'Blueberries',icon:'🫐',points:3},strawberry:{name:'Strawberry',icon:'🍓',points:1}};
   const ITEMS={mango:{name:'Mango turbo',icon:'🥭',short:'Four seconds of extra speed.'},icecream:{name:'Chocolate shell',icon:'🍦',short:'A shield that absorbs one hit for eight seconds.'},pizza:{name:'Pizza skid',icon:'🍕',short:'Drop a slippery slice behind your vehicle.'},whiskey:{name:'Whiskey spill',icon:'🥃',short:'Drop a bottle and an amber skid patch. No drinking involved.'}};
@@ -41,7 +42,7 @@
     const driver=clamp(Math.floor(finite(options.driver)),0,7),track=buildTrack(options.track);
     const r={track,mode,difficulty:['easy','normal','hard'].includes(options.difficulty)?options.difficulty:'normal',assist:options.assist!==false,seed:(options.seed||Date.now())>>>0||1,phase:'race',countdown:3,time:0,laps:3,racers:[],pickups:[],traps:[],traffic:[],projectiles:[],events:[],eventId:0,nextId:0};
     const ids=gridIds(driver);
-    for(let i=0;i<(mode==='trial'?1:MAX_RACERS);i++)r.racers.push({id:ids[i],ai:i>0,vehicle:i?['kart','police','kart','ambulance','kart','bus','kart'][i-1]:(VEHICLES[options.vehicle]?options.vehicle:'kart'),s:-8-Math.floor(i/2)*6,x:i%2?3:-3,speed:0,vx:0,heading:0,roll:0,rollV:0,pitch:0,pitchV:0,heave:0,heaveV:0,lane:(i%3-1)*3,skill:rng(r),item:null,boost:0,shield:0,spin:0,slip:0,immune:0,contact:0,driftCharge:0,drifting:false,coins:0,lapTimes:[],lapStart:0,finished:false,finishTime:null,steer:0,stuck:0,recoveries:0,completedLaps:0});
+    for(let i=0;i<(mode==='trial'?1:MAX_RACERS);i++)r.racers.push({id:ids[i],ai:i>0,vehicle:i?['kart','police','kart','ambulance','kart','bus','kart'][i-1]:(VEHICLES[options.vehicle]?options.vehicle:'kart'),s:-8-Math.floor(i/2)*6,x:i%2?3:-3,speed:0,vx:0,heading:0,driftBlend:0,roll:0,rollV:0,pitch:0,pitchV:0,heave:0,heaveV:0,lane:(i%3-1)*3,skill:rng(r),item:null,boost:0,shield:0,spin:0,slip:0,immune:0,contact:0,driftCharge:0,drifting:false,coins:0,lapTimes:[],lapStart:0,finished:false,finishTime:null,steer:0,stuck:0,recoveries:0,completedLaps:0});
     if(mode!=='trial'){
       const snacks=Object.keys(SNACKS);let k=0;
       for(let s=65;s<track.length-35;s+=58){for(const x of [-5,0,5])r.pickups.push({id:r.nextId++,s,x,type:k%5===4?'box':snacks[(k+Math.round(x/5)+4)%4],cooldown:0});k++;}
@@ -71,7 +72,7 @@
   function recover(r,p){
     // Recovery never advances s or rewinds a checkpoint: no shortcut or lap exploit.
     const lanes=[0,3,-3,5,-5];p.x=lanes.find(x=>![...r.racers,...r.traffic].some(q=>q!==p&&Math.abs(gap(r,q.s,p.s))<9&&Math.abs(q.x-x)<2.4))??0;
-    p.vx=p.heading=p.roll=p.rollV=p.pitch=p.pitchV=p.heave=p.heaveV=0;
+    p.vx=p.heading=p.roll=p.rollV=p.pitch=p.pitchV=p.heave=p.heaveV=0;p.driftBlend=0;
     p.speed=6;p.slip=p.spin=p.driftCharge=0;p.immune=2;p.contact=1.5;p.stuck=0;p.recoveries++;
     if(!p.ai)event(r,'Back on track. Facing forward.','recover');
   }
@@ -95,9 +96,16 @@
     const lateral=Math.abs(dx)/width>Math.abs(ds)/length;
     const sign=(lateral?dx:ds)>=0?1:-1,ia=1/va.mass,ib=b.ai===undefined?0:1/vb.mass;
     const relative=lateral?(a.vx-(b.vx||0))*sign:(a.speed-b.speed)*sign;
-    if(relative<0){const impulse=-(1+.22)*relative/(ia+ib);if(lateral){a.vx+=impulse*ia*sign;if(ib)b.vx-=impulse*ib*sign;}else{a.speed=Math.max(0,a.speed+impulse*ia*sign);if(ib)b.speed=Math.max(0,b.speed-impulse*ib*sign);}}
-    if(lateral){const overlap=width-Math.abs(dx)+.03;a.x+=sign*overlap*ia/(ia+ib);if(ib)b.x-=sign*overlap*ib/(ia+ib);}else{a.vx+=(dx>=0?1:-1)*2.8;if(ib)b.vx-=(dx>=0?1:-1)*1.6;}
-    a.contact=.32;if(ib)b.contact=.32;a.heaveV=.7;if(ib)b.heaveV=.5;
+    const impact=clamp(Math.abs(relative),0,24);
+    // Low restitution keeps contacts chunky rather than pinball-like; mass still decides who gets moved.
+    if(relative<0){const impulse=-(1+.12)*relative/(ia+ib);if(lateral){a.vx+=impulse*ia*sign;if(ib)b.vx-=impulse*ib*sign;}else{a.speed=Math.max(0,a.speed+impulse*ia*sign);if(ib)b.speed=Math.max(0,b.speed-impulse*ib*sign);}}
+    if(lateral){
+      const overlap=width-Math.abs(dx)+.03;a.x+=sign*overlap*ia/(ia+ib);if(ib)b.x-=sign*overlap*ib/(ia+ib);
+      const shove=.035*impact;a.vx+=sign*shove*(vb.mass/(va.mass+vb.mass));if(ib)b.vx-=sign*shove*(va.mass/(va.mass+vb.mass));
+    }else{
+      const nudge=1.8+impact*.045;a.vx+=(dx>=0?1:-1)*nudge;if(ib)b.vx-=(dx>=0?1:-1)*nudge*.68;
+    }
+    a.contact=.36;if(ib)b.contact=.36;a.heaveV=.46+impact*.018;if(ib)b.heaveV=.40+impact*.014;
     if(!a.ai||b.ai===false)event(r,'Bumper to bumper!','collision');
   }
   function substep(r,input,dt){
@@ -118,7 +126,9 @@
       }
       if(brake>.05)gas=0;
       if(p.spin>0){steer*=.25;drift=false;}
-      p.steer=steer;p.drifting=drift&&p.speed>12&&Math.abs(steer)>.08&&p.slip===0;
+      p.steer=steer;p.drifting=drift&&p.speed>11&&Math.abs(steer)>.07&&p.slip===0;
+      // Drift grip blends over a few frames. It is still very arcade, but no longer snaps instantly loose.
+      p.driftBlend+=( (p.drifting?1:0)-p.driftBlend )*Math.min(1,dt*(p.drifting?6.5:8.5));
       if(p.drifting)p.driftCharge=Math.min(2.6,p.driftCharge+dt);
       else if(!drift&&p.driftCharge>.65){p.boost=Math.max(p.boost,Math.min(2,p.driftCharge*.8));p.driftCharge=0;if(!p.ai)event(r,'Drift turbo!','boost');}
       else if(!drift)p.driftCharge=0;
@@ -126,26 +136,31 @@
       let top=v.top*(p.ai?{easy:.78,normal:.88,hard:.99}[r.difficulty]+p.skill*.015:1)+p.coins*.16;
       if(p.boost>0)top*=1.36;if(outside)top*=.62;
       const previousSpeed=p.speed;
-      const drag=1.0+.0065*p.speed*p.speed+(outside?3:0);
-      const force=gas*v.accel*(p.boost>0?1.5:1)-brake*36-drag;
+      const drag=1.0+.0063*p.speed*p.speed+(outside?3.35:0);
+      const force=gas*v.accel*(p.boost>0?1.5:1)-brake*37-drag;
       p.speed=clamp(p.speed+force*dt,0,52);
       if(p.speed>top)p.speed=Math.max(top,p.speed-(p.speed-top)*3.5*dt);
-      let desired=steer*(.62-Math.min(p.speed,40)*.005)*(p.drifting?1.2:1);
+      // Speed only trims steering by about 20% at the top end: this remains an 85%-arcade racer.
+      const speedSteer=1-clamp((p.speed-18)/58,0,.20);
+      let desired=steer*.62*speedSteer*v.steer*(1+p.driftBlend*.23);
       if((p.ai||r.assist)&&Math.abs(steer)<.08&&!drift)desired-=clamp(p.x*.035,-.28,.28);
-      p.heading+=(desired-p.heading)*Math.min(1,dt*(p.slip>0?1.8:8));
-      const grip=p.slip>0?.65:p.drifting?v.grip*.4:v.grip;
-      const desiredV=p.speed*Math.sin(p.heading),centrifugal=pt.bend*p.speed*p.speed*.18;
+      const steerResponse=(p.slip>0?2.0:v.response)*(p.driftBlend>0?.86:1);
+      p.heading+=(desired-p.heading)*Math.min(1,dt*steerResponse);
+      const driftGrip=1-p.driftBlend*(1-v.driftGrip),surfaceGrip=outside?.70:1;
+      const grip=p.slip>0?.65:v.grip*driftGrip*surfaceGrip;
+      const desiredV=p.speed*Math.sin(p.heading),centrifugal=pt.bend*p.speed*p.speed*.165;
       const oldV=p.vx;p.vx+=((desiredV-p.vx)*grip+centrifugal)*dt;
       p.x+=p.vx*dt;p.s+=Math.max(0,p.speed*Math.cos(p.heading))*dt;
       const edge=r.track.width/2+2.6;
       const wall=Math.abs(p.x)>=edge;
-      if(wall){p.x=clamp(p.x,-edge,edge);if(p.vx*Math.sign(p.x)>0)p.vx*=-.18;p.speed=Math.max(0,p.speed-9*dt);p.heaveV+=.07;}
+      if(wall){const wallSpeed=Math.abs(p.vx);p.x=clamp(p.x,-edge,edge);if(p.vx*Math.sign(p.x)>0)p.vx*=-.10;p.speed=Math.max(0,p.speed-(6.5+wallSpeed*.55)*dt);p.heaveV+=.05+Math.min(.12,wallSpeed*.006);}
       // Damped suspension and chassis attitude, shared by every renderer.
-      const lateralA=(p.vx-oldV)/dt,forwardA=(p.speed-previousSpeed)/dt;
-      const rollTarget=clamp(-lateralA*.012,-.18,.18),pitchTarget=clamp(-forwardA*.007,-.10,.10);
-      p.rollV+=((rollTarget-p.roll)*65-p.rollV*13)*dt;p.roll+=p.rollV*dt;
-      p.pitchV+=((pitchTarget-p.pitch)*60-p.pitchV*12)*dt;p.pitch+=p.pitchV*dt;
-      p.heaveV+=(-p.heave*90-p.heaveV*15)*dt;p.heave+=p.heaveV*dt;
+      const lateralA=(p.vx-oldV)/dt,forwardA=(p.speed-previousSpeed)/dt,chassis=v.roll||1;
+      const rollTarget=clamp(-lateralA*.0115*chassis,-.18*chassis,.18*chassis),pitchTarget=clamp(-forwardA*.0068*Math.min(1.18,chassis),-.11,.11);
+      const rollSpring=65/Math.sqrt(chassis),rollDamp=13/Math.sqrt(chassis);
+      p.rollV+=((rollTarget-p.roll)*rollSpring-p.rollV*rollDamp)*dt;p.roll+=p.rollV*dt;
+      p.pitchV+=((pitchTarget-p.pitch)*58-p.pitchV*11.5)*dt;p.pitch+=p.pitchV*dt;
+      p.heaveV+=(-p.heave*(88/chassis)-p.heaveV*(14/Math.sqrt(chassis)))*dt;p.heave+=p.heaveV*dt;
       const distressed=wall||Math.abs(p.heading)>1.6||(p.speed<1&&gas>.4)||Math.abs(p.x)>r.track.width/2+2;
       p.stuck=gas>.2&&brake<.1&&distressed?p.stuck+dt:Math.max(0,p.stuck-dt*2);
       if(p.stuck>1.6)recover(r,p);
