@@ -20,7 +20,7 @@ test('full cast vendors shared male and accessory rigs plus a real animated Mula
   ];
   for (const rel of files) assert.equal(fs.existsSync(path.join(root, rel)), true, rel);
   assert.ok(fs.statSync(path.join(root, files[1])).size > 650_000);
-  assert.ok(fs.statSync(path.join(root, files[7])).size > 450_000);
+  assert.ok(fs.statSync(path.join(root, files[8])).size > 450_000);
 });
 
 test('male shared glTF is local and stripped to lightweight toon materials', () => {
