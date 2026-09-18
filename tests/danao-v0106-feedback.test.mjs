@@ -27,6 +27,8 @@ test('combat feedback presenter is scene-owned, bounded and self-disposing', () 
     'onBeforeRenderObservable',
     'disposeFeedback',
     '__DANAO_FEEDBACK_EVENTS',
+    'strokeText',
+    'useAlphaFromDiffuseTexture',
   ]) assert.match(source, new RegExp(marker));
   assert.doesNotMatch(source, /setInterval|setTimeout/);
   assert.match(source, /active >= 7 && event\.type === 'light-hit'/);
