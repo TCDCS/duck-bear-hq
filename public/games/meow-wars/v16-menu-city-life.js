@@ -258,17 +258,17 @@ function setupCityLife(scene) {
   scene.__mw16Wake=scene.add.graphics().setDepth(-2);
 
   if (id==='oconnell-bridge-spire') {
-    makePatrolBoat(scene,-150,466,{label:'GARDA',direction:1,london:false});
-    makeDoubleDecker(scene,-180,roadY-5,{
+    makePatrolBoat(scene,120,466,{label:'GARDA',direction:1,london:false});
+    makeDoubleDecker(scene,250,roadY-5,{
       label:'DUBLIN',
       color:0x2d67a1,
       accent:0xf0c94f,
       direction:1
     });
-    makeSplashTour(scene,1450,roadY-4,-1);
+    makeSplashTour(scene,1040,roadY-4,-1);
   } else {
-    makePatrolBoat(scene,1430,474,{label:'POLICE',direction:-1,london:true});
-    makeDoubleDecker(scene,-170,roadY-5,{
+    makePatrolBoat(scene,1110,474,{label:'POLICE',direction:-1,london:true});
+    makeDoubleDecker(scene,220,roadY-5,{
       label:'LONDON',
       color:0xa72e3a,
       accent:0xd84a54,
