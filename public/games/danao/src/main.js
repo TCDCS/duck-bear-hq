@@ -48,13 +48,19 @@ onlineBridge = createOnlineMatchBridge({
 
 async function startFromState(state) {
   if (onlineBridge?.active) onlineBridge.stop();
+  onlineRoot.hidden = true;
   status.style.display = 'block';
-  await runtime.startMatch({
-    arenaId: state.arenaId,
-    fighterId: state.fighterId,
-    botCount: state.botCount,
-    settings: state.settings,
-  });
+  try {
+    await runtime.startMatch({
+      arenaId: state.arenaId,
+      fighterId: state.fighterId,
+      botCount: state.botCount,
+      settings: state.settings,
+    });
+  } catch (error) {
+    onlineRoot.hidden = false;
+    throw error;
+  }
 }
 
 app = mountApp(root, {
@@ -73,6 +79,7 @@ app = mountApp(root, {
     if (onlineClient.room) onlineClient.leave();
     runtime.stopMatch();
     runtime.startMenuAudio();
+    onlineRoot.hidden = false;
     status.style.display = 'none';
   },
   onSettings(next) {
@@ -85,6 +92,7 @@ onlineLobby = mountOnlineLobby(onlineRoot, {
   getLocalState: () => app?.getState?.() || {},
   async onStartOnline({ room, localPlayerId, arenaId }) {
     const state = app?.getState?.() || {};
+    onlineRoot.hidden = true;
     app?.beginMatch?.();
     status.textContent = 'Connecting online fight…';
     status.style.display = 'block';
@@ -98,6 +106,7 @@ onlineLobby = mountOnlineLobby(onlineRoot, {
       status.style.display = 'none';
     } catch (error) {
       onlineBridge.stop();
+      onlineRoot.hidden = false;
       app?.returnToMenu?.();
       status.style.display = 'none';
       throw error;
@@ -105,6 +114,7 @@ onlineLobby = mountOnlineLobby(onlineRoot, {
   },
   onReturnLocal() {
     if (onlineBridge?.active) onlineBridge.stop();
+    onlineRoot.hidden = false;
     app?.returnToMenu?.();
     runtime.startMenuAudio();
     status.style.display = 'none';
