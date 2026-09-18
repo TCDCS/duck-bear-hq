@@ -86,7 +86,7 @@
 }
 
 .danao-touch-btn.pressed {
-  transform: translateY(4px) scale(.94);
+  transform: translateY(4px);
   border-color: #f5c842;
   background: rgba(162, 48, 44, .92);
   box-shadow:
