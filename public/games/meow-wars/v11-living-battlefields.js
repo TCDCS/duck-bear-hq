@@ -396,10 +396,25 @@ function requestedArena(scene) {
   return ARENAS[scene.arenaIndex] || ARENAS[0];
 }
 
+const v10MenuRefresh=MenuScene.prototype.refresh;
+MenuScene.prototype.refresh=function() {
+  v10MenuRefresh.call(this);
+  const arena=requestedArena(this);
+  this.__mw11SelectedArenaId=arena.id;
+  globalThis.__MEOW_WARS_SELECTED_ARENA=arena.id;
+  if(!this.__mw11SelectionNote||!this.__mw11SelectionNote.active) {
+    this.__mw11SelectionNote=this.add.text(640,310,'',{
+      fontFamily:'Arial Black, Arial',fontSize:'10px',color:'#d9f4ff',
+      backgroundColor:'rgba(10,32,55,.78)',padding:{x:8,y:3}
+    }).setOrigin(.5).setDepth(21);
+  }
+  this.__mw11SelectionNote.setText('SELECTED  ·  '+arena.name.toUpperCase());
+};
+
 const v10MenuStart=MenuScene.prototype.start;
 MenuScene.prototype.start=function() {
   if(this.__mw11Starting) return;
-  const arena=requestedArena(this);
+  const arena=ARENAS.find((entry)=>entry.id===this.__mw11SelectedArenaId)||requestedArena(this);
   const payload={
     mode:this.mode,
     arenaId:arena.id,
