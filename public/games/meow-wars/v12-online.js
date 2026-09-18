@@ -997,20 +997,33 @@ function rematchOnline(scene) {
   scene.__mw12ResultShown = false;
 }
 
+function ensureOnlineLauncher() {
+  let button = document.getElementById('mw-online-launcher');
+  if (button) return button;
+  button = document.createElement('button');
+  button.id = 'mw-online-launcher';
+  button.type = 'button';
+  button.textContent = 'ONLINE 1V1';
+  button.setAttribute('aria-label', 'Play Meow Wars online');
+  button.style.cssText = [
+    'position:fixed','z-index:8000','top:max(10px,env(safe-area-inset-top))','left:max(10px,env(safe-area-inset-left))',
+    'min-width:132px','min-height:42px','padding:8px 14px','border-radius:10px','border:2px solid #8fffe1',
+    'background:rgba(18,107,104,.96)','color:#fff','font:900 13px Arial','letter-spacing:.3px',
+    'box-shadow:0 5px 20px rgba(0,0,0,.35)','cursor:pointer','touch-action:manipulation'
+  ].join(';');
+  button.addEventListener('click', showLobby);
+  document.body.appendChild(button);
+  return button;
+}
+
+function showOnlineLauncher(visible) {
+  const button = ensureOnlineLauncher();
+  button.style.display = visible ? 'block' : 'none';
+}
+
 function syncLobbyButton(scene) {
-  if (scene.__mw12OnlineButton?.active) return;
-  const rect = scene.add.rectangle(115, 45, 190, 36, 0x126b68, .99)
-    .setStrokeStyle(2, 0x8fffe1, .9)
-    .setInteractive({ useHandCursor: true })
-    .setDepth(590);
-  const text = scene.add.text(115, 45, 'ONLINE 1V1', {
-    fontFamily: 'Arial Black, Arial',
-    fontSize: '13px',
-    color: '#ffffff'
-  }).setOrigin(.5).setDepth(591);
-  rect.on('pointerdown', showLobby);
-  scene.__mw12OnlineButton = rect;
-  scene.__mw12OnlineButtonText = text;
+  scene.__mw12OnlineButton = { active: true };
+  showOnlineLauncher(true);
 }
 
 const v11MenuCreate = MenuScene.prototype.create;
@@ -1049,6 +1062,7 @@ GameScene.prototype.isCpuTurn = function() {
 
 const v11GameCreate = GameScene.prototype.create;
 GameScene.prototype.create = function() {
+  showOnlineLauncher(false);
   v11GameCreate.call(this);
   if (this.mode !== 'online') return;
 
