@@ -1,0 +1,23 @@
+name: Meow Wars v0.6 Validate
+
+on:
+  pull_request:
+    paths:
+      - 'public/games/meow-wars/**'
+      - 'public/games/index.html'
+      - 'tests/meow-wars-v06.test.mjs'
+      - '.github/workflows/meow-wars-v06-validate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate production payload patch
+        run: node --test tests/meow-wars-v06.test.mjs
