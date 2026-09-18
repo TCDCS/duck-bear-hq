@@ -6,6 +6,7 @@ import { patchDanaoV07Visuals } from './danao-v07-visual-patch.mjs';
 import { patchDanaoV08Runtime } from './danao-v08-runtime-patch.mjs';
 import { patchDanaoV09Runtime } from './danao-v09-runtime-patch.mjs';
 import { patchDanaoV09App } from './danao-v09-app-patch.mjs';
+import { patchDanaoSupermarketVisuals } from './danao-supermarket-visual-patch.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const builds = [
@@ -19,7 +20,7 @@ const builds = [
     partsDir: path.join(root, 'scripts/danao-v05-gz/visuals'),
     output: path.join(root, 'public/games/danao/src/game/visuals.js'),
     sha256: '38344470446870e174188d8c2b260042199b1cd41fab96f6b00bf9bbfe752a57',
-    transform: patchDanaoV07Visuals,
+    transform: (source) => patchDanaoSupermarketVisuals(patchDanaoV07Visuals(source)),
   },
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/app'),
