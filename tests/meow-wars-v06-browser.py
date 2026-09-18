@@ -2,6 +2,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 BASE_URL = "http://127.0.0.1:8787"
+LIVE_URL = "https://duck-bear-hq.zachary-chambers2.workers.dev"
 OUT = Path("verification/meow-wars-v06")
 OUT.mkdir(parents=True, exist_ok=True)
 ARENAS = [
@@ -31,6 +32,21 @@ def click_canvas(page, x, y):
 with sync_playwright() as p:
     browser = p.chromium.launch()
     context = browser.new_context(viewport={"width": 1440, "height": 900}, device_scale_factor=1)
+    live = context.new_page()
+    live.goto(LIVE_URL + "/games/meow-wars/?acceptance=before-v06", wait_until="domcontentloaded", timeout=45000)
+    live.wait_for_selector("canvas", timeout=30000)
+    live.locator("canvas").screenshot(path=str(OUT / "before-00-live-menu.png"))
+    for index, arena in enumerate(ARENAS[:3]):
+        live.goto(LIVE_URL + "/games/meow-wars/?before=" + arena, wait_until="domcontentloaded", timeout=45000)
+        live.wait_for_selector("canvas", timeout=30000)
+        for _ in range(index):
+            click_canvas(live, 955, 257)
+            live.wait_for_timeout(140)
+        click_canvas(live, 640, 603)
+        live.wait_for_timeout(900)
+        live.locator("canvas").screenshot(path=str(OUT / f"before-{index+1:02d}-{arena}-battle.png"))
+    live.close()
+
     page = context.new_page()
     errors = []
     page.on("pageerror", lambda exc: errors.append(str(exc)))
