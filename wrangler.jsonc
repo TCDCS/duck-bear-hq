@@ -18,10 +18,13 @@
     {"name":"WACKY_DIRECTORY","class_name":"WackyDirectory"},
     {"name":"WACKY_ROOMS","class_name":"WackyRoom"},
     {"name":"DANAO_DIRECTORY","class_name":"DanaoDirectory"},
-    {"name":"DANAO_ROOMS","class_name":"DanaoRoom"}
+    {"name":"DANAO_ROOMS","class_name":"DanaoRoom"},
+    {"name":"MEOW_DIRECTORY","class_name":"MeowWarsDirectory"},
+    {"name":"MEOW_ROOMS","class_name":"MeowWarsRoom"}
   ]},
   "migrations": [
     {"tag":"wacky-v4-sqlite","new_sqlite_classes":["WackyDirectory","WackyRoom"]},
-    {"tag":"danao-v1-sqlite","new_sqlite_classes":["DanaoDirectory","DanaoRoom"]}
+    {"tag":"danao-v1-sqlite","new_sqlite_classes":["DanaoDirectory","DanaoRoom"]},
+    {"tag":"meow-v1-sqlite","new_sqlite_classes":["MeowWarsDirectory","MeowWarsRoom"]}
   ]
 }
