@@ -248,14 +248,18 @@ export function patchDanaoV09Runtime(source) {
 
   out = replaceRequired(
     out,
-    /function fixedUpdate\(now, inputLocked = false\) \{\n\s*if \(!inputLocked\) \{\n\s*for \(const fighter of fighters\) updateFighter\(fighter, now\);\n\s*updateHazards\(now\);\n\s*\}\n\s*world\.step\(\);\n\s*checkRingOuts\(now\);\n\s*\}/,
+    /function fixedUpdate\(now, inputLocked = false\) \{\n\s*if \(!inputLocked\) \{\n\s*for \(const fighter of fighters\) updateFighter\(fighter, now\);\n\s*updateHazards\(now\);\n\s*\}\n\s*syncHeldTargets\(now\);\n\s*world\.step\(\);\n\s*updatePropImpacts\(now\);\n\s*checkRingOuts\(now\);\n\s*\}/,
     `function fixedUpdate(now, inputLocked = false) {
     if (!inputLocked) {
       for (const fighter of fighters) updateFighter(fighter, now);
       if (!networkMode || networkIsHost) updateHazards(now);
     }
+    if (!networkMode || networkIsHost) syncHeldTargets(now);
     world.step();
-    if (!networkMode || networkIsHost) checkRingOuts(now);
+    if (!networkMode || networkIsHost) {
+      updatePropImpacts(now);
+      checkRingOuts(now);
+    }
   }`,
     'host world authority',
   );
