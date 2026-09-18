@@ -332,6 +332,30 @@ try {
   ]);
   await guest.screenshot({ path: out('guest-mobile-before-fire.png'), fullPage: true });
 
+  // Re-establish the authoritative Red turn *after* screenshot capture, then press
+  // FIRE immediately. This isolates real input/network behavior from slow CI image IO.
+  await host.evaluate(() => {
+    const scene = globalThis.__MEOW_WARS_GAME_SCENE;
+    if (scene.activeCat().team !== 1) scene.endTurn('qa-red-fire-final');
+    scene.turnRemainingMs = 90000;
+    scene.actionLocked = false;
+  });
+  await Promise.all([
+    host.waitForFunction(() =>
+      globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().team === 1 &&
+      globalThis.__MEOW_WARS_GAME_SCENE?.actionLocked === false,
+      null,
+      { timeout: 5000 }
+    ),
+    guest.waitForFunction(() =>
+      globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().team === 1 &&
+      globalThis.__MEOW_WARS_GAME_SCENE?.actionLocked === false,
+      null,
+      { timeout: 5000 }
+    ),
+    host.waitForFunction(() => globalThis.__MEOW_WARS_ONLINE?.serverTurnTeam === 1, null, { timeout: 5000 })
+  ]);
+
   const beforeFire = await Promise.all([
     host.evaluate(() => ({
       intentsReceived: globalThis.__MEOW_WARS_V12_STATS.intentsReceived,
