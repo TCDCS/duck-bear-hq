@@ -35,11 +35,9 @@ function upgradeRenderResolution(source) {
 function upgradePhaser4Tint(source) {
   const legacy = 'cat.sprite.setTintFill?.(0xffffff);';
   const occurrences = source.split(legacy).length - 1;
-  if (occurrences !== 1) throw new Error('Meow Wars Phaser 4 tint anchor mismatch');
-  return source.replace(
-    legacy,
-    'cat.sprite.setTint?.(0xffffff);\n        cat.sprite.setTintMode?.(Phaser.TintModes.FILL);'
-  );
+  if (occurrences < 1) throw new Error('Meow Wars Phaser 4 tint anchor missing');
+  const replacement = 'cat.sprite.setTint?.(0xffffff);\n        cat.sprite.setTintMode?.(Phaser.TintModes.FILL);';
+  return source.split(legacy).join(replacement);
 }
 
 async function readLayer(url, label) {
