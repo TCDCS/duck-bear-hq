@@ -164,6 +164,10 @@ jobs:
               });
             });
             await page.waitForTimeout(90);
+            await page.locator('#game').screenshot({
+              path: OUT + '/combat-feedback.png',
+              timeout: 90000,
+            });
 
             const sceneState = await page.evaluate(() => {
               const scene = globalThis.BABYLON?.EngineStore?.LastCreatedScene;
