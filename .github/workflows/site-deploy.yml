@@ -1,5 +1,5 @@
 name: Site Deploy
-# Manual content deploy trigger: Meow Wars v0.6 hub sync
+# Manual content deploy trigger: Meow Wars v0.7
 
 on:
   workflow_dispatch:
