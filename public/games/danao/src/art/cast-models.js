@@ -114,6 +114,11 @@ export const CAST_MODELS = Object.freeze({
 
 let loaderPromise = null;
 
+function noteCastLoad(styleId, status, detail = '') {
+  const state = globalThis.__DANAO_CAST_LOADS || (globalThis.__DANAO_CAST_LOADS = {});
+  state[styleId] = { status, detail: String(detail || ''), at: Date.now() };
+}
+
 function hexRgb(hex) {
   const value = String(hex || '#ffffff').replace('#', '');
   return [
@@ -365,10 +370,12 @@ function styleHumanResult(B, scene, styleId, config, bodyResult, accessoryResult
 }
 
 async function importHuman(B, scene, styleId, config, visualRoot) {
+  noteCastLoad(styleId, 'loading-body');
   const bodyRoot = config.sex === 'female' ? FEMALE_ROOT : MALE_ROOT;
   const bodyFile = config.sex === 'female' ? FEMALE_FILE : MALE_FILE;
 
   const bodyResult = await B.SceneLoader.ImportMeshAsync('', bodyRoot, bodyFile, scene);
+  noteCastLoad(styleId, 'loading-accessories', bodyFile);
   const accessoryFiles = [
     config.sex === 'female' && styleId === 'hero'
       ? 'hero-hair-buns.glb'
@@ -383,6 +390,7 @@ async function importHuman(B, scene, styleId, config, visualRoot) {
   }
 
   if (!styleHumanResult(B, scene, styleId, config, bodyResult, accessoryResults)) {
+    noteCastLoad(styleId, 'style-failed', 'body mesh/material setup');
     for (const mesh of [
       ...(bodyResult?.meshes || []),
       ...accessoryResults.flatMap((result) => result?.meshes || []),
@@ -403,6 +411,7 @@ async function importHuman(B, scene, styleId, config, visualRoot) {
   }
 
   const pose = makeHumanPoseRig(B, [bodyResult, ...accessoryResults]);
+  noteCastLoad(styleId, 'ready', body?.name || styleId);
 
   return {
     kind: 'human',
@@ -490,14 +499,22 @@ function dogBounds(result) {
 }
 
 export async function mountMulanDogModel(B, scene, visualRoot) {
-  if (!B?.SceneLoader?.ImportMeshAsync || !scene || !visualRoot) return null;
+  noteCastLoad('mulan', 'starting');
+  if (!B?.SceneLoader?.ImportMeshAsync || !scene || !visualRoot) {
+    noteCastLoad('mulan', 'precondition-failed');
+    return null;
+  }
   if (!await ensureGltfLoader(B)) return null;
 
   try {
     const config = CAST_MODELS.mulan;
+    noteCastLoad('mulan', 'loading-body', DOG_FILE);
     const result = await B.SceneLoader.ImportMeshAsync('', DOG_ROOT, DOG_FILE, scene);
     const body = result?.meshes?.find?.((mesh) => mesh.name === 'ShibaInu');
-    if (!body) return null;
+    if (!body) {
+      noteCastLoad('mulan', 'style-failed', 'ShibaInu mesh missing');
+      return null;
+    }
 
     setDogMaterials(B, scene, result, config);
 
@@ -524,6 +541,7 @@ export async function mountMulanDogModel(B, scene, visualRoot) {
     collar.material = toonMaterial(B, scene, 'mulan-rig-collar-mat', config.collar);
 
     const pose = makeDogPoseRig(result);
+    noteCastLoad('mulan', 'ready', body.name);
     return {
       kind: 'dog',
       anchor,
@@ -533,7 +551,8 @@ export async function mountMulanDogModel(B, scene, visualRoot) {
         anchor.dispose?.(false, true);
       },
     };
-  } catch {
+  } catch (error) {
+    noteCastLoad('mulan', 'failed', error?.message || error);
     return null;
   }
 }
@@ -547,8 +566,12 @@ export async function mountCastRenderModel(B, scene, visualRoot, styleId) {
   if (!await ensureGltfLoader(B)) return null;
 
   try {
-    return await importHuman(B, scene, styleId, config, visualRoot);
-  } catch {
+    noteCastLoad(styleId, 'starting');
+    const rig = await importHuman(B, scene, styleId, config, visualRoot);
+    if (!rig) noteCastLoad(styleId, 'failed', 'human import returned null');
+    return rig;
+  } catch (error) {
+    noteCastLoad(styleId, 'failed', error?.message || error);
     return null;
   }
 }
