@@ -314,6 +314,7 @@ function v06DrawEnvironment(scene, far, mid, near) {
     if (id === 'westminster-bridge-big-ben') return v06DrawWestminster(scene,far,mid,near);
     return v06DrawDonabate(scene,far,mid,near);
 }
+const __mwV05CreateSky = GameScene.prototype.createSky;
 GameScene.prototype.createSky = function() {
     const p = this.arena.palette;
     this.v06ParallaxLayers = [];
@@ -382,6 +383,184 @@ GameScene.prototype.paintTerrainTexture=function(){
 };
 `;
 
+
+const ART_PASS_PATCH = String.raw\`
+function v06HdTrackObject(scene, obj, factor) {
+    if (!obj || !Number.isFinite(obj.x)) return;
+    obj.__mwParallaxBaseX = obj.x;
+    obj.__mwParallaxFactor = factor;
+    scene.v06ParallaxObjects.push(obj);
+}
+function v06HdTrackLegacy(scene) {
+    for (const obj of scene.children?.list || []) {
+        if (obj.depth === -27) v06HdTrackObject(scene, obj, 0.10);
+        else if (obj.depth === -21) v06HdTrackObject(scene, obj, 0.28);
+        else if (obj.depth === -4) v06HdTrackObject(scene, obj, 0.58);
+        else if (obj.depth === -28 && Number.isFinite(obj.radius)) v06HdTrackObject(scene, obj, 0.035);
+    }
+}
+function v06HdGardenExtras(scene) {
+    const far=v06Layer(scene,-28.5,0.06), mid=v06Layer(scene,-20,0.23), near=v06Layer(scene,-3.5,0.56);
+    far.fillStyle(0x4f8a65,0.46);
+    far.fillEllipse(170,474,560,155); far.fillEllipse(635,468,700,170); far.fillEllipse(1120,478,560,145);
+    far.fillStyle(0x397552,0.28);
+    far.fillEllipse(390,493,680,120); far.fillEllipse(980,495,720,130);
+    mid.fillStyle(0xf3ead4,0.98);
+    for(let x=710;x<1260;x+=37){mid.fillRect(x,474,7,65);mid.fillTriangle(x,474,x+3.5,464,x+7,474);}
+    mid.fillRect(700,495,570,7); mid.fillRect(700,526,570,7);
+    mid.fillStyle(0x327b42,0.96);
+    for(let x=725;x<1260;x+=50){mid.fillCircle(x,520,16);mid.fillCircle(x+15,524,12);}
+    const petals=[0xff6f89,0xffd45a,0x85cfff,0xffffff];
+    for(let i=0;i<34;i+=1){const x=20+((i*83)%1230),y=505+((i*31)%45);near.lineStyle(2,0x2f7a3d,.9);near.beginPath();near.moveTo(x,y+8);near.lineTo(x,y-2);near.strokePath();near.fillStyle(petals[i%petals.length],1);near.fillCircle(x-3,y-4,3);near.fillCircle(x+3,y-4,3);near.fillCircle(x,y-8,3);}
+}
+function v06HdRooftopExtras(scene) {
+    const far=v06Layer(scene,-28.5,0.07), mid=v06Layer(scene,-20,0.25), near=v06Layer(scene,-3.5,0.60);
+    far.fillStyle(0xffffff,0.34);
+    for(let i=0;i<34;i+=1){const x=(i*149)%1280,y=150+((i*83)%205);far.fillCircle(x,y,i%5===0?2:1);}
+    const blocks=[0x1f2946,0x27314f,0x202c4b];
+    for(let i=0;i<18;i+=1){const w=70+(i%4)*18,h=85+(i%6)*28,x=i*82-40;far.fillStyle(blocks[i%blocks.length],.72);far.fillRect(x,505-h,w,h);far.fillStyle(0xe9c66d,.35);for(let yy=505-h+18;yy<490;yy+=27)for(let xx=x+12;xx<x+w-8;xx+=25)far.fillRect(xx,yy,6,9);}
+    mid.fillStyle(0x66717f,1);mid.fillRoundedRect(175,428,115,54,8);mid.fillStyle(0x303b49,1);mid.fillRect(188,440,90,8);mid.fillRect(188,457,90,8);
+    mid.lineStyle(5,0x596574,1);mid.beginPath();mid.moveTo(1018,472);mid.lineTo(1018,387);mid.moveTo(977,416);mid.lineTo(1062,398);mid.strokePath();
+    mid.lineStyle(3,0x758290,1);mid.beginPath();mid.moveTo(810,455);mid.lineTo(850,420);mid.lineTo(891,455);mid.strokePath();mid.fillStyle(0x7d8997,1);mid.fillEllipse(850,420,72,24);
+    near.lineStyle(3,0x505c6b,.95);near.beginPath();near.moveTo(70,501);near.lineTo(420,488);near.moveTo(860,490);near.lineTo(1235,475);near.strokePath();
+    for(let i=0;i<16;i+=1){near.fillStyle(i%3===0?0xffcc55:0xf27d61,1);near.fillCircle(95+i*72,500-(i%5)*3,3.5);}
+}
+function v06HdJunkyardExtras(scene) {
+    const far=v06Layer(scene,-28.5,0.07), mid=v06Layer(scene,-20,0.25), near=v06Layer(scene,-3.5,0.60);
+    far.fillStyle(0x765c48,.52);far.fillRect(0,430,1280,95);
+    for(const x of [130,430,915,1160]){far.fillStyle(0x514b45,.68);far.fillRect(x,280,36,160);far.fillStyle(0x3b3b39,.58);far.fillEllipse(x+18,270,65,22);}
+    far.lineStyle(9,0xb07c2f,.9);for(const x of [260,1010]){far.beginPath();far.moveTo(x,450);far.lineTo(x,260);far.lineTo(x+165,260);far.strokePath();far.lineStyle(3,0x393d40,.85);far.beginPath();far.moveTo(x+130,262);far.lineTo(x+130,365);far.strokePath();far.lineStyle(9,0xb07c2f,.9);}
+    mid.lineStyle(2,0x59605f,.7);for(let x=0;x<1280;x+=42){mid.beginPath();mid.moveTo(x,410);mid.lineTo(x+84,520);mid.moveTo(x+84,410);mid.lineTo(x,520);mid.strokePath();}mid.lineStyle(5,0x565956,.8);mid.beginPath();mid.moveTo(0,418);mid.lineTo(1280,418);mid.moveTo(0,515);mid.lineTo(1280,515);mid.strokePath();
+    for(const [x,c] of [[150,0xb95e4f],[540,0x557f8d],[950,0xd09a45]]){near.fillStyle(c,.95);near.fillRoundedRect(x,468,118,30,9);near.fillStyle(0x2a3034,1);near.fillCircle(x+25,499,17);near.fillCircle(x+93,499,17);}
+    for(const x of [340,780,1180]){near.fillStyle(0x282d31,1);near.fillCircle(x,505,24);near.fillStyle(0x101417,1);near.fillCircle(x,505,11);near.fillStyle(0x3d4348,1);near.fillCircle(x+25,510,18);near.fillStyle(0x101417,1);near.fillCircle(x+25,510,8);}
+}
+function v06HdTajMonument(g,x,y,s){
+    const marble=0xf7f4ea,shade=0xd9d5cb,line=0xb8b3a8,arch=0x6f7771;
+    g.fillStyle(0xc7bda9,.75);g.fillRect(x-275*s,y-14*s,550*s,18*s);
+    g.fillStyle(marble,1);g.fillRect(x-195*s,y-137*s,390*s,137*s);g.fillRect(x-245*s,y-106*s,50*s,106*s);g.fillRect(x+195*s,y-106*s,50*s,106*s);
+    g.fillStyle(shade,1);g.fillRect(x-203*s,y-145*s,406*s,12*s);
+    g.fillStyle(arch,.54);g.fillRoundedRect(x-30*s,y-88*s,60*s,88*s,28*s);
+    for(const dx of [-135,-88,88,135]){g.fillStyle(arch,.38);g.fillRoundedRect(x+dx*s-13*s,y-69*s,26*s,69*s,12*s);}
+    g.lineStyle(2*s,line,.75);for(const dx of [-166,-55,55,166]){g.beginPath();g.moveTo(x+dx*s,y-130*s);g.lineTo(x+dx*s,y-4*s);g.strokePath();}
+    g.fillStyle(marble,1);g.fillRect(x-73*s,y-169*s,146*s,42*s);g.fillEllipse(x,y-187*s,150*s,110*s);g.fillTriangle(x-70*s,y-192*s,x,y-245*s,x+70*s,y-192*s);
+    g.lineStyle(3*s,0xc6b686,.9);g.beginPath();g.moveTo(x,y-244*s);g.lineTo(x,y-266*s);g.strokePath();g.fillStyle(0xc6b686,1);g.fillCircle(x,y-269*s,4*s);
+    for(const dx of [-116,116]){g.fillStyle(marble,1);g.fillRect(x+dx*s-32*s,y-143*s,64*s,50*s);g.fillEllipse(x+dx*s,y-151*s,62*s,48*s);g.fillTriangle(x+dx*s-28*s,y-154*s,x+dx*s,y-180*s,x+dx*s+28*s,y-154*s);}
+    const towers=[[-252,.84,190],[-213,.70,166],[213,.70,166],[252,.84,190]];
+    for(const [dx,ss,h] of towers){g.fillStyle(dx===-213||dx===213?0xe7e2d8:marble,1);g.fillRect(x+dx*s-10*s*ss,y-h*s,20*s*ss,h*s);g.fillStyle(shade,1);for(let k=1;k<4;k+=1)g.fillRect(x+dx*s-14*s*ss,y-(h-k*42)*s,28*s*ss,6*s);g.fillStyle(marble,1);g.fillEllipse(x+dx*s,y-h*s,34*s*ss,21*s*ss);g.fillTriangle(x+dx*s-13*s*ss,y-(h+4)*s,x+dx*s,y-(h+28)*s,x+dx*s+13*s*ss,y-(h+4)*s);}
+}
+function v06HdDrawTaj(scene,far,mid,near){
+    for(const [x,y,s] of [[105,98,.62],[360,132,.46],[940,92,.56],[1180,126,.44]])v06Cloud(far,x,y,s,.56);
+    far.fillStyle(0x4a7d4b,.48);for(let x=0;x<1280;x+=52)far.fillCircle(x,425+(x%4)*4,34);
+    v06HdTajMonument(mid,640,452,.94);
+    mid.fillStyle(0x2f7040,.95);for(const x of [70,150,230,1050,1130,1210]){mid.fillTriangle(x-14,490,x,430,x+14,490);mid.fillRect(x-5,486,10,25);}
+    near.fillStyle(0xd7c4a2,1);near.fillRect(295,456,690,18);near.fillRect(295,563,690,15);
+    near.fillStyle(0x4ca6b9,.92);near.fillRoundedRect(340,474,600,90,10);
+    near.fillStyle(0xeaf7f2,.25);for(let y=489;y<558;y+=18)near.fillRect(370,y,540,3);
+    near.fillStyle(0x3c7d46,1);for(const x of [315,965])for(let y=482;y<556;y+=24)near.fillCircle(x,y,10);
+    scene.v06Water={y:482,color:0xd9f7f7,amplitude:1.7,speed:.0022,depth:-5,x0:350,x1:930};
+}
+function v06HdCityFacade(g,x,base,w,h,body,roof){
+    g.fillStyle(body,.96);g.fillRect(x,base-h,w,h);g.fillStyle(roof,1);g.fillRect(x-3,base-h-8,w+6,9);
+    g.fillStyle(0xe9c36d,.52);for(let yy=base-h+22;yy<base-22;yy+=28)for(let xx=x+12;xx<x+w-10;xx+=24)g.fillRect(xx,yy,8,11);
+    g.fillStyle(0x3e4449,.9);g.fillRect(x+8,base-18,w-16,18);
+}
+function v06HdDublinBridge(g,y,water){
+    const stone=0xb9b2a5,dark=0x7f796e;
+    g.fillStyle(stone,1);g.fillRect(-20,y,1320,94);
+    g.fillStyle(water,1);const step=1280/5;for(let i=0;i<5;i+=1)g.fillEllipse(i*step+step/2,y+82,step*.70,125);
+    g.fillStyle(dark,1);g.fillRect(-20,y-15,1320,18);g.fillStyle(0xd9d2c5,1);g.fillRect(-20,y-24,1320,10);
+    g.lineStyle(2,0x69645d,.7);for(let x=0;x<1280;x+=48){g.beginPath();g.moveTo(x,y-24);g.lineTo(x,y-3);g.strokePath();}
+    for(let x=80;x<1240;x+=185){g.fillStyle(0x3b4248,1);g.fillRect(x-2,y-62,4,40);g.fillCircle(x,y-67,6);g.fillStyle(0xffe6a0,.9);g.fillCircle(x,y-67,3);}
+}
+function v06HdDrawDublin(scene,far,mid,near){
+    for(const [x,y,s] of [[95,98,.62],[430,127,.48],[860,92,.54],[1160,128,.47]])v06Cloud(far,x,y,s,.52);
+    const colors=[0xb99275,0xc6a783,0x9b806c,0xd0b9a0,0x947867,0xbfa78f,0x8f9aa0];
+    let x=-24;for(let i=0;i<14;i+=1){const w=88+(i%3)*10,h=120+(i%4)*24;v06HdCityFacade(far,x,421,w,h,colors[i%colors.length],0x4d5155);x+=w-2;}
+    v06Spire(mid,640,430,1.12);mid.fillStyle(0xd8e4e8,.65);mid.fillCircle(640,165,5);
+    v06WaterBase(mid,430,0x3f7180);mid.fillStyle(0x82aab0,.28);for(let y=455;y<550;y+=23)mid.fillRect(0,y,1280,2);
+    v06HdDublinBridge(near,450,0x3f7180);
+    scene.v06Water={y:438,color:0xc7e3e4,amplitude:2.2,speed:.0026,depth:-7,x0:0,x1:1280};
+}
+function v06HdPalace(g,x,base,s){
+    const stone=0xb79a62,dark=0x655a45,roof=0x585a54;
+    g.fillStyle(stone,1);g.fillRect(x,base-151*s,705*s,151*s);
+    g.fillStyle(dark,.72);for(let xx=x+18*s;xx<x+690*s;xx+=47*s){g.fillRect(xx,base-116*s,21*s,83*s);g.fillTriangle(xx-4*s,base-116*s,xx+10*s,base-143*s,xx+25*s,base-116*s);}
+    g.fillStyle(stone,1);for(let xx=x+4*s;xx<x+700*s;xx+=92*s){g.fillRect(xx,base-184*s,33*s,34*s);g.fillTriangle(xx-5*s,base-184*s,xx+16*s,base-216*s,xx+38*s,base-184*s);}
+    g.fillStyle(roof,1);g.fillRect(x-5*s,base-158*s,715*s,9*s);
+    g.fillStyle(0xe7c777,.5);for(let xx=x+23*s;xx<x+690*s;xx+=48*s)for(let yy=base-97*s;yy<base-36*s;yy+=29*s)g.fillRect(xx,yy,7*s,11*s);
+}
+function v06HdBigBen(g,x,y,s){
+    const stone=0xc2a66b,dark=0x78694d,trim=0xd0b56e,roof=0x48535a;
+    g.fillStyle(stone,1);g.fillRect(x-37*s,y-208*s,74*s,208*s);
+    g.fillStyle(dark,1);g.fillRect(x-45*s,y-219*s,90*s,17*s);
+    g.fillStyle(stone,1);g.fillRect(x-48*s,y-275*s,96*s,61*s);
+    g.fillStyle(trim,1);g.fillRect(x-52*s,y-281*s,104*s,8*s);
+    g.fillStyle(0xf3e8c9,1);g.fillCircle(x,y-246*s,25*s);g.lineStyle(4*s,0x2f3437,1);g.strokeCircle(x,y-246*s,25*s);g.beginPath();g.moveTo(x,y-246*s);g.lineTo(x-2*s,y-262*s);g.moveTo(x,y-246*s);g.lineTo(x+14*s,y-238*s);g.strokePath();
+    g.fillStyle(roof,1);g.fillTriangle(x-49*s,y-281*s,x,y-350*s,x+49*s,y-281*s);g.fillRect(x-5*s,y-368*s,10*s,25*s);g.fillStyle(trim,1);g.fillCircle(x,y-372*s,4*s);
+    g.fillStyle(dark,.75);for(let yy=y-188*s;yy<y-35*s;yy+=34*s){g.fillRoundedRect(x-16*s,yy,12*s,21*s,5*s);g.fillRoundedRect(x+4*s,yy,12*s,21*s,5*s);}
+}
+function v06HdWestminsterBridge(g,y,water){
+    const green=0x6f907d,dark=0x4e6e5e;
+    g.fillStyle(green,1);g.fillRect(-20,y,1320,78);
+    g.fillStyle(water,1);const step=1280/7;for(let i=0;i<7;i+=1)g.fillEllipse(i*step+step/2,y+70,step*.72,105);
+    g.fillStyle(dark,1);g.fillRect(-20,y-17,1320,18);g.fillStyle(0x98ad9f,1);g.fillRect(-20,y-25,1320,8);
+    for(let x=65;x<1260;x+=150){g.fillStyle(0x3d5449,1);g.fillRect(x-2,y-54,4,31);g.fillCircle(x,y-57,5);}
+}
+function v06HdDrawWestminster(scene,far,mid,near){
+    for(const [x,y,s] of [[105,102,.60],[450,130,.46],[890,95,.54],[1175,130,.44]])v06Cloud(far,x,y,s,.50);
+    v06HdPalace(far,75,447,.96);v06HdBigBen(mid,940,449,.98);
+    v06WaterBase(mid,438,0x557f8a);mid.fillStyle(0xa9c9cc,.22);for(let y=458;y<550;y+=24)mid.fillRect(0,y,1280,2);
+    v06HdWestminsterBridge(near,466,0x557f8a);
+    scene.v06Water={y:443,color:0xd0e5e3,amplitude:2.1,speed:.0024,depth:-7,x0:0,x1:1280};
+}
+function v06HdDrawDonabate(scene,far,mid,near){
+    for(const [x,y,s] of [[110,92,.68],[430,128,.48],[815,84,.58],[1140,124,.50]])v06Cloud(far,x,y,s,.62);
+    far.fillStyle(0x6e9299,.58);far.fillEllipse(1050,366,470,95);far.fillStyle(0x5a7b82,.38);far.fillEllipse(920,372,260,52);
+    far.lineStyle(3,0x3f6170,.55);for(const [x,y] of [[260,205],[315,180],[760,215]]){far.beginPath();far.moveTo(x-10,y);far.lineTo(x,y-6);far.lineTo(x+10,y);far.strokePath();}
+    v06WaterBase(mid,350,0x4698b8);mid.fillStyle(0x9ed4dd,.34);for(let y=378;y<515;y+=24){for(let x=(y%48)-40;x<1280;x+=105)mid.fillRoundedRect(x,y,65,3,2);}
+    near.fillStyle(0xe5ca91,1);near.fillRect(-20,500,1320,115);near.fillStyle(0xcab477,.9);near.fillEllipse(180,505,470,95);near.fillEllipse(680,510,650,100);near.fillEllipse(1150,505,520,92);
+    near.fillStyle(0x879b5f,1);for(let x=0;x<1280;x+=31){const h=11+(x%7)*2;near.fillTriangle(x,513,x+8,513-h,x+15,513);near.fillTriangle(x+11,516,x+21,516-h*.75,x+28,516);}
+    near.fillStyle(0xf2e1bb,.72);for(let x=10;x<1270;x+=61)near.fillEllipse(x,563+(x%4)*5,24,5);
+    scene.v06Water={y:355,color:0xd8f1f2,amplitude:3.1,speed:.0030,depth:-7,x0:0,x1:1280};
+}
+function v06HdDrawNewEnvironment(scene,far,mid,near){
+    if(scene.arena.id==='taj-mahal')return v06HdDrawTaj(scene,far,mid,near);
+    if(scene.arena.id==='oconnell-bridge-spire')return v06HdDrawDublin(scene,far,mid,near);
+    if(scene.arena.id==='westminster-bridge-big-ben')return v06HdDrawWestminster(scene,far,mid,near);
+    return v06HdDrawDonabate(scene,far,mid,near);
+}
+GameScene.prototype.createSky=function(){
+    const p=this.arena.palette,id=this.arena.id;
+    this.v06ParallaxLayers=[];this.v06ParallaxObjects=[];this.v06Water=null;this.v06WaterGraphics=null;
+    if(id==='garden-siege'||id==='rooftop-rumble'||id==='junkyard-jamboree'){
+        __mwV05CreateSky.call(this);
+        v06HdTrackLegacy(this);
+        if(id==='garden-siege')v06HdGardenExtras(this);else if(id==='rooftop-rumble')v06HdRooftopExtras(this);else v06HdJunkyardExtras(this);
+        this.add.text(1264,12,__mw_v06_version+' • '+__mw_v06_build,{fontFamily:'Arial',fontSize:'11px',color:'#f4fbff',backgroundColor:'#10223ecc',padding:{x:6,y:3}}).setOrigin(1,0).setDepth(92);
+        return;
+    }
+    this.cameras.main.setBackgroundColor(p.skyTop);
+    for(let i=0;i<18;i+=1){const t=i/17;this.add.rectangle(WIDTH/2,(i+.5)*(HEIGHT/18),WIDTH+6,HEIGHT/18+2,v06Mix(p.skyTop,p.skyBottom,t),1).setDepth(-40);}
+    this.add.circle(1090,105,58,v06Hex(p.sun),.92).setDepth(-36);
+    const far=v06Layer(this,-30,.09),mid=v06Layer(this,-20,.27),near=v06Layer(this,-6,.58);
+    v06HdDrawNewEnvironment(this,far,mid,near);
+    const labelBack=this.add.rectangle(142,88,244,42,0x10223e,.86).setDepth(90);labelBack.setStrokeStyle?.(2,v06Hex(p.accent),.9);
+    this.add.text(142,88,this.arena.name.toUpperCase(),{fontFamily:'Arial Black, Arial',fontSize:'13px',color:'#ffffff'}).setOrigin(.5).setDepth(91);
+    this.add.text(1264,12,__mw_v06_version+' • '+__mw_v06_build,{fontFamily:'Arial',fontSize:'11px',color:'#f4fbff',backgroundColor:'#10223ecc',padding:{x:6,y:3}}).setOrigin(1,0).setDepth(92);
+};
+GameScene.prototype.updateEnvironmentV06=function(time){
+    let focus=WIDTH/2;try{const cat=this.activeCat?.();if(cat&&Number.isFinite(cat.x))focus=cat.x;}catch{}
+    const n=(focus/WIDTH)-.5;
+    for(let i=0;i<(this.v06ParallaxLayers?.length||0);i+=1){const layer=this.v06ParallaxLayers[i],factor=layer.__mwParallaxFactor||0;layer.x=-n*72*factor+Math.sin(time*.00018+i)*4*factor;}
+    for(let i=0;i<(this.v06ParallaxObjects?.length||0);i+=1){const obj=this.v06ParallaxObjects[i],factor=obj.__mwParallaxFactor||0;base=obj.__mwParallaxBaseX;obj.x=base-n*72*factor+Math.sin(time*.00018+i*.7)*4*factor;}
+    if(!this.v06Water)return;
+    if(!this.v06WaterGraphics)this.v06WaterGraphics=this.add.graphics().setDepth(this.v06Water.depth);
+    const g=this.v06WaterGraphics,w=this.v06Water,x0=w.x0??-20,x1=w.x1??1300;
+    g.clear();g.lineStyle(2,w.color,.52);
+    for(let row=0;row<4;row+=1){const y=w.y+15+row*22;g.beginPath();let first=true;for(let x=x0;x<=x1;x+=16){const yy=y+Math.sin(x*.027+time*w.speed+row)*w.amplitude;if(first){g.moveTo(x,yy);first=false;}else g.lineTo(x,yy);}g.strokePath();}
+};
+\`;
+
 const MENU_PATCH = String.raw`
 const __mw_v06_MenuScene = __mw_game_MenuScene_js.MenuScene;
 const __mw_v06_menuCreate = __mw_v06_MenuScene.prototype.create;
@@ -426,7 +605,7 @@ export function patchSource(input) {
   source = replaceOnce(
     source,
     "// --- game/MenuScene.js ---",
-    RUNTIME_PATCH + "\n\n// --- game/MenuScene.js ---",
+    RUNTIME_PATCH + "\n\n" + ART_PASS_PATCH + "\n\n// --- game/MenuScene.js ---",
     'runtime patch insertion'
   );
 
