@@ -22,6 +22,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Repository checks
+        run: npm test && npm run check
+      - name: Syntax-check Meow Wars v0.6
+        run: |
+          node --check public/games/meow-wars/v06-hd.js
+          node --check public/games/meow-wars/game-4-menu.js
       - name: Install browser QA dependency
         run: |
           npm install --no-save --ignore-scripts playwright@1.55.0
@@ -101,7 +107,7 @@ jobs:
           for(let i=0;i<ids.length;i++){
             await open(branch);
             for(let n=0;n<i;n++) await clickGame(955,257);
-            const selected=await page.evaluate(()=>globalThis.__mw_core_arenas_js?.ARENAS?.map(a=>a.id) || []);
+            const selected=await page.evaluate(()=>(()=>{try{return __mw_core_arenas_js.ARENAS.map(a=>a.id)}catch{return []}})());
             if(selected.length!==7) errors.push('arena list changed during '+ids[i]);
             await clickGame(640,603);
             await page.waitForTimeout(1100);
