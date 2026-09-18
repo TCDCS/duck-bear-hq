@@ -2,7 +2,7 @@ name: Danao v0.5 Validate
 
 on:
   push:
-    branches: [release/danao-v05]
+    branches: [release/danao-v05, feature/danao-mango-cast]
     paths:
       - 'public/games/danao/**'
       - 'public/games/index.html'
