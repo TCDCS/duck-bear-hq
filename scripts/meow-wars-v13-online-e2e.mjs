@@ -63,6 +63,38 @@ async function logicalHold(page, x, y, ms) {
   await page.mouse.up();
 }
 
+async function pinAuthoritativeRedTurn() {
+  const beforeAck = await host.evaluate(() => globalThis.__MEOW_WARS_V12_STATS?.snapshotAcks || 0);
+  await host.evaluate(() => {
+    const scene = globalThis.__MEOW_WARS_GAME_SCENE;
+    if (!scene) throw new Error('Host GameScene unavailable');
+    const red = scene.cats.find((cat) => cat.team === 1 && cat.alive);
+    if (!red) throw new Error('No living Red cat available for online QA');
+    scene.gameOver = false;
+    scene.actionLocked = false;
+    scene.turns.resetTo(red.id);
+    scene.turnNumber = Math.max(2, scene.turnNumber);
+    scene.startTurn(true);
+    scene.turnRemainingMs = 90000;
+    scene.actionLocked = false;
+  });
+  await Promise.all([
+    host.waitForFunction(() =>
+      globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().team === 1 &&
+      globalThis.__MEOW_WARS_GAME_SCENE?.actionLocked === false,
+      null,
+      { timeout: 5000 }
+    ),
+    guest.waitForFunction(() => globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().team === 1, null, { timeout: 5000 }),
+    host.waitForFunction((before) =>
+      globalThis.__MEOW_WARS_ONLINE?.serverTurnTeam === 1 &&
+      (globalThis.__MEOW_WARS_V12_STATS?.snapshotAcks || 0) > before,
+      beforeAck,
+      { timeout: 7000 }
+    )
+  ]);
+}
+
 async function roomCode(page) {
   return page.evaluate(() => globalThis.__MEOW_WARS_ONLINE?.room?.code || '');
 }
@@ -208,23 +240,9 @@ try {
   await host.screenshot({ path: out('host-online-battle.png'), fullPage: true });
   await guest.screenshot({ path: out('guest-mobile-online-battle.png'), fullPage: true });
 
-  // Advance the authoritative host to the red player's turn. Give this QA turn
-  // extra time so screenshot/network diagnostics cannot expire it mid-proof.
-  await host.evaluate(() => {
-    const scene = globalThis.__MEOW_WARS_GAME_SCENE;
-    scene.endTurn('timeout');
-    scene.turnRemainingMs = 90000;
-  });
-  await Promise.all([
-    host.waitForFunction(() => globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().team === 1, null, { timeout: 5000 }),
-    guest.waitForFunction(() => globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().team === 1, null, { timeout: 5000 }),
-    host.waitForFunction(() =>
-      globalThis.__MEOW_WARS_ONLINE?.serverTurnTeam === 1 &&
-      globalThis.__MEOW_WARS_V12_STATS?.snapshotAcks > 0,
-      null,
-      { timeout: 5000 }
-    )
-  ]);
+  // Pin a known living Red cat and wait for the server to acknowledge the
+  // authoritative snapshot. This removes CI timing from the turn-selection proof.
+  await pinAuthoritativeRedTurn();
 
   const authorityDiag = await Promise.all([
     host.evaluate(() => ({
@@ -319,28 +337,11 @@ try {
     throw new Error('Guest mobile movement was not applied authoritatively: ' + JSON.stringify({ beforeX, afterX, movementDiag }));
   }
 
-  // FIRE is tested as its own authoritative Red turn. This keeps slow CI
-  // screenshots/diagnostics from consuming the same timed turn used for movement.
-  await host.evaluate(() => {
-    const scene = globalThis.__MEOW_WARS_GAME_SCENE;
-    if (scene.activeCat().team !== 1) scene.endTurn('timeout');
-    scene.turnRemainingMs = 90000;
-  });
-  await Promise.all([
-    host.waitForFunction(() => globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().team === 1, null, { timeout: 5000 }),
-    guest.waitForFunction(() => globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().team === 1, null, { timeout: 5000 }),
-    host.waitForFunction(() => globalThis.__MEOW_WARS_ONLINE?.serverTurnTeam === 1, null, { timeout: 5000 })
-  ]);
+  // FIRE is tested as its own authoritative Red turn. Re-pin before and
+  // after screenshot IO so a slow runner cannot consume the input window.
+  await pinAuthoritativeRedTurn();
   await guest.screenshot({ path: out('guest-mobile-before-fire.png'), fullPage: true });
-
-  // Re-establish the authoritative Red turn *after* screenshot capture, then press
-  // FIRE immediately. This isolates real input/network behavior from slow CI image IO.
-  await host.evaluate(() => {
-    const scene = globalThis.__MEOW_WARS_GAME_SCENE;
-    if (scene.activeCat().team !== 1) scene.endTurn('timeout');
-    scene.turnRemainingMs = 90000;
-    scene.actionLocked = false;
-  });
+  await pinAuthoritativeRedTurn();
   await Promise.all([
     host.waitForFunction(() =>
       globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().team === 1 &&
