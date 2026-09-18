@@ -79,13 +79,17 @@ test('Meow Wars v1.4 adds realistic material classes and damage reactions',()=>{
 
   for(const marker of [
     'PROP_MATERIAL','spawnMaterialBurst','reactToPropChanges','snapshotProps',
-    'setupDamagePresentation','updateDamagePresentation','materialDamageStates:true',
+    'setupDamagePresentation','updateDamagePresentation','drawPropMaterialDetail',
+    'materialDamageStates:true','propMaterialMicroDetail:true','propMaterialDetails',
     'greenhouse','oil-drum','pub-barrels','wheelie-bin','lifebuoy'
   ])assert.ok(env.includes(marker),marker);
 
   assert.match(env,/scene\.add\.triangle/);
   assert.match(env,/stats\.materialHits/);
   assert.match(env,/stats\.materialBursts/);
+  assert.match(env,/stats\.propMaterialDetails/);
+  assert.match(env,/Multi-angle highlights suggest panes/);
+  assert.match(env,/Tyre-like diagonal tread marks/);
 });
 
 test('Meow Wars v1.4 improves wet-surface light/reflection while remaining cosmetic-only',()=>{
