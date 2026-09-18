@@ -90,8 +90,8 @@ jobs:
           const branch='http://127.0.0.1:8000/games/meow-wars/';
           await open(branch);
           const build=await page.evaluate(()=>globalThis.__MEOW_WARS_BUILD__ || null);
-          const arenas=await page.evaluate(()=>globalThis.__mw_core_arenas_js?.ARENAS?.map(a=>a.id) || []);
-          if(build!=='0.6.0+20260918-HD1') errors.push('wrong build marker: '+build);
+          const arenas=await page.evaluate(()=>(()=>{try{return __mw_core_arenas_js.ARENAS.map(a=>a.id)}catch{return []}})());
+          if(build!=='0.6.0+20260918-HD2') errors.push('wrong build marker: '+build);
           if(arenas.length!==7) errors.push('expected 7 arenas, got '+arenas.length);
           await canvasShot('10-v06-menu.png');
           await clickGame(82,29);
