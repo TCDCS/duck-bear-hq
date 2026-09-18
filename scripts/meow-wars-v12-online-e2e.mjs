@@ -239,10 +239,12 @@ try {
   const beforeMove = await Promise.all([
     host.evaluate(() => ({
       x: globalThis.__MEOW_WARS_GAME_SCENE.activeCat().x,
+      intentsReceived: globalThis.__MEOW_WARS_V12_STATS.intentsReceived,
       intentsApplied: globalThis.__MEOW_WARS_V12_STATS.intentsApplied
     })),
     guest.evaluate(() => ({
       intentsSent: globalThis.__MEOW_WARS_V12_STATS.intentsSent,
+      intentAcks: globalThis.__MEOW_WARS_V12_STATS.intentAcks,
       touchEvents: globalThis.__MEOW_WARS_V10_STATS.touchControlEvents
     }))
   ]);
@@ -250,28 +252,54 @@ try {
 
   // Use the actual mobile right-arrow control long enough to produce a fresh state intent.
   await logicalHold(guest, 126, 565, 420);
-  await Promise.all([
-    guest.waitForFunction((before) =>
-      globalThis.__MEOW_WARS_V12_STATS?.intentsSent > before.intentsSent &&
-      globalThis.__MEOW_WARS_V10_STATS?.touchControlEvents > before.touchEvents,
-      beforeMove[1],
-      { timeout: 5000 }
-    ),
-    host.waitForFunction((before) =>
-      globalThis.__MEOW_WARS_V12_STATS?.intentsApplied > before,
-      beforeMove[0].intentsApplied,
-      { timeout: 5000 }
-    ),
-    host.waitForFunction((before) =>
-      globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().x > before + 1,
-      beforeX,
-      { timeout: 5000 }
-    )
-  ]);
+  await guest.waitForFunction((before) =>
+    globalThis.__MEOW_WARS_V12_STATS?.intentsSent > before.intentsSent &&
+    globalThis.__MEOW_WARS_V10_STATS?.touchControlEvents > before.touchEvents,
+    beforeMove[1],
+    { timeout: 5000 }
+  );
 
-  const afterX = await host.evaluate(() => globalThis.__MEOW_WARS_GAME_SCENE.activeCat().x);
+  await guest.waitForFunction((before) =>
+    globalThis.__MEOW_WARS_V12_STATS?.intentAcks > before,
+    beforeMove[1].intentAcks,
+    { timeout: 5000 }
+  );
+
+  await host.waitForFunction((before) =>
+    globalThis.__MEOW_WARS_V12_STATS?.intentsReceived > before,
+    beforeMove[0].intentsReceived,
+    { timeout: 5000 }
+  );
+
+  await host.waitForFunction((before) =>
+    globalThis.__MEOW_WARS_V12_STATS?.intentsApplied > before,
+    beforeMove[0].intentsApplied,
+    { timeout: 5000 }
+  );
+
+  await host.waitForFunction((before) =>
+    globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().x > before + 1,
+    beforeX,
+    { timeout: 5000 }
+  );
+
+  const movementDiag = await Promise.all([
+    host.evaluate(() => ({
+      x: globalThis.__MEOW_WARS_GAME_SCENE.activeCat().x,
+      activeTeam: globalThis.__MEOW_WARS_GAME_SCENE.activeCat().team,
+      stats: globalThis.__MEOW_WARS_V12_STATS,
+      lastIntent: globalThis.__MEOW_WARS_ONLINE.lastIntentReceived,
+      error: globalThis.__MEOW_WARS_ONLINE.lastOnlineError
+    })),
+    guest.evaluate(() => ({
+      stats: globalThis.__MEOW_WARS_V12_STATS,
+      ack: globalThis.__MEOW_WARS_ONLINE.lastIntentAck,
+      error: globalThis.__MEOW_WARS_ONLINE.lastOnlineError
+    }))
+  ]);
+  const afterX = movementDiag[0].x;
   if (!(afterX > beforeX + 1)) {
-    throw new Error('Guest mobile movement was not applied authoritatively: ' + JSON.stringify({ beforeX, afterX }));
+    throw new Error('Guest mobile movement was not applied authoritatively: ' + JSON.stringify({ beforeX, afterX, movementDiag }));
   }
 
   const intentsBeforeFire = await host.evaluate(() => globalThis.__MEOW_WARS_V12_STATS.intentsApplied);
