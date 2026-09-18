@@ -16,7 +16,8 @@ const stats = globalThis.__MEOW_WARS_V14_STATS = {
   damageStates: 0,
   trafficPasses: 0,
   mistFrames: 0,
-  cloudShadowFrames: 0
+  cloudShadowFrames: 0,
+  propMaterialDetails: 0
 };
 
 const REDUCED = () => globalThis.__MEOW_WARS_SETTINGS?.fxIntensity === 'reduced';
@@ -67,6 +68,7 @@ function cleanup(scene) {
   for(const entry of scene.__mw14DamagePresentation || []) {
     safeDestroy(entry.cracks);
     safeDestroy(entry.scuff);
+    safeDestroy(entry.materialDetail);
   }
   safeDestroy(scene.__mw14Surface);
   safeDestroy(scene.__mw14Lighting);
@@ -340,13 +342,70 @@ function reactToPropChanges(scene,before,source='blast') {
   }
 }
 
+function drawPropMaterialDetail(graphics,prop) {
+  graphics.clear();
+  if(!prop?.image?.active||prop.destroyed)return;
+
+  const material=materialFor(prop);
+  const w=Math.max(26,prop.image.displayWidth||60);
+  const h=Math.max(30,prop.image.displayHeight||70);
+  const x=prop.x;
+  const y=prop.y;
+
+  if(material==='metal') {
+    // Narrow seams, rivets and a restrained specular edge make metal read as fabricated rather than flat.
+    graphics.lineStyle(1.1,0xeaf2f4,.22);
+    graphics.beginPath(); graphics.moveTo(x-w*.22,y-h*.64); graphics.lineTo(x+w*.18,y-h*.64); graphics.strokePath();
+    graphics.lineStyle(1,0x1f292e,.24);
+    graphics.beginPath(); graphics.moveTo(x-w*.20,y-h*.33); graphics.lineTo(x+w*.22,y-h*.33); graphics.strokePath();
+    graphics.fillStyle(0xd7e0e3,.38);
+    for(const dx of [-.18,.18]) graphics.fillCircle(x+w*dx,y-h*.49,1.6);
+  } else if(material==='glass') {
+    // Multi-angle highlights suggest panes and thickness without obscuring the greenhouse.
+    graphics.lineStyle(1.5,0xf3fdff,.34);
+    graphics.beginPath(); graphics.moveTo(x-w*.31,y-h*.73); graphics.lineTo(x-w*.06,y-h*.42); graphics.strokePath();
+    graphics.lineStyle(1,0x9ed8e8,.22);
+    graphics.beginPath(); graphics.moveTo(x+w*.03,y-h*.75); graphics.lineTo(x+w*.29,y-h*.46); graphics.strokePath();
+    graphics.fillStyle(0xffffff,.11); graphics.fillRect(x-w*.28,y-h*.66,w*.09,h*.26);
+  } else if(material==='wood') {
+    graphics.lineStyle(1,0x4c301f,.22);
+    for(let i=0;i<3;i++){
+      const yy=y-h*(.56-i*.13);
+      graphics.beginPath(); graphics.moveTo(x-w*.28,yy); graphics.lineTo(x+w*.28,yy+Math.sin(i+prop.x)*2); graphics.strokePath();
+    }
+    graphics.lineStyle(1,0xe0b783,.16);
+    graphics.beginPath(); graphics.moveTo(x-w*.18,y-h*.69); graphics.lineTo(x+w*.12,y-h*.67); graphics.strokePath();
+  } else if(material==='rubber') {
+    // Tyre-like diagonal tread marks.
+    graphics.lineStyle(1.4,0x81878b,.18);
+    for(let i=-2;i<=2;i++){
+      const xx=x+i*w*.09;
+      graphics.beginPath(); graphics.moveTo(xx-w*.05,y-h*.58); graphics.lineTo(xx+w*.05,y-h*.44); graphics.strokePath();
+    }
+  } else if(material==='plastic') {
+    graphics.lineStyle(1,0xe4fbff,.18);
+    graphics.beginPath(); graphics.moveTo(x-w*.24,y-h*.62); graphics.lineTo(x+w*.22,y-h*.62); graphics.strokePath();
+    graphics.lineStyle(1,0x163d47,.18);
+    graphics.beginPath(); graphics.moveTo(x,y-h*.60); graphics.lineTo(x,y-h*.25); graphics.strokePath();
+  } else {
+    // Stone gets edge lines plus tiny chips.
+    graphics.lineStyle(1,0xf4efe5,.17);
+    graphics.beginPath(); graphics.moveTo(x-w*.27,y-h*.57); graphics.lineTo(x+w*.25,y-h*.57); graphics.strokePath();
+    graphics.fillStyle(0x6f685f,.16);
+    graphics.fillCircle(x-w*.15,y-h*.38,2); graphics.fillCircle(x+w*.19,y-h*.46,1.6);
+  }
+}
+
 function setupDamagePresentation(scene) {
   scene.__mw14DamagePresentation=[];
   for(const prop of scene.__mw11Props || []) {
     if(!prop.image?.active)continue;
+    const materialDetail=scene.add.graphics().setDepth(9);
     const cracks=scene.add.graphics().setDepth(10);
     const scuff=scene.add.ellipse(prop.x,prop.y-18,18,7,0x201b18,0).setDepth(10);
-    scene.__mw14DamagePresentation.push({prop,cracks,scuff,lastBand:0});
+    drawPropMaterialDetail(materialDetail,prop);
+    scene.__mw14DamagePresentation.push({prop,materialDetail,cracks,scuff,lastBand:0});
+    stats.propMaterialDetails+=1;
   }
 }
 
@@ -354,9 +413,11 @@ function updateDamagePresentation(scene) {
   for(const entry of scene.__mw14DamagePresentation || []) {
     const prop=entry.prop;
     const visible=!prop.destroyed&&prop.image?.active;
+    entry.materialDetail?.setVisible(visible);
     entry.cracks.setVisible(visible);
     entry.scuff.setVisible(visible);
     if(!visible)continue;
+    drawPropMaterialDetail(entry.materialDetail,prop);
 
     const ratio=Math.max(0,Math.min(1,(prop.hp||0)/(prop.maxHp||1)));
     const band=ratio<.25?3:ratio<.5?2:ratio<.75?1:0;
@@ -509,6 +570,7 @@ globalThis.__MEOW_WARS_BUILD_INFO=()=>{
       mapMoods:Object.fromEntries(Object.entries(ARENA_MOOD).map(([id,m])=>[id,m.name])),
       wetSurfaceLight:true,
       materialDamageStates:true,
+      propMaterialMicroDetail:true,
       mobileDensity:DENSITY()
     },
     v14Stats:{...stats}
