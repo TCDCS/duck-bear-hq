@@ -1,5 +1,5 @@
 {
-  "version": "0.10.9",
+  "version": "0.10.10",
   "engine": "Babylon.js + Rapier",
   "entry": "./src/main.js",
   "direction": "physics-chaos"
