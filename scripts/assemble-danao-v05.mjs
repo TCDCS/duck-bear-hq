@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import { patchDanaoV07Visuals } from './danao-v07-visual-patch.mjs';
 import { patchDanaoV08Runtime } from './danao-v08-runtime-patch.mjs';
 import { patchDanaoV09Runtime } from './danao-v09-runtime-patch.mjs';
+import { patchDanaoV09App } from './danao-v09-app-patch.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const builds = [
@@ -24,6 +25,7 @@ const builds = [
     partsDir: path.join(root, 'scripts/danao-v05-gz/app'),
     output: path.join(root, 'public/games/danao/src/ui/App.js'),
     sha256: '02732a964fb06df125aea06e20d734507c460dd61521f84fd83f1646a9215268',
+    transform: patchDanaoV09App,
   },
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/styles'),
