@@ -39,8 +39,9 @@ test('Teahouse Rooftop gets skyline, tiles and animated roof life', () => {
 test('arena polish removes the old courtyard camera blocker and tones legacy roof materials', () => {
   const source = read('public/games/danao/src/art/arena-polish.js');
   assert.match(source, /hideNamedMeshes\(scene, 'courtyard-roof-silhouette'\)/);
-  assert.match(source, /recolorMatchingMaterials\(B, scene, '#4b6f73', '#365a60'/);
-  assert.match(source, /recolorMatchingMaterials\(B, scene, '#bc382f', '#91373b'/);
+  assert.match(source, /setNamedMaterialColor\(B, scene, 'floor', '#31535a'/);
+  assert.match(source, /setNamedMaterialColor\(B, scene, 'trim', '#7d343a'/);
+  assert.doesNotMatch(source, /courtyard-polish-beam-x|courtyard-polish-beam-z/);
 });
 
 test('arena polish has bounded scene-owned animation instead of background timers', () => {
