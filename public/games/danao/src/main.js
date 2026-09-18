@@ -6,6 +6,7 @@ import { mountOnlineLobby } from './online/lobby.js';
 import { createOnlineMatchBridge } from './online/match-bridge.js';
 import { polishCheckoutChaos } from './art/store-polish.js';
 import { polishDanaoArena } from './art/arena-polish.js';
+import { showCombatFeedback } from './art/combat-feedback.js';
 
 const canvas = document.getElementById('game');
 const root = document.getElementById('app');
@@ -50,6 +51,11 @@ const runtime = createDanaoRuntime(canvas, {
   onResult(result) {
     app?.showMatchResult(result);
     if (onlineBridge?.active && onlineClient.isHost) onlineBridge.reportResult(result);
+  },
+  onFeedback(event) {
+    const B = globalThis.BABYLON;
+    const scene = B?.EngineStore?.LastCreatedScene;
+    showCombatFeedback(B, scene, event);
   },
 });
 
