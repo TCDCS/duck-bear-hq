@@ -494,9 +494,18 @@ function handleMessage(message) {
   if (message.type === 'room') {
     online.room = message.room;
     stats.roomUpdates += 1;
-    if (message.room.phase === 'lobby') ensureMenuForLobby();
-    else if (message.room.phase === 'battle') launchBattle(message.room, online.checkpoint, online.pendingAction);
-    else updateConnectionBadge();
+    if (message.room.phase === 'lobby') {
+      ensureMenuForLobby();
+    } else if (message.room.phase === 'battle') {
+      const scene = online.activeScene;
+      if (!scene?.sys?.isActive?.() || scene.__mw12MatchId !== message.room.matchId) {
+        launchBattle(message.room, online.checkpoint, online.pendingAction);
+      } else {
+        updateConnectionBadge();
+      }
+    } else {
+      updateConnectionBadge();
+    }
     return;
   }
 
