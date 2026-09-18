@@ -63,3 +63,130 @@ test('v0.9 packaged runtime uses resolved sparse gamepad indexes', () => {
   assert.doesNotMatch(runtime, /pads\[i\]/);
   assert.doesNotMatch(runtime, /readGamepad\(0\)/);
 });
+
+
+test('v0.9 browser room client module exists', () => {
+  const clientPath = path.join(root, 'public/games/danao/src/online/room-client.js');
+  assert.equal(fs.existsSync(clientPath), true);
+});
+
+test('v0.9 room client creates rooms, stores reconnect data and keeps tokens out of invite URLs', async () => {
+  const { createDanaoRoomClient } = await import('../public/games/danao/src/online/room-client.js');
+  const requests = [];
+  const storage = new Map();
+  const fetchImpl = async (url, init) => {
+    requests.push({ url, init });
+    return new Response(JSON.stringify({
+      room: { code: '0123', hostId: 0, phase: 'lobby', players: [{ id: 0, name: 'Hero', ready: true, connected: false }] },
+      id: 0,
+      token: '11111111-1111-4111-8111-111111111111',
+    }), { status: 201, headers: { 'Content-Type': 'application/json' } });
+  };
+  const client = createDanaoRoomClient({
+    baseUrl: 'https://example.test',
+    fetchImpl,
+    storage: {
+      getItem: (key) => storage.get(key) ?? null,
+      setItem: (key, value) => storage.set(key, String(value)),
+      removeItem: (key) => storage.delete(key),
+    },
+    WebSocketCtor: class { constructor() { throw new Error('socket should not open in this test'); } },
+  });
+  const joined = await client.createRoom({ name: 'Hero', character: 'Hero', costume: 'Arcade' }, { connect: false });
+  assert.equal(requests[0].url, 'https://example.test/api/danao/create');
+  assert.equal(JSON.parse(requests[0].init.body).name, 'Hero');
+  assert.equal(joined.room.code, '0123');
+  assert.equal(storage.get('danao.reconnect.code'), '0123');
+  assert.equal(storage.get('danao.reconnect.token'), '11111111-1111-4111-8111-111111111111');
+  assert.equal(client.inviteUrl, 'https://example.test/games/danao/?room=0123');
+  assert.equal(client.inviteUrl.includes('token='), false);
+});
+
+test('v0.9 room client joins exact room code and builds same-origin websocket URL', async () => {
+  const { createDanaoRoomClient } = await import('../public/games/danao/src/online/room-client.js');
+  const sockets = [];
+  class FakeSocket {
+    constructor(url) { this.url = url; this.readyState = 0; this.sent = []; sockets.push(this); }
+    addEventListener(type, fn) { this['on' + type] = fn; }
+    send(text) { this.sent.push(text); }
+    close() { this.readyState = 3; this.onclose?.({ code: 1000, reason: 'closed' }); }
+    open() { this.readyState = 1; this.onopen?.({}); }
+  }
+  const fetchImpl = async () => new Response(JSON.stringify({
+    room: { code: '0042', hostId: 0, phase: 'lobby', players: [{ id: 1, name: 'Gaby', ready: false, connected: false }] },
+    id: 1,
+    token: '22222222-2222-4222-8222-222222222222',
+  }), { status: 201, headers: { 'Content-Type': 'application/json' } });
+  const client = createDanaoRoomClient({ baseUrl: 'https://example.test', fetchImpl, WebSocketCtor: FakeSocket, storage: null });
+  await client.joinRoom({ code: '0042', name: 'Gaby', character: 'Gaby', costume: 'Arcade' });
+  assert.equal(sockets.length, 1);
+  assert.equal(sockets[0].url, 'wss://example.test/api/danao/0042/socket?token=22222222-2222-4222-8222-222222222222');
+});
+
+test('v0.9 room client dispatches room/snapshot/input/host/result messages and ignores stale snapshots', async () => {
+  const { createDanaoRoomClient } = await import('../public/games/danao/src/online/room-client.js');
+  let socket;
+  class FakeSocket {
+    constructor() { socket = this; this.readyState = 0; this.sent = []; }
+    addEventListener(type, fn) { this['on' + type] = fn; }
+    send(text) { this.sent.push(text); }
+    open() { this.readyState = 1; this.onopen?.({}); }
+    message(value) { this.onmessage?.({ data: typeof value === 'string' ? value : JSON.stringify(value) }); }
+    close() { this.readyState = 3; }
+  }
+  const storage = new Map([
+    ['danao.reconnect.code', '1234'],
+    ['danao.reconnect.token', '33333333-3333-4333-8333-333333333333'],
+  ]);
+  const seen = { room: 0, snapshot: [], input: [], host: [], result: [] };
+  const client = createDanaoRoomClient({
+    baseUrl: 'https://example.test',
+    fetchImpl: async () => { throw new Error('fetch not expected'); },
+    WebSocketCtor: FakeSocket,
+    storage: { getItem: (k) => storage.get(k) ?? null, setItem: (k,v) => storage.set(k,String(v)), removeItem: (k) => storage.delete(k) },
+  });
+  client.on('room', () => seen.room++);
+  client.on('snapshot', (state) => seen.snapshot.push(state.seq));
+  client.on('input', (value) => seen.input.push(value.id));
+  client.on('host', (value) => seen.host.push(value.hostId));
+  client.on('result', (value) => seen.result.push(value.winner));
+  assert.equal(client.reconnectLast(), true);
+  socket.open();
+  socket.message({ type: 'welcome', id: 2, room: { code: '1234', hostId: 0, phase: 'fight', players: [] }, state: { seq: 4, fighters: [] } });
+  socket.message({ type: 'snapshot', state: { seq: 5, fighters: [] } });
+  socket.message({ type: 'snapshot', state: { seq: 4, fighters: [{ slot: 0 }] } });
+  socket.message({ type: 'input', id: 1, frame: { seq: 2, moveX: 1, moveY: 0 } });
+  socket.message({ type: 'host', hostId: 2, state: { seq: 5, fighters: [] } });
+  socket.message({ type: 'result', result: { winner: 2 } });
+  assert.equal(seen.room >= 1, true);
+  assert.deepEqual(seen.snapshot, [4, 5]);
+  assert.deepEqual(seen.input, [1]);
+  assert.deepEqual(seen.host, [2]);
+  assert.deepEqual(seen.result, [2]);
+  assert.equal(client.playerId, 2);
+  assert.equal(client.isHost, true);
+});
+
+test('v0.9 room client rate-limits inputs to 30 Hz and host snapshots to 15 Hz', async () => {
+  const { createDanaoRoomClient } = await import('../public/games/danao/src/online/room-client.js');
+  let socket;
+  class FakeSocket {
+    constructor() { socket = this; this.readyState = 1; this.sent = []; }
+    addEventListener(type, fn) { this['on' + type] = fn; }
+    send(text) { this.sent.push(JSON.parse(text)); }
+    close() {}
+  }
+  const client = createDanaoRoomClient({ baseUrl: 'https://example.test', fetchImpl: async () => { throw new Error('unused'); }, WebSocketCtor: FakeSocket, storage: null });
+  client.restoreSession({ code: '9999', token: '44444444-4444-4444-8444-444444444444', id: 0, room: { code: '9999', hostId: 0, phase: 'fight', players: [] } });
+  client.connect();
+  assert.equal(client.sendInput({ moveX: 1, punch: true }, 1000), true);
+  assert.equal(client.sendInput({ moveX: 0, punch: false }, 1010), false);
+  assert.equal(client.sendInput({ moveX: 0, punch: false }, 1034), true);
+  assert.equal(client.sendState({ fighters: [] }, 2000), true);
+  assert.equal(client.sendState({ fighters: [] }, 2040), false);
+  assert.equal(client.sendState({ fighters: [] }, 2067), true);
+  const inputs = socket.sent.filter((m) => m.type === 'input');
+  const states = socket.sent.filter((m) => m.type === 'state');
+  assert.deepEqual(inputs.map((m) => m.seq), [1, 2]);
+  assert.deepEqual(states.map((m) => m.state.seq), [1, 2]);
+});
