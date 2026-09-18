@@ -1,5 +1,5 @@
 name: Site Deploy
-# Manual content deploy trigger: Meow Wars v1.0 release
+# Manual content deploy trigger: Meow Wars v1.1 living battlefields
 
 on:
   workflow_dispatch:
