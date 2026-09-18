@@ -152,6 +152,38 @@ jobs:
 
             await page.waitForTimeout(2500);
 
+            await page.evaluate(async () => {
+              const B = globalThis.BABYLON;
+              const scene = B?.EngineStore?.LastCreatedScene;
+              const feedback = await import('/games/danao/src/art/combat-feedback.js');
+              feedback.showCombatFeedback(B, scene, {
+                type: 'heavy-hit',
+                x: 0,
+                y: 1.0,
+                z: -1.5,
+              });
+            });
+            await page.waitForTimeout(90);
+            const feedbackProof = await page.evaluate(() => {
+              const scene = globalThis.BABYLON?.EngineStore?.LastCreatedScene;
+              const names = (scene?.meshes || []).map((mesh) => mesh.name);
+              return {
+                textPresent: names.includes('combat-feedback-text'),
+                ringPresent: names.includes('combat-feedback-ring'),
+                eventLogged: Boolean(
+                  globalThis.__DANAO_FEEDBACK_EVENTS?.some?.((event) =>
+                    event.type === 'heavy-hit' && event.text === 'WHAM!'
+                  )
+                ),
+              };
+            });
+            report.feedbackProof = feedbackProof;
+
+            await page.locator('#game').screenshot({
+              path: OUT + '/combat-feedback.png',
+              timeout: 90000,
+            });
+
             const sceneState = await page.evaluate(() => {
               const scene = globalThis.BABYLON?.EngineStore?.LastCreatedScene;
               if (!scene) return { missingScene: true };
@@ -211,6 +243,10 @@ jobs:
               && sceneState.proceduralZacharyEnabled === false
               && sceneState.proceduralMulanEnabled === false;
             report.checks.wrestlingGeometryRemoved = sceneState.wrestlingMeshes.length === 0;
+            report.checks.combatFeedbackRendered =
+              feedbackProof.textPresent === true
+              && feedbackProof.ringPresent === true
+              && feedbackProof.eventLogged === true;
             report.checks.noPageErrors = pageErrors.length === 0;
 
             await page.screenshot({
