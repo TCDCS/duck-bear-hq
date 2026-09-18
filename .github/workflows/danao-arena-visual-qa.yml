@@ -1,0 +1,248 @@
+name: Danao Arena Visual QA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'feature/danao-*']
+    paths:
+      - 'public/games/danao/**'
+      - 'scripts/assemble-danao-v05.mjs'
+      - 'scripts/danao-*.mjs'
+      - 'scripts/danao-v05-gz/**'
+      - '.github/workflows/danao-arena-visual-qa.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: danao-arena-visual-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  courtyard-rooftop-screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Assemble exact Danao release
+        run: npm run assemble:danao
+
+      - name: Install Chromium screenshot runner
+        run: |
+          npm install --no-save --package-lock=false playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local Danao site
+        run: |
+          python3 -m http.server 8080 --directory public > /tmp/danao-arena-http.log 2>&1 &
+          echo $! > /tmp/danao-arena-http.pid
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8080/games/danao/release.json >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/danao-arena-http.log
+          exit 1
+
+      - name: Capture Lantern Courtyard and Teahouse Rooftop
+        run: |
+          mkdir -p verification/danao-arenas
+          cat > verification/danao-arenas/arena-runner.mjs <<'EOF'
+          import { chromium } from 'playwright';
+          import fs from 'node:fs';
+
+          const OUT = 'verification/danao-arenas';
+          const BASE = 'http://127.0.0.1:8080';
+          const browser = await chromium.launch({
+            headless: true,
+            args: [
+              '--no-sandbox',
+              '--use-angle=swiftshader',
+              '--enable-unsafe-swiftshader',
+              '--enable-webgl',
+              '--ignore-gpu-blocklist',
+              '--disable-dev-shm-usage',
+            ],
+          });
+
+          const context = await browser.newContext({
+            viewport: { width: 1440, height: 900 },
+            serviceWorkers: 'block',
+          });
+
+          async function poll(page, label, fn, timeout = 60000) {
+            const deadline = Date.now() + timeout;
+            while (Date.now() < deadline) {
+              try {
+                if (await fn()) return;
+              } catch {}
+              await page.waitForTimeout(200);
+            }
+            throw new Error('Timed out waiting for ' + label);
+          }
+
+          async function captureArena({ arenaId, expectedName, markers }) {
+            const page = await context.newPage();
+            const pageErrors = [];
+            const consoleErrors = [];
+            page.on('pageerror', (error) => pageErrors.push(String(error)));
+            page.on('console', (msg) => {
+              if (msg.type() === 'error') consoleErrors.push(msg.text());
+            });
+
+            const result = {
+              arenaId,
+              expectedName,
+              passed: false,
+              pageErrors,
+              consoleErrors,
+              checks: {},
+            };
+
+            try {
+              await page.goto(BASE + '/games/danao/', {
+                waitUntil: 'domcontentloaded',
+                timeout: 90000,
+              });
+              await page.locator('[data-action="play"]').waitFor({
+                state: 'visible',
+                timeout: 30000,
+              });
+              await page.locator('[data-action="play"]').click();
+              await page.locator('[data-arena="' + arenaId + '"]').click();
+
+              const selected = await page.locator('[data-arena="' + arenaId + '"]').innerText();
+              result.selectedArena = selected.trim();
+              result.checks.correctArenaSelected = selected.includes(expectedName);
+
+              await page.locator('[data-action="start"]').click();
+
+              await poll(page, arenaId + ' Babylon scene', async () => page.evaluate(() =>
+                Boolean(globalThis.BABYLON?.EngineStore?.LastCreatedScene)
+              ));
+
+              await poll(page, arenaId + ' real Hero rig', async () => page.evaluate(() => {
+                const scene = globalThis.BABYLON?.EngineStore?.LastCreatedScene;
+                const body = scene?.getMeshByName?.('Superhero_Female');
+                return Boolean(body?.isEnabled?.());
+              }), 90000);
+
+              await poll(page, arenaId + ' environment markers', async () => page.evaluate((expected) => {
+                const scene = globalThis.BABYLON?.EngineStore?.LastCreatedScene;
+                const names = (scene?.meshes || []).map((mesh) => mesh.name);
+                return expected.every((name) => names.includes(name));
+              }, markers), 90000);
+
+              await page.waitForTimeout(2600);
+
+              const sceneState = await page.evaluate((expected) => {
+                const scene = globalThis.BABYLON?.EngineStore?.LastCreatedScene;
+                const meshes = scene?.meshes || [];
+                const names = meshes.map((mesh) => mesh.name);
+                const markerCounts = Object.fromEntries(expected.map((name) => [
+                  name,
+                  names.filter((meshName) => meshName === name).length,
+                ]));
+                return {
+                  meshCount: meshes.length,
+                  markerCounts,
+                  heroBodyEnabled: Boolean(scene?.getMeshByName?.('Superhero_Female')?.isEnabled?.()),
+                  proceduralHeroEnabled: Boolean(scene?.getMeshByName?.('hero-torso')?.isEnabled?.()),
+                  clearColor: scene?.clearColor ? {
+                    r: scene.clearColor.r,
+                    g: scene.clearColor.g,
+                    b: scene.clearColor.b,
+                  } : null,
+                };
+              }, markers);
+
+              result.scene = sceneState;
+              result.checks.markersPresent = markers.every((name) => sceneState.markerCounts[name] > 0);
+              result.checks.realHeroLoaded = sceneState.heroBodyEnabled === true;
+              result.checks.proceduralHeroHidden = sceneState.proceduralHeroEnabled === false;
+              result.checks.noPageErrors = pageErrors.length === 0;
+              result.release = await (await page.request.get(BASE + '/games/danao/release.json')).json();
+
+              await page.screenshot({
+                path: OUT + '/' + arenaId + '-full.png',
+                fullPage: true,
+                timeout: 90000,
+              });
+              await page.locator('#game').screenshot({
+                path: OUT + '/' + arenaId + '-gameplay.png',
+                timeout: 90000,
+              });
+
+              result.passed = Object.values(result.checks).every(Boolean);
+            } catch (error) {
+              result.failure = String(error);
+              try {
+                await page.screenshot({
+                  path: OUT + '/' + arenaId + '-failure.png',
+                  fullPage: true,
+                  timeout: 30000,
+                });
+              } catch {}
+            } finally {
+              await page.close();
+            }
+
+            return result;
+          }
+
+          const arenas = [
+            {
+              arenaId: 'courtyard',
+              expectedName: 'Lantern Courtyard',
+              markers: [
+                'courtyard-polish-pillar',
+                'courtyard-polish-pagoda-roof',
+                'courtyard-polish-planter',
+                'courtyard-polish-banner',
+              ],
+            },
+            {
+              arenaId: 'rooftop',
+              expectedName: 'Teahouse Rooftop',
+              markers: [
+                'rooftop-polish-skyline',
+                'rooftop-polish-water-tank',
+                'rooftop-polish-laundry',
+                'rooftop-polish-string-bulb',
+              ],
+            },
+          ];
+
+          const results = [];
+          for (const arena of arenas) results.push(await captureArena(arena));
+
+          const report = {
+            passed: results.every((result) => result.passed),
+            results,
+          };
+          fs.writeFileSync(OUT + '/arena-visual-qa.json', JSON.stringify(report, null, 2));
+          await browser.close();
+
+          console.log(JSON.stringify(report, null, 2));
+          if (!report.passed) process.exit(1);
+          EOF
+
+          node verification/danao-arenas/arena-runner.mjs
+
+      - name: Upload Danao arena visual QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: danao-arena-visual-qa
+          path: verification/danao-arenas/
+          if-no-files-found: error
+          retention-days: 7

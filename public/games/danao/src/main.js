@@ -5,6 +5,7 @@ import { createDanaoRoomClient } from './online/room-client.js';
 import { mountOnlineLobby } from './online/lobby.js';
 import { createOnlineMatchBridge } from './online/match-bridge.js';
 import { polishCheckoutChaos } from './art/store-polish.js';
+import { polishDanaoArena } from './art/arena-polish.js';
 
 const canvas = document.getElementById('game');
 const root = document.getElementById('app');
@@ -73,6 +74,7 @@ function polishActiveArena(arenaId) {
   const B = globalThis.BABYLON;
   const scene = B?.EngineStore?.LastCreatedScene;
   polishCheckoutChaos(B, scene, arenaId);
+  polishDanaoArena(B, scene, arenaId);
 }
 
 async function startFromState(state) {
