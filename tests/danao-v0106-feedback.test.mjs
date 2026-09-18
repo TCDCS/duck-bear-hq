@@ -68,8 +68,10 @@ test('browser main renders runtime feedback through the Babylon presentation lay
   assert.match(main, /showCombatFeedback\(B, scene, event\)/);
 });
 
-test('game-feel feedback release is Danao 0.10.6', () => {
+test('game-feel feedback remains part of Danao 0.10.6 and later releases', () => {
   const release = JSON.parse(read('public/games/danao/release.json'));
-  assert.equal(release.version, '0.10.6');
+  const [major, minor, patch] = release.version.split('.').map(Number);
+  const numericVersion = major * 1_000_000 + minor * 1_000 + patch;
+  assert.ok(numericVersion >= 10_006, release.version);
   assert.equal(release.engine, 'Babylon.js + Rapier');
 });

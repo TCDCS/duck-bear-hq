@@ -1,8 +1,40 @@
+const FEEDBACK_TYPES = new Set([
+  'light-hit',
+  'heavy-hit',
+  'pickup',
+  'grab',
+  'prop-throw',
+  'fighter-throw',
+  'prop-break',
+  'fall-reset',
+  'ko',
+]);
+const MAX_RELAY_FEEDBACK = 10;
+
+function finiteCoordinate(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return 0;
+  return Math.max(-100, Math.min(100, number));
+}
+
+function normaliseFeedbackEvent(event, seq) {
+  const type = typeof event?.type === 'string' ? event.type : '';
+  if (!FEEDBACK_TYPES.has(type) || !Number.isInteger(seq) || seq <= 0) return null;
+  return {
+    seq,
+    type,
+    x: finiteCoordinate(event.x),
+    y: finiteCoordinate(event.y),
+    z: finiteCoordinate(event.z),
+  };
+}
+
 export function createOnlineMatchBridge({
   client,
   runtime,
   onResult = () => {},
   onError = () => {},
+  onFeedback = () => {},
 } = {}) {
   if (!client || !runtime) throw new Error('Danao online bridge needs a room client and runtime.');
 
@@ -10,7 +42,32 @@ export function createOnlineMatchBridge({
   let localPlayerId = -1;
   let currentRoom = null;
   let simulationHost = false;
+  let feedbackSequence = 0;
+  let lastFeedbackSequence = 0;
+  let relayFeedback = [];
   const unsubs = [];
+
+  const resetFeedbackRelay = () => {
+    feedbackSequence = 0;
+    lastFeedbackSequence = 0;
+    relayFeedback = [];
+  };
+
+  const consumeFeedback = (state, { adopt = false } = {}) => {
+    const clean = (Array.isArray(state?.feedback) ? state.feedback : [])
+      .slice(-MAX_RELAY_FEEDBACK)
+      .map((event) => normaliseFeedbackEvent(event, Number(event?.seq)))
+      .filter(Boolean)
+      .sort((a, b) => a.seq - b.seq);
+
+    for (const event of clean) {
+      feedbackSequence = Math.max(feedbackSequence, event.seq);
+      if (event.seq <= lastFeedbackSequence) continue;
+      lastFeedbackSequence = event.seq;
+      onFeedback(event);
+    }
+    if (adopt) relayFeedback = clean.slice(-MAX_RELAY_FEEDBACK);
+  };
 
   const role = (isHost = client.isHost) => ({
     enabled: active,
@@ -34,13 +91,17 @@ export function createOnlineMatchBridge({
   unsubs.push(client.on('snapshot', (state) => {
     if (!active || simulationHost || !state) return;
     runtime.applyNetworkSnapshot?.(state, false);
+    consumeFeedback(state);
   }));
 
   unsubs.push(client.on('host', ({ hostId, state } = {}) => {
     if (!active || !Number.isInteger(hostId)) return;
     if (currentRoom) currentRoom = { ...currentRoom, hostId };
     const becomingHost = hostId === localPlayerId;
-    if (becomingHost && state) runtime.applyNetworkSnapshot?.(state, true);
+    if (becomingHost && state) {
+      runtime.applyNetworkSnapshot?.(state, true);
+      consumeFeedback(state, { adopt: true });
+    }
     applyRole(becomingHost);
   }));
 
@@ -66,6 +127,7 @@ export function createOnlineMatchBridge({
       if (!room || !Array.isArray(room.players)) throw new Error('Danao online room is not ready.');
       currentRoom = room;
       localPlayerId = Number.isInteger(slot) ? slot : client.playerId;
+      resetFeedbackRelay();
       active = true;
       simulationHost = room.hostId === localPlayerId;
       await runtime.startMatch({
@@ -85,10 +147,25 @@ export function createOnlineMatchBridge({
       if (!active) return false;
       if (simulationHost) {
         const snapshot = runtime.captureNetworkSnapshot?.();
-        return snapshot ? client.sendState(snapshot, at) : false;
+        const state = snapshot ? {
+          ...snapshot,
+          feedback: relayFeedback.map((event) => ({ ...event })),
+        } : null;
+        return state ? client.sendState(state, at) : false;
       }
       const input = runtime.readNetworkInput?.();
       return input ? client.sendInput(input, at) : false;
+    },
+    recordFeedback(event = {}) {
+      if (!active || !simulationHost) return false;
+      const next = normaliseFeedbackEvent(event, feedbackSequence + 1);
+      if (!next) return false;
+      feedbackSequence = next.seq;
+      relayFeedback.push(next);
+      if (relayFeedback.length > MAX_RELAY_FEEDBACK) {
+        relayFeedback.splice(0, relayFeedback.length - MAX_RELAY_FEEDBACK);
+      }
+      return true;
     },
     reportResult(result = {}) {
       if (!active || !simulationHost) return false;
@@ -104,6 +181,7 @@ export function createOnlineMatchBridge({
     stop() {
       active = false;
       simulationHost = false;
+      resetFeedbackRelay();
       runtime.setNetworkAuthority?.({ enabled: false, isHost: false, localSlot: -1, players: [], matchId: 0 });
       runtime.stopMatch?.();
     },
@@ -112,6 +190,7 @@ export function createOnlineMatchBridge({
     dispose() {
       active = false;
       simulationHost = false;
+      resetFeedbackRelay();
       for (const unsub of unsubs) unsub?.();
     },
   };
