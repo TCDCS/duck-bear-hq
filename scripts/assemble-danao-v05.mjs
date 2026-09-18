@@ -24,7 +24,7 @@ const builds = [
   {
     partsDir: path.join(root, 'scripts/danao-v05-gz/visuals'),
     output: path.join(root, 'public/games/danao/src/game/visuals.js'),
-    sha256: '568dd5bf0fc73da3de9ce2aab6897e35b3b3c794d7591eeea81aab87ebe4746e',
+    sha256: 'a07bb66e534dc0ee8afb0899695b6874eb533d5b90752fa76387718a3ab179c0',
     transform: (source) => patchDanaoFullCastVisuals(patchDanaoRealCharacterVisuals(patchDanaoSupermarketVisuals(patchDanaoV07Visuals(source)))),
   },
   {
