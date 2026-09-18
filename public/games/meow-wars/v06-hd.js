@@ -13,7 +13,35 @@ safeArena=id=>ARENAS.find(a=>a.id===id)||ARENAS[0];
 const hx=h=>{const n=parseInt(h.slice(1),16);return[(n>>16)&255,(n>>8)&255,n&255]},shade=(h,d)=>{const c=hx(h).map(v=>Math.max(0,Math.min(255,v+d)));return'rgb('+c.join(',')+')'},mix=(a,b,t)=>{const x=hx(a),y=hx(b);return'rgb('+x.map((v,i)=>Math.round(v+(y[i]-v)*t)).join(',')+')'};
 function rr(c,x,y,w,h,r){c.beginPath();c.roundRect?c.roundRect(x,y,w,h,r):(c.rect(x,y,w,h));}
 function cloud(c,x,y,s,a=.7){c.save();c.globalAlpha=a;c.fillStyle='#fff';c.beginPath();[[0,0,190,48],[-85,-35,75,62],[10,-55,98,82],[110,-28,70,58]].forEach(p=>c.ellipse(x+p[0]*s,y+p[1]*s,p[2]*s,p[3]*s,0,0,T));c.fill();c.restore()}
-function tree(c,x,y,s){c.fillStyle='#795235';rr(c,x-20*s,y-165*s,40*s,180*s,12*s);c.fill();c.fillStyle='#458f48';c.beginPath();c.arc(x-62*s,y-170*s,70*s,0,T);c.arc(x+58*s,y-185*s,78*s,0,T);c.fill();c.fillStyle='#6eb85a';c.beginPath();c.arc(x,y-238*s,94*s,0,T);c.arc(x+62*s,y-242*s,58*s,0,T);c.fill()}
+function tree(c,x,y,s){
+ c.fillStyle='#6e4930';rr(c,x-22*s,y-172*s,44*s,190*s,12*s);c.fill();
+ c.strokeStyle='rgba(75,45,28,.45)';c.lineWidth=4*s;c.beginPath();c.moveTo(x-8*s,y-158*s);c.lineTo(x+5*s,y-20*s);c.stroke();
+ c.fillStyle='#377d42';c.beginPath();c.arc(x-68*s,y-177*s,72*s,0,T);c.arc(x+62*s,y-190*s,82*s,0,T);c.arc(x-8*s,y-235*s,94*s,0,T);c.fill();
+ c.fillStyle='#69b958';c.beginPath();c.arc(x-35*s,y-246*s,54*s,0,T);c.arc(x+55*s,y-238*s,48*s,0,T);c.arc(x-82*s,y-202*s,34*s,0,T);c.fill();
+ c.fillStyle='rgba(255,255,220,.18)';c.beginPath();c.arc(x-28*s,y-270*s,28*s,0,T);c.fill()
+}
+function hill(c,y,color,amp,phase=0){
+ c.fillStyle=color;c.beginPath();c.moveTo(0,1080);
+ for(let x=0;x<=SW;x+=80)c.lineTo(x,y+Math.sin(x*.0032+phase)*amp+Math.sin(x*.007+phase*.7)*amp*.25);
+ c.lineTo(SW,1080);c.closePath();c.fill()
+}
+function windows(c,x,y,w,h,cols,rows,on='#f5d885',off='#50677d'){
+ const gapX=w/(cols+1),gapY=h/(rows+1),ww=Math.min(24,gapX*.32),hh=Math.min(34,gapY*.34);
+ for(let r=1;r<=rows;r++)for(let k=1;k<=cols;k++){c.fillStyle=((r*7+k*5+Math.floor(x))%4===0)?on:off;c.fillRect(x+k*gapX-ww/2,y+r*gapY-hh/2,ww,hh)}
+}
+function lamp(c,x,y,s=1){
+ c.strokeStyle='#263942';c.lineWidth=8*s;c.beginPath();c.moveTo(x,y);c.lineTo(x,y-125*s);c.quadraticCurveTo(x,y-154*s,x+28*s,y-158*s);c.stroke();
+ c.fillStyle='#21343c';c.beginPath();c.ellipse(x+31*s,y-155*s,24*s,13*s,0,0,T);c.fill();
+ c.fillStyle='rgba(255,232,156,.88)';c.beginPath();c.ellipse(x+31*s,y-155*s,13*s,7*s,0,0,T);c.fill()
+}
+function bush(c,x,y,s=1,a='#376f42',b='#5ca953'){
+ c.fillStyle=a;c.beginPath();c.arc(x-28*s,y,34*s,0,T);c.arc(x+25*s,y-4*s,38*s,0,T);c.arc(x,y-28*s,36*s,0,T);c.fill();
+ c.fillStyle=b;c.beginPath();c.arc(x-9*s,y-35*s,22*s,0,T);c.arc(x+34*s,y-20*s,18*s,0,T);c.fill()
+}
+function birds(c,x,y,s=1){
+ c.strokeStyle='rgba(49,78,96,.55)';c.lineWidth=4*s;
+ for(let i=0;i<5;i++){let xx=x+i*75*s,yy=y+(i%2)*22*s;c.beginPath();c.arc(xx,yy,18*s,Math.PI*1.08,Math.PI*1.9);c.arc(xx+34*s,yy,18*s,Math.PI*1.1,Math.PI*1.92);c.stroke()}
+}
 function water(c,y,h,a='#62b1cb',b='#357d9a'){const g=c.createLinearGradient(0,y,0,y+h);g.addColorStop(0,a);g.addColorStop(1,b);c.fillStyle=g;c.fillRect(0,y,SW,h);c.globalAlpha=.22;c.fillStyle='#fff';for(let r=0;r<7;r++)for(let x=(r%2)*90;x<SW;x+=260)c.fillRect(x,y+18+r*26,120,4);c.globalAlpha=1}
 function sky(c,a,b,sun){const g=c.createLinearGradient(0,0,0,1080);g.addColorStop(0,a);g.addColorStop(1,b);c.fillStyle=g;c.fillRect(0,0,SW,1080);if(sun){c.fillStyle=sun;c.beginPath();c.arc(3210,220,125,0,T);c.fill()}}
 function garden(f,m,n){sky(f,'#72cdf3','#dff7ff','#fff0a0');[420,1280,2280,3160].forEach((x,i)=>cloud(f,x,250+(i%2)*90,1.1,.55));const wc=['#ffd190','#f1ad9a','#c5d7ff','#f1d2aa'];for(let i=0;i<11;i++){let x=-80+i*365,y=1010-(i%2)*45,s=.95+(i%3)*.08;m.fillStyle=wc[i%4];m.fillRect(x,y-240*s,250*s,240*s);m.fillStyle=i%2?'#526e8f':'#c45d4c';m.beginPath();m.moveTo(x-30*s,y-240*s);m.lineTo(x+125*s,y-360*s);m.lineTo(x+280*s,y-240*s);m.closePath();m.fill()}for(let x=100;x<SW;x+=540)tree(m,x,1050,1.1);n.fillStyle='#f4edd6';for(let x=0;x<SW;x+=105){n.fillRect(x,100,25,230);n.beginPath();n.moveTo(x,100);n.lineTo(x+12,70);n.lineTo(x+25,100);n.fill()}n.fillRect(0,160,SW,24);n.fillRect(0,270,SW,24)}
