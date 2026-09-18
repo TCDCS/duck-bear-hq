@@ -114,16 +114,16 @@ function drawTempleBar(c, x, baseY, w, h) {
   c.fillStyle = '#6f151b';
   c.fillRect(x, baseY - h, w, 9);
   c.fillStyle = TEMPLE_BLACK;
-  rr(c, x + 4, baseY - 88, w - 8, 38, 4); c.fill();
+  rr(c, x + 4, baseY - 118, w - 8, 38, 4); c.fill();
 
   c.fillStyle = TEMPLE_GOLD;
   c.font = 'bold 8px Georgia, Times New Roman, serif';
   c.textAlign = 'center';
-  c.fillText('DUBLIN, IRELAND', x + w / 2, baseY - 78);
+  c.fillText('DUBLIN, IRELAND', x + w / 2, baseY - 108);
   c.font = 'bold 19px Georgia, Times New Roman, serif';
-  c.fillText('THE TEMPLE BAR', x + w / 2, baseY - 60);
+  c.fillText('THE TEMPLE BAR', x + w / 2, baseY - 90);
   c.font = 'bold 8px Georgia, Times New Roman, serif';
-  c.fillText('Est. 1840', x + w / 2, baseY - 49);
+  c.fillText('Est. 1840', x + w / 2, baseY - 79);
 
   c.fillStyle = '#38201e';
   c.fillRect(x + 10, baseY - 43, w - 20, 36);
