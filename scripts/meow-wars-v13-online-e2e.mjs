@@ -262,7 +262,8 @@ try {
 
   const beforeMove = await Promise.all([
     host.evaluate(() => ({
-      x: globalThis.__MEOW_WARS_GAME_SCENE.catById('red-1').x,
+      activeId: globalThis.__MEOW_WARS_GAME_SCENE.activeCat().id,
+      x: globalThis.__MEOW_WARS_GAME_SCENE.activeCat().x,
       intentsReceived: globalThis.__MEOW_WARS_V12_STATS.intentsReceived,
       intentsApplied: globalThis.__MEOW_WARS_V12_STATS.intentsApplied
     })),
@@ -312,15 +313,18 @@ try {
     { timeout: 5000 }
   );
 
-  await host.waitForFunction((before) =>
-    globalThis.__MEOW_WARS_GAME_SCENE?.catById?.('red-1')?.x > before + 1,
-    beforeX,
+  await host.waitForFunction((before) => {
+    const scene = globalThis.__MEOW_WARS_GAME_SCENE;
+    return scene?.activeCat?.().id === before.activeId && scene.activeCat().x > before.x + 1;
+  },
+    { activeId: beforeMove[0].activeId, x: beforeX },
     { timeout: 5000 }
   );
 
   const movementDiag = await Promise.all([
     host.evaluate(() => ({
-      x: globalThis.__MEOW_WARS_GAME_SCENE.catById('red-1').x,
+      activeId: globalThis.__MEOW_WARS_GAME_SCENE.activeCat().id,
+      x: globalThis.__MEOW_WARS_GAME_SCENE.activeCat().x,
       activeTeam: globalThis.__MEOW_WARS_GAME_SCENE.activeCat().team,
       stats: globalThis.__MEOW_WARS_V12_STATS,
       lastIntent: globalThis.__MEOW_WARS_ONLINE.lastIntentReceived,
