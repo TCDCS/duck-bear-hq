@@ -35,6 +35,8 @@ test('Meow Wars v0.6 patches the actual v0.5 production bundle', () => {
   assert.match(patched, /Adaptive HD → 4K render scale/);
   assert.match(patched, /\$\{ARENAS\.length\} BATTLEFIELDS/);
   assert.doesNotMatch(patched, /3 BATTLEFIELDS/);
+  assert.ok(patched.indexOf('ARENAS.push(') < patched.indexOf('const BY_ID = new Map'));
+  assert.doesNotThrow(() => new Function(patched));
 });
 
 test('Meow Wars v0.6 carries explicit version and build markers', () => {
