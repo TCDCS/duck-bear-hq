@@ -194,6 +194,7 @@ onlineLobby = mountOnlineLobby(onlineRoot, {
   onReturnLocal() {
     environmentReaction = null;
     environmentDetails = null;
+    environmentWear = null;
     touchControls.setActive(false);
     if (onlineBridge?.active) onlineBridge.stop();
     onlineRoot.hidden = false;
