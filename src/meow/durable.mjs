@@ -25,7 +25,7 @@ export class MeowDirectory {
       try {
         const q = await request.json();
         const now = Date.now();
-        if (!/^[a-fd]{64}$/.test(q.client || '')) return json({ error: 'Invalid request.' }, 400);
+        if (!/^[a-f\d]{64}$/.test(q.client || '')) return json({ error: 'Invalid request.' }, 400);
         if (!['create', 'join'].includes(q.action)) return json({ error: 'Not found.' }, 404);
 
         for (const [code, entry] of Object.entries(this.data.codes)) {
@@ -47,7 +47,7 @@ export class MeowDirectory {
         }
 
         if (q.action === 'join') {
-          if (!/^d{4}$/.test(q.code || '') || !this.data.codes[q.code]) {
+          if (!/^\d{4}$/.test(q.code || '') || !this.data.codes[q.code]) {
             await this.ctx.storage.put('directory', this.data);
             return json({ error: 'Room not found or expired. Check the four-digit code.' }, 404);
           }
