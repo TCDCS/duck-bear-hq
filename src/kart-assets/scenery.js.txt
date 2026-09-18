@@ -9,8 +9,17 @@
     const info={objects:[],labels:[],triangles:0},half=t.width/2,park=t.id===3,regent=t.id===4,irish=t.country==='IE';
     const surface=(id,fn)=>{const old=m.material;m.material=id;fn();m.material=old;};
     const closest=(x,z)=>{let distance=Infinity;for(const p of t.samples)distance=Math.min(distance,Math.hypot(p.x-x,p.z-z));return distance;};
-    const allowed=(x,z,r)=>closest(x,z)>=half+4+r&&(!irish||!globalThis.WackyModels.reserves.some(q=>Math.hypot(x-q.x,z-q.z)<q.r+r));
-    const register=(kind,x,z,r)=>{if(!allowed(x,z,r))return false;info.objects.push({kind,x,z,radius:r});return true;};
+    // Hero reserves keep procedural filler out of the landmark view. Manual hero models can opt in with force=true.
+    const heroReserves=[
+      [{x:-110,z:222,r:31},{x:-148,z:218,r:39}],
+      [{x:-160,z:184,r:34}],
+      [{x:-44,z:228,r:25},{x:44,z:228,r:25}],
+      [{x:-145,z:174,r:31}],
+      [{x:-145,z:220,r:43}],
+      [{x:-105,z:222,r:24},{x:-145,z:218,r:34}]
+    ][t.id]||[];
+    const allowed=(x,z,r,force=false)=>force||(closest(x,z)>=half+4+r&&!heroReserves.some(q=>Math.hypot(x-q.x,z-q.z)<q.r+r)&&(!irish||!globalThis.WackyModels.reserves.some(q=>Math.hypot(x-q.x,z-q.z)<q.r+r)));
+    const register=(kind,x,z,r,force=false)=>{if(!allowed(x,z,r,force))return false;info.objects.push({kind,x,z,radius:r});return true;};
     const at=(x,z,rot,a,b)=>[x+a*Math.cos(rot)+b*Math.sin(rot),z-a*Math.sin(rot)+b*Math.cos(rot)];
     const slab=(a,b,lo,hi,y,col)=>{const p=(q,x)=>[q.x-q.tz*x,y,q.z+q.tx*x];m.quad(p(a,lo),p(a,hi),p(b,hi),p(b,lo),col);};
     surface(M.grass,()=>m.box(0,-.35,0,1800,.5,1800,t.ground));
@@ -112,8 +121,8 @@
       }
       for(const side of [-1,1])for(const b of [-d*.31,d*.31]){const a=at(x,z,rot,side*(w/2-.12),b),c=at(x,z,rot,side*(w/2+.16),b);surface(M.plain,()=>m.cylinder([a[0],.52,a[1]],[c[0],.52,c[1]],ambulance?.48:.44,'#202729',12));}
     }
-    function building(x,z,w,h,d,rot,index=0,distant=false){
-      if(!register('building',x,z,Math.hypot(w,d)/2))return;
+    function building(x,z,w,h,d,rot,index=0,distant=false,force=false){
+      if(!register('building',x,z,Math.hypot(w,d)/2,force))return;
       const box=(a,y,b,ww,hh,dd,col)=>{const q=at(x,z,rot,a,b);m.box(q[0],y,q[1],ww,hh,dd,col,rot);};
       const stone=regent||park,col=stone?['#c4bcab','#cec6b6','#bbb4a5'][index%3]:['#a27c63','#b79072','#a59686','#957969'][index%4];
       surface(stone?M.stone:M.brick,()=>box(0,h/2,0,w,h,d,col));
@@ -178,6 +187,14 @@
       surface(M.stone,()=>{for(let i=0;i<ring.length;i++){const a=ring[i],b=ring[(i+1)%ring.length];const out=p=>[centre[0]+(p[0]-centre[0])*1.03,.02,centre[1]+(p[1]-centre[1])*1.08];m.quad([a[0],.02,a[1]],out(a),out(b),[b[0],.02,b[1]],'#a2a08c');}});
       surface(M.water,()=>{for(let i=0;i<ring.length;i++){const a=ring[i],b=ring[(i+1)%ring.length];m.tri([centre[0],.005,centre[1]],[b[0],.005,b[1]],[a[0],.005,a[1]],'#2da6ad');}});
       for(let i=0;i<(m.low?100:140);i++){const x=(rand()-.5)*650,z=(rand()-.5)*530;if((x*x/130**2+(z+14)**2/65**2)<1)continue;tree(x,z,.75+rand()*.85);}
+      // A Marble Arch-inspired park gateway gives the opening approach a clear left-side landmark.
+      const ax=-145,az=174;register('park arch',ax,az,20,true);
+      surface(M.stone,()=>{
+        m.box(ax-10,6.5,az,7,13,8,'#d8cfbd');m.box(ax+10,6.5,az,7,13,8,'#d8cfbd');m.box(ax,11.0,az,26,4,8,'#e2d9c7');
+        m.box(ax-13.5,1.0,az,3.3,2,9,'#c8bfac');m.box(ax+13.5,1.0,az,3.3,2,9,'#c8bfac');m.box(ax,13.4,az,29,1.0,9,'#ece1cd');
+      });
+      for(const side of [-1,1])surface(M.stone,()=>m.cylinder([ax+side*7.0,0,az-4.2],[ax+side*7.0,9.0,az-4.2],.75,'#e8deca',16));
+      info.labels.push({x:ax,y:11.0,z:az-4.2,text:'HYDE PARK',width:18,type:'shop'});
       // Bandstand, picnic spots and background terraces.
       const bx=62,bz=76;
       if(register('bandstand',bx,bz,9)){
@@ -201,12 +218,26 @@
       }
       for(let i=0;i<45;i++){const x=(rand()-.5)*450,z=(rand()-.5)*380;tree(x,z,.75+rand()*.45);}
       if(t.id===0){
-        const x=-53,z=-60;
-        surface(M.stone,()=>{m.box(x,23,z,8,46,8,'#cdb78e');m.box(x,39,z,10.3,9,10.3,'#d7c398');m.box(x,45,z,9.3,3,9.3,'#bda678');});
-        m.pyramid(x,46.5,z,8,12,8,'#566666');m.cylinder([x,57,z],[x,62,z],.19,'#baa578',8);
-        for(const side of [-1,1]){m.box(x,39,z+side*5.19,6.2,6.2,.1,'#f1e8d0');m.box(x,39.9,z+side*5.26,.20,2.1,.06,'#304148');m.box(x+1.1,39,z+side*5.26,2.3,.20,.06,'#304148');}
-        building(-108,-62,65,17,18,0,0);
+        // Westminster hero reveal: Elizabeth Tower and Parliament sit ahead-left of the opening straight.
+        const x=-110,z=222;
+        register('Elizabeth Tower',x,z,8,true);
+        surface(M.stone,()=>{
+          m.box(x,23,z,9.5,46,9.5,'#cbb58b');m.box(x,9,z,10.5,1.0,10.5,'#d7c49b');m.box(x,23,z,10.2,.8,10.2,'#d8c39a');
+          m.box(x,38.2,z,10.7,1.0,10.7,'#dfcda7');m.box(x,42.0,z,9.9,7.0,9.9,'#d6c099');m.box(x,46.0,z,10.5,.8,10.5,'#bca67e');
+        });
+        // Four oversized clock faces keep the tower readable at racing speed.
+        for(const side of [-1,1]){
+          surface(M.light,()=>{m.box(x,41.8,z+side*5.02,6.5,6.5,.12,'#f4ecd2');m.box(x+side*5.02,41.8,z,.12,6.5,6.5,'#f4ecd2');});
+          surface(M.metal,()=>{m.box(x,42.5,z+side*5.10,.20,2.25,.08,'#304148');m.box(x+1.15,41.8,z+side*5.10,2.45,.20,.08,'#304148');});
+        }
+        surface(M.metal,()=>{m.pyramid(x,46.4,z,9.0,12.5,9.0,'#506366');m.cylinder([x,58.5,z],[x,64,z],.19,'#baa578',8);});
+        info.labels.push({x,y:48.5,z:z-5.2,text:'BIG BEN',width:8,type:'shop'});
+        // Parliament forms a long stone backdrop behind the clock tower and faces the road.
+        building(-151,218,69,20,19,Math.PI,0,false,true);
+        building(-183,221,28,25,17,Math.PI,2,false,true);
+        // London Eye remains a second landmark deeper into the lap.
         const ex=64,ez=-17,ey=36,rad=28;
+        register('London Eye',ex,ez,31,true);
         for(let i=0;i<64;i++){const a=i/64*Math.PI*2,b=(i+1)/64*Math.PI*2;surface(M.metal,()=>m.cylinder([ex+Math.cos(a)*rad,ey+Math.sin(a)*rad,ez],[ex+Math.cos(b)*rad,ey+Math.sin(b)*rad,ez],.42,'#dfdfd5',6));if(i%4===0){m.cylinder([ex,ey,ez],[ex+Math.cos(a)*rad,ey+Math.sin(a)*rad,ez],.10,'#e6e4d6',4);surface(M.glass,()=>m.sphere(ex+Math.cos(a)*(rad+1),ey+Math.sin(a)*(rad+1),ez,1.5,'#829ca4',8));}}
         for(const side of [-1,1])m.cylinder([ex+side*14,0,ez+8],[ex,ey,ez],.55,'#d7ded5',8);
       }
@@ -215,10 +246,24 @@
           m.box(x,1,z,10,2,4,'#947957');m.box(x,3.5,z,12,.16,7,i%2?'#a6574c':'#4e7164');for(let j=0;j<6;j++)m.box(x-5+j*2,3.59,z,.9,.02,7,'#decda6');for(const side of [-1,1])m.cylinder([x+side*5,0,z+2],[x+side*5,3.5,z+2],.06,'#41483e',6);
           info.labels.push({x,y:2.8,z:z+2.2,text:i%2?'CAMDEN MARKET':'TEA & BISCUITS',width:9,type:'shop'});
         }
+        const gx=-160,gz=184;register('Camden gateway',gx,gz,20,true);
+        surface(M.brick,()=>{m.box(gx-13,6,gz,7,12,7,'#7e493d');m.box(gx+13,6,gz,7,12,7,'#7e493d');m.box(gx,11.2,gz,32,4.1,5.3,'#3f4d52');});
+        surface(M.metal,()=>{for(const a of [-13,13])m.pyramid(gx+a,12,gz,7.8,4.2,7.8,'#334b50');});
+        for(let i=0;i<7;i++)m.box(gx-14+i*4.7,7.7,gz-3.6,2.1,1.0,.10,['#e76050','#e6b044','#3d9e79','#567fc2'][i%4]);
+        info.labels.push({x:gx,y:11.3,z:gz-2.9,text:'CAMDEN MARKET',width:25,type:'shop'});
+      }
+      if(t.id===4){
+        const cx=-145,cz=220;
+        for(let i=-3;i<=3;i++){
+          const a=i*.12,bx=cx+i*14.2,bz=cz+Math.abs(i)*2.1;
+          building(bx,bz,13.8,26+(3-Math.abs(i))*1.4,13.5,Math.PI+a,20+i,false,true);
+          if(!m.low){const fx=bx+Math.sin(a)*7.1,fz=bz-Math.cos(a)*7.1;surface(M.metal,()=>m.cylinder([fx,7.0,fz],[fx,11.0,fz],.055,'#4c5550',6));m.box(fx+1.2,10.3,fz,2.4,.75,.05,i%2?'#385a9c':'#b64e49',a);}
+        }
+        info.labels.push({x:cx,y:20,z:cz-8,text:'REGENT STREET',width:30,type:'shop'});
       }
       if(t.id===2){
-        for(const x of [-44,44])for(const z of [135,228]){register('bridge tower',x,z,6.4);surface(M.stone,()=>m.box(x,15,z,8,30,8,'#c8bca5'));m.pyramid(x,30,z,9,12,9,'#456579');}
-        for(const z of [135,228]){m.box(0,28,z,96,2,2,'#799aa1');for(const side of [-1,1])m.cylinder([side*44,29,z],[side*97,2,z],.5,'#668896',8);}
+        for(const x of [-44,44])for(const z of [135,228]){register('bridge tower',x,z,6.4,true);surface(M.stone,()=>{m.box(x,15,z,8,30,8,'#c8bca5');m.box(x,8,z,10,.8,10,'#ded2b9');m.box(x,22,z,9,.7,9,'#dfd1b7');});m.pyramid(x,30,z,9,12,9,'#456579');}
+        for(const z of [135,228]){m.box(0,28,z,96,2,2,'#799aa1');for(const side of [-1,1])m.cylinder([side*44,29,z],[side*97,2,z],.5,'#668896',8);}info.labels.push({x:-44,y:23,z:232,text:'TOWER BRIDGE',width:22,type:'shop'});
         surface(M.glass,()=>{m.pyramid(63,0,-43,24,100,25,'#839faa');m.pyramid(62,0,-42,10,114,11,'#b3c6cd');});
       }
     }
