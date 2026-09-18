@@ -53,6 +53,8 @@ const online = globalThis.__MEOW_WARS_ONLINE = {
   serverTurnTeam: null,
   lastSnapshotAck: -1,
   lastIntentAck: -1,
+  lastIntentAccepted: null,
+  lastIntentAckTurnTeam: null,
   lastIntentReceived: null,
   lastOnlineError: ''
 };
@@ -297,6 +299,8 @@ function handleSocketMessage(message) {
 
   if (message.type === 'intent-ack') {
     online.lastIntentAck = Number(message.seq);
+    online.lastIntentAccepted = Boolean(message.accepted);
+    online.lastIntentAckTurnTeam = Number(message.turnTeam);
     stats.intentAcks += 1;
     return;
   }
