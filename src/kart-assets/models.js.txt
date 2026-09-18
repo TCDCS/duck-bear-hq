@@ -113,7 +113,7 @@
     if(type==='whiskey'){m.cylinder([0,.105,0],[0,.13,0],1.4,'#c99135',26);m.cylinder([-.65,.39,-.25],[.55,.39,.14],.29,'#74532e',18);m.cylinder([.55,.39,.14],[1.03,.39,.3],.12,'#7e613b',16);m.cylinder([1.03,.39,.3],[1.13,.39,.335],.14,'#bd8f42',16);m.roundBox(-.1,.63,-.02,.43,.035,.28,'#efe1b5',.02);}
     return m;
   }
-  const reserves=[{x:-105,z:222,r:12},{x:-145,z:218,r:34},{x:-152,z:43,r:20},{x:50,z:102,r:40},{x:142,z:-76,r:18}];
+  const reserves=[{x:-125,z:205,r:12},{x:-160,z:207,r:34},{x:-152,z:43,r:20},{x:50,z:102,r:40},{x:142,z:-76,r:18}];
   function dublin(m,t,info){
     const label=(text,x,y,z,width=14)=>info.labels.push({text,x,y,z,width,type:'shop'});
     const box=(x,y,z,w,h,d,col,r=.15)=>m.roundBox(x,y,z,w,h,d,col,r);
@@ -121,12 +121,12 @@
     m.material=6;m.box(0,-.02,0,334,.12,30,'#279faa');m.material=9;
     for(const z of [-17,17]){m.box(0,.18,z,340,.6,3.6,'#d9c89c');for(let x=-164;x<166;x+=5)m.cylinder([x,.3,z],[x,1.7,z],.06,'#44564d',8);m.cylinder([-165,1.5,z],[165,1.5,z],.07,'#495e55',8);}
     // Opening hero reveal: the Spire and GPO sit ahead-left so the player drives towards Dublin, not past it.
-    const sx=-105,sz=222;
+    const sx=-125,sz=205;
     m.material=7;m.cylinder([sx,.1,sz],[sx,84,sz],1.25,'#c4dde5',30,.022);
     m.material=9;m.cylinder([sx,0,sz],[sx,.42,sz],3.6,'#e4d4b1',24);m.cylinder([sx,.42,sz],[sx,1.0,sz],2.4,'#d8c59f',24);
     label('The Spire',sx,5,sz-4,15);
     // GPO: six classical columns, deeper pediment and Irish tricolour, facing the opening road.
-    const gx=-145,gz=218;
+    const gx=-160,gz=207;
     m.material=9;box(gx,9,gz,44,18,19,'#d9c9a6');m.box(gx,.42,gz-13,47,.7,8,'#dbd1ba');
     for(let x=gx-16;x<=gx+16;x+=6.4){m.cylinder([x,1,gz-10.2],[x,15,gz-10.2],.73,'#eee0bc',20);m.cylinder([x,14.7,gz-10.2],[x,15.3,gz-10.2],1.1,'#f6e8c9',18);}
     m.box(gx,16,gz-10.0,44,1.2,6,'#e6d7b6');m.tri([gx-22,16.6,gz-13.1],[gx+22,16.6,gz-13.1],[gx,23,gz-13.1],'#e7d7b2');
