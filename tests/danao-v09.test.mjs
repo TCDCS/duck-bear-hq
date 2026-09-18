@@ -331,6 +331,7 @@ test('v0.9 main mounts room client, online lobby and match bridge without replac
 test('v0.9 packaged app exposes an external beginMatch hook for online room starts', () => {
   const app = fs.readFileSync(path.join(root, 'public/games/danao/src/ui/App.js'), 'utf8');
   assert.match(app, /beginMatch/);
+  assert.match(app, /returnToMenu/);
   assert.match(app, /START_MATCH/);
 });
 
