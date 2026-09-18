@@ -78,11 +78,8 @@ test('Checkout Chaos shelf and checkout fixtures are real Rapier collision geome
   const runtime = read('public/games/danao/src/game/runtime.js');
   for (const marker of [
     'arena.fixtures || []',
-    'fixture.size[0] / 2',
-    'fixture.size[1] / 2',
-    'fixture.size[2] / 2',
-    'fixture.x',
-    'fixture.y',
-    'fixture.z',
+    'const size = fixture.size || [1, 1, 1]',
+    'RAPIER.ColliderDesc.cuboid(size[0] / 2, size[1] / 2, size[2] / 2)',
+    '.setTranslation(Number(fixture.x) || 0, Number(fixture.y) || size[1] / 2, Number(fixture.z) || 0)',
   ]) assert.ok(runtime.includes(marker), marker);
 });
