@@ -295,7 +295,7 @@ function makeHumanPoseRig(B, results) {
     attackKind = '',
   } = {}) => {
     const heavy = attackKind === 'heavy';
-    const armDrop = 1.04;
+    const armDrop = -1.04;
 
     rotate('upperarm_l',
       -stride * 0.24 - (heavy ? punch * 0.42 : punch * 0.08),
