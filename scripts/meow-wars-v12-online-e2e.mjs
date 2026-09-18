@@ -208,7 +208,7 @@ try {
   await guest.screenshot({ path: out('guest-mobile-online-battle.png'), fullPage: true });
 
   // Advance the authoritative host to the red player's turn.
-  await host.evaluate(() => globalThis.__MEOW_WARS_GAME_SCENE.endTurn('online-e2e'));
+  await host.evaluate(() => globalThis.__MEOW_WARS_GAME_SCENE.endTurn('skip'));
   await Promise.all([
     host.waitForFunction(() => globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().team === 1, null, { timeout: 5000 }),
     guest.waitForFunction(() => globalThis.__MEOW_WARS_GAME_SCENE?.activeCat?.().team === 1, null, { timeout: 5000 })
