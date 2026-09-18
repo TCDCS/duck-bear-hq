@@ -1,0 +1,237 @@
+name: Danao Visual QA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'feature/danao-*']
+    paths:
+      - 'public/games/danao/**'
+      - 'scripts/assemble-danao-v05.mjs'
+      - 'scripts/danao-*.mjs'
+      - 'scripts/danao-v05-gz/**'
+      - '.github/workflows/danao-visual-qa.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: danao-visual-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checkout-chaos-screenshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Assemble exact Danao release
+        run: npm run assemble:danao
+
+      - name: Install Chromium screenshot runner
+        run: |
+          npm install --no-save --package-lock=false playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start local Danao site
+        run: |
+          python3 -m http.server 8080 --directory public > /tmp/danao-http.log 2>&1 &
+          echo $! > /tmp/danao-http.pid
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8080/games/danao/release.json >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/danao-http.log
+          exit 1
+
+      - name: Capture and inspect Checkout Chaos gameplay
+        run: |
+          mkdir -p verification/danao
+          cat > verification/danao/visual-runner.mjs <<'EOF'
+          import { chromium } from 'playwright';
+          import fs from 'node:fs';
+
+          const OUT = 'verification/danao';
+          const BASE = 'http://127.0.0.1:8080';
+          const browser = await chromium.launch({
+            headless: true,
+            args: [
+              '--no-sandbox',
+              '--use-angle=swiftshader',
+              '--enable-unsafe-swiftshader',
+              '--enable-webgl',
+              '--ignore-gpu-blocklist',
+              '--disable-dev-shm-usage',
+            ],
+          });
+
+          const context = await browser.newContext({
+            viewport: { width: 1440, height: 900 },
+            serviceWorkers: 'block',
+          });
+          const page = await context.newPage();
+          const pageErrors = [];
+          const consoleErrors = [];
+          page.on('pageerror', (error) => pageErrors.push(String(error)));
+          page.on('console', (msg) => {
+            if (msg.type() === 'error') consoleErrors.push(msg.text());
+          });
+
+          const report = {
+            passed: false,
+            checks: {},
+            pageErrors,
+            consoleErrors,
+          };
+
+          async function poll(label, fn, timeout = 60000) {
+            const deadline = Date.now() + timeout;
+            while (Date.now() < deadline) {
+              try {
+                if (await fn()) return;
+              } catch {}
+              await page.waitForTimeout(200);
+            }
+            throw new Error('Timed out waiting for ' + label);
+          }
+
+          try {
+            await page.goto(BASE + '/games/danao/', {
+              waitUntil: 'domcontentloaded',
+              timeout: 90000,
+            });
+
+            await page.locator('[data-action="play"]').waitFor({
+              state: 'visible',
+              timeout: 30000,
+            });
+            await page.locator('[data-action="play"]').click();
+            await page.locator('.arena-card.selected').waitFor({
+              state: 'visible',
+              timeout: 15000,
+            });
+
+            const selectedArena = (await page.locator('.arena-card.selected').innerText()).trim();
+            report.selectedArena = selectedArena;
+            report.checks.checkoutChaosSelected = /Checkout Chaos/i.test(selectedArena);
+            if (!report.checks.checkoutChaosSelected) {
+              throw new Error('Checkout Chaos is not selected: ' + selectedArena);
+            }
+
+            await page.locator('[data-action="start"]').click();
+
+            await poll('Babylon scene', async () => page.evaluate(() =>
+              Boolean(globalThis.BABYLON?.EngineStore?.LastCreatedScene)
+            ));
+
+            await poll('real Hero rig', async () => page.evaluate(() => {
+              const scene = globalThis.BABYLON?.EngineStore?.LastCreatedScene;
+              const body = scene?.getMeshByName?.('Superhero_Female');
+              const hair = scene?.getMeshByName?.('Hair_Buns');
+              return Boolean(body?.isEnabled?.() && hair?.isEnabled?.());
+            }), 90000);
+
+            await page.waitForTimeout(2500);
+
+            const sceneState = await page.evaluate(() => {
+              const scene = globalThis.BABYLON?.EngineStore?.LastCreatedScene;
+              if (!scene) return { missingScene: true };
+              const meshes = scene.meshes || [];
+              const names = meshes.map((mesh) => mesh.name);
+              const enabled = (name) => {
+                const mesh = scene.getMeshByName?.(name);
+                return Boolean(mesh && mesh.isEnabled?.());
+              };
+              const skeletonBones = (scene.skeletons || [])
+                .flatMap((skeleton) => skeleton.bones || [])
+                .map((bone) => bone.name);
+              return {
+                meshCount: meshes.length,
+                supermarketMeshCount: names.filter((name) => name.startsWith('supermarket-')).length,
+                checkoutCount: names.filter((name) => name === 'supermarket-checkout').length,
+                productMeshCount: names.filter((name) => name === 'supermarket-product-row').length,
+                freezerCount: names.filter((name) => name === 'supermarket-freezer-wall').length,
+                heroBodyEnabled: enabled('Superhero_Female'),
+                heroHairEnabled: enabled('Hair_Buns'),
+                proceduralHeroEnabled: enabled('hero-torso'),
+                upperarmBonePresent: skeletonBones.includes('upperarm_r') && skeletonBones.includes('upperarm_l'),
+                wrestlingMeshes: names.filter((name) =>
+                  /ring-rope|turnbuckle-pad|crowd-bench|announcer-desk|ring-step/.test(name)
+                ),
+                tescoSignPresent: names.includes('tesco-superstore-sign'),
+              };
+            });
+
+            report.scene = sceneState;
+            report.release = await (await page.request.get(BASE + '/games/danao/release.json')).json();
+
+            report.checks.supermarketAuthored =
+              sceneState.supermarketMeshCount >= 100
+              && sceneState.checkoutCount >= 3
+              && sceneState.productMeshCount >= 200
+              && sceneState.freezerCount >= 4
+              && sceneState.tescoSignPresent === true;
+
+            report.checks.realHeroLoaded =
+              sceneState.heroBodyEnabled === true
+              && sceneState.heroHairEnabled === true
+              && sceneState.upperarmBonePresent === true;
+
+            report.checks.proceduralHeroHidden = sceneState.proceduralHeroEnabled === false;
+            report.checks.wrestlingGeometryRemoved = sceneState.wrestlingMeshes.length === 0;
+            report.checks.noPageErrors = pageErrors.length === 0;
+
+            await page.screenshot({
+              path: OUT + '/checkout-chaos-full.png',
+              fullPage: true,
+              timeout: 90000,
+            });
+            await page.locator('#game').screenshot({
+              path: OUT + '/checkout-chaos-gameplay.png',
+              timeout: 90000,
+            });
+
+            report.passed = Object.values(report.checks).every(Boolean);
+            if (!report.passed) {
+              throw new Error('One or more visual QA checks failed');
+            }
+          } catch (error) {
+            report.failure = String(error);
+            try {
+              await page.screenshot({
+                path: OUT + '/checkout-chaos-failure.png',
+                fullPage: true,
+                timeout: 30000,
+              });
+            } catch {}
+          } finally {
+            fs.writeFileSync(
+              OUT + '/visual-qa.json',
+              JSON.stringify(report, null, 2),
+            );
+            await browser.close();
+          }
+
+          console.log(JSON.stringify(report, null, 2));
+          if (!report.passed) process.exit(1);
+          EOF
+
+          node verification/danao/visual-runner.mjs
+
+      - name: Upload Danao visual QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: danao-visual-qa
+          path: verification/danao/
+          if-no-files-found: error
+          retention-days: 7
