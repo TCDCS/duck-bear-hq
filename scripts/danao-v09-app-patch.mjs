@@ -13,6 +13,10 @@ export function patchDanaoV09App(source) {
       state = reduceUiState(state, { type: 'START_MATCH' });
       render();
     },
+    returnToMenu: () => {
+      state = reduceUiState(state, { type: 'BACK_MENU' });
+      render();
+    },
     getState: () => structuredClone(state),`,
     'external beginMatch',
   );
