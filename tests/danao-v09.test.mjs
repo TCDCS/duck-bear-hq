@@ -50,3 +50,16 @@ test('v0.9 controller helper ignores disconnected pads and caps slots at four', 
   assert.equal(localControlPlan(pads, 8).length, 4);
   assert.deepEqual(localControlPlan(pads, 4).map((entry) => entry.index), [1, 2, 3, 4]);
 });
+
+
+test('v0.9 packaged runtime uses resolved sparse gamepad indexes', () => {
+  const runtime = fs.readFileSync(path.join(root, 'public/games/danao/src/game/runtime.js'), 'utf8');
+  for (const marker of [
+    "import { localControlPlan } from './controllers.js';",
+    'readGamepad(fighter.control.index)',
+    'const controlPlan = localControlPlan(pads, total);',
+    'control = controlPlan[i];',
+  ]) assert.ok(runtime.includes(marker), marker);
+  assert.doesNotMatch(runtime, /pads\[i\]/);
+  assert.doesNotMatch(runtime, /readGamepad\(0\)/);
+});
