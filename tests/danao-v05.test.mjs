@@ -39,7 +39,7 @@ test('Checkout Chaos is the flagship showcase and carries supermarket brawler pr
   assert.match(items, /baguette/);
 });
 
-test('Cloudflare deploy assembles the Danao v0.10.2 full-cast rig release before verification', () => {
+test('Cloudflare deploy assembles the Danao v0.10.3 presentation-corrected full-cast release before verification', () => {
   const pkg = JSON.parse(read('package.json'));
   assert.match(pkg.scripts.deploy, /^npm run assemble:danao/);
   assert.equal(pkg.scripts['assemble:danao'], 'node scripts/assemble-danao-v05.mjs');
