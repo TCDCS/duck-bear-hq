@@ -72,3 +72,17 @@ test('supermarket release patch is reproducible through the Danao assembler', ()
   assert.match(assembler, /patchDanaoSupermarketVisuals/);
   assert.match(assembler, /danao-supermarket-visual-patch\.mjs/);
 });
+
+
+test('Checkout Chaos shelf and checkout fixtures are real Rapier collision geometry', () => {
+  const runtime = read('public/games/danao/src/game/runtime.js');
+  for (const marker of [
+    'arena.fixtures || []',
+    'fixture.size[0] / 2',
+    'fixture.size[1] / 2',
+    'fixture.size[2] / 2',
+    'fixture.x',
+    'fixture.y',
+    'fixture.z',
+  ]) assert.ok(runtime.includes(marker), marker);
+});
