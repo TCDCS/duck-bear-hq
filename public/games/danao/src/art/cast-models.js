@@ -510,7 +510,8 @@ export async function mountMulanDogModel(B, scene, visualRoot) {
     const config = CAST_MODELS.mulan;
     noteCastLoad('mulan', 'loading-body', DOG_FILE);
     const result = await B.SceneLoader.ImportMeshAsync('', DOG_ROOT, DOG_FILE, scene);
-    const body = result?.meshes?.find?.((mesh) => mesh.name === 'ShibaInu');
+    const body = result?.meshes?.find?.((mesh) => mesh.name === 'ShibaInu')
+      || result?.meshes?.find?.((mesh) => (mesh.getTotalVertices?.() || 0) > 1000);
     if (!body) {
       noteCastLoad('mulan', 'style-failed', 'ShibaInu mesh missing');
       return null;
