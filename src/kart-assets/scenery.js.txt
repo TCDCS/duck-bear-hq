@@ -42,6 +42,9 @@
     for(const side of [-1,1]){const q=C.sampleTrack(t,0,side*(half+5.0));register('start support',q.x,q.z,.37);surface(M.metal,()=>m.box(q.x,4.2,q.z,.52,8.4,.52,'#263b3d',yaw));}
     m.box(start.x,8.1,start.z,t.width+10.6,1.7,.6,'#f37f2f',yaw);
     info.labels.push({x:start.x,y:8.1,z:start.z,text:'WACKY RACES',width:t.width+9,type:'gantry'});
+    // Sparse detail is enough at racing speed; crossings and drains break up the flat road without becoming obstacles.
+    for(let s=145,k=0;s<t.length-90;s+=285,k++){crossing(s);roadDetail(s+72,k);}
+
     function shadow(x,z,r){surface(M.plain,()=>m.cylinder([x,-.089,z],[x,-.087,z],r,park?'#526c42':'#666e61',m.low?8:16));}
     function tree(x,z,scale=1){
       const radius=4.1*scale;if(!register('tree',x,z,radius))return;
@@ -61,6 +64,34 @@
       const box=(a,y,b,w,h,d,col)=>{const q=at(x,z,rot,a,b);m.box(q[0],y,q[1],w,h,d,col,rot);};
       surface(M.wood,()=>{for(let i=0;i<4;i++)box(0,.58,-.35+i*.22,3.0,.12,.16,'#95724b');for(let i=0;i<3;i++)box(0,.91+i*.22,-.46,3,.16,.09,'#896941');});
       surface(M.metal,()=>{for(const a of [-1.14,1.14]){box(a,.32,0,.10,.64,.65,'#303c38');box(a,1.02,-.49,.11,1.32,.10,'#303c38');}});
+    }
+    function bin(x,z,rot){
+      if(!register('street bin',x,z,.55))return;
+      surface(M.metal,()=>{m.roundBox(x,.62,z,.62,1.22,.58,irish?'#31584c':'#374b4b',.08,rot);m.box(x,1.22,z,.68,.10,.64,'#202d2f',rot);});
+    }
+    function bollard(x,z,rot){
+      if(!register('bollard',x,z,.30))return;
+      surface(M.metal,()=>{m.cylinder([x,0,z],[x,.92,z],.14,irish?'#324d44':'#303a3d',8,.11);m.cylinder([x,.92,z],[x,1.03,z],.18,'#d9cfaa',8,.14);});
+    }
+    function busStop(x,z,rot){
+      if(!register('bus stop',x,z,.65))return;
+      surface(M.metal,()=>m.cylinder([x,0,z],[x,3.65,z],.08,'#3b4645',8));
+      surface(M.light,()=>{m.roundBox(x,3.33,z,.72,.82,.12,irish?'#e5d749':'#e9e5d0',.05,rot);m.roundBox(x,2.65,z,.52,.78,.11,irish?'#27835f':'#d33d36',.04,rot);});
+    }
+    function trafficLight(x,z,rot){
+      if(!register('traffic light',x,z,.75))return;
+      surface(M.metal,()=>{m.cylinder([x,0,z],[x,4.55,z],.09,'#313b3c',8);const q=at(x,z,rot,0,.18);m.roundBox(q[0],4.22,q[1],.62,1.72,.48,'#293235',.08,rot);});
+      const q=at(x,z,rot,0,.43);for(const [y,col] of [[4.70,'#e34e40'],[4.22,'#e8b943'],[3.74,'#4caf66']])surface(M.light,()=>m.sphere(q[0],y,q[1],.16,col,8));
+    }
+    function crossing(s){
+      const centre=C.sampleTrack(t,s),yaw=Math.atan2(centre.tx,centre.tz);
+      for(let i=-4;i<=4;i++){const q=C.sampleTrack(t,s+i*1.55,0);surface(M.plain,()=>m.box(q.x,.094,q.z,t.width*.76,.018,.72,'#eee8d7',yaw));}
+      for(const side of [-1,1]){const q=C.sampleTrack(t,s,side*(half-.65));surface(M.metal,()=>m.box(q.x,.13,q.z,.20,.05,2.0,'#c9b56b',yaw));}
+    }
+    function roadDetail(s,index){
+      const side=index%2?1:-1,q=C.sampleTrack(t,s,side*(half*.48)),yaw=Math.atan2(q.tx,q.tz);
+      surface(M.metal,()=>m.roundBox(q.x,.102,q.z,1.00,.025,.68,'#4d5558',.10,yaw));
+      if(index%2===0){const d=C.sampleTrack(t,s+7,side*(half-.78));surface(M.metal,()=>{for(let j=-2;j<=2;j++)m.box(d.x+d.tx*j*.22,.105,d.z+d.tz*j*.22,.055,.02,.46,'#464c4e',yaw);});}
     }
     function phone(x,z,rot){if(irish)return;
       if(!register('telephone box',x,z,1.55))return;
@@ -169,7 +200,11 @@
         if(index%2===0)lamp(p.x,p.z,rot);if(index%3===1){const q=C.sampleTrack(t,s+4,side*(half+6.25));pedestrian(q.x,q.z,index);}
         else if(park){bench(p.x,p.z,rot);}
         if(index%7===0&&!park&&!irish){const q=C.sampleTrack(t,s+7,side*(half+6.9));phone(q.x,q.z,rot);}
+        if(index%5===2&&!park){const q=C.sampleTrack(t,s+3,side*(half+6.15));bin(q.x,q.z,rot);}
+        if(index%9===4&&!park){const q=C.sampleTrack(t,s+5,side*(half+6.05));busStop(q.x,q.z,rot);}
+        if(index%11===6&&!park){const q=C.sampleTrack(t,s+2,side*(half+6.35));trafficLight(q.x,q.z,rot);}
         if(index%4===0){const q=C.sampleTrack(t,s+10,side*(half+11.5));tree(q.x,q.z,.86+rand()*.22);}
+        if(index%6===3&&!park){const q=C.sampleTrack(t,s+8,side*(half+5.85));bollard(q.x,q.z,rot);}
         if(park&&index%3===0){const q=C.sampleTrack(t,s,side*(half+10.1));rail(q.x,q.z,Math.atan2(q.tx,q.tz));}
       }
     }
