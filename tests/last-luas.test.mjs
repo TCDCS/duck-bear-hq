@@ -60,6 +60,10 @@ test('v0.4 uses real pinned Quaternius character assets rather than primitive pe
   assert.match(source,/loadFromUrl\(CHARACTER_SOURCES\[kind\],'container'/);
   assert.match(source,/instantiateRenderEntity/);
   assert.match(source,/spawnCharacter/);
+  assert.match(source,/Idle_Neutral:8/);
+  assert.match(source,/Run:16/);
+  assert.match(source,/Walk:22/);
+  assert.doesNotMatch(source,/\|\|clips\[0\]/);
   assert.match(source,/Runner character model/);
   assert.match(source,/Tourist character model/);
   assert.match(source,/Umbrella pedestrian model/);
