@@ -199,7 +199,7 @@ async function login(request, env) {
     return apiJson({ ok:true, user:safeUser(user) },200,{ 'Set-Cookie':sessionCookie(token) });
   } catch(err) { if(err instanceof HttpError) return apiJson({error:err.message},err.status); throw err; }
 }
-async function getAuth(request, env) {
+export async function getAuth(request, env) {
   const token=cookieValue(request,'db_session'); if(!token) return null; const tokenHash=await sha256(token); const t=now();
   const row=await env.DB.prepare(`SELECT s.id AS session_id,s.expires_at,u.* FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>? LIMIT 1`).bind(tokenHash,t).first();
   return row ? { sessionId:row.session_id, tokenHash, user:row } : null;

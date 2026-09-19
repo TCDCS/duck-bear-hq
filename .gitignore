@@ -17,3 +17,8 @@ unity/danao/MemoryCaptures/
 # Local test/output files
 playwright-report/
 test-results/
+
+.superpowers/
+verification/last-luas/
+
+__pycache__/
