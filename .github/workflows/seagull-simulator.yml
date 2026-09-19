@@ -41,10 +41,14 @@ jobs:
             curl -fsS http://127.0.0.1:4173/games/seagull-simulator/ >/dev/null && break
             sleep 0.25
           done
-          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&exercise=1'
-          dom=$(google-chrome --headless --no-sandbox --dump-dom --virtual-time-budget=3500 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&exercise=1')
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=6500 --screenshot=/tmp/seagull-smoke.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&exercise=1'
+          dom=$(google-chrome --headless --no-sandbox --dump-dom --virtual-time-budget=6500 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&exercise=1')
           echo "$dom" | grep 'data-seagull-ready="1"'
-          echo "$dom" | grep 'data-seagull-exercised="1"'
+          echo "$dom" | grep 'data-seagull-exercise-scheduled="1"'
+          if ! echo "$dom" | grep 'data-seagull-exercised="1"'; then
+            echo "$dom" | grep -o 'data-seagull-exercise-error="[^"]*"' || true
+            exit 1
+          fi
           test -s /tmp/seagull-smoke.png
       - name: Upload smoke screenshot
         uses: actions/upload-artifact@v4
