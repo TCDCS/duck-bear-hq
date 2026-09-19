@@ -1,0 +1,30 @@
+{
+  "game": "seagull-simulator",
+  "current": "1.1.0",
+  "entries": [
+    {
+      "version": "1.1.0",
+      "date": "2026-09-19",
+      "title": "Dublin Detail & Identity Update",
+      "changes": [
+        "Rebuilt College Green around Trinity College Dublin’s West Front and Front Gate.",
+        "Replaced Insomnia with Tesco on Dame Street.",
+        "Replaced Dublin Deli with Yeeros using the supplied Yeeros artwork.",
+        "Added recognisable Grafton Street storefronts including LEGO Store and Disney Store.",
+        "Upgraded shop façades, paving, railings, traffic lights, bike racks and bus-stop detail.",
+        "Added Settings and a clickable Update Log."
+      ]
+    },
+    {
+      "version": "1.0",
+      "date": "2026-09-19",
+      "title": "Initial Live Release",
+      "changes": [
+        "Launched the continuous Dame Street, College Green, Grafton Street and St Stephen’s Green route.",
+        "Added free flight, dive/grab, landing, waddling, wanted heat and Garda pursuit.",
+        "Added local progression, gull unlocks, upgrades, missions, trophies and run statistics.",
+        "Added mobile performance, pause, accessibility and persistence hardening."
+      ]
+    }
+  ]
+}
