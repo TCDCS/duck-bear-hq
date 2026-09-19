@@ -231,7 +231,7 @@ function ambientPerson(z,side,phase){
   const root=new pc.Entity('Pavement pedestrian');
   root.setPosition(side*(4.95+(phase%3)*.35),0,-z);app.root.addChild(root);
   const kind=phase%3===0?'worker':'casual';
-  spawnCharacter(root,{kind,clip:'Walk',scale:.88+(phase%3)*.025,yaw:phase%2?0:180,name:'Pedestrian model'});
+  spawnCharacter(root,{kind,clip:'Walk',scale:.98+(phase%3)*.025,yaw:phase%2?0:180,name:'Pedestrian model'});
   animated.push({type:'pavement',entity:root,baseX:root.getPosition().x,baseD:z,phase:phase*.7});
 }
 function buildStreetLife(){
@@ -268,7 +268,7 @@ const landmarkCallouts=[
 
 function buildPlayer(){
   const root=new pc.Entity('Runner');app.root.addChild(root);
-  const model=spawnCharacter(root,{kind:'casual',clip:'Run',scale:.96,yaw:180,name:'Runner character model'});
+  const model=spawnCharacter(root,{kind:'casual',clip:'Run',scale:1.08,yaw:180,name:'Runner character model'});
   box('Runner backpack',new pc.Vec3(0,1.05,.23),new pc.Vec3(.34,.44,.16),mat(new pc.Color(.45,.25,.10),{gloss:.25}),root);
   const groundY=.04;root.setPosition(lanes[1],groundY,0);
   return {entity:root,model,lane:1,distance:0,y:groundY,groundY,vy:0,grounded:true,hit:0};
@@ -282,12 +282,12 @@ function obstacle(kind,d,lane,{jumpable=false}={}){
   if(kind==='bin'){box('bin',new pc.Vec3(0,.72,0),new pc.Vec3(.92,1.42,.78),M.green,root);box('lid',new pc.Vec3(0,1.48,-.05),new pc.Vec3(1.0,.15,.86),M.black,root);}
   if(kind==='roadworks'){box('barrier',new pc.Vec3(0,.78,0),new pc.Vec3(1.95,1.12,.24),M.orange,root);box('barrier stripe',new pc.Vec3(0,.80,.14),new pc.Vec3(1.35,.18,.04),M.white,root);}
   if(kind==='tourist'){
-    spawnCharacter(root,{kind:'casual',clip:'Idle_Neutral',scale:.94,yaw:180,name:'Tourist character model'});
+    spawnCharacter(root,{kind:'casual',clip:'Idle_Neutral',scale:1.03,yaw:180,name:'Tourist character model'});
     box('phone',new pc.Vec3(.33,1.36,-.18),new pc.Vec3(.07,.24,.14),M.black,root);
     animated.push({type:'tourist',entity:root,baseX:lanes[lane],baseD:d,phase:d*.11});
   }
   if(kind==='umbrella'){
-    spawnCharacter(root,{kind:'worker',clip:'Idle_Neutral',scale:.91,yaw:180,name:'Umbrella pedestrian model'});
+    spawnCharacter(root,{kind:'worker',clip:'Idle_Neutral',scale:1.00,yaw:180,name:'Umbrella pedestrian model'});
     box('umbrella handle',new pc.Vec3(.38,1.55,0),new pc.Vec3(.045,1.55,.045),M.black,root);
     sphere('umbrella canopy',new pc.Vec3(.38,2.43,0),new pc.Vec3(1.18,.24,1.18),M.purple,root);
     animated.push({type:'umbrella',entity:root,baseX:lanes[lane],baseD:d,phase:d*.05});
@@ -297,7 +297,7 @@ function obstacle(kind,d,lane,{jumpable=false}={}){
     cyl('wheel2',new pc.Vec3(0,.48,.64),new pc.Vec3(.48,.07,.48),M.black,root,new pc.Vec3(90,0,0));
     box('bike frame',new pc.Vec3(0,.70,0),new pc.Vec3(.10,.10,1.10),M.rail,root);
     box('handlebars',new pc.Vec3(0,1.02,-.55),new pc.Vec3(.78,.07,.08),M.rail,root);
-    const rider=spawnCharacter(root,{kind:kind==='delivery'?'worker':'casual',clip:'Idle_Neutral',scale:.78,yaw:180,name:kind==='delivery'?'Delivery rider model':'Cyclist rider model'});
+    const rider=spawnCharacter(root,{kind:kind==='delivery'?'worker':'casual',clip:'Idle_Neutral',scale:.86,yaw:180,name:kind==='delivery'?'Delivery rider model':'Cyclist rider model'});
     if(rider){rider.setLocalPosition(0,.10,.08);rider.setLocalEulerAngles(16,180,0);}
     if(kind==='delivery')box('delivery box',new pc.Vec3(0,1.12,.70),new pc.Vec3(.82,.70,.64),M.green,root);
     animated.push({type:kind,entity:root,baseX:lanes[lane],baseD:d,phase:d*.07});
@@ -321,13 +321,13 @@ function buildTram(){
 let tram=null;
 function syncTram(){if(tram)tram.entity.setPosition(0,.02,-tram.distance);}
 
-const camera=new pc.Entity('Camera');camera.addComponent('camera',{clearColor:new pc.Color(.028,.045,.09),fov:67,nearClip:.1,farClip:720});app.root.addChild(camera);camera.setPosition(0,4.2,7.2);
+const camera=new pc.Entity('Camera');camera.addComponent('camera',{clearColor:new pc.Color(.028,.045,.09),fov:63,nearClip:.1,farClip:720});app.root.addChild(camera);camera.setPosition(0,3.72,5.65);
 
 function updateCamera(dt){
   const p=player.entity.getPosition(),rush=state.started&&!state.finished?Math.max(0,(10-state.timeLeft)/10):0,shake=player.hit>0?Math.sin(state.elapsed*48)*.065:0;
-  const target=new pc.Vec3(p.x*.16+shake,4.25-rush*.30,p.z+7.15-rush*.62),cur=camera.getPosition(),t=1-Math.exp(-8*dt);
+  const target=new pc.Vec3(p.x*.18+shake,3.72-rush*.22,p.z+5.65-rush*.48),cur=camera.getPosition(),t=1-Math.exp(-8*dt);
   camera.setPosition(pc.math.lerp(cur.x,target.x,t),pc.math.lerp(cur.y,target.y,t),pc.math.lerp(cur.z,target.z,t));
-  camera.lookAt(p.x*.18,1.22,p.z-9.2-rush*1.8);camera.camera.fov=pc.math.lerp(camera.camera.fov,67+rush*7,1-Math.exp(-4*dt));
+  camera.lookAt(p.x*.20,1.38,p.z-7.7-rush*1.55);camera.camera.fov=pc.math.lerp(camera.camera.fov,63+rush*6,1-Math.exp(-4*dt));
 }
 
 const input={queue:new Set(),downX:0,downY:0,tracking:false};
@@ -349,6 +349,30 @@ function updatePlayer(dt){
   const speed=(player.hit>0?GAME.hitSpeed:GAME.speed)*urgency;
   player.distance+=speed*dt;player.entity.setPosition(x,player.y,-player.distance);
 }
+function prepareVisualReview(focus){
+  const targetMap={tourist:64,cyclist:78,umbrella:108,delivery:154};
+  const targetD=targetMap[focus];
+  if(!targetD)return null;
+  let target=null;
+  for(const o of obstacleRecords){
+    const isTarget=o.kind===focus&&o.d===targetD;
+    o.entity.enabled=isTarget;
+    if(isTarget)target=o;
+  }
+  for(const a of animated){
+    if(a.type==='pavement')a.entity.enabled=false;
+  }
+  const preview=Math.max(0,targetD-5.2);
+  player.distance=preview;
+  player.entity.setPosition(lanes[target?.lane??1],player.y,-preview);
+  if(target){
+    target.entity.setPosition(lanes[target.lane],0,-targetD);
+    target.entity.setLocalEulerAngles(0,0,0);
+  }
+  document.documentElement.dataset.lastLuasReviewFocus=focus;
+  return preview;
+}
+
 function updateObstacles(){
   const px=player.entity.getPosition().x;
   for(const o of obstacleRecords){
@@ -414,10 +438,14 @@ async function boot(){
     document.documentElement.dataset.lastLuasWorkerClips=(characterAssets.get('worker')?.resource?.animations||[]).map(a=>a.name||a.resource?.name||'').join(',');
     const smokeParams=new URLSearchParams(location.search);
     if(smokeParams.get('smoke')==='1'){
-      const preview=Math.max(0,Math.min(GAME.streetLength-8,Number(smokeParams.get('distance')||70)||70));
-      player.distance=preview;player.entity.setPosition(lanes[1],player.y,-preview);
+      const focus=smokeParams.get('focus');
+      let preview=focus?prepareVisualReview(focus):null;
+      if(preview===null){
+        preview=Math.max(0,Math.min(GAME.streetLength-8,Number(smokeParams.get('distance')||18)||18));
+        player.distance=preview;player.entity.setPosition(lanes[1],player.y,-preview);
+      }
       ui.start.classList.remove('visible');ui.start.hidden=true;updateHud();updateCamera(1);animateWorld();
-      setTimeout(()=>{app.stop();document.documentElement.dataset.lastLuasSmokeStopped='1';},900);
+      setTimeout(()=>{app.stop();document.documentElement.dataset.lastLuasSmokeStopped='1';},1200);
     }else{
       playButton.disabled=false;playButton.textContent='RUN FOR IT →';
     }
