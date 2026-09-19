@@ -172,3 +172,10 @@ test('Seagull retry buttons restart directly into gameplay',()=>{
   assert.match(source,/restartRunBtn'\)\?\.addEventListener\('click',restartRun\)/);
   assert.match(source,/restartBtn'\)\?\.addEventListener\('click',restartRun\)/);
 });
+
+test('Seagull persistence smoke covers coins bird upgrades trophies and stats',()=>{
+  assert.match(source,/persistcheck/);
+  assert.match(source,/coins:321,selectedBird:'big-lad'/);
+  assert.match(source,/data\.seagullPersistVerified=ok\?'1':'0'/);
+  assert.match(source,/achievements:\[\.\.\.new Set/);
+});
