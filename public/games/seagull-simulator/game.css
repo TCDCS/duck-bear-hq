@@ -31,3 +31,13 @@
 @media(max-height:520px) and (orientation:landscape){
   .over-panel{padding:8px 16px;justify-content:center}.over-panel .eyebrow{font-size:8px;margin:0 0 4px}.over-panel h2{font-size:38px;margin:0 0 6px;text-shadow:0 3px 0 #3d1b2a}.over-panel .results{width:min(760px,92vw);grid-template-columns:repeat(2,1fr);gap:4px;margin-bottom:7px}.over-panel .results span{padding:5px 8px;font-size:8px;border-width:1px}.over-panel .results strong{font-size:10px}.over-panel .play{min-width:150px;padding:7px 14px;font-size:12px}.over-panel .secondary{margin-top:8px;font-size:8px}
 }
+
+@media(max-height:520px) and (orientation:landscape){
+  .trophy-grid{gap:4px}
+  .trophy-card{padding:5px}
+  .trophy-card .trophy-icon{width:30px;height:30px;font-size:11px;margin-bottom:2px}
+  .trophy-card h3{font-size:8px;margin-bottom:1px}
+  .trophy-card p{font-size:6px;line-height:1.2;min-height:20px}
+  .trophy-card small{font-size:5.5px;margin-top:2px}
+  .trophies-panel .panel-copy{margin-bottom:4px}
+}
