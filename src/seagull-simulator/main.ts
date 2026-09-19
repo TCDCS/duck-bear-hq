@@ -204,6 +204,12 @@ class DameStreetScene extends Phaser.Scene{
     setText('stolen','0');
     setWanted(0);setFeathers(3);this.setMission(0);
     this.time.delayedCall(900,()=>this.toast('Find food. Dive low. Grab it. Get out.'));
+    const tutorialKey='seagull-tutorial-seen-v1';
+    if(!new URLSearchParams(location.search).has('smoke')&&!localStorage.getItem(tutorialKey)){
+      localStorage.setItem(tutorialKey,'1');
+      this.time.delayedCall(3400,()=>this.toast('HOLD DIVE TO SWOOP DOWN · KEEP HOLDING TO LAND'));
+      this.time.delayedCall(6200,()=>this.toast('GRAB UP CLOSE · FLAP TO ESCAPE OR TAKE OFF'));
+    }
     document.documentElement.dataset.seagullReady='1';
     if(new URLSearchParams(location.search).has('exercise')){
       document.documentElement.dataset.seagullExerciseScheduled='1';
@@ -411,11 +417,15 @@ class DameStreetScene extends Phaser.Scene{
 
   dog(x:number,y:number,flip=false){
     const g=this.add.graphics().setDepth(19);
-    g.fillStyle(0x9c6b42);g.fillEllipse(x,y,46,24);
-    g.fillCircle(x+(flip?-22:22),y-7,14);
-    g.fillStyle(0x6e472f);g.fillTriangle(x+(flip?-26:26),y-20,x+(flip?-38:38),y-31,x+(flip?-15:15),y-20);
-    g.lineStyle(4,0x795138);if(flip)g.lineBetween(x+18,y-4,x+34,y-18);else g.lineBetween(x-18,y-4,x-34,y-18);
-    g.fillStyle(0x24343b);g.fillCircle(x+(flip?-26:26),y-9,2);
+    const dir=flip?-1:1;
+    g.fillStyle(0x9c6b42);g.fillEllipse(x,y,52,26);
+    g.fillStyle(0x865735);g.fillRoundedRect(x-17,y+8,7,19,3);g.fillRoundedRect(x+9,y+8,7,19,3);
+    g.fillStyle(0x9c6b42);g.fillCircle(x+dir*25,y-8,15);
+    g.fillStyle(0x6e472f);g.fillEllipse(x+dir*31,y+1,17,10);
+    g.fillTriangle(x+dir*22,y-18,x+dir*35,y-29,x+dir*14,y-19);
+    g.lineStyle(4,0x795138);g.lineBetween(x-dir*23,y-5,x-dir*38,y-19);
+    g.lineStyle(3,0x4aa3a1);g.lineBetween(x+dir*14,y-2,x+dir*34,y-2);
+    g.fillStyle(0x24343b);g.fillCircle(x+dir*29,y-10,2);g.fillCircle(x+dir*39,y+1,2);
   }
 
   duck(x:number,y:number,flip=false){
@@ -668,6 +678,7 @@ class DameStreetScene extends Phaser.Scene{
     this.carryText.setText(this.combo>1?`${t.name.toUpperCase()} · x${this.combo}`:t.name.toUpperCase()+'!');
     this.time.delayedCall(1150,()=>this.carryText.setText(''));
     setText('score',Math.floor(this.score).toLocaleString());setText('stolen',String(this.stolen));setText('combo','x'+this.combo);
+    this.scorePop('+'+earned+(this.combo>1?'  x'+this.combo:''));
     this.toast('STOLEN: '+t.name.toUpperCase()+'  +'+earned);sfx('grab');haptic(30);
     this.emote(t.person,t.temperament==='defender'?'OI!':'!');
     this.addHeat(13+(t.value>=50?5:0),time);
@@ -741,7 +752,7 @@ class DameStreetScene extends Phaser.Scene{
     setText('missionProgress',`${Math.min(this.missionProgress,this.missionTarget)}/${this.missionTarget}`);
     if(this.missionProgress>=this.missionTarget){
       const bonus=150+this.missionIndex*50;this.score+=bonus;setText('score',Math.floor(this.score).toLocaleString());
-      this.toast('MISSION COMPLETE  +'+bonus);tone(740,.08,'square',.025,160);haptic(45);
+      this.toast('MISSION COMPLETE  +'+bonus);this.scorePop('MISSION +'+bonus,'#ffe66f');tone(740,.08,'square',.025,160);haptic(45);
       this.time.delayedCall(900,()=>this.setMission(this.missionIndex+1));
     }
   }
@@ -809,6 +820,11 @@ class DameStreetScene extends Phaser.Scene{
     this.toast(message);sfx('hit');haptic(80);
     if(this.missionIndex===4&&this.missionProgress>0){this.missionProgress=0;setText('missionProgress','0/'+this.missionTarget);this.toast('MISSION STREAK RESET');}
     if(this.feathers<=0)this.gameOver();
+  }
+
+  scorePop(text:string,color='#ffffff'){
+    const pop=this.add.text(this.gull.x,this.gull.y-70,text,{fontFamily:'Arial Black',fontSize:'24px',color,stroke:'#17384b',strokeThickness:6}).setOrigin(.5).setDepth(120);
+    this.tweens.add({targets:pop,y:pop.y-70,alpha:0,scale:1.16,duration:850,ease:'Cubic.easeOut',onComplete:()=>pop.destroy()});
   }
 
   emote(at:Phaser.GameObjects.Sprite,text:string){
