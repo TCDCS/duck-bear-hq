@@ -1,9 +1,9 @@
 {
   "game": "seagull-simulator",
   "title": "Seagull Simulator: Dublin",
-  "version": "0.9.1-alpha",
+  "version": "1.0",
   "engine": "Phaser 4 + TypeScript",
-  "status": "playable-alpha",
+  "status": "release-candidate",
   "area": "Dame Street + College Green + Grafton Street + St Stephen's Green",
   "controls": {
     "mobile": "virtual stick + flap + dive + grab",
@@ -124,5 +124,8 @@
     "cross-reload progression persistence",
     "forced low-power browser path",
     "reduced-motion source/UI checks"
-  ]
+  ],
+  "build": "1.0",
+  "liveTarget": true,
+  "releaseStage": "1.0 is the first live Duck & Bear release"
 }
