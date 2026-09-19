@@ -1,7 +1,7 @@
 {
   "game": "Last Luas",
-  "version": "0.4.0",
-  "status": "playable vertical slice — Dublin geometry and streetscape rebuild",
+  "version": "0.5.0",
+  "status": "playable vertical slice — tram, facade and kerb-life detail pass",
   "engine": "PlayCanvas 2.22.2",
   "location": "Dawson Street, Dublin",
   "durationSeconds": 90,
@@ -33,7 +33,15 @@
     "platformWhiteEdgeLines": true,
     "glassShelters": true,
     "realtimeStopDisplays": true,
-    "runtimeNameboards": true
+    "runtimeNameboards": true,
+    "graniteKerbs": true,
+    "parkedDublinTaxis": true,
+    "deliveryVan": true,
+    "lockedBicycles": true,
+    "facadeCornicesAndStonework": true,
+    "articulatedLuas": true,
+    "luasBogieAndDoorDetail": true,
+    "pantographCollector": true
   },
   "landmarks": [
     "St Stephen's Green end",
@@ -62,5 +70,9 @@
     "camera FOV sprint effect",
     "local best catch time"
   ],
-  "notes": "v0.4 rebuilds the street from the St Stephen's Green end towards Duke Street/Nassau Street, adds named side-street breaks and Dublin street furniture, improves the Dawson stop with tactile edges and realtime displays, and updates the tram with silver/yellow/purple Luas cues. Gameplay remains the same 90-second three-lane runner."
+  "notes": "v0.5 keeps the v0.4 Dawson Street geometry and adds a longer articulated silver/yellow/purple Luas, bogies, doors and pantograph detail, more landmark cornices/stonework/planting, granite kerbs, parked taxis, a delivery van and locked bicycles. A dedicated browser smoke workflow now captures the route before merge.",
+  "validation": {
+    "browserSmokeSnapshots": true,
+    "buildReadinessMarker": true
+  }
 }
