@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 88">
+<ellipse cx="130" cy="79" rx="115" ry="6" fill="#19313c" opacity=".16"/>
+<g stroke="#293d47" stroke-width="3" stroke-linejoin="round">
+<path d="M15 18Q15 8 28 8h204q13 0 13 10v48q0 10-13 10H28q-13 0-13-10Z" fill="#e8ece9"/>
+<path d="M19 51h222v15H19Z" fill="#63a856"/>
+<path d="M24 16h211v28H24Z" fill="#a9d8df"/>
+<path d="M57 16v28M91 16v28M125 16v28M159 16v28M193 16v28" stroke="#4b6a75" stroke-width="4"/>
+<path d="M15 23 3 34v22l12 7M245 23l12 11v22l-12 7" fill="#dfe5e2"/>
+<circle cx="57" cy="76" r="9" fill="#26343c"/><circle cx="203" cy="76" r="9" fill="#26343c"/>
+<rect x="102" y="55" width="56" height="8" rx="3" fill="#315742"/>
+</g>
+<text x="130" y="62" text-anchor="middle" font-family="Arial,sans-serif" font-size="7" font-weight="700" fill="#fff">LUAS</text>
+</svg>

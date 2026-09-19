@@ -3,16 +3,20 @@
   "version": "6.0.0",
   "private": true,
   "type": "module",
-  "description": "Duck & Bear public website, private account and Wacky Races online rooms",
+  "description": "Duck & Bear public website, private account and browser games",
   "scripts": {
     "deploy": "npm test && npm run check && wrangler d1 migrations apply DB --remote && wrangler deploy",
-    "check": "node scripts/check.mjs && node scripts/mango-check.mjs",
+    "check": "npm run build:seagull && node scripts/check.mjs && node scripts/mango-check.mjs",
     "test": "node --test tests/*.cjs tests/*.mjs",
     "smoke": "node scripts/smoke.mjs",
-    "dev": "wrangler dev",
-    "migrate:local": "wrangler d1 migrations apply DB --local"
+    "dev": "npm run build:seagull && wrangler dev",
+    "migrate:local": "wrangler d1 migrations apply DB --local",
+    "build:seagull": "esbuild src/seagull-simulator/main.ts --bundle --minify --format=iife --target=es2020 --outfile=public/games/seagull-simulator/game.js"
   },
   "devDependencies": {
     "wrangler": "^4.45.0"
+  },
+  "dependencies": {
+    "phaser": "4.2.1"
   }
 }

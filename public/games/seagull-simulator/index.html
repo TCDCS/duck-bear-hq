@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en-IE">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#173b50">
+  <meta name="description" content="Seagull Simulator: Dublin — steal snacks, dodge traffic and become a public nuisance from Dame Street to Stephen's Green.">
+  <title>Seagull Simulator: Dublin — Duck &amp; Bear</title>
+  <link rel="icon" href="/games/seagull-simulator/icon.svg">
+  <link rel="stylesheet" href="/games/seagull-simulator/game.css?v=1.0">
+</head>
+<body>
+  <main class="game-shell">
+    <div id="game" class="game-stage" aria-label="Seagull Simulator: Dublin game"></div>
+
+    <section id="startScreen" class="panel start-panel">
+      <a class="back" href="/games/">← Duck &amp; Bear Games</a>
+      <div class="logo-mark" aria-hidden="true"><img src="/games/seagull-simulator/art/gull-mid.svg" alt=""></div>
+      <p class="eyebrow">DUCK &amp; BEAR PRESENTS</p>
+      <h1>SEAGULL<br><span>SIMULATOR</span></h1>
+      <div class="title-badges"><strong class="dublin">DUBLIN</strong><strong class="build-badge">BUILD <span id="version">1.0</span></strong></div>
+      <p class="tagline">STEAL. SQUAWK. REPEAT.</p>
+      <p class="intro">Free-fly through Dame Street, College Green, Grafton Street and St Stephen's Green. Pick a snack, dive low, grab it and get away before Dublin has enough of you.</p>
+      <button id="playBtn" class="play">PLAY</button>
+      <div class="progression-strip">
+        <button id="birdsBtn" class="mini-button" type="button">BIRDS</button>
+        <span class="coin-pill">◉ <strong id="coinCount">0</strong></span>
+        <button id="upgradesBtn" class="mini-button" type="button">UPGRADES</button>
+        <button id="trophiesBtn" class="mini-button" type="button">TROPHIES <span id="trophyCount">0/8</span></button>
+      </div>
+      <p class="selected-bird">Flying as <strong id="selectedBirdName">Dublin Gull</strong></p>
+      <p class="controls-note">Phone: stick + Dive/Grab/Flap · Hold Dive to land · Computer: WASD/Arrows + Space/E · P/Esc pause</p>
+      <p class="best-line">Best run <strong id="startBest">0</strong></p>
+      <p class="build">Duck &amp; Bear release build 1.0</p>
+    </section>
+
+    <div id="hud" class="hud hidden" aria-live="polite">
+      <a class="hud-home" href="/games/" aria-label="Back to games">←</a>
+      <button id="soundBtn" class="hud-sound" type="button" aria-label="Toggle sound effects">SFX</button>
+      <button id="pauseBtn" class="hud-sound" type="button" aria-label="Pause game">Ⅱ</button>
+      <div class="hud-chip"><small>SCORE</small><strong id="score">0</strong></div>
+      <div class="hud-chip"><small>FOOD</small><strong id="stolen">0</strong></div>
+      <div class="hud-chip combo"><small>COMBO</small><strong id="combo">x1</strong></div>
+      <div class="hud-chip wanted"><small>WANTED <span id="heat">0%</span></small><strong id="wantedStars">☆☆☆☆☆</strong></div>
+      <div class="hud-chip feathers"><small>FEATHERS</small><strong id="feathers">●●●</strong></div>
+    </div>
+    <div id="missionBar" class="mission-bar hidden"><span>MISSION</span><strong id="mission">Steal 3 snacks</strong><b id="missionProgress">0/3</b></div>
+
+    <div id="toast" class="toast" role="status"></div>
+
+    <div id="controls" class="mobile-controls hidden" aria-label="Game controls">
+      <div id="stickZone" class="stick-zone"><div class="stick-base"><div id="stickKnob" class="stick-knob"></div></div></div>
+      <div class="action-buttons">
+        <button id="boostBtn" class="action boost" aria-label="Flap faster">FLAP</button>
+        <button id="diveBtn" class="action dive" aria-label="Dive">DIVE</button>
+        <button id="grabBtn" class="action grab" aria-label="Grab food">GRAB</button>
+      </div>
+    </div>
+
+    <section id="pausePanel" class="panel pause-panel hidden">
+      <p class="eyebrow">SEAGULL ON A BREAK</p>
+      <h2>PAUSED</h2>
+      <p>Even a public nuisance needs a minute.</p>
+      <button id="resumeBtn" class="play" type="button">RESUME</button>
+      <button id="restartRunBtn" class="pause-secondary" type="button">RESTART RUN</button>
+      <a class="secondary" href="/games/">BACK TO GAMES</a>
+    </section>
+
+    <section id="gameOver" class="panel over-panel hidden">
+      <p class="eyebrow">RUN OVER</p>
+      <h2>CAUGHT!</h2>
+      <div class="results">
+        <span>Score <strong id="finalScore">0</strong></span>
+        <span>Food stolen <strong id="finalStolen">0</strong></span>
+        <span>Best score <strong id="bestScore">0</strong></span>
+        <span>Coins earned <strong id="coinsEarned">0</strong></span>
+        <span>Bird <strong id="finalBird">Dublin Gull</strong></span>
+        <span>Best theft <strong id="finalBestTheft">—</strong></span>
+        <span>Best combo <strong id="finalBestCombo">x1</strong></span>
+        <span>Highest wanted <strong id="finalWanted">0/5</strong></span>
+        <span>Areas visited <strong id="finalAreas">1/4</strong></span>
+        <span>Run time <strong id="finalRunTime">0:00</strong></span>
+      </div>
+      <button id="restartBtn" class="play">PLAY AGAIN</button>
+      <a class="secondary" href="/games/">BACK TO GAMES</a>
+    </section>
+
+    <section id="birdsPanel" class="panel progression-panel hidden" aria-label="Birds">
+      <button class="panel-close" data-close-panel="birdsPanel" type="button">×</button>
+      <p class="eyebrow">BIRDS</p>
+      <h2>Choose your menace.</h2>
+      <p class="panel-copy">Different gulls change the feel a little. Unlocks stay on this device.</p>
+      <div id="birdGrid" class="choice-grid"></div>
+      <div class="panel-balance">Coins <strong id="birdsCoinCount">0</strong></div>
+    </section>
+
+    <section id="trophiesPanel" class="panel progression-panel hidden" aria-label="Trophies">
+      <button class="panel-close" data-close-panel="trophiesPanel" type="button">×</button>
+      <p class="eyebrow">TROPHY CABINET</p>
+      <h2>Dublin remembers.</h2>
+      <p class="panel-copy">Small local achievements for causing exactly the right kind of trouble.</p>
+      <div class="lifetime-strip">
+        <span>Runs <strong id="lifetimeRuns">0</strong></span>
+        <span>Food <strong id="lifetimeFood">0</strong></span>
+        <span>Total score <strong id="lifetimeScore">0</strong></span>
+        <span>Best combo <strong id="lifetimeCombo">x1</strong></span>
+      </div>
+      <div id="trophyGrid" class="trophy-grid"></div>
+    </section>
+
+    <section id="upgradesPanel" class="panel progression-panel hidden" aria-label="Upgrades">
+      <button class="panel-close" data-close-panel="upgradesPanel" type="button">×</button>
+      <p class="eyebrow">UPGRADES</p>
+      <h2>A slightly better nuisance.</h2>
+      <p class="panel-copy">Five levels each. Small boosts only—the game still needs timing.</p>
+      <div id="upgradeGrid" class="upgrade-grid"></div>
+      <div class="panel-balance">Coins <strong id="upgradesCoinCount">0</strong></div>
+    </section>
+  </main>
+  <div class="rotate-hint" aria-hidden="true"><strong>ROTATE YOUR PHONE</strong><span>Seagulls need a bit more room to cause trouble.</span></div>
+  <script src="/games/seagull-simulator/game.js?v=1.0"></script>
+</body>
+</html>

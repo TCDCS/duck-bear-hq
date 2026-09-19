@@ -1,0 +1,133 @@
+name: Seagull Simulator Validate
+
+on:
+  push:
+    branches:
+      - feature/seagull-simulator
+  pull_request:
+    paths:
+      - 'src/seagull-simulator/**'
+      - 'public/games/seagull-simulator/**'
+      - 'public/games/index.html'
+      - 'public/games/games.css'
+      - 'public/index.html'
+      - 'public/seagull-card.css'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/check.mjs'
+      - '.github/workflows/seagull-simulator.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build Seagull Simulator
+        run: npm run build:seagull
+      - name: Browser smoke test
+        run: |
+          python3 -m http.server 4173 --directory public >/tmp/seagull-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid 2>/dev/null || true' EXIT
+          for i in {1..20}; do
+            curl -fsS http://127.0.0.1:4173/games/seagull-simulator/ >/dev/null && break
+            sleep 0.25
+          done
+          mkdir -p /tmp/seagull-smoke
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=4500 --screenshot=/tmp/seagull-smoke/dame-street.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=4500 --screenshot=/tmp/seagull-smoke/college-green.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&area=college'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=4500 --screenshot=/tmp/seagull-smoke/grafton-street.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&area=grafton'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=4500 --screenshot=/tmp/seagull-smoke/stephens-green.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&area=green'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=844,390 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/mobile-title.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=844,390 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/mobile-game.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=844,390 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/mobile-lowpower.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&lowpower=1'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=390,844 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/mobile-portrait.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&orientationcheck=1'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/birds-panel.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&panel=birds'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/upgrades-panel.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&panel=upgrades'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/trophies-panel.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&panel=trophies'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/run-summary.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&summarycheck=1'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=844,390 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/mobile-run-summary.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&summarycheck=1'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=844,390 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/mobile-trophies.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&panel=trophies'
+          dom=$(google-chrome --headless --no-sandbox --dump-dom --virtual-time-budget=6500 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&exercise=1')
+          echo "$dom" | grep 'data-seagull-ready="1"'
+          echo "$dom" | grep 'data-seagull-physics-bodies="1"'
+          echo "$dom" | grep 'data-seagull-exercise-scheduled="1"'
+          if ! echo "$dom" | grep 'data-seagull-exercised="1"'; then
+            echo "$dom" | grep -o 'data-seagull-exercise-error="[^"]*"' || true
+            exit 1
+          fi
+          feel=$(google-chrome --headless --no-sandbox --dump-dom --virtual-time-budget=6500 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&feelcheck=1')
+          echo "$feel" | grep 'data-seagull-feel-scheduled="1"'
+          if ! echo "$feel" | grep 'data-seagull-feel-exercised="1"'; then
+            echo "$feel" | grep -o 'data-seagull-feel-error="[^"]*"' || true
+            exit 1
+          fi
+          summary=$(google-chrome --headless --no-sandbox --dump-dom --virtual-time-budget=6500 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&summarycheck=1')
+          echo "$summary" | grep 'data-seagull-summary-scheduled="1"'
+          echo "$summary" | grep 'data-seagull-summary-exercised="1"'
+          echo "$summary" | grep '1:34'
+          rm -rf /tmp/seagull-profile
+          seed=$(google-chrome --headless --no-sandbox --user-data-dir=/tmp/seagull-profile --dump-dom --virtual-time-budget=3000 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&persistcheck=seed')
+          echo "$seed" | grep 'data-seagull-persist-seeded="1"'
+          verify=$(google-chrome --headless --no-sandbox --user-data-dir=/tmp/seagull-profile --dump-dom --virtual-time-budget=3000 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&persistcheck=verify')
+          echo "$verify" | grep 'data-seagull-persist-verified="1"'
+          echo "$verify" | grep 'Big Lad'
+          echo "$verify" | grep '>321<'
+          lowpower=$(google-chrome --headless --no-sandbox --dump-dom --virtual-time-budget=4500 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&lowpower=1')
+          echo "$lowpower" | grep 'data-seagull-low-power="1"'
+          echo "$lowpower" | grep 'data-seagull-physics-bodies="1"'
+          pigeons=$(echo "$lowpower" | sed -n 's/.*data-seagull-pigeons="\([0-9][0-9]*\)".*/\1/p' | head -n1)
+          echo "Low-power pigeons: $pigeons"
+          test -n "$pigeons"
+          test "$pigeons" -lt 20
+          portrait=$(google-chrome --headless --no-sandbox --window-size=390,844 --dump-dom --virtual-time-budget=4500 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&orientationcheck=1')
+          echo "$portrait" | grep 'data-seagull-orientation-paused="1"'
+          echo "$portrait" | grep 'ROTATE YOUR PHONE'
+          test -s /tmp/seagull-smoke/dame-street.png
+          test -s /tmp/seagull-smoke/college-green.png
+          test -s /tmp/seagull-smoke/grafton-street.png
+          test -s /tmp/seagull-smoke/stephens-green.png
+          test -s /tmp/seagull-smoke/mobile-title.png
+          test -s /tmp/seagull-smoke/mobile-game.png
+          test -s /tmp/seagull-smoke/mobile-lowpower.png
+          test -s /tmp/seagull-smoke/mobile-portrait.png
+          test -s /tmp/seagull-smoke/birds-panel.png
+          test -s /tmp/seagull-smoke/upgrades-panel.png
+          test -s /tmp/seagull-smoke/trophies-panel.png
+          test -s /tmp/seagull-smoke/run-summary.png
+          test -s /tmp/seagull-smoke/mobile-run-summary.png
+          test -s /tmp/seagull-smoke/mobile-trophies.png
+      - name: Upload smoke screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: seagull-simulator-smoke
+          path: /tmp/seagull-smoke/
+          if-no-files-found: error
+      - name: Upload playable Seagull build
+        uses: actions/upload-artifact@v4
+        with:
+          name: seagull-simulator-build
+          path: public/games/seagull-simulator/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Repository checks
+        run: npm run check
+      - name: Site tests
+        run: npm test
+      - name: Check bundle size
+        run: |
+          test -s public/games/seagull-simulator/game.js
+          bytes=$(wc -c < public/games/seagull-simulator/game.js)
+          gzip_bytes=$(gzip -c public/games/seagull-simulator/game.js | wc -c)
+          echo "Seagull bundle: $bytes bytes raw"
+          echo "Seagull bundle: $gzip_bytes bytes gzip"
+          test "$bytes" -lt 3500000
+          test "$gzip_bytes" -lt 650000

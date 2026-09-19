@@ -1,0 +1,131 @@
+{
+  "game": "seagull-simulator",
+  "title": "Seagull Simulator: Dublin",
+  "version": "1.0",
+  "engine": "Phaser 4 + TypeScript",
+  "status": "release-candidate",
+  "area": "Dame Street + College Green + Grafton Street + St Stephen's Green",
+  "controls": {
+    "mobile": "virtual stick + flap + dive + grab",
+    "desktop": "WASD/arrows + Shift + Space + E"
+  },
+  "nextAreas": [],
+  "features": [
+    "free flight",
+    "dive and grab",
+    "land and waddle",
+    "food recycling",
+    "wanted heat",
+    "Garda response",
+    "combos",
+    "missions",
+    "local high score",
+    "pedestrian Grafton Street",
+    "buskers",
+    "St Stephen's Green park",
+    "ducks and picnics",
+    "local coins",
+    "four unlockable gulls",
+    "Wings/Beak/Nerve upgrades",
+    "persistent SFX preference",
+    "smoothed arcade flight",
+    "persistent dive steering assist",
+    "high-altitude heat escape",
+    "Garda line-of-sight loss",
+    "eight local trophies",
+    "lifetime run statistics",
+    "richer run-end summary",
+    "active play-time tracking",
+    "area-specific food pools",
+    "area-specific crowd mixes",
+    "sandwiches",
+    "doughnuts",
+    "high-value takeaway bags",
+    "single Arcade Physics player body",
+    "off-screen pedestrian update culling",
+    "non-physics traffic/NPC actors",
+    "ambient pigeons",
+    "pigeon scatter behaviour",
+    "animated Grafton busker notes",
+    "nearby Luas bell cue",
+    "automatic ambient low-power mode",
+    "real browser persistence reload check",
+    "reduced-motion support",
+    "playable CI build artifact"
+  ],
+  "progression": {
+    "storage": "local device",
+    "birds": 4,
+    "upgradeTracks": 3,
+    "maxUpgradeLevel": 5,
+    "paidCurrency": false
+  },
+  "tuning": {
+    "flight": "smoothed/inertial",
+    "diveAssistMs": 760,
+    "gardaLoseSightMs": 1900,
+    "gardaCooldownMs": 3200
+  },
+  "achievements": {
+    "count": 8,
+    "storage": "local device",
+    "examples": [
+      "Mine Now",
+      "Four on the Floor",
+      "Public Menace",
+      "Full Tour",
+      "Feeding Frenzy"
+    ]
+  },
+  "runSummary": [
+    "best theft",
+    "best combo",
+    "highest wanted",
+    "areas visited",
+    "active run time"
+  ],
+  "food": {
+    "count": 8,
+    "types": [
+      "chips",
+      "chicken fillet roll",
+      "coffee",
+      "ice cream",
+      "spice bag",
+      "sandwich",
+      "doughnut",
+      "takeaway bag"
+    ],
+    "highestValue": "takeaway bag"
+  },
+  "areaFlavour": {
+    "Dame Street": "takeaway-heavy",
+    "College Green": "coffee/commuter-heavy",
+    "Grafton Street": "café/treat-heavy",
+    "St Stephen's Green": "picnic/ice-cream-heavy"
+  },
+  "performance": {
+    "arcadePhysicsBodies": 1,
+    "npcUpdateRadiusX": 1650,
+    "npcUpdateRadiusY": 1100,
+    "goal": "mid-range mobile browser stability",
+    "lowPowerMode": "automatic or ?lowpower=1",
+    "lowPowerPigeons": "~50%",
+    "lowPowerNpcRadiusX": 1250,
+    "lowPowerNpcRadiusY": 900
+  },
+  "ambient": {
+    "pigeons": 20,
+    "physics": false,
+    "luasBellCooldownMs": 6500,
+    "buskerNotes": true
+  },
+  "validation": [
+    "cross-reload progression persistence",
+    "forced low-power browser path",
+    "reduced-motion source/UI checks"
+  ],
+  "build": "1.0",
+  "liveTarget": true,
+  "releaseStage": "1.0 is the first live Duck & Bear release"
+}

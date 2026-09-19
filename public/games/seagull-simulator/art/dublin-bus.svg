@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 140">
+<ellipse cx="110" cy="130" rx="96" ry="8" fill="#19313c" opacity=".18"/>
+<g stroke="#203745" stroke-width="3" stroke-linejoin="round">
+<rect x="7" y="7" width="206" height="115" rx="13" fill="#2f86b9"/>
+<path d="M7 91h206v20H7Z" fill="#efc735"/>
+<path d="M17 16h184v31H17Z" fill="#c9e7ea"/>
+<path d="M17 53h184v30H17Z" fill="#bee0e6"/>
+<path d="M48 16v31M80 16v31M112 16v31M144 16v31M176 16v31" stroke="#456777" stroke-width="4"/>
+<path d="M48 53v30M80 53v30M112 53v30M144 53v30M176 53v30" stroke="#456777" stroke-width="4"/>
+<rect x="72" y="94" width="78" height="12" rx="3" fill="#172f3e"/>
+<text x="111" y="103" text-anchor="middle" font-family="Arial,sans-serif" font-size="8.5" font-weight="700" fill="#ffd84c">46A · DUBLIN</text>
+<rect x="13" y="92" width="11" height="8" rx="2" fill="#fff0a1"/>
+<rect x="196" y="92" width="11" height="8" rx="2" fill="#ed6e5c"/>
+<path d="M183 14h20v69h-20Z" fill="#a8d4dd" opacity=".85"/>
+<circle cx="47" cy="120" r="13" fill="#27343c"/><circle cx="47" cy="120" r="5" fill="#7c8b90"/>
+<circle cx="174" cy="120" r="13" fill="#27343c"/><circle cx="174" cy="120" r="5" fill="#7c8b90"/>
+</g>
+<text x="29" y="101" font-family="Arial,sans-serif" font-size="7" font-weight="700" fill="#17334a">DUBLIN</text>
+</svg>
