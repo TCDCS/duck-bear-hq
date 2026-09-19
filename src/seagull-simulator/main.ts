@@ -16,6 +16,7 @@ type Target = {
   vx: number;
   vy: number;
   panicUntil: number;
+  temperament: 'oblivious'|'suspicious'|'runner'|'defender';
 };
 
 type Vehicle = {
@@ -33,6 +34,31 @@ const controls={
   consumeDive(){const v=this.dive;this.dive=false;return v;},
   consumeGrab(){const v=this.grab;this.grab=false;return v;}
 };
+
+let audioCtx:AudioContext|null=null;
+function initAudio(){
+  if(new URLSearchParams(location.search).has('smoke'))return;
+  try{
+    const Ctx=window.AudioContext||(window as any).webkitAudioContext;
+    if(Ctx){audioCtx=new Ctx();audioCtx.resume().catch(()=>{});}
+  }catch{}
+}
+function tone(freq:number,duration=.08,type:OscillatorType='sine',gain=.035,slide=0){
+  if(!audioCtx)return;
+  const now=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.type=type;o.frequency.setValueAtTime(freq,now);
+  if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(40,freq+slide),now+duration);
+  g.gain.setValueAtTime(gain,now);g.gain.exponentialRampToValueAtTime(.0001,now+duration);
+  o.connect(g);g.connect(audioCtx.destination);o.start(now);o.stop(now+duration+.02);
+}
+function sfx(name:'grab'|'dive'|'hit'|'wanted'|'target'){
+  if(name==='grab'){tone(520,.06,'square',.025,220);setTimeout(()=>tone(880,.09,'triangle',.03,180),45);}
+  if(name==='dive'){tone(240,.13,'sawtooth',.018,-120);}
+  if(name==='hit'){tone(120,.16,'square',.035,-55);}
+  if(name==='wanted'){tone(620,.07,'square',.025,0);setTimeout(()=>tone(760,.08,'square',.025,0),80);}
+  if(name==='target')tone(440,.045,'triangle',.014,90);
+}
+function haptic(ms:number){try{navigator.vibrate?.(ms);}catch{}}
 
 const $=(id:string)=>document.getElementById(id);
 function setText(id:string,value:string){const el=$(id);if(el)el.textContent=value;}
@@ -251,16 +277,29 @@ class DameStreetScene extends Phaser.Scene{
     };
     gull('gull-0',21);gull('gull-1',7);gull('gull-2',-13);
 
-    const person=(key:string,coat:number,skin:number=0xd99d75,hat:number|null=null)=>{
+    const person=(key:string,coat:number,skin:number=0xd99d75,hat:number|null=null,accent:number=0xc99b55)=>{
       const g=this.make.graphics({x:0,y:0},false);
-      g.fillStyle(0x000000,.15);g.fillEllipse(30,72,42,12);
-      g.fillStyle(0x2f3f49);g.fillRoundedRect(18,49,8,22,3);g.fillRoundedRect(34,49,8,22,3);
-      g.fillStyle(coat);g.fillRoundedRect(13,29,34,29,9);
-      g.fillStyle(0x453127);g.fillCircle(30,19,12);g.fillStyle(skin);g.fillCircle(30,23,11);g.fillStyle(0x453127);g.fillRoundedRect(18,11,24,7,3);
-      if(hat!==null){g.fillStyle(hat);g.fillRect(17,10,26,7);g.fillRoundedRect(21,5,18,8,4);}
-      g.generateTexture(key,60,82);g.destroy();
+      g.fillStyle(0x000000,.15);g.fillEllipse(31,76,46,12);
+      g.fillStyle(0x182a35);g.fillRoundedRect(16,52,10,22,4);g.fillRoundedRect(37,52,10,22,4);
+      g.fillStyle(0xffffff);g.fillRoundedRect(16,70,10,4,2);g.fillRoundedRect(37,70,10,4,2);
+      g.fillStyle(coat);g.fillRoundedRect(12,30,39,31,10);
+      g.fillStyle(coat);g.fillRoundedRect(7,33,9,25,4);g.fillRoundedRect(47,33,9,25,4);
+      g.fillStyle(skin);g.fillCircle(11,57,5);g.fillCircle(52,57,5);
+      g.fillStyle(0x453127);g.fillCircle(31,19,13);g.fillStyle(skin);g.fillCircle(31,23,11);g.fillStyle(0x453127);g.fillRoundedRect(18,10,26,8,3);
+      g.fillStyle(0x233742);g.fillCircle(27,23,1.5);g.fillCircle(35,23,1.5);
+      g.fillStyle(accent);g.fillRoundedRect(43,40,13,19,3);g.lineStyle(2,0x5c4937,.8);g.lineBetween(44,41,34,31);
+      if(hat!==null){g.fillStyle(hat);g.fillRect(17,10,28,7);g.fillRoundedRect(21,4,20,9,4);}
+      g.generateTexture(key,64,86);g.destroy();
     };
-    person('person-blue',0x335b87);person('person-red',0xa63f52);person('person-green',0x39795d);person('person-tan',0xa56e49);person('person-dark',0x2f3b4c,0x8f5d42);
+    person('person-blue',0x335b87,0xd99d75,null,0xc88c48);
+    person('person-red',0xa63f52,0xe0ae88,null,0x473d67);
+    person('person-green',0x39795d,0xd39b74,null,0xd7b05b);
+    person('person-tan',0xa56e49,0xb97755,null,0x316a8a);
+    person('person-dark',0x2f3b4c,0x8f5d42,null,0xbe7a45);
+    person('person-office',0x263d61,0xe0ad86,null,0x171d25);
+    person('person-tourist',0x4b7ba5,0xe3b58d,0xd9b13d,0xd65b49);
+    person('person-builder',0x4f5961,0xc98962,0xf0cc38,0xe8793c);
+    person('person-runner',0x7a3d85,0xa96c50,null,0x44c4c9);
     // Garda - stylised Irish uniform/high-vis
     const gd=this.make.graphics({x:0,y:0},false);
     gd.fillStyle(0x000000,.15);gd.fillEllipse(32,79,45,12);gd.fillStyle(0x172a3b);gd.fillRoundedRect(18,51,9,26,3);gd.fillRoundedRect(37,51,9,26,3);
@@ -312,7 +351,7 @@ class DameStreetScene extends Phaser.Scene{
   }
 
   spawnPeople(){
-    const tex=['person-blue','person-red','person-green','person-tan','person-dark'];
+    const tex=['person-blue','person-red','person-green','person-tan','person-dark','person-office','person-tourist','person-builder','person-runner'];
     const food=[
       {key:'food-chips',name:'chips',value:20},
       {key:'food-roll',name:'chicken fillet roll',value:50},
@@ -329,7 +368,8 @@ class DameStreetScene extends Phaser.Scene{
       const f=food[i%food.length];
       const fi=this.add.image(x+24,y-20,f.key).setScale(.66).setDepth(23);
       const ring=this.add.circle(x,y,34,0xffe784,0).setStrokeStyle(3,0xffe784,0).setDepth(18);
-      this.targets.push({person:p,food:fi,ring,value:f.value,name:f.name,stolen:false,vx:(Math.random()-.5),vy:(Math.random()-.5)*.4,panicUntil:0});
+      const temperament=(['oblivious','suspicious','runner','defender'] as const)[i%4];
+      this.targets.push({person:p,food:fi,ring,value:f.value,name:f.name,stolen:false,vx:(Math.random()-.5),vy:(Math.random()-.5)*.4,panicUntil:0,temperament});
     }
   }
 
@@ -346,7 +386,7 @@ class DameStreetScene extends Phaser.Scene{
   select(t:Target){
     if(this.selected)this.selected.ring.setStrokeStyle(3,0xffe784,0);
     this.selected=t;t.ring.setStrokeStyle(3,0xffe784,.9);
-    this.toast(t.name.toUpperCase()+' TARGETED');
+    this.toast(t.name.toUpperCase()+' TARGETED');sfx('target');
   }
 
   update(time:number,delta:number){
@@ -389,7 +429,17 @@ class DameStreetScene extends Phaser.Scene{
   }
 
   startDive(time:number){
-    this.altitudeTarget=.08;this.diveUntil=time+850;
+    this.altitudeTarget=.08;this.diveUntil=time+850;sfx('dive');
+    if(this.selected&&!this.selected.stolen){
+      const dist=Phaser.Math.Distance.Between(this.gull.x,this.gull.y,this.selected.person.x,this.selected.person.y);
+      this.selected.panicUntil=Math.max(this.selected.panicUntil,time+(this.selected.temperament==='oblivious'?350:1200));
+      if(dist<145&&this.wanted>=2&&this.selected.temperament==='defender'&&Math.random()<.42){
+        this.emote(this.selected.person,'!');
+        this.hit('Umbrella! Pick a softer target.',time);
+        return;
+      }
+      if(dist<260&&this.selected.temperament!=='oblivious')this.emote(this.selected.person,'!');
+    }
     this.tweens.add({targets:this.cameras.main,zoom:1.08,duration:180,yoyo:true,ease:'Sine.easeOut'});
     if(this.selected&&!this.selected.stolen){
       const a=Phaser.Math.Angle.Between(this.gull.x,this.gull.y,this.selected.person.x,this.selected.person.y);
@@ -413,7 +463,8 @@ class DameStreetScene extends Phaser.Scene{
     this.carryText.setText(t.name.toUpperCase()+'!');
     this.time.delayedCall(1150,()=>this.carryText.setText(''));
     setText('score',Math.floor(this.score).toLocaleString());setText('stolen',String(this.stolen));
-    this.toast('STOLEN: '+t.name.toUpperCase()+'  +'+t.value);
+    this.toast('STOLEN: '+t.name.toUpperCase()+'  +'+t.value);sfx('grab');haptic(30);
+    this.emote(t.person,t.temperament==='defender'?'OI!':'!');
     this.raiseWanted();
     if(this.selected===t)this.selected=null;
   }
@@ -421,7 +472,7 @@ class DameStreetScene extends Phaser.Scene{
   raiseWanted(){
     const level=Phaser.Math.Clamp(Math.floor((this.stolen+1)/3),0,5);
     if(level===this.wanted)return;
-    this.wanted=level;setWanted(level);
+    this.wanted=level;setWanted(level);sfx('wanted');
     this.toast(level>=4?'DUBLIN HAS HAD ENOUGH.':'WANTED LEVEL '+level);
     if(level>=2&&level>this.lastWanted){
       const sx=this.gull.x+(Math.random()>.5?430:-430),sy=this.gull.y+(Math.random()-.5)*280;
@@ -440,10 +491,17 @@ class DameStreetScene extends Phaser.Scene{
         }
       }else{
         const s=Number(t.person.getData('baseSpeed')||24);
-        t.person.x+=t.vx*s*dt;t.person.y+=t.vy*s*dt;
+        if(time<t.panicUntil&&t.temperament!=='oblivious'){
+          const a=Phaser.Math.Angle.Between(this.gull.x,this.gull.y,t.person.x,t.person.y);
+          const flee=t.temperament==='runner'?125:78;
+          t.person.x+=Math.cos(a)*flee*dt;t.person.y+=Math.sin(a)*flee*dt;
+        }else{
+          t.person.x+=t.vx*s*dt;t.person.y+=t.vy*s*dt;
+        }
         if(t.person.x<80||t.person.x>WORLD_W-80)t.vx*=-1;
         const minY=t.person.y<900?515:1285,maxY=t.person.y<900?715:1530;
         if(t.person.y<minY||t.person.y>maxY)t.vy*=-1;
+        t.person.y=Phaser.Math.Clamp(t.person.y,minY,maxY);
         t.food.setPosition(t.person.x+24,t.person.y-20);
         t.ring.setPosition(t.person.x,t.person.y+4);
       }
@@ -478,8 +536,13 @@ class DameStreetScene extends Phaser.Scene{
     if(time<this.invulnerableUntil||this.ended)return;
     this.invulnerableUntil=time+1300;this.feathers-=hard?2:1;setFeathers(Math.max(0,this.feathers));
     this.cameras.main.shake(160,.008);this.gull.setVelocity((Math.random()-.5)*450,-240);this.altitudeTarget=.75;
-    this.toast(message);
+    this.toast(message);sfx('hit');haptic(80);
     if(this.feathers<=0)this.gameOver();
+  }
+
+  emote(at:Phaser.GameObjects.Sprite,text:string){
+    const bubble=this.add.text(at.x,at.y-64,text,{fontFamily:'Arial Black',fontSize:'18px',color:'#17384b',backgroundColor:'#fff4d9',padding:{x:7,y:4}}).setOrigin(.5).setDepth(90);
+    this.tweens.add({targets:bubble,y:bubble.y-18,alpha:0,duration:850,ease:'Quad.easeOut',onComplete:()=>bubble.destroy()});
   }
 
   updateSelection(){
@@ -508,6 +571,7 @@ class DameStreetScene extends Phaser.Scene{
 
 function startGame(){
   if((window as any).__seagullGame)return;
+  initAudio();
   $('startScreen')?.classList.add('hidden');
   $('hud')?.classList.remove('hidden');
   $('controls')?.classList.remove('hidden');
