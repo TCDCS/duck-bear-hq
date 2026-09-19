@@ -410,11 +410,14 @@ async function boot(){
     document.documentElement.dataset.lastLuasReady='1';
     document.documentElement.dataset.lastLuasBuild=BUILD;
     document.documentElement.dataset.lastLuasCharacterAssets=String(characterAssets.size);
+    document.documentElement.dataset.lastLuasCasualClips=(characterAssets.get('casual')?.resource?.animations||[]).map(a=>a.name||a.resource?.name||'').join(',');
+    document.documentElement.dataset.lastLuasWorkerClips=(characterAssets.get('worker')?.resource?.animations||[]).map(a=>a.name||a.resource?.name||'').join(',');
     const smokeParams=new URLSearchParams(location.search);
     if(smokeParams.get('smoke')==='1'){
       const preview=Math.max(0,Math.min(GAME.streetLength-8,Number(smokeParams.get('distance')||70)||70));
       player.distance=preview;player.entity.setPosition(lanes[1],player.y,-preview);
       ui.start.classList.remove('visible');ui.start.hidden=true;updateHud();updateCamera(1);animateWorld();
+      setTimeout(()=>{app.stop();document.documentElement.dataset.lastLuasSmokeStopped='1';},900);
     }else{
       playButton.disabled=false;playButton.textContent='RUN FOR IT →';
     }
