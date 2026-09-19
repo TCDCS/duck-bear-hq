@@ -3,7 +3,7 @@ name: Seagull Simulator Validate
 on:
   push:
     branches:
-      - feature/seagull-simulator
+      - 'feature/seagull-*'
   pull_request:
     paths:
       - 'src/seagull-simulator/**'
