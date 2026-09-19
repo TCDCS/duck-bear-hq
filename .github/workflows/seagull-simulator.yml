@@ -49,6 +49,7 @@ jobs:
           google-chrome --headless --no-sandbox --hide-scrollbars --window-size=844,390 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/mobile-title.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1'
           google-chrome --headless --no-sandbox --hide-scrollbars --window-size=844,390 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/mobile-game.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1'
           google-chrome --headless --no-sandbox --hide-scrollbars --window-size=844,390 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/mobile-lowpower.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&lowpower=1'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=390,844 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/mobile-portrait.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&orientationcheck=1'
           google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/birds-panel.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&panel=birds'
           google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/upgrades-panel.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&panel=upgrades'
           google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/trophies-panel.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&panel=trophies'
@@ -87,6 +88,9 @@ jobs:
           echo "Low-power pigeons: $pigeons"
           test -n "$pigeons"
           test "$pigeons" -lt 20
+          portrait=$(google-chrome --headless --no-sandbox --window-size=390,844 --dump-dom --virtual-time-budget=4500 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&orientationcheck=1')
+          echo "$portrait" | grep 'data-seagull-orientation-paused="1"'
+          echo "$portrait" | grep 'ROTATE YOUR PHONE'
           test -s /tmp/seagull-smoke/dame-street.png
           test -s /tmp/seagull-smoke/college-green.png
           test -s /tmp/seagull-smoke/grafton-street.png
@@ -94,6 +98,7 @@ jobs:
           test -s /tmp/seagull-smoke/mobile-title.png
           test -s /tmp/seagull-smoke/mobile-game.png
           test -s /tmp/seagull-smoke/mobile-lowpower.png
+          test -s /tmp/seagull-smoke/mobile-portrait.png
           test -s /tmp/seagull-smoke/birds-panel.png
           test -s /tmp/seagull-smoke/upgrades-panel.png
           test -s /tmp/seagull-smoke/trophies-panel.png
