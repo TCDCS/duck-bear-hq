@@ -39,6 +39,7 @@ jobs:
           pathlib.Path('/tmp/last-luas.patch').write_bytes(patch)
           subprocess.run(['git','apply','--check','--unidiff-zero','/tmp/last-luas.patch'],check=True)
           subprocess.run(['git','apply','--unidiff-zero','/tmp/last-luas.patch'],check=True)
+          h=pathlib.Path('public/_headers');h.write_text(h.read_text().rstrip()+'\n')
           old=subprocess.check_output(['git','rev-parse','HEAD:public/games/last-luas/game.mjs'],text=True).strip()
           assert old=='fa5252c1a03bc1e54c8b20d82d5ac17df49aead8','Old game changed; reconcile instead of deleting'
           subprocess.run(['git','rm','public/games/last-luas/game.mjs'],check=True)
