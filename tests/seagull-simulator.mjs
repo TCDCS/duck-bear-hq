@@ -102,3 +102,10 @@ test('Road traffic is bounded before pedestrian Grafton Street',()=>{
   assert.match(source,/const bounded=v\.minX!==undefined\|\|v\.maxX!==undefined/);
   assert.match(source,/pad=bounded\?0:180/);
 });
+
+test('Seagull local storage failures do not block startup',()=>{
+  assert.match(source,/function storageGet\(key:string\)\{try\{return localStorage\.getItem\(key\);\}catch\{return null;\}\}/);
+  assert.match(source,/function storageSet\(key:string,value:string\)\{try\{localStorage\.setItem/);
+  assert.doesNotMatch(source,/localStorage\.getItem\('seagull-best'\)/);
+  assert.doesNotMatch(source,/localStorage\.setItem\('seagull-muted'/);
+});
