@@ -126,7 +126,7 @@ class DameStreetScene extends Phaser.Scene{
     this.load.svg('gull-1',base+'gull-mid.svg',{width:140,height:100});
     this.load.svg('gull-2',base+'gull-down.svg',{width:140,height:100});
     this.load.svg('garda',base+'garda.svg',{width:76,height:112});
-    this.load.svg('bus',base+'dublin-bus.svg',{width:210,height:104});
+    this.load.svg('bus',base+'dublin-bus.svg',{width:220,height:140});
   }
 
   create(){
@@ -372,7 +372,7 @@ class DameStreetScene extends Phaser.Scene{
 
   spawnTraffic(){
     const add=(key:string,x:number,y:number,speed:number,lane:number)=>{
-      const s=this.physics.add.sprite(x,y,key).setDepth(26);if(key==='bus')s.setDisplaySize(178,88);s.body!.setImmovable(true);this.vehicles.push({sprite:s,speed,lane});
+      const s=this.physics.add.sprite(x,y,key).setDepth(26);if(key==='bus')s.setDisplaySize(188,120);s.body!.setImmovable(true);this.vehicles.push({sprite:s,speed,lane});
     };
     for(let i=0;i<5;i++)add(i%3===0?'bus':i%3===1?'taxi':'van',450+i*680,835,100+Math.random()*30,0);
     for(let i=0;i<5;i++){add(i%2?'taxi':'bus',260+i*720,1165,-105-Math.random()*25,1);this.vehicles[this.vehicles.length-1].sprite.setFlipX(true);}
