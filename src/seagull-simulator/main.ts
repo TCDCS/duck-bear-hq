@@ -9,7 +9,7 @@ const FOOD_TYPES=[
   {key:'food-ice',name:'ice cream',value:30},
   {key:'food-spice',name:'spice bag',value:75}
 ] as const;
-const WORLD_W=5200;
+const WORLD_W=8800;
 const WORLD_H=1800;
 const VERSION='0.2.0-alpha';
 
@@ -174,6 +174,8 @@ class DameStreetScene extends Phaser.Scene{
     this.gull.play('fly');
     const startArea=new URLSearchParams(location.search).get('area');
     if(startArea==='college')this.gull.setPosition(4080,690);
+    if(startArea==='grafton')this.gull.setPosition(5950,880);
+    if(startArea==='green')this.gull.setPosition(7700,860);
     this.cameras.main.startFollow(this.gull,true,.09,.09);
     this.cameras.main.setFollowOffset(0,190);
     this.cameras.main.setZoom(1.02);
@@ -254,12 +256,14 @@ class DameStreetScene extends Phaser.Scene{
     ];
     for(const s of shops)this.shop(s.x,70,s.w,390,s.name,s.c,s.s);
     this.collegeGreen(3600);
+    this.graftonStreet(5200);
+    this.stephensGreen(7000);
     // street furniture
-    for(let x=160;x<WORLD_W;x+=300)this.lamp(x,610);
-    for(let x=280;x<WORLD_W;x+=520)this.bin(x,680);
-    for(let x=420;x<WORLD_W;x+=690)this.flowerBasket(x,545);
-    for(let x=690;x<WORLD_W;x+=920)this.cafeBoard(x,676,x%1840<900?'COFFEE':'DELI');
-    for(let x=120;x<WORLD_W;x+=115){g.fillStyle(0x2e3f49);g.fillRoundedRect(x,720,13,36,5);}
+    for(let x=160;x<5200;x+=300)this.lamp(x,610);
+    for(let x=280;x<5200;x+=520)this.bin(x,680);
+    for(let x=420;x<5200;x+=690)this.flowerBasket(x,545);
+    for(let x=690;x<5200;x+=920)this.cafeBoard(x,676,x%1840<900?'COFFEE':'DELI');
+    for(let x=120;x<5200;x+=115){g.fillStyle(0x2e3f49);g.fillRoundedRect(x,720,13,36,5);}
     // crossings
     for(const x of [980,2220,3920,4780]){
       g.fillStyle(0xf3f0dc,.9);
@@ -330,6 +334,78 @@ class DameStreetScene extends Phaser.Scene{
       g.fillStyle(0x9b927e);g.fillRoundedRect(px,675,72,28,6);
       g.fillStyle(0x4d9853);g.fillCircle(px+18,668,18);g.fillCircle(px+48,665,20);
     }
+  }
+
+  graftonStreet(x:number){
+    const g=this.add.graphics().setDepth(6);
+    // Cover the road completely: this section is pedestrian-first.
+    g.fillStyle(0xcbbda2);g.fillRect(x,490,1800,1070);
+    for(let px=x;px<x+1800;px+=82){
+      g.lineStyle(2,0xa99b84,.45);g.lineBetween(px,490,px+120,1560);
+    }
+    for(let py=560;py<1530;py+=86){
+      g.lineStyle(2,0xe1d6c3,.5);g.lineBetween(x,py,x+1800,py);
+    }
+    // Retail facades
+    this.shop(x+20,70,490,390,'BROWN THOMAS',0x6c655e,0xffffff);
+    this.shop(x+520,70,430,390,"BEWLEY'S",0x6a2b2d,0xf0d6a2);
+    this.shop(x+960,70,390,390,'BUTLERS',0x3b2a26,0xf4d9a3);
+    this.shop(x+1360,70,410,390,'SPORTS',0x263a58,0xffffff);
+    this.add.text(x+900,1160,'GRAFTON STREET',{fontFamily:'Arial Black',fontSize:'42px',color:'#81745f',stroke:'#f1e6d2',strokeThickness:5}).setOrigin(.5).setDepth(8).setAngle(-2);
+    // Planters, benches and busking spots.
+    for(let px=x+180;px<x+1700;px+=310){
+      g.fillStyle(0x8c806c);g.fillRoundedRect(px,730,70,28,6);
+      g.fillStyle(0x4d9853);g.fillCircle(px+18,721,18);g.fillCircle(px+49,720,21);
+    }
+    for(let px=x+280;px<x+1650;px+=430){
+      g.fillStyle(0x6b4d35);g.fillRoundedRect(px,1300,105,14,5);g.fillRect(px+12,1310,7,24);g.fillRect(px+84,1310,7,24);
+    }
+    this.busker(x+650,930);
+    this.busker(x+1450,1040);
+    this.cafeBoard(x+1040,850,'COFFEE');
+    this.cafeBoard(x+1570,1240,'TREATS');
+  }
+
+  stephensGreen(x:number){
+    const g=this.add.graphics().setDepth(7);
+    g.fillStyle(0x62a95d);g.fillRect(x,0,1800,1800);
+    // Main park path
+    g.fillStyle(0xd8c9a8);g.fillRoundedRect(x+60,650,1680,520,90);
+    g.fillStyle(0xc9b792);g.fillRoundedRect(x+650,420,420,1100,75);
+    g.lineStyle(3,0xf0e4ca,.45);
+    for(let px=x+100;px<x+1700;px+=130)g.lineBetween(px,670,px+75,1150);
+    // Pond
+    g.fillStyle(0x76bfd0);g.fillEllipse(x+1390,1390,560,300);
+    g.lineStyle(10,0x8d795d,.55);g.strokeEllipse(x+1390,1390,570,310);
+    // Trees
+    for(const [tx,ty,s] of [[170,260,1],[430,350,.8],[1200,250,1.1],[1580,310,.9],[220,1410,.9],[620,1600,1],[1040,1590,.8],[1660,1580,1]] as any[]){
+      g.fillStyle(0x5e4a35);g.fillRect(x+tx-9,ty,18,85*s);
+      g.fillStyle(0x397f45);g.fillCircle(x+tx,ty-5,55*s);
+      g.fillStyle(0x67b557);g.fillCircle(x+tx-30*s,ty+2,34*s);g.fillCircle(x+tx+30*s,ty-12,38*s);
+    }
+    // Benches and picnic blankets
+    for(const [bx,by] of [[250,880],[520,1120],[1190,820],[1510,1050]] as any[]){
+      g.fillStyle(0x684b36);g.fillRoundedRect(x+bx,by,110,15,5);g.fillRect(x+bx+12,by+12,8,26);g.fillRect(x+bx+88,by+12,8,26);
+    }
+    g.fillStyle(0xd95858,.85);g.fillRect(x+900,1220,150,95);g.fillStyle(0xf4e3a9,.9);g.fillRect(x+1080,1245,135,82);
+    this.add.text(x+900,535,"ST STEPHEN'S GREEN",{fontFamily:'Arial Black',fontSize:'39px',color:'#fff4d8',stroke:'#2f613c',strokeThickness:7}).setOrigin(.5).setDepth(10);
+    // Ducks on the pond
+    for(const [dx,dy,flip] of [[1270,1350,0],[1450,1420,1],[1530,1340,0],[1360,1470,1]] as any[])this.duck(x+dx,dy,Boolean(flip));
+  }
+
+  busker(x:number,y:number){
+    const p=this.add.sprite(x,y,'person-tan').setDepth(25);
+    p.setScale(1.05);
+    const g=this.add.graphics().setDepth(26);
+    g.fillStyle(0xb7783f);g.fillEllipse(x+25,y+8,20,27);g.fillStyle(0x5b3b29);g.fillRect(x+30,y-25,5,34);g.fillCircle(x+25,y+8,4);
+    g.fillStyle(0x333e43);g.fillEllipse(x+60,y+35,70,20);g.lineStyle(3,0x8d6f4c);g.strokeEllipse(x+60,y+35,70,20);
+    this.add.text(x+59,y+35,'€',{fontFamily:'Arial Black',fontSize:'10px',color:'#f6d85c'}).setOrigin(.5).setDepth(27);
+  }
+
+  duck(x:number,y:number,flip=false){
+    const g=this.add.graphics().setDepth(16);
+    g.fillStyle(0x75583b);g.fillEllipse(x,y,34,20);g.fillStyle(0x3f7447);g.fillCircle(x+(flip?-13:13),y-8,10);
+    g.fillStyle(0xe5a52b);if(flip)g.fillTriangle(x-21,y-8,x-32,y-4,x-21,y);else g.fillTriangle(x+21,y-8,x+32,y-4,x+21,y);
   }
 
   flowerBasket(x:number,y:number){
@@ -443,18 +519,21 @@ class DameStreetScene extends Phaser.Scene{
     const add=(key:string,x:number,y:number,speed:number,lane:number,minX?:number,maxX?:number)=>{
       const s=this.physics.add.sprite(x,y,key).setDepth(26);if(key==='bus')s.setDisplaySize(188,120);if(key==='luas')s.setDisplaySize(235,80);s.body!.setImmovable(true);this.vehicles.push({sprite:s,speed,lane,minX,maxX});
     };
-    for(let i=0;i<5;i++)add(i%3===0?'bus':i%3===1?'taxi':'van',450+i*680,835,100+Math.random()*30,0);
-    for(let i=0;i<5;i++){add(i%2?'taxi':'bus',260+i*720,1165,-105-Math.random()*25,1);this.vehicles[this.vehicles.length-1].sprite.setFlipX(true);}
+    for(let i=0;i<5;i++)add(i%3===0?'bus':i%3===1?'taxi':'van',450+i*680,835,100+Math.random()*30,0,0,5200);
+    for(let i=0;i<5;i++){add(i%2?'taxi':'bus',260+i*720,1165,-105-Math.random()*25,1,0,5200);this.vehicles[this.vehicles.length-1].sprite.setFlipX(true);}
     add('luas',3900,925,72,2,3600,5200);add('luas',4920,925,-68,2,3600,5200);this.vehicles[this.vehicles.length-1].sprite.setFlipX(true);
   }
 
   spawnPeople(){
     const tex=['person-blue','person-red','person-green','person-tan','person-dark','person-office','person-tourist','person-builder','person-runner'];
 
-    for(let i=0;i<48;i++){
-      const upper=i<20;
+    for(let i=0;i<78;i++){
+      const upper=i<35;
       const x=120+Math.random()*(WORLD_W-240);
-      const y=upper?535+Math.random()*160:1300+Math.random()*210;
+      let y:number;
+      if(x>=7000)y=690+Math.random()*760;
+      else if(x>=5200)y=610+Math.random()*830;
+      else y=upper?535+Math.random()*160:1300+Math.random()*210;
       const p=this.physics.add.sprite(x,y,tex[i%tex.length]).setDepth(22);
       p.body!.setCircle(16,14,42);p.setData('baseSpeed',18+Math.random()*22);
       const f=FOOD_TYPES[i%FOOD_TYPES.length];
@@ -526,7 +605,7 @@ class DameStreetScene extends Phaser.Scene{
     this.updateHeat(time,dt);
     this.updateSelection();
 
-    const zone=this.gull.x<1700?'DAME STREET':this.gull.x<3400?'DAME STREET · EAST':this.gull.x<3900?'COLLEGE GREEN APPROACH':'COLLEGE GREEN';
+    const zone=this.gull.x<1700?'DAME STREET':this.gull.x<3400?'DAME STREET · EAST':this.gull.x<3900?'COLLEGE GREEN APPROACH':this.gull.x<5200?'COLLEGE GREEN':this.gull.x<7000?'GRAFTON STREET':"ST STEPHEN'S GREEN";
     this.districtText.setText(zone);
   }
 
@@ -612,8 +691,12 @@ class DameStreetScene extends Phaser.Scene{
     if(this.ended)return;
     const f=FOOD_TYPES[Phaser.Math.Between(0,FOOD_TYPES.length-1)];
     t.name=f.name;t.value=f.value;t.food.setTexture(f.key).setVisible(true);
-    const upper=Math.random()>.35;
-    t.person.setPosition(upper?(Math.random()>.5?75:WORLD_W-75):Phaser.Math.Between(120,WORLD_W-120),upper?Phaser.Math.Between(530,700):Phaser.Math.Between(1300,1515));
+    const rx=Phaser.Math.Between(80,WORLD_W-80);
+    let ry:number;
+    if(rx>=7000)ry=Phaser.Math.Between(690,1460);
+    else if(rx>=5200)ry=Phaser.Math.Between(620,1420);
+    else ry=Math.random()>.35?Phaser.Math.Between(530,700):Phaser.Math.Between(1300,1515);
+    t.person.setPosition(rx,ry);
     t.food.setPosition(t.person.x+24,t.person.y-20);
     t.stolen=false;t.panicUntil=0;t.ring.setVisible(true);
   }
@@ -661,7 +744,11 @@ class DameStreetScene extends Phaser.Scene{
           t.person.x+=t.vx*s*dt;t.person.y+=t.vy*s*dt;
         }
         if(t.person.x<80||t.person.x>WORLD_W-80)t.vx*=-1;
-        const minY=t.person.y<900?515:1285,maxY=t.person.y<900?715:1530;
+        let minY:number,maxY:number;
+        if(t.person.x>=7000){minY=670;maxY=1500;}
+        else if(t.person.x>=5200){minY=590;maxY=1450;}
+        else if(t.person.y<900){minY=515;maxY=715;}
+        else{minY=1285;maxY=1530;}
         if(t.person.y<minY||t.person.y>maxY)t.vy*=-1;
         t.person.y=Phaser.Math.Clamp(t.person.y,minY,maxY);
         t.food.setPosition(t.person.x+24,t.person.y-20);
