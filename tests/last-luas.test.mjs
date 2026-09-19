@@ -62,8 +62,8 @@ test('Dawson Street geometry follows the south-to-north run and Dublin streetsca
 test('v0.5 adds facade, kerb-life and browser readiness detail',()=>{
   const source=read(game);
   for(const detail of ['Granite kerb L','Dublin taxi 1','Delivery van','Locked bicycle','Ivy upper cornice','Mansion House crest','RIA stone quoin','St Anns pilaster','Hodges stone cornice','ARKET floor slab'])assert.match(source,new RegExp(detail));
-  assert.match(source,/data\.lastLuasReady/);
-  assert.match(source,/data\.lastLuasBuild/);
+  assert.match(source,/dataset\.lastLuasReady/);
+  assert.match(source,/dataset\.lastLuasBuild/);
   assert.match(source,/smokeParams/);
 });
 
