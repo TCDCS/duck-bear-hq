@@ -1,0 +1,20 @@
+name: Last Luas source snapshot
+on:
+  push:
+    branches: [last-luas-inked-implementation]
+    paths: ['.github/workflows/last-luas-source-export.yml']
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Export tracked public source only
+        run: git archive --format=tar.gz HEAD > /tmp/last-luas-source.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: last-luas-source
+          path: /tmp/last-luas-source.tar.gz
+          retention-days: 1
