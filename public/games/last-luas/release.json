@@ -1,0 +1,19 @@
+{
+  "game": "Last Luas",
+  "version": "0.1.0",
+  "status": "playable vertical slice",
+  "engine": "PlayCanvas 2.22.2",
+  "location": "Dawson Street, Dublin",
+  "durationSeconds": 90,
+  "controls": ["keyboard", "touch"],
+  "artDirection": "high-detail cartoon Dublin, wet evening",
+  "landmarks": [
+    "ARKET Dawson Street",
+    "Hodges Figgis",
+    "Cafe en Seine",
+    "The Dawson Lounge",
+    "The Ivy Dawson Street",
+    "Dawson Luas stop"
+  ],
+  "notes": "The v0.1 street is a procedural stylised reconstruction. Final surveyed Blender/GLB facades can replace the primitive geometry without changing the runner logic."
+}
