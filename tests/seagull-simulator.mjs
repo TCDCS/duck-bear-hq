@@ -179,3 +179,10 @@ test('Seagull persistence smoke covers coins bird upgrades trophies and stats',(
   assert.match(source,/data\.seagullPersistVerified=ok\?'1':'0'/);
   assert.match(source,/achievements:\[\.\.\.new Set/);
 });
+
+test('Seagull respects reduced-motion preference without changing gameplay rules',()=>{
+  assert.match(source,/prefers-reduced-motion: reduce/);
+  assert.match(source,/if\(!reducedMotion\)this\.cameras\.main\.shake/);
+  assert.match(source,/if\(!reducedMotion\)this\.tweens\.add\(\{targets:this\.cameras\.main/);
+  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+});
