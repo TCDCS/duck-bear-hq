@@ -23,11 +23,11 @@ type ProgressState={
 };
 const BIRDS:Record<BirdId,{name:string;cost:number;speed:number;grab:number;heat:number;feathers:number;scale:number;tint?:number;previewFilter:string;blurb:string}>={
   dublin:{name:'Dublin Gull',cost:0,speed:1,grab:92,heat:1,feathers:3,scale:1,previewFilter:'none',blurb:'Balanced. Loud. Completely shameless.'},
-  'big-lad':{name:'Big Lad',cost:250,speed:.94,grab:106,heat:1.08,feathers:4,scale:1.12,tint:0xffefd2,previewFilter:'sepia(.25) saturate(.8)',blurb:'Tougher and better at grabbing, but harder to ignore.'},
-  sneaky:{name:'Sneaky Gull',cost:450,speed:1.08,grab:88,heat:.82,feathers:3,scale:.94,tint:0xd9eef3,previewFilter:'hue-rotate(155deg) saturate(.6)',blurb:'Quick and less suspicious. Smaller reach.'},
-  'absolute-unit':{name:'Absolute Unit',cost:750,speed:.98,grab:116,heat:1.18,feathers:5,scale:1.2,tint:0xc8ced0,previewFilter:'grayscale(.45) brightness(.9)',blurb:'Huge reach and five feathers. Everyone notices.'}
+  'big-lad':{name:'Big Lad',cost:180,speed:.94,grab:106,heat:1.08,feathers:4,scale:1.12,tint:0xffefd2,previewFilter:'sepia(.25) saturate(.8)',blurb:'Tougher and better at grabbing, but harder to ignore.'},
+  sneaky:{name:'Sneaky Gull',cost:350,speed:1.08,grab:88,heat:.82,feathers:3,scale:.94,tint:0xd9eef3,previewFilter:'hue-rotate(155deg) saturate(.6)',blurb:'Quick and less suspicious. Smaller reach.'},
+  'absolute-unit':{name:'Absolute Unit',cost:650,speed:.98,grab:116,heat:1.18,feathers:5,scale:1.2,tint:0xc8ced0,previewFilter:'grayscale(.45) brightness(.9)',blurb:'Huge reach and five feathers. Everyone notices.'}
 };
-const UPGRADE_COSTS=[75,125,200,300,450];
+const UPGRADE_COSTS=[40,70,110,160,230];
 const UPGRADE_META:Record<UpgradeKey,{name:string;blurb:string}>={
   wings:{name:'Wings',blurb:'A little more flight and waddle speed.'},
   beak:{name:'Beak',blurb:'A little more reach when grabbing food.'},
@@ -40,7 +40,7 @@ function loadProgress():ProgressState{
     if(!raw||typeof raw!=='object')return fallback;
     const unlocked=(Array.isArray(raw.unlockedBirds)?raw.unlockedBirds:[]).filter((id:any)=>id in BIRDS) as BirdId[];
     if(!unlocked.includes('dublin'))unlocked.unshift('dublin');
-    const selected=(raw.selectedBird in BIRDS&&unlocked.includes(raw.selectedBird))?raw.selectedBird:'dublin';
+    const selected=(typeof raw.selectedBird==='string'&&raw.selectedBird in BIRDS&&unlocked.includes(raw.selectedBird as BirdId))?raw.selectedBird as BirdId:'dublin';
     return {
       coins:Math.max(0,Math.floor(Number(raw.coins)||0)),
       selectedBird:selected,
@@ -906,7 +906,7 @@ class DameStreetScene extends Phaser.Scene{
   gameOver(){
     if(this.ended)return;this.ended=true;this.physics.pause();
     const best=Number(localStorage.getItem('seagull-best')||0);if(this.score>best)localStorage.setItem('seagull-best',String(Math.floor(this.score)));
-    const coins=Math.max(2,Math.floor(this.score/90)+Math.floor(this.stolen/5)+this.completedMissions*5);
+    const coins=Math.max(5,Math.floor(this.score/50)+Math.floor(this.stolen/3)+this.completedMissions*8);
     progress.coins+=coins;saveProgress();
     window.dispatchEvent(new CustomEvent('seagull-gameover',{detail:{score:Math.floor(this.score),stolen:this.stolen,best:Math.max(best,Math.floor(this.score)),coins}}));
   }
