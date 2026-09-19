@@ -115,7 +115,7 @@ test('Seagull local storage failures do not block startup',()=>{
 
 test('Seagull trophies and lifetime stats migrate old local saves safely',()=>{
   assert.match(source,/type AchievementId='mine-now'\|'spice-raider'\|'combo-four'\|'public-menace'\|'ground-job'\|'full-tour'\|'mission-machine'\|'feeding-frenzy'/);
-  assert.match(source,/achievements:\(Array\.isArray\(raw\.achievements\)\?raw\.achievements:\[\]\)/);
+  assert.match(source,/achievements:\[\.\.\.new Set\(\(Array\.isArray\(raw\.achievements\)\?raw\.achievements:\[\]\)\.filter/);
   assert.match(source,/runs:Math\.max\(0,Math\.floor\(Number\(raw\.stats\?\.runs\)\|\|0\)\)/);
   assert.match(source,/progress\.stats\.totalFood\+=this\.stolen/);
   assert.match(source,/this\.areasVisited\.size===4/);
@@ -176,7 +176,7 @@ test('Seagull retry buttons restart directly into gameplay',()=>{
 test('Seagull persistence smoke covers coins bird upgrades trophies and stats',()=>{
   assert.match(source,/persistcheck/);
   assert.match(source,/coins:321,selectedBird:'big-lad'/);
-  assert.match(source,/data\.seagullPersistVerified=ok\?'1':'0'/);
+  assert.match(source,/document\.documentElement\.dataset\.seagullPersistVerified=ok\?'1':'0'/);
   assert.match(source,/achievements:\[\.\.\.new Set/);
 });
 
