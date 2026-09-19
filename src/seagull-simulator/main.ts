@@ -36,7 +36,7 @@ function pedestrianForArea(x:number,seed:number){
 }
 const WORLD_W=8800;
 const WORLD_H=1800;
-const VERSION='0.9.0-alpha';
+const VERSION='0.9.1-alpha';
 
 type BirdId='dublin'|'big-lad'|'sneaky'|'absolute-unit';
 type UpgradeKey='wings'|'beak'|'nerve';
@@ -145,6 +145,9 @@ const controls={
 function storageGet(key:string){try{return localStorage.getItem(key);}catch{return null;}}
 function storageSet(key:string,value:string){try{localStorage.setItem(key,value);return true;}catch{return false;}}
 const reducedMotion=typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const deviceMemory=Number((navigator as any).deviceMemory||0);
+const coreCount=Number(navigator.hardwareConcurrency||0);
+const lowPowerMode=new URLSearchParams(location.search).has('lowpower')||(deviceMemory>0&&deviceMemory<=4)||(innerWidth<1000&&coreCount>0&&coreCount<=4);
 let audioCtx:AudioContext|null=null;
 let soundEnabled=storageGet('seagull-muted')!=='1';
 function initAudio(){
@@ -333,6 +336,8 @@ class DameStreetScene extends Phaser.Scene{
     if(new URLSearchParams(location.search).has('smoke')){
       const actors:any[]=[this.gull,...this.targets.map(t=>t.person),...this.gardai,...this.vehicles.map(v=>v.sprite),...this.pigeons];
       document.documentElement.dataset.seagullPhysicsBodies=String(actors.filter(a=>Boolean(a?.body)).length);
+      document.documentElement.dataset.seagullLowPower=lowPowerMode?'1':'0';
+      document.documentElement.dataset.seagullPigeons=String(this.pigeons.length);
     }
     if(new URLSearchParams(location.search).has('exercise')){
       document.documentElement.dataset.seagullExerciseScheduled='1';
@@ -563,9 +568,10 @@ class DameStreetScene extends Phaser.Scene{
     g.fillStyle(0xb7783f);g.fillEllipse(x+25,y+8,20,27);g.fillStyle(0x5b3b29);g.fillRect(x+30,y-25,5,34);g.fillCircle(x+25,y+8,4);
     g.fillStyle(0x333e43);g.fillEllipse(x+60,y+35,70,20);g.lineStyle(3,0x8d6f4c);g.strokeEllipse(x+60,y+35,70,20);
     this.add.text(x+59,y+35,'€',{fontFamily:'Arial Black',fontSize:'10px',color:'#f6d85c'}).setOrigin(.5).setDepth(27);
-    for(let i=0;i<3;i++){
+    const noteCount=lowPowerMode?1:3;
+    for(let i=0;i<noteCount;i++){
       const note=this.add.text(x+12+i*16,y-32-i*7,i%2?'♫':'♪',{fontFamily:'Arial',fontSize:'15px',color:'#6a355d',stroke:'#fff5d0',strokeThickness:2}).setDepth(28).setAlpha(.1);
-      if(reducedMotion)note.setAlpha(.55);else this.tweens.add({targets:note,y:note.y-42,alpha:{from:.15,to:.9},duration:1100+i*180,delay:i*330,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
+      if(reducedMotion||lowPowerMode)note.setAlpha(.55);else this.tweens.add({targets:note,y:note.y-42,alpha:{from:.15,to:.9},duration:1100+i*180,delay:i*330,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
     }
   }
 
@@ -741,18 +747,21 @@ class DameStreetScene extends Phaser.Scene{
       {minX:7200,maxX:8580,minY:720,maxY:1320,count:7}
     ];
     let n=0;
-    for(const z of zones)for(let i=0;i<z.count;i++){
-      const x=Phaser.Math.Linear(z.minX,z.maxX,(i+1)/(z.count+1));
-      const y=Phaser.Math.Linear(z.minY,z.maxY,((i*37)%z.count+1)/(z.count+1));
+    for(const z of zones){
+      const count=lowPowerMode?Math.max(2,Math.ceil(z.count*.5)):z.count;
+      for(let i=0;i<count;i++){
+      const x=Phaser.Math.Linear(z.minX,z.maxX,(i+1)/(count+1));
+      const y=Phaser.Math.Linear(z.minY,z.maxY,((i*37)%count+1)/(count+1));
       const p=this.add.sprite(x,y,'pigeon').setDepth(20).setScale(.76+(i%3)*.08);
       p.setData('homeX',x);p.setData('homeY',y);p.setData('minX',z.minX);p.setData('maxX',z.maxX);p.setData('minY',z.minY);p.setData('maxY',z.maxY);p.setData('phase',n++*.83);
       this.pigeons.push(p);
+      }
     }
   }
 
   updateAmbient(time:number,dt:number){
     for(const p of this.pigeons){
-      if(Math.abs(p.x-this.gull.x)>1550)continue;
+      if(Math.abs(p.x-this.gull.x)>(lowPowerMode?1100:1550))continue;
       const d=Phaser.Math.Distance.Between(p.x,p.y,this.gull.x,this.gull.y);
       if(d<175&&this.altitude<.48){
         const a=Phaser.Math.Angle.Between(this.gull.x,this.gull.y,p.x,p.y);
@@ -1005,7 +1014,7 @@ class DameStreetScene extends Phaser.Scene{
 
   updateTargets(time:number,dt:number){
     for(const t of this.targets){
-      const nearby=Math.abs(t.person.x-this.gull.x)<1650&&Math.abs(t.person.y-this.gull.y)<1100;
+      const nearby=Math.abs(t.person.x-this.gull.x)<(lowPowerMode?1250:1650)&&Math.abs(t.person.y-this.gull.y)<(lowPowerMode?900:1100);
       if(!nearby)continue;
       if(t.stolen){
         const panic=time<t.panicUntil;
