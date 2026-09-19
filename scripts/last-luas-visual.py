@@ -23,15 +23,25 @@ SHOTS = [
 
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True)
+    context = browser.new_context(viewport={"width": 1280, "height": 720})
+    page = context.new_page()
     report = []
+
     for shot in SHOTS:
         name = shot["name"]
         width, height = shot["viewport"]
-        page = browser.new_page(viewport={"width": width, "height": height})
+        page.set_viewport_size({"width": width, "height": height})
         console_messages = []
         page_errors = []
-        page.on("console", lambda msg, messages=console_messages: messages.append(f"{msg.type}: {msg.text}"))
-        page.on("pageerror", lambda err, errors=page_errors: errors.append(str(err)))
+
+        def on_console(msg):
+            console_messages.append(f"{msg.type}: {msg.text}")
+
+        def on_error(err):
+            page_errors.append(str(err))
+
+        page.on("console", on_console)
+        page.on("pageerror", on_error)
         url = f"{BASE}?{shot['query']}"
         page.goto(url, wait_until="domcontentloaded", timeout=30000)
         page.wait_for_function(
@@ -67,7 +77,10 @@ with sync_playwright() as p:
         })
         if page_errors:
             raise RuntimeError(f"{name}: browser errors: {' | '.join(page_errors)}")
-        page.close()
+        page.remove_listener("console", on_console)
+        page.remove_listener("pageerror", on_error)
+
+    context.close()
     browser.close()
 
 (OUT / "report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
