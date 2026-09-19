@@ -94,6 +94,7 @@ test('Seagull supports safe pause and backgrounding',()=>{
   assert.match(source,/game\.scene\.pause\('DameStreet'\)/);
   assert.match(source,/game\.scene\.resume\('DameStreet'\)/);
   assert.match(source,/visibilitychange/);
+  assert.match(source,/e\.key==='Escape'\|\|e\.key\.toLowerCase\(\)==='p'/);
 });
 
 test('Road traffic is bounded before pedestrian Grafton Street',()=>{
