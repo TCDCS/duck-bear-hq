@@ -1231,7 +1231,8 @@ function setGamePaused(next:boolean){
 }
 $('pauseBtn')?.addEventListener('click',()=>setGamePaused(true));
 $('resumeBtn')?.addEventListener('click',()=>setGamePaused(false));
-$('restartRunBtn')?.addEventListener('click',()=>location.reload());
+const restartRun=()=>{location.href=location.pathname+'?autostart=1';};
+$('restartRunBtn')?.addEventListener('click',restartRun);
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden&&!new URLSearchParams(location.search).has('smoke')&&(window as any).__seagullGame)setGamePaused(true);
 });
@@ -1277,5 +1278,5 @@ window.addEventListener('seagull-gameover',(ev:any)=>{
   renderProgression();
 });
 $('playBtn')?.addEventListener('click',startGame);
-$('restartBtn')?.addEventListener('click',()=>location.reload());
+$('restartBtn')?.addEventListener('click',restartRun);
 if(new URLSearchParams(location.search).has('autostart'))startGame();
