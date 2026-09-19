@@ -1,7 +1,7 @@
 {
   "game": "Last Luas",
   "version": "0.4.0",
-  "status": "visual rebuild preview — real animated character assets",
+  "status": "playable vertical slice — real animated character upgrade",
   "engine": "PlayCanvas 2.22.2",
   "location": "Dawson Street, Dublin",
   "durationSeconds": 90,
@@ -45,7 +45,7 @@
     "camera FOV sprint effect",
     "local best catch time"
   ],
-  "notes": "v0.4 restarts from the stable v0.3 street and replaces primitive player/NPC bodies with pinned CC0 Quaternius animated character assets. No rejected v0.4 street-geometry rebuild is included.",
+  "notes": "v0.4 keeps the stable v0.3 Dawson Street and replaces primitive player/NPC bodies with pinned CC0 Quaternius animated characters. The rejected geometry experiment is not included.",
   "thirdPartyAssets": {
     "characters": "Quaternius Ultimate Modular Men",
     "license": "CC0 1.0",
