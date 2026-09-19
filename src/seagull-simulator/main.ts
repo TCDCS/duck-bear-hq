@@ -30,6 +30,8 @@ type Vehicle = {
   sprite: Phaser.Physics.Arcade.Sprite;
   speed: number;
   lane: number;
+  minX?: number;
+  maxX?: number;
 };
 
 const controls={
@@ -170,6 +172,8 @@ class DameStreetScene extends Phaser.Scene{
     this.gull.body!.setCircle(28,14,12);
     this.anims.create({key:'fly',frames:[{key:'gull-0'},{key:'gull-1'},{key:'gull-2'},{key:'gull-1'}],frameRate:8,repeat:-1});
     this.gull.play('fly');
+    const startArea=new URLSearchParams(location.search).get('area');
+    if(startArea==='college')this.gull.setPosition(4080,690);
     this.cameras.main.startFollow(this.gull,true,.09,.09);
     this.cameras.main.setFollowOffset(0,190);
     this.cameras.main.setZoom(1.02);
@@ -435,12 +439,12 @@ class DameStreetScene extends Phaser.Scene{
   }
 
   spawnTraffic(){
-    const add=(key:string,x:number,y:number,speed:number,lane:number)=>{
-      const s=this.physics.add.sprite(x,y,key).setDepth(26);if(key==='bus')s.setDisplaySize(188,120);if(key==='luas')s.setDisplaySize(235,80);s.body!.setImmovable(true);this.vehicles.push({sprite:s,speed,lane});
+    const add=(key:string,x:number,y:number,speed:number,lane:number,minX?:number,maxX?:number)=>{
+      const s=this.physics.add.sprite(x,y,key).setDepth(26);if(key==='bus')s.setDisplaySize(188,120);if(key==='luas')s.setDisplaySize(235,80);s.body!.setImmovable(true);this.vehicles.push({sprite:s,speed,lane,minX,maxX});
     };
     for(let i=0;i<5;i++)add(i%3===0?'bus':i%3===1?'taxi':'van',450+i*680,835,100+Math.random()*30,0);
     for(let i=0;i<5;i++){add(i%2?'taxi':'bus',260+i*720,1165,-105-Math.random()*25,1);this.vehicles[this.vehicles.length-1].sprite.setFlipX(true);}
-    add('luas',3900,970,72,2);add('luas',4920,970,-68,2);this.vehicles[this.vehicles.length-1].sprite.setFlipX(true);
+    add('luas',3900,970,72,2,3600,5200);add('luas',4920,970,-68,2,3600,5200);this.vehicles[this.vehicles.length-1].sprite.setFlipX(true);
   }
 
   spawnPeople(){
@@ -668,8 +672,9 @@ class DameStreetScene extends Phaser.Scene{
   updateTraffic(dt:number){
     for(const v of this.vehicles){
       v.sprite.x+=v.speed*dt;
-      if(v.speed>0&&v.sprite.x>WORLD_W+180)v.sprite.x=-180;
-      if(v.speed<0&&v.sprite.x<-180)v.sprite.x=WORLD_W+180;
+      const min=v.minX??-180,max=v.maxX??WORLD_W+180;
+      if(v.speed>0&&v.sprite.x>max+180)v.sprite.x=min-180;
+      if(v.speed<0&&v.sprite.x<min-180)v.sprite.x=max+180;
       if(this.altitude<.2&&Phaser.Math.Distance.Between(this.gull.x,this.gull.y,v.sprite.x,v.sprite.y)<72)this.hit('Ouch. Dublin traffic.',performance.now());
     }
   }
