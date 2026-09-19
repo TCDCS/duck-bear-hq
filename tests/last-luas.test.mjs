@@ -74,6 +74,15 @@ test('v0.4 uses real pinned Quaternius character assets rather than primitive pe
   assert.match(source,/dataset\.lastLuasCharacterAssets/);
 });
 
+test('v0.4 real Dawson Street facade pass is present',()=>{
+  const source=read(game),html=read(index);
+  for(const facade of ['ARKET curved glass panel','Hodges Figgis red brick facade','Hodges curved display','Cafe en Seine teal frontage','Dawson Lounge iconic red door','The Ivy Dawson Street facade'])assert.match(source,new RegExp(facade));
+  for(const logo of ['ARKET real wordmark','Hodges Figgis real logo','Cafe en Seine real logo','Dawson Lounge real sign','Ivy real wordmark'])assert.match(source,new RegExp(logo));
+  assert.match(source,/function brandMaterial/);
+  assert.doesNotMatch(html,/class="rain"/);
+  assert.doesNotMatch(source,/Puddle/);
+});
+
 test('street polish includes distinct hazards and final sprint feedback',()=>{
   const source=read(game),styles=read(css);
   assert.match(source,/umbrella-hit/);
@@ -92,9 +101,12 @@ test('release metadata matches the playable slice',()=>{
   assert.equal(data.durationSeconds,90);
   assert.equal(data.location,'Dawson Street, Dublin');
   assert.equal(data.environment.raisedLuasPlatforms,true);
-  assert.equal(data.environment.puddleReflections,true);
+  assert.equal(data.environment.puddleReflections,false);
   assert.equal(data.environment.runtimeNameboards,true);
   assert.equal(data.environment.realAnimatedCharacters,true);
   assert.equal(data.environment.proceduralPeople,false);
   assert.equal(data.thirdPartyAssets.license,'CC0 1.0');
+  assert.equal(data.environment.rain,false);
+  assert.equal(data.environment.realFacadeReferences,true);
+  assert.equal(data.environment.realBrandWordmarks,true);
 });
