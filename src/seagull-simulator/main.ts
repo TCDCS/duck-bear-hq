@@ -2,6 +2,13 @@ import Phaser from 'phaser';
 
 const GAME_W=1280;
 const GAME_H=720;
+const FOOD_TYPES=[
+  {key:'food-chips',name:'chips',value:20},
+  {key:'food-roll',name:'chicken fillet roll',value:50},
+  {key:'food-coffee',name:'coffee',value:15},
+  {key:'food-ice',name:'ice cream',value:30},
+  {key:'food-spice',name:'spice bag',value:75}
+] as const;
 const WORLD_W=3600;
 const WORLD_H=1800;
 const VERSION='0.1.0-alpha';
@@ -109,7 +116,15 @@ class DameStreetScene extends Phaser.Scene{
   score=0;
   stolen=0;
   wanted=0;
+  heat=0;
   feathers=3;
+  combo=1;
+  lastTheftAt=0;
+  lastHeatEvent=0;
+  missionIndex=0;
+  missionProgress=0;
+  missionTarget=3;
+  missionKind:'any'|'chips'|'roll'|'spice'='any';
   selected:Target|null=null;
   diveUntil=0;
   invulnerableUntil=0;
@@ -170,7 +185,7 @@ class DameStreetScene extends Phaser.Scene{
     setText('version',VERSION);
     setText('score','0');
     setText('stolen','0');
-    setWanted(0);setFeathers(3);
+    setWanted(0);setFeathers(3);this.setMission(0);
     this.time.delayedCall(900,()=>this.toast('Find food. Dive low. Grab it. Get out.'));
     document.documentElement.dataset.seagullReady='1';
     if(new URLSearchParams(location.search).has('exercise')){
@@ -380,20 +395,14 @@ class DameStreetScene extends Phaser.Scene{
 
   spawnPeople(){
     const tex=['person-blue','person-red','person-green','person-tan','person-dark','person-office','person-tourist','person-builder','person-runner'];
-    const food=[
-      {key:'food-chips',name:'chips',value:20},
-      {key:'food-roll',name:'chicken fillet roll',value:50},
-      {key:'food-coffee',name:'coffee',value:15},
-      {key:'food-ice',name:'ice cream',value:30},
-      {key:'food-spice',name:'spice bag',value:75}
-    ];
+
     for(let i=0;i<34;i++){
       const upper=i<20;
       const x=120+Math.random()*(WORLD_W-240);
       const y=upper?535+Math.random()*160:1300+Math.random()*210;
       const p=this.physics.add.sprite(x,y,tex[i%tex.length]).setDepth(22);
       p.body!.setCircle(16,14,42);p.setData('baseSpeed',18+Math.random()*22);
-      const f=food[i%food.length];
+      const f=FOOD_TYPES[i%FOOD_TYPES.length];
       const fi=this.add.image(x+24,y-20,f.key).setScale(.66).setDepth(23);
       const ring=this.add.circle(x,y,34,0xffe784,0).setStrokeStyle(3,0xffe784,0).setDepth(18);
       const temperament=(['oblivious','suspicious','runner','defender'] as const)[i%4];
@@ -450,6 +459,7 @@ class DameStreetScene extends Phaser.Scene{
     this.updateTargets(time,dt);
     this.updateTraffic(dt);
     this.updateGardai(time,dt);
+    this.updateHeat(time,dt);
     this.updateSelection();
 
     const zone=this.gull.x<900?'DAME STREET':this.gull.x<1750?'DAME STREET · EAST':this.gull.x<2650?'COLLEGE GREEN APPROACH':'CITY CENTRE';
@@ -486,27 +496,86 @@ class DameStreetScene extends Phaser.Scene{
     const d=Phaser.Math.Distance.Between(this.gull.x,this.gull.y,t.person.x,t.person.y);
     if(this.altitude>.34||d>92){this.toast(this.altitude>.34?'Dive lower first.':'Too far away.');return;}
     t.stolen=true;t.food.setVisible(false);t.ring.setVisible(false);t.panicUntil=time+3200;
-    this.score+=t.value*(1+this.wanted*.2);this.stolen++;
+    this.combo=time-this.lastTheftAt<8000?Math.min(4,this.combo+1):1;
+    this.lastTheftAt=time;
+    const earned=Math.round(t.value*this.combo*(1+this.wanted*.12));
+    this.score+=earned;this.stolen++;
     this.altitudeTarget=.82;this.diveUntil=time;
-    this.carryText.setText(t.name.toUpperCase()+'!');
+    this.carryText.setText(this.combo>1?`${t.name.toUpperCase()} · x${this.combo}`:t.name.toUpperCase()+'!');
     this.time.delayedCall(1150,()=>this.carryText.setText(''));
-    setText('score',Math.floor(this.score).toLocaleString());setText('stolen',String(this.stolen));
-    this.toast('STOLEN: '+t.name.toUpperCase()+'  +'+t.value);sfx('grab');haptic(30);
+    setText('score',Math.floor(this.score).toLocaleString());setText('stolen',String(this.stolen));setText('combo','x'+this.combo);
+    this.toast('STOLEN: '+t.name.toUpperCase()+'  +'+earned);sfx('grab');haptic(30);
     this.emote(t.person,t.temperament==='defender'?'OI!':'!');
-    this.raiseWanted();
+    this.addHeat(13+(t.value>=50?5:0),time);
+    this.advanceMission(t.name);
+    this.time.delayedCall(Phaser.Math.Between(8500,14500),()=>this.recycleTarget(t));
     if(this.selected===t)this.selected=null;
   }
 
-  raiseWanted(){
-    const level=Phaser.Math.Clamp(Math.floor((this.stolen+1)/3),0,5);
-    if(level===this.wanted)return;
-    this.wanted=level;setWanted(level);sfx('wanted');
-    this.toast(level>=4?'DUBLIN HAS HAD ENOUGH.':'WANTED LEVEL '+level);
-    if(level>=2&&level>this.lastWanted){
-      const sx=this.gull.x+(Math.random()>.5?430:-430),sy=this.gull.y+(Math.random()-.5)*280;
-      this.spawnGarda(Phaser.Math.Clamp(sx,80,WORLD_W-80),Phaser.Math.Clamp(sy,520,1480),true);
+  addHeat(amount:number,time:number){
+    this.heat=Phaser.Math.Clamp(this.heat+amount,0,100);
+    this.lastHeatEvent=time;
+    this.syncWanted();
+  }
+
+  updateHeat(time:number,dt:number){
+    if(time-this.lastHeatEvent>2800&&this.heat>0){
+      this.heat=Math.max(0,this.heat-dt*(this.altitude>.55?3.2:1.35));
+      this.syncWanted();
     }
-    this.lastWanted=level;
+    if(time-this.lastTheftAt>8000&&this.combo!==1){this.combo=1;setText('combo','x1');}
+    setText('heat',Math.round(this.heat)+'%');
+  }
+
+  syncWanted(){
+    const level=Phaser.Math.Clamp(Math.ceil(this.heat/20),0,5);
+    if(level===this.wanted){setWanted(level);return;}
+    const rising=level>this.wanted;
+    this.wanted=level;setWanted(level);
+    if(rising){
+      sfx('wanted');
+      this.toast(level>=4?'DUBLIN HAS HAD ENOUGH.':'WANTED LEVEL '+level);
+      if(level>=2&&level>this.lastWanted){
+        const sx=this.gull.x+(Math.random()>.5?430:-430),sy=this.gull.y+(Math.random()-.5)*280;
+        this.spawnGarda(Phaser.Math.Clamp(sx,80,WORLD_W-80),Phaser.Math.Clamp(sy,520,1480),true);
+      }
+      this.lastWanted=Math.max(this.lastWanted,level);
+    }
+  }
+
+  recycleTarget(t:Target){
+    if(this.ended)return;
+    const f=FOOD_TYPES[Phaser.Math.Between(0,FOOD_TYPES.length-1)];
+    t.name=f.name;t.value=f.value;t.food.setTexture(f.key).setVisible(true);
+    const upper=Math.random()>.35;
+    t.person.setPosition(upper?(Math.random()>.5?75:WORLD_W-75):Phaser.Math.Between(120,WORLD_W-120),upper?Phaser.Math.Between(530,700):Phaser.Math.Between(1300,1515));
+    t.food.setPosition(t.person.x+24,t.person.y-20);
+    t.stolen=false;t.panicUntil=0;t.ring.setVisible(true);
+  }
+
+  setMission(index:number){
+    const missions=[
+      {kind:'any' as const,target:3,text:'Steal 3 snacks'},
+      {kind:'chips' as const,target:2,text:'Steal 2 bags of chips'},
+      {kind:'roll' as const,target:1,text:'Steal a chicken fillet roll'},
+      {kind:'spice' as const,target:1,text:'Steal a spice bag'},
+      {kind:'any' as const,target:5,text:'Steal 5 snacks without getting caught'}
+    ];
+    this.missionIndex=index%missions.length;const m=missions[this.missionIndex];
+    this.missionKind=m.kind;this.missionTarget=m.target;this.missionProgress=0;
+    setText('mission',m.text);setText('missionProgress',`0/${m.target}`);
+  }
+
+  advanceMission(foodName:string){
+    const match=this.missionKind==='any'||(this.missionKind==='chips'&&foodName==='chips')||(this.missionKind==='roll'&&foodName==='chicken fillet roll')||(this.missionKind==='spice'&&foodName==='spice bag');
+    if(!match)return;
+    this.missionProgress++;
+    setText('missionProgress',`${Math.min(this.missionProgress,this.missionTarget)}/${this.missionTarget}`);
+    if(this.missionProgress>=this.missionTarget){
+      const bonus=150+this.missionIndex*50;this.score+=bonus;setText('score',Math.floor(this.score).toLocaleString());
+      this.toast('MISSION COMPLETE  +'+bonus);tone(740,.08,'square',.025,160);haptic(45);
+      this.time.delayedCall(900,()=>this.setMission(this.missionIndex+1));
+    }
   }
 
   updateTargets(time:number,dt:number){
