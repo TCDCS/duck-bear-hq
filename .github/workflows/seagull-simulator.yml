@@ -43,6 +43,7 @@ jobs:
           done
           mkdir -p /tmp/seagull-smoke
           google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=4500 --screenshot=/tmp/seagull-smoke/dame-street.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=4500 --screenshot=/tmp/seagull-smoke/dame-east.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&area=dame-east'
           google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=4500 --screenshot=/tmp/seagull-smoke/college-green.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&area=college'
           google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=4500 --screenshot=/tmp/seagull-smoke/grafton-street.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&area=grafton'
           google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=4500 --screenshot=/tmp/seagull-smoke/stephens-green.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&area=green'
@@ -92,6 +93,7 @@ jobs:
           echo "$portrait" | grep 'data-seagull-orientation-paused="1"'
           echo "$portrait" | grep 'ROTATE YOUR PHONE'
           test -s /tmp/seagull-smoke/dame-street.png
+          test -s /tmp/seagull-smoke/dame-east.png
           test -s /tmp/seagull-smoke/college-green.png
           test -s /tmp/seagull-smoke/grafton-street.png
           test -s /tmp/seagull-smoke/stephens-green.png
