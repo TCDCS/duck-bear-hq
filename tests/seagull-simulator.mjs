@@ -145,3 +145,12 @@ test('Seagull areas have distinct food and crowd flavour',()=>{
   assert.equal(release.food.highestValue,'takeaway bag');
   assert.equal(release.areaFlavour["Grafton Street"],'café/treat-heavy');
 });
+
+test('Seagull keeps background actors out of Arcade Physics',()=>{
+  assert.match(source,/person: Phaser\.GameObjects\.Sprite/);
+  assert.match(source,/gardai:Phaser\.GameObjects\.Sprite\[\]/);
+  assert.match(source,/const p=this\.add\.sprite\(x,y,pedestrianForArea/);
+  assert.match(source,/const s=this\.add\.sprite\(x,y,key\)/);
+  assert.match(source,/const nearby=Math\.abs\(t\.person\.x-this\.gull\.x\)<1650&&Math\.abs\(t\.person\.y-this\.gull\.y\)<1100/);
+  assert.equal(release.performance.arcadePhysicsBodies,1);
+});
