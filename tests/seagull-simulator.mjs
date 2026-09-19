@@ -213,3 +213,8 @@ test('Seagull portrait rotation pauses without overriding manual pause',()=>{
   assert.match(source,/!phonePortrait&&orientationPaused/);
   assert.match(source,/orientationchange/);
 });
+
+test('Seagull landing has a procedural art fallback',()=>{
+  assert.match(source,/if\(!this\.textures\.exists\('gull-walk'\)\)/);
+  assert.match(source,/gw\.generateTexture\('gull-walk'/);
+});
