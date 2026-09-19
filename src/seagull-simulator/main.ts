@@ -89,7 +89,7 @@ function loadProgress():ProgressState{
         beak:Phaser.Math.Clamp(Math.floor(Number(raw.upgrades?.beak)||0),0,5),
         nerve:Phaser.Math.Clamp(Math.floor(Number(raw.upgrades?.nerve)||0),0,5)
       },
-      achievements:(Array.isArray(raw.achievements)?raw.achievements:[]).filter((id:any)=>id in ACHIEVEMENTS) as AchievementId[],
+      achievements:[...new Set((Array.isArray(raw.achievements)?raw.achievements:[]).filter((id:any)=>id in ACHIEVEMENTS))] as AchievementId[],
       stats:{
         runs:Math.max(0,Math.floor(Number(raw.stats?.runs)||0)),
         totalFood:Math.max(0,Math.floor(Number(raw.stats?.totalFood)||0)),
@@ -1209,6 +1209,16 @@ $('upgradesBtn')?.addEventListener('click',()=>openPanel('upgradesPanel'));
 $('trophiesBtn')?.addEventListener('click',()=>openPanel('trophiesPanel'));
 document.querySelectorAll<HTMLElement>('[data-close-panel]').forEach(b=>b.addEventListener('click',()=>closePanel(String(b.dataset.closePanel))));
 renderProgression();
+const persistCheck=new URLSearchParams(location.search).get('persistcheck');
+if(persistCheck==='seed'){
+  progress={coins:321,selectedBird:'big-lad',unlockedBirds:['dublin','big-lad'],upgrades:{wings:2,beak:1,nerve:3},achievements:['mine-now','combo-four'],stats:{runs:4,totalFood:31,totalScore:2480,bestCombo:4,highestWanted:5,missionsCompleted:6}};
+  saveProgress();renderProgression();
+  document.documentElement.dataset.seagullPersistSeeded='1';
+}
+if(persistCheck==='verify'){
+  const ok=progress.coins===321&&progress.selectedBird==='big-lad'&&progress.upgrades.wings===2&&progress.achievements.includes('combo-four')&&progress.stats.runs===4;
+  document.documentElement.dataset.seagullPersistVerified=ok?'1':'0';
+}
 const previewPanel=new URLSearchParams(location.search).get('panel');
 if(previewPanel==='birds')openPanel('birdsPanel');
 if(previewPanel==='upgrades')openPanel('upgradesPanel');
