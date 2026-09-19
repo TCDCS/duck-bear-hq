@@ -1,5 +1,5 @@
 name: Site Deploy
-# Manual content deploy trigger: Seagull Simulator Build 1.0 live release
+# Manual content deploy trigger: Seagull Simulator Build 1.0 brand-signage patch
 
 on:
   workflow_dispatch:
