@@ -280,6 +280,20 @@ class DameStreetScene extends Phaser.Scene{
         document.documentElement.dataset.seagullExerciseError=String(err).slice(0,120);
       }
     }
+    if(new URLSearchParams(location.search).has('feelcheck')){
+      document.documentElement.dataset.seagullFeelScheduled='1';
+      try{
+        this.heat=60;this.wanted=3;setWanted(3);
+        const g=this.gardai.find(q=>q.getData('chaser'))||this.spawnAndReturnGarda(this.gull.x+260,this.gull.y+40);
+        this.altitude=.86;this.altitudeTarget=.86;
+        g.setData('lostSightSince',1000);g.setData('cooldownUntil',0);
+        this.updateGardai(3100,.016);
+        const cooldown=Number(g.getData('cooldownUntil')||0);
+        document.documentElement.dataset.seagullFeelExercised=cooldown>3100?'1':'0';
+      }catch(err){
+        document.documentElement.dataset.seagullFeelError=String(err).slice(0,120);
+      }
+    }
   }
 
   drawWorld(){
@@ -635,6 +649,11 @@ class DameStreetScene extends Phaser.Scene{
     g.setData('chaser',chaser);g.setData('homeX',x);g.setData('homeY',y);
     g.setData('lostSightSince',0);g.setData('cooldownUntil',0);g.setData('lostEmoted',false);
     this.gardai.push(g);
+  }
+
+  spawnAndReturnGarda(x:number,y:number){
+    this.spawnGarda(x,y,true);
+    return this.gardai[this.gardai.length-1];
   }
 
   select(t:Target){
