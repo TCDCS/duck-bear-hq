@@ -175,18 +175,18 @@ class DameStreetScene extends Phaser.Scene{
     document.documentElement.dataset.seagullReady='1';
     if(new URLSearchParams(location.search).has('exercise')){
       document.documentElement.dataset.seagullExerciseScheduled='1';
-      this.time.delayedCall(120,()=>{
-        try{
-          const t=this.targets.find(q=>!q.stolen);
-          if(!t){document.documentElement.dataset.seagullExerciseError='no-target';return;}
+      try{
+        const t=this.targets.find(q=>!q.stolen);
+        if(!t){document.documentElement.dataset.seagullExerciseError='no-target';}
+        else{
           this.gull.setPosition(t.person.x+28,t.person.y);
           this.altitude=.08;this.altitudeTarget=.08;this.selected=t;
           this.tryGrab(performance.now());
           document.documentElement.dataset.seagullExercised=t.stolen&&this.stolen===1&&this.score>0?'1':'0';
-        }catch(err){
-          document.documentElement.dataset.seagullExerciseError=String(err).slice(0,120);
         }
-      });
+      }catch(err){
+        document.documentElement.dataset.seagullExerciseError=String(err).slice(0,120);
+      }
     }
   }
 
