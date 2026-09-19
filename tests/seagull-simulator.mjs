@@ -70,3 +70,14 @@ test('Seagull progression is local-only and bounded',()=>{
   assert.equal(release.progression.paidCurrency,false);
   assert.equal(release.progression.birds,4);
 });
+
+test('Seagull flight and pursuit use arcade smoothing rather than hard snapping',()=>{
+  assert.match(source,/steerRate=this\.grounded\?12:\(swooping\?9\.5:7\.2\)/);
+  assert.match(source,/diveAssistUntil=time\+760/);
+  assert.match(source,/desiredX=Phaser\.Math\.Linear/);
+  assert.match(source,/lostSightSince/);
+  assert.match(source,/cooldownUntil/);
+  assert.match(source,/time-lostSince>1900/);
+  assert.match(source,/HEAT CLEAR · YOU LOST THEM/);
+  assert.equal(release.tuning.gardaCooldownMs,3200);
+});
