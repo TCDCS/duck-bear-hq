@@ -36,7 +36,7 @@ function pedestrianForArea(x:number,seed:number){
 }
 const WORLD_W=8800;
 const WORLD_H=1800;
-const VERSION='0.9.1-alpha';
+const VERSION='1.0';
 
 type BirdId='dublin'|'big-lad'|'sneaky'|'absolute-unit';
 type UpgradeKey='wings'|'beak'|'nerve';
