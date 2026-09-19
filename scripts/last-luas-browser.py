@@ -1,11 +1,14 @@
 """Native-browser acceptance. Fixtures and branded captures remain private.
-Run against the real local Worker; optionally use a short-lived live acceptance session.
+Uses synthetic local fixtures only; never accepts a production host or owner session.
 """
 import asyncio,json,os,time
 from pathlib import Path
 from urllib.parse import urlparse
-from playwright.async_api import async_playwright
+from playwright.async_api import async_playwright, expect
 BASE=os.environ.get('BASE_URL','http://127.0.0.1:8787').rstrip('/')
+parsed=urlparse(BASE)
+if parsed.scheme!='http' or parsed.hostname not in ('127.0.0.1','localhost') or parsed.port!=8787 or parsed.username or parsed.password:
+ raise SystemExit('Only the isolated loopback Worker is allowed for fixture browser acceptance.')
 FIXTURE=Path(os.environ.get('LAST_LUAS_FIXTURE','.wrangler/last-luas-fixture.json'))
 OUT=Path(os.environ.get('LAST_LUAS_REPORT','/tmp/last-luas-browser'));OUT.mkdir(parents=True,exist_ok=True)
 async def inspect(page):return await page.evaluate("async()=> (await import('/games/last-luas/inked/main.mjs?v=1.0.0')).inspect()")
@@ -23,11 +26,11 @@ async def main():
    result=await anon.request.get(BASE+route);assert result.status==200;(text:=await result.text());assert title in text
   report['checks'].append('Games, Mango and Wacky routes preserved')
   if len(users)>1:
-   other=await browser.new_context();await other.add_cookies([{'name':'db_session','value':users[1]['token'],'url':BASE,'httpOnly':True,'secure':BASE.startswith('https')}]);assert (await other.request.get(BASE+'/games/last-luas/private/brands/hodges.png')).status==403;await other.close();report['checks'].append('another signed-in admin denied')
+   other=await browser.new_context();await other.add_cookies([{'name':'db_session','value':users[1]['token'],'url':BASE,'httpOnly':True,'secure':False}]);assert (await other.request.get(BASE+'/games/last-luas/private/brands/hodges.png')).status==403;await other.close();report['checks'].append('another signed-in admin denied')
   context=await browser.new_context(viewport={'width':1440,'height':900},device_scale_factor=1)
-  await context.add_cookies([{'name':'db_session','value':users[0]['token'],'url':BASE,'httpOnly':True,'secure':BASE.startswith('https')}])
+  await context.add_cookies([{'name':'db_session','value':users[0]['token'],'url':BASE,'httpOnly':True,'secure':False}])
   page=await context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
-  response=await page.goto(BASE+'/games/last-luas/');assert response.status==200;await page.wait_for_function("!document.getElementById('playButton').disabled",timeout=30000)
+  response=await page.goto(BASE+'/games/last-luas/');assert response.status==200;await expect(page.locator('#playButton')).to_be_enabled(timeout=30000)
   first=await inspect(page);assert set(first['brandIds'])=={'cafe','ivy','pret','hodges'};assert first['phase']=='menu'
   await page.wait_for_timeout(300);assert (await inspect(page))['elapsed']==0
   await page.screenshot(path=str(OUT/'menu.png'));report['checks'].append('actual 2D renderer and four hash-verified original logos loaded')
@@ -61,7 +64,7 @@ async def main():
   report['checks'].append('portrait/landscape composition and touch buttons; emulation, not a physical-phone benchmark')
   # Swipe/tap via pointer events are separate actions; test actual touchscreen context as well.
   touch=await browser.new_context(viewport={'width':390,'height':844},is_mobile=True,has_touch=True)
-  await touch.add_cookies([{'name':'db_session','value':users[0]['token'],'url':BASE,'httpOnly':True,'secure':BASE.startswith('https')}]);tp=await touch.new_page();await tp.goto(BASE+'/games/last-luas/');await tp.wait_for_function("!document.getElementById('playButton').disabled");await tp.tap('#playButton');await tp.touchscreen.tap(185,420);await tp.wait_for_timeout(140);assert (await inspect(tp))['player']['y']>0
+  await touch.add_cookies([{'name':'db_session','value':users[0]['token'],'url':BASE,'httpOnly':True,'secure':False}]);tp=await touch.new_page();await tp.goto(BASE+'/games/last-luas/');await expect(tp.locator('#playButton')).to_be_enabled(timeout=30000);await tp.tap('#playButton');await tp.touchscreen.tap(185,420);await tp.wait_for_timeout(140);assert (await inspect(tp))['player']['y']>0
   session=await touch.new_cdp_session(tp);await session.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':250,'y':440}]});await session.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':115,'y':443}]});await session.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});await tp.wait_for_timeout(120);assert (await inspect(tp))['player']['lane']==0;await touch.close();report['checks'].append('real browser touchscreen tap and swipe')
   assert not errors,errors;report['consoleErrors']=errors
   await context.close();await anon.close();await browser.close()
