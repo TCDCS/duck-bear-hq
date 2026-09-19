@@ -72,6 +72,9 @@ test('v0.4 uses real pinned Quaternius character assets rather than primitive pe
   assert.doesNotMatch(source,/sphere\('head'/i);
   assert.doesNotMatch(source,/box\('body'/i);
   assert.match(source,/dataset\.lastLuasCharacterAssets/);
+  assert.match(source,/function buildObstacles/);
+  assert.match(source,/buildStreet\(\);buildObstacles\(\)/);
+  assert.match(source,/dataset\.lastLuasObstacleCount/);
 });
 
 test('v0.4 real Dawson Street facade pass is present',()=>{
