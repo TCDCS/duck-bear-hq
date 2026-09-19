@@ -130,7 +130,7 @@
   "releaseStage": "live",
   "releaseDate": "2026-09-19",
   "brandSignage": {
-    "build": "1.0 visual patch candidate",
+    "build": "Build 1.0 live storefront patch",
     "bundledLocal": true,
     "environmentalOnly": true,
     "brands": [
@@ -142,6 +142,8 @@
       "Boots",
       "Brown Thomas",
       "Bewley's"
-    ]
+    ],
+    "deployed": true,
+    "deployedDate": "2026-09-19"
   }
 }
