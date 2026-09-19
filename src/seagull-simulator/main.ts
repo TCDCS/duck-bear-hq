@@ -164,6 +164,16 @@ class DameStreetScene extends Phaser.Scene{
     setWanted(0);setFeathers(3);
     this.time.delayedCall(900,()=>this.toast('Find food. Dive low. Grab it. Get out.'));
     document.documentElement.dataset.seagullReady='1';
+    if(new URLSearchParams(location.search).has('exercise')){
+      this.time.delayedCall(650,()=>{
+        const t=this.targets.find(q=>!q.stolen);
+        if(!t)return;
+        this.gull.setPosition(t.person.x+28,t.person.y);
+        this.altitude=.08;this.altitudeTarget=.08;this.selected=t;
+        this.tryGrab(performance.now());
+        document.documentElement.dataset.seagullExercised=t.stolen&&this.stolen===1&&this.score>0?'1':'0';
+      });
+    }
   }
 
   drawWorld(){
