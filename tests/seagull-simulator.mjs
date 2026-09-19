@@ -81,3 +81,9 @@ test('Seagull flight and pursuit use arcade smoothing rather than hard snapping'
   assert.match(source,/HEAT CLEAR · YOU LOST THEM/);
   assert.equal(release.tuning.gardaCooldownMs,3200);
 });
+
+test('Seagull risk feedback matches visible gameplay',()=>{
+  assert.match(source,/defendChance=Math\.min\(\.43,\.10\+this\.wanted\*\.065\)/);
+  assert.match(source,/const reach=this\.bird\.grab\+progress\.upgrades\.beak\*5/);
+  assert.match(source,/texture\.key==='luas'\?118:v\.sprite\.texture\.key==='bus'\?102:70/);
+});
