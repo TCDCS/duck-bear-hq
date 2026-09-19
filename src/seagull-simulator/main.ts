@@ -1242,6 +1242,7 @@ if(previewPanel==='upgrades')openPanel('upgradesPanel');
 if(previewPanel==='trophies')openPanel('trophiesPanel');
 
 let paused=false;
+let orientationPaused=false;
 function setGamePaused(next:boolean){
   const game=(window as any).__seagullGame as Phaser.Game|undefined;
   if(!game||paused===next)return;
@@ -1257,8 +1258,8 @@ function setGamePaused(next:boolean){
     $('controls')?.classList.remove('hidden');
   }
 }
-$('pauseBtn')?.addEventListener('click',()=>setGamePaused(true));
-$('resumeBtn')?.addEventListener('click',()=>setGamePaused(false));
+$('pauseBtn')?.addEventListener('click',()=>{orientationPaused=false;setGamePaused(true);});
+$('resumeBtn')?.addEventListener('click',()=>{orientationPaused=false;setGamePaused(false);});
 const restartRun=()=>{resetControls();location.href=location.pathname+'?autostart=1';};
 $('restartRunBtn')?.addEventListener('click',restartRun);
 document.addEventListener('visibilitychange',()=>{
@@ -1268,6 +1269,17 @@ window.addEventListener('blur',()=>{
   resetControls();
   if(!new URLSearchParams(location.search).has('smoke')&&(window as any).__seagullGame)setGamePaused(true);
 });
+function syncOrientationPause(){
+  if(new URLSearchParams(location.search).has('smoke'))return;
+  const phonePortrait=innerWidth<=900&&innerHeight>innerWidth;
+  if(phonePortrait&&(window as any).__seagullGame&&!paused){
+    orientationPaused=true;setGamePaused(true);
+  }else if(!phonePortrait&&orientationPaused){
+    orientationPaused=false;setGamePaused(false);
+  }
+}
+window.addEventListener('resize',syncOrientationPause);
+window.addEventListener('orientationchange',()=>setTimeout(syncOrientationPause,80));
 window.addEventListener('keydown',e=>{
   if((e.key==='Escape'||e.key.toLowerCase()==='p')&&(window as any).__seagullGame&&$('gameOver')?.classList.contains('hidden')){
     e.preventDefault();setGamePaused(!paused);
@@ -1296,6 +1308,7 @@ function startGame(){
     scene:[DameStreetScene],
     render:{antialias:true,pixelArt:false,roundPixels:false}
   });
+  setTimeout(syncOrientationPause,120);
 }
 setText('startBest',Number(storageGet('seagull-best')||0).toLocaleString());
 function syncSoundButton(){const b=$('soundBtn');if(!b)return;b.textContent=soundEnabled?'SFX':'MUTE';b.classList.toggle('muted',!soundEnabled);b.setAttribute('aria-pressed',String(!soundEnabled));}
