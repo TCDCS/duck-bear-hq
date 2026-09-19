@@ -28,6 +28,13 @@ jobs:
         run: |
           python -m pip install playwright
           python -m playwright install --with-deps chromium
+      - name: Capture official Cafe en Seine logo
+        run: |
+          set -euo pipefail
+          echo '---CAFE_LOGO_BEGIN---'
+          curl -LfsS 'https://www.cafeenseine.ie/wp-content/themes/sitetheme/library/images/logo.svg'
+          echo
+          echo '---CAFE_LOGO_END---'
       - name: Last Luas source tests
         run: node --test tests/last-luas.test.mjs
       - name: Inspect pinned character GLBs
