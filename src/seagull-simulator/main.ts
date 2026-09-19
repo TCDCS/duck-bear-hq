@@ -175,8 +175,8 @@ class DameStreetScene extends Phaser.Scene{
     this.gull.play('fly');
     const startArea=new URLSearchParams(location.search).get('area');
     if(startArea==='college')this.gull.setPosition(4080,690);
-    if(startArea==='grafton')this.gull.setPosition(5950,880);
-    if(startArea==='green')this.gull.setPosition(7700,860);
+    if(startArea==='grafton')this.gull.setPosition(5950,760);
+    if(startArea==='green')this.gull.setPosition(7700,1000);
     this.cameras.main.startFollow(this.gull,true,.09,.09);
     this.cameras.main.setFollowOffset(0,190);
     this.cameras.main.setZoom(1.02);
@@ -373,23 +373,30 @@ class DameStreetScene extends Phaser.Scene{
     g.fillStyle(0xc9b792);g.fillRoundedRect(x+650,420,420,1100,75);
     g.lineStyle(3,0xf0e4ca,.45);
     for(let px=x+100;px<x+1700;px+=130)g.lineBetween(px,670,px+75,1150);
-    // Pond
-    g.fillStyle(0x76bfd0);g.fillEllipse(x+1390,1390,560,300);
-    g.lineStyle(10,0x8d795d,.55);g.strokeEllipse(x+1390,1390,570,310);
-    // Trees
-    for(const [tx,ty,s] of [[170,260,1],[430,350,.8],[1200,250,1.1],[1580,310,.9],[220,1410,.9],[620,1600,1],[1040,1590,.8],[1660,1580,1]] as any[]){
+    // Pond moved into the main play camera rather than hidden below it.
+    g.fillStyle(0x76bfd0);g.fillEllipse(x+1390,1080,560,280);
+    g.lineStyle(10,0x8d795d,.55);g.strokeEllipse(x+1390,1080,570,290);
+    g.fillStyle(0x9ed8da,.42);g.fillEllipse(x+1335,1040,250,70);
+    // Trees around, not through, the main path.
+    for(const [tx,ty,s] of [[170,260,1],[430,350,.8],[1200,250,1.1],[1580,310,.9],[170,670,.72],[480,620,.68],[1200,610,.72],[1650,650,.7],[220,1370,.9],[620,1510,1],[1040,1510,.8],[1660,1450,1]] as any[]){
       g.fillStyle(0x5e4a35);g.fillRect(x+tx-9,ty,18,85*s);
       g.fillStyle(0x397f45);g.fillCircle(x+tx,ty-5,55*s);
       g.fillStyle(0x67b557);g.fillCircle(x+tx-30*s,ty+2,34*s);g.fillCircle(x+tx+30*s,ty-12,38*s);
     }
+    // Flower beds
+    for(const [fx,fy] of [[360,760],[760,690],[1120,760],[1600,820]] as any[]){
+      g.fillStyle(0x537e45);g.fillEllipse(x+fx,fy,120,46);
+      for(let j=0;j<7;j++){g.fillStyle([0xe86575,0xf0cf4f,0xf39cc4,0xf8eee1][j%4]);g.fillCircle(x+fx-42+j*14,fy-5+(j%2)*8,5);}
+    }
     // Benches and picnic blankets
-    for(const [bx,by] of [[250,880],[520,1120],[1190,820],[1510,1050]] as any[]){
+    for(const [bx,by] of [[250,880],[500,1110],[1080,820],[1510,880]] as any[]){
       g.fillStyle(0x684b36);g.fillRoundedRect(x+bx,by,110,15,5);g.fillRect(x+bx+12,by+12,8,26);g.fillRect(x+bx+88,by+12,8,26);
     }
-    g.fillStyle(0xd95858,.85);g.fillRect(x+900,1220,150,95);g.fillStyle(0xf4e3a9,.9);g.fillRect(x+1080,1245,135,82);
-    this.add.text(x+900,535,"ST STEPHEN'S GREEN",{fontFamily:'Arial Black',fontSize:'39px',color:'#fff4d8',stroke:'#2f613c',strokeThickness:7}).setOrigin(.5).setDepth(10);
+    g.fillStyle(0xd95858,.85);g.fillRect(x+720,1000,145,90);g.fillStyle(0xf4e3a9,.9);g.fillRect(x+900,1150,135,82);
+    this.add.text(x+905,595,"ST STEPHEN'S GREEN",{fontFamily:'Arial Black',fontSize:'20px',color:'#fff8da',backgroundColor:'#376d43e8',padding:{x:12,y:7}}).setOrigin(.5).setDepth(10);
+    this.dog(x+520,930,false);this.dog(x+1540,760,true);
     // Ducks on the pond
-    for(const [dx,dy,flip] of [[1270,1350,0],[1450,1420,1],[1530,1340,0],[1360,1470,1]] as any[])this.duck(x+dx,dy,Boolean(flip));
+    for(const [dx,dy,flip] of [[1270,1040,0],[1450,1110,1],[1530,1020,0],[1360,1160,1]] as any[])this.duck(x+dx,dy,Boolean(flip));
   }
 
   busker(x:number,y:number){
@@ -399,6 +406,15 @@ class DameStreetScene extends Phaser.Scene{
     g.fillStyle(0xb7783f);g.fillEllipse(x+25,y+8,20,27);g.fillStyle(0x5b3b29);g.fillRect(x+30,y-25,5,34);g.fillCircle(x+25,y+8,4);
     g.fillStyle(0x333e43);g.fillEllipse(x+60,y+35,70,20);g.lineStyle(3,0x8d6f4c);g.strokeEllipse(x+60,y+35,70,20);
     this.add.text(x+59,y+35,'€',{fontFamily:'Arial Black',fontSize:'10px',color:'#f6d85c'}).setOrigin(.5).setDepth(27);
+  }
+
+  dog(x:number,y:number,flip=false){
+    const g=this.add.graphics().setDepth(19);
+    g.fillStyle(0x9c6b42);g.fillEllipse(x,y,46,24);
+    g.fillCircle(x+(flip?-22:22),y-7,14);
+    g.fillStyle(0x6e472f);g.fillTriangle(x+(flip?-26:26),y-20,x+(flip?-38:38),y-31,x+(flip?-15:15),y-20);
+    g.lineStyle(4,0x795138);if(flip)g.lineBetween(x+18,y-4,x+34,y-18);else g.lineBetween(x-18,y-4,x-34,y-18);
+    g.fillStyle(0x24343b);g.fillCircle(x+(flip?-26:26),y-9,2);
   }
 
   duck(x:number,y:number,flip=false){
@@ -606,6 +622,8 @@ class DameStreetScene extends Phaser.Scene{
 
     const zone=this.gull.x<1700?'DAME STREET':this.gull.x<3400?'DAME STREET · EAST':this.gull.x<3900?'COLLEGE GREEN APPROACH':this.gull.x<5200?'COLLEGE GREEN':this.gull.x<7000?'GRAFTON STREET':"ST STEPHEN'S GREEN";
     this.districtText.setText(zone);
+    const cameraBias=this.gull.x>=7000?0:(this.gull.x>=5200?330:190);
+    this.cameras.main.setFollowOffset(0,cameraBias);
   }
 
   startDive(time:number){
