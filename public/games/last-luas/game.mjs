@@ -518,7 +518,7 @@ async function boot(){
         player.distance=preview;player.entity.setPosition(lanes[1],player.y,-preview);
       }
       ui.start.classList.remove('visible');ui.start.hidden=true;updateHud();updateCamera(1);animateWorld();
-      setTimeout(()=>{app.stop();document.documentElement.dataset.lastLuasSmokeStopped='1';},1200);
+      setTimeout(()=>{state.paused=true;document.documentElement.dataset.lastLuasSmokeStopped='1';},1200);
     }else{
       playButton.disabled=false;playButton.textContent='RUN FOR IT →';
     }
