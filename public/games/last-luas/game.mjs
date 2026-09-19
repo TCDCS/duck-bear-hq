@@ -308,7 +308,7 @@ function buildTram(){
   return {entity:root,distance:GAME.streetLength,pulling:false};
 }
 let tram=null;
-function syncTram(){tram.entity.setPosition(0,.02,-tram.distance);}syncTram();
+function syncTram(){if(tram)tram.entity.setPosition(0,.02,-tram.distance);}
 
 const camera=new pc.Entity('Camera');camera.addComponent('camera',{clearColor:new pc.Color(.028,.045,.09),fov:67,nearClip:.1,farClip:720});app.root.addChild(camera);camera.setPosition(0,4.2,7.2);
 
