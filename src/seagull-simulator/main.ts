@@ -36,7 +36,7 @@ function pedestrianForArea(x:number,seed:number){
 }
 const WORLD_W=8800;
 const WORLD_H=1800;
-const VERSION='0.7.0-alpha';
+const VERSION='0.8.0-alpha';
 
 type BirdId='dublin'|'big-lad'|'sneaky'|'absolute-unit';
 type UpgradeKey='wings'|'beak'|'nerve';
@@ -111,7 +111,7 @@ function unlockAchievement(id:AchievementId){
 
 
 type Target = {
-  person: Phaser.Physics.Arcade.Sprite;
+  person: Phaser.GameObjects.Sprite;
   food: Phaser.GameObjects.Image;
   ring: Phaser.GameObjects.Arc;
   value: number;
@@ -124,7 +124,7 @@ type Target = {
 };
 
 type Vehicle = {
-  sprite: Phaser.Physics.Arcade.Sprite;
+  sprite: Phaser.GameObjects.Sprite;
   speed: number;
   lane: number;
   minX?: number;
@@ -215,7 +215,7 @@ class DameStreetScene extends Phaser.Scene{
   shadow!:Phaser.GameObjects.Ellipse;
   targetMarker!:Phaser.GameObjects.Arc;
   targets:Target[]=[];
-  gardai:Phaser.Physics.Arcade.Sprite[]=[];
+  gardai:Phaser.GameObjects.Sprite[]=[];
   vehicles:Vehicle[]=[];
   keys:any;
   altitude=.7;
@@ -687,7 +687,7 @@ class DameStreetScene extends Phaser.Scene{
 
   spawnTraffic(){
     const add=(key:string,x:number,y:number,speed:number,lane:number,minX?:number,maxX?:number)=>{
-      const s=this.physics.add.sprite(x,y,key).setDepth(26);if(key==='bus')s.setDisplaySize(188,120);if(key==='luas')s.setDisplaySize(235,80);s.body!.setImmovable(true);this.vehicles.push({sprite:s,speed,lane,minX,maxX});
+      const s=this.add.sprite(x,y,key).setDepth(26);if(key==='bus')s.setDisplaySize(188,120);if(key==='luas')s.setDisplaySize(235,80);this.vehicles.push({sprite:s,speed,lane,minX,maxX});
     };
     for(let i=0;i<5;i++)add(i%3===0?'bus':i%3===1?'taxi':'van',450+i*680,835,100+Math.random()*30,0,0,5200);
     for(let i=0;i<5;i++){add(i%2?'taxi':'bus',260+i*720,1165,-105-Math.random()*25,1,0,5200);this.vehicles[this.vehicles.length-1].sprite.setFlipX(true);}
@@ -702,8 +702,8 @@ class DameStreetScene extends Phaser.Scene{
       if(x>=7000)y=690+Math.random()*760;
       else if(x>=5200)y=610+Math.random()*830;
       else y=upper?535+Math.random()*160:1300+Math.random()*210;
-      const p=this.physics.add.sprite(x,y,pedestrianForArea(x,i)).setDepth(22);
-      p.body!.setCircle(16,14,42);p.setData('baseSpeed',18+Math.random()*22);
+      const p=this.add.sprite(x,y,pedestrianForArea(x,i)).setDepth(22);
+      p.setData('baseSpeed',18+Math.random()*22);
       const f=foodForArea(x,i);
       const fi=this.add.image(x+24,y-20,f.key).setScale(.66).setDepth(23);
       const ring=this.add.circle(x,y,34,0xffe784,0).setStrokeStyle(3,0xffe784,0).setDepth(18);
@@ -713,13 +713,13 @@ class DameStreetScene extends Phaser.Scene{
   }
 
   spawnCameos(){
-    const m=this.physics.add.sprite(3180,1375,'michael').setDepth(22);
+    const m=this.add.sprite(3180,1375,'michael').setDepth(22);
     this.add.text(m.x,m.y-62,'Michael D.',{fontFamily:'Trebuchet MS',fontSize:'13px',fontStyle:'bold',color:'#22384b',backgroundColor:'#fff3cfcc',padding:{x:7,y:4}}).setOrigin(.5).setDepth(23);
     m.setData('cameo',true);
   }
 
   spawnGarda(x:number,y:number,chaser=true){
-    const g=this.physics.add.sprite(x,y,'garda').setDepth(25).setDisplaySize(66,98);
+    const g=this.add.sprite(x,y,'garda').setDepth(25).setDisplaySize(66,98);
     g.setData('chaser',chaser);g.setData('homeX',x);g.setData('homeY',y);
     g.setData('lostSightSince',0);g.setData('cooldownUntil',0);g.setData('lostEmoted',false);
     this.gardai.push(g);
@@ -947,6 +947,8 @@ class DameStreetScene extends Phaser.Scene{
 
   updateTargets(time:number,dt:number){
     for(const t of this.targets){
+      const nearby=Math.abs(t.person.x-this.gull.x)<1650&&Math.abs(t.person.y-this.gull.y)<1100;
+      if(!nearby)continue;
       if(t.stolen){
         const panic=time<t.panicUntil;
         if(panic){
@@ -991,6 +993,7 @@ class DameStreetScene extends Phaser.Scene{
   updateGardai(time:number,dt:number){
     for(const g of this.gardai){
       const dist=Phaser.Math.Distance.Between(g.x,g.y,this.gull.x,this.gull.y);
+      if(!g.getData('chaser')&&dist>2200)continue;
       const cooldownUntil=Number(g.getData('cooldownUntil')||0);
       const canSee=this.altitude<.62||dist<190;
       let lostSince=Number(g.getData('lostSightSince')||0);
