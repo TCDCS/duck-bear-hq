@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 76 112">
+<ellipse cx="38" cy="105" rx="27" ry="7" fill="#18313d" opacity=".18"/>
+<g stroke="#1d3545" stroke-width="2.6" stroke-linejoin="round">
+<rect x="18" y="70" width="14" height="34" rx="6" fill="#18324c"/><rect x="44" y="70" width="14" height="34" rx="6" fill="#18324c"/>
+<path d="M15 43q23-12 46 0v37H15Z" fill="#1d3650"/>
+<path d="M12 42q26-13 52 0l-4 29H16Z" fill="#e8df32"/>
+<path d="M17 48h42M16 59h44" stroke="#d9edf2" stroke-width="5"/>
+<path d="M25 40v31M51 40v31" stroke="#7f939a" stroke-width="3"/>
+<rect x="52" y="45" width="7" height="16" rx="2" fill="#26343d"/><circle cx="55.5" cy="47" r="2" fill="#63c8e6"/>
+<circle cx="38" cy="28" r="15" fill="#d89d76"/>
+<path d="M23 25q15-18 30 0v-8H23Z" fill="#193651"/>
+<path d="M20 16h36l-5-8H27Z" fill="#193651"/>
+<path d="M28 13h20" stroke="#d9c84c" stroke-width="2"/>
+<circle cx="33" cy="28" r="1.7" fill="#233742"/><circle cx="43" cy="28" r="1.7" fill="#233742"/>
+<path d="M34 35q4 3 8 0" fill="none"/>
+</g><text x="38" y="56" text-anchor="middle" font-family="Arial,sans-serif" font-size="6.5" font-weight="700" fill="#17324b">GARDA</text></svg>
