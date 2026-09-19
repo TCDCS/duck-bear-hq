@@ -140,6 +140,7 @@ class DameStreetScene extends Phaser.Scene{
   lastWanted=0;
   carryText!:Phaser.GameObjects.Text;
   districtText!:Phaser.GameObjects.Text;
+  lastZone='';
 
   constructor(){super('DameStreet');}
 
@@ -620,8 +621,10 @@ class DameStreetScene extends Phaser.Scene{
     this.updateHeat(time,dt);
     this.updateSelection();
 
-    const zone=this.gull.x<1700?'DAME STREET':this.gull.x<3400?'DAME STREET · EAST':this.gull.x<3900?'COLLEGE GREEN APPROACH':this.gull.x<5200?'COLLEGE GREEN':this.gull.x<7000?'GRAFTON STREET':"ST STEPHEN'S GREEN";
+    const zone=this.gull.x<3400?'DAME STREET':this.gull.x<5200?'COLLEGE GREEN':this.gull.x<7000?'GRAFTON STREET':"ST STEPHEN'S GREEN";
     this.districtText.setText(zone);
+    if(this.lastZone&&zone!==this.lastZone)this.toast('ENTERING '+zone);
+    this.lastZone=zone;
     const cameraBias=this.gull.x>=7000?0:(this.gull.x>=5200?330:190);
     this.cameras.main.setFollowOffset(0,cameraBias);
   }
@@ -859,6 +862,7 @@ function startGame(){
     render:{antialias:true,pixelArt:false,roundPixels:false}
   });
 }
+setText('startBest',Number(localStorage.getItem('seagull-best')||0).toLocaleString());
 $('playBtn')?.addEventListener('click',startGame);
 if(new URLSearchParams(location.search).has('autostart'))startGame();
 $('restartBtn')?.addEventListener('click',()=>location.reload());
