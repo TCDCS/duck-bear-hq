@@ -61,7 +61,7 @@ test('Seagull can land and waddle without another control button',()=>{
 test('Seagull progression is local-only and bounded',()=>{
   assert.match(source,/seagull-progress-v1/);
   assert.match(source,/type BirdId='dublin'\|'big-lad'\|'sneaky'\|'absolute-unit'/);
-  assert.match(source,/UPGRADE_COSTS=\[75,125,200,300,450\]/);
+  assert.match(source,/UPGRADE_COSTS=\[40,70,110,160,230\]/);
   assert.match(source,/Math\.Clamp\(Math\.floor\(Number\(raw\.upgrades\?\.wings\)\|\|0\),0,5\)/);
   assert.match(source,/progress\.coins\+=coins;saveProgress\(\)/);
   assert.match(html,/id="birdsBtn"/);
