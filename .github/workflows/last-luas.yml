@@ -1,0 +1,71 @@
+name: Last Luas Validate
+
+on:
+  pull_request:
+    paths:
+      - 'public/games/last-luas/**'
+      - 'public/games/index.html'
+      - 'public/index.html'
+      - 'public/kart-games.js'
+      - 'tests/last-luas.test.mjs'
+      - '.github/workflows/last-luas.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'public/games/last-luas/**'
+      - 'tests/last-luas.test.mjs'
+      - '.github/workflows/last-luas.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install repository dependencies
+        run: npm ci
+      - name: Run Last Luas source tests
+        run: node --test tests/last-luas.test.mjs
+      - name: Render Dawson Street smoke views
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/last-luas-smoke
+          python3 -m http.server 4173 --directory public >/tmp/last-luas-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid 2>/dev/null || true' EXIT
+          for i in {1..30}; do
+            curl -fsS http://127.0.0.1:4173/games/last-luas/ >/dev/null && break
+            sleep 0.25
+          done
+          dom=$(google-chrome --headless --no-sandbox --dump-dom --virtual-time-budget=5000 'http://127.0.0.1:4173/games/last-luas/?smoke=1&distance=180')
+          echo "$dom" | grep 'data-last-luas-ready="1"'
+          echo "$dom" | grep 'data-last-luas-build="0.5.0"'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=4000 --screenshot=/tmp/last-luas-smoke/green-end.png 'http://127.0.0.1:4173/games/last-luas/?smoke=1&distance=40'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=4000 --screenshot=/tmp/last-luas-smoke/mansion-house.png 'http://127.0.0.1:4173/games/last-luas/?smoke=1&distance=128'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=4000 --screenshot=/tmp/last-luas-smoke/cafe-en-seine.png 'http://127.0.0.1:4173/games/last-luas/?smoke=1&distance=254'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=4000 --screenshot=/tmp/last-luas-smoke/duke-street.png 'http://127.0.0.1:4173/games/last-luas/?smoke=1&distance=369'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=4000 --screenshot=/tmp/last-luas-smoke/dawson-stop.png 'http://127.0.0.1:4173/games/last-luas/?smoke=1&distance=405'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=844,390 --virtual-time-budget=4000 --screenshot=/tmp/last-luas-smoke/mobile-stop.png 'http://127.0.0.1:4173/games/last-luas/?smoke=1&distance=405'
+          test -s /tmp/last-luas-smoke/green-end.png
+          test -s /tmp/last-luas-smoke/mansion-house.png
+          test -s /tmp/last-luas-smoke/cafe-en-seine.png
+          test -s /tmp/last-luas-smoke/duke-street.png
+          test -s /tmp/last-luas-smoke/dawson-stop.png
+          test -s /tmp/last-luas-smoke/mobile-stop.png
+      - name: Run full repository tests
+        run: npm test
+      - name: Upload Last Luas smoke views
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: last-luas-v05-smoke
+          path: /tmp/last-luas-smoke/
+          if-no-files-found: warn
+          retention-days: 7
