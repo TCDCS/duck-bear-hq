@@ -1028,6 +1028,28 @@ const previewPanel=new URLSearchParams(location.search).get('panel');
 if(previewPanel==='birds')openPanel('birdsPanel');
 if(previewPanel==='upgrades')openPanel('upgradesPanel');
 
+let paused=false;
+function setGamePaused(next:boolean){
+  const game=(window as any).__seagullGame as Phaser.Game|undefined;
+  if(!game||paused===next)return;
+  paused=next;
+  if(next){
+    game.scene.pause('DameStreet');
+    $('pausePanel')?.classList.remove('hidden');
+    $('controls')?.classList.add('hidden');
+  }else{
+    game.scene.resume('DameStreet');
+    $('pausePanel')?.classList.add('hidden');
+    $('controls')?.classList.remove('hidden');
+  }
+}
+$('pauseBtn')?.addEventListener('click',()=>setGamePaused(true));
+$('resumeBtn')?.addEventListener('click',()=>setGamePaused(false));
+$('restartRunBtn')?.addEventListener('click',()=>location.reload());
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden&&!new URLSearchParams(location.search).has('smoke')&&(window as any).__seagullGame)setGamePaused(true);
+});
+
 function startGame(){
   if((window as any).__seagullGame)return;
   initAudio();
@@ -1058,7 +1080,7 @@ $('playBtn')?.addEventListener('click',startGame);
 if(new URLSearchParams(location.search).has('autostart'))startGame();
 $('restartBtn')?.addEventListener('click',()=>location.reload());
 window.addEventListener('seagull-gameover',(ev:any)=>{
-  $('controls')?.classList.add('hidden');$('gameOver')?.classList.remove('hidden');
+  paused=false;$('pausePanel')?.classList.add('hidden');$('controls')?.classList.add('hidden');$('gameOver')?.classList.remove('hidden');
   setText('finalScore',Number(ev.detail.score).toLocaleString());
   setText('finalStolen',String(ev.detail.stolen));setText('bestScore',Number(ev.detail.best).toLocaleString());setText('coinsEarned',String(ev.detail.coins||0));setText('finalBird',selectedBird().name);renderProgression();
 });
