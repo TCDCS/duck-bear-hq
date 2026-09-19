@@ -278,6 +278,15 @@ class DameStreetScene extends Phaser.Scene{
     this.load.svg('garda',base+'garda.svg',{width:76,height:112});
     this.load.svg('bus',base+'dublin-bus.svg',{width:220,height:140});
     this.load.svg('luas',base+'luas.svg',{width:260,height:88});
+    const brand='/games/seagull-simulator/brands/';
+    this.load.svg('brand-centra',brand+'centra.svg',{width:520,height:130});
+    this.load.svg('brand-supervalu',brand+'supervalu.svg',{width:600,height:130});
+    this.load.svg('brand-insomnia',brand+'insomnia.svg',{width:520,height:180});
+    this.load.svg('brand-mcdonalds',brand+'mcdonalds.svg',{width:420,height:170});
+    this.load.svg('brand-spar',brand+'spar.svg',{width:620,height:150});
+    this.load.svg('brand-boots',brand+'boots.svg',{width:500,height:170});
+    this.load.svg('brand-brown-thomas',brand+'brown-thomas.svg',{width:700,height:150});
+    this.load.svg('brand-bewleys',brand+'bewleys.svg',{width:620,height:180});
   }
 
   create(){
@@ -302,6 +311,7 @@ class DameStreetScene extends Phaser.Scene{
     this.anims.create({key:'fly',frames:[{key:'gull-0'},{key:'gull-1'},{key:'gull-2'},{key:'gull-1'}],frameRate:8,repeat:-1});
     this.gull.play('fly');
     const startArea=new URLSearchParams(location.search).get('area');
+    if(startArea==='dame-east')this.gull.setPosition(2200,690);
     if(startArea==='college')this.gull.setPosition(4080,690);
     if(startArea==='grafton')this.gull.setPosition(5950,760);
     if(startArea==='green')this.gull.setPosition(7700,1000);
@@ -414,15 +424,15 @@ class DameStreetScene extends Phaser.Scene{
     }
 
     const shops=[
-      {x:60,w:470,name:'CENTRA',c:0x167daf,s:0xffc52d},
-      {x:540,w:500,name:'SuperValu',c:0xb63036,s:0xffffff},
-      {x:1050,w:430,name:'INSOMNIA',c:0x8d2c34,s:0xffffff},
-      {x:1490,w:520,name:"McDONALD'S",c:0x202426,s:0xffffff},
-      {x:2020,w:450,name:'SPAR',c:0x327b45,s:0xffffff},
-      {x:2480,w:520,name:'BOOTS',c:0x244b9d,s:0xffffff},
-      {x:3010,w:520,name:'DUBLIN DELI',c:0xd17832,s:0xfff1c5}
+      {x:60,w:470,name:'CENTRA',c:0x167daf,s:0xffc52d,brand:'brand-centra'},
+      {x:540,w:500,name:'SuperValu',c:0xb63036,s:0xffffff,brand:'brand-supervalu'},
+      {x:1050,w:430,name:'INSOMNIA',c:0x8d2c34,s:0xffffff,brand:'brand-insomnia'},
+      {x:1490,w:520,name:"McDONALD'S",c:0x202426,s:0xffffff,brand:'brand-mcdonalds'},
+      {x:2020,w:450,name:'SPAR',c:0x327b45,s:0xffffff,brand:'brand-spar'},
+      {x:2480,w:520,name:'BOOTS',c:0x244b9d,s:0xffffff,brand:'brand-boots'},
+      {x:3010,w:520,name:'DUBLIN DELI',c:0xd17832,s:0xfff1c5,brand:undefined}
     ];
-    for(const s of shops)this.shop(s.x,70,s.w,390,s.name,s.c,s.s);
+    for(const s of shops)this.shop(s.x,70,s.w,390,s.name,s.c,s.s,s.brand);
     this.collegeGreen(3600);
     this.graftonStreet(5200);
     this.stephensGreen(7000);
@@ -444,7 +454,7 @@ class DameStreetScene extends Phaser.Scene{
     this.add.text(3890,1085,'COLLEGE GREEN',{fontFamily:'Arial Black',fontSize:'30px',color:'#f3e9c8',stroke:'#354e59',strokeThickness:5}).setDepth(3).setAngle(-2);
   }
 
-  shop(x:number,y:number,w:number,h:number,name:string,colour:number,sign:number){
+  shop(x:number,y:number,w:number,h:number,name:string,colour:number,sign:number,brandKey?:string){
     const g=this.add.graphics().setDepth(2);
     g.fillStyle(0x5d6870,.25);g.fillRect(x+18,y+24,w,h);
     g.fillStyle(0xe7d7bb);g.fillRect(x,y,w,h);
@@ -464,7 +474,14 @@ class DameStreetScene extends Phaser.Scene{
       g.fillStyle(0xffffff,.26);g.fillTriangle(wx+7,y+307,wx+77,y+307,wx+7,y+370);
       g.fillStyle(0xf8e7aa,.38);g.fillRect(wx+8,y+385,80,22);
     }
-    this.add.text(x+w/2,y+225,name,{fontFamily:'Arial Black, sans-serif',fontSize:Math.min(42,Math.max(24,w/name.length*.9))+'px',color:'#'+sign.toString(16).padStart(6,'0')}).setOrigin(.5).setDepth(4);
+    const fallback=this.add.text(x+w/2,y+225,name,{fontFamily:'Arial Black, sans-serif',fontSize:Math.min(42,Math.max(24,w/name.length*.9))+'px',color:'#'+sign.toString(16).padStart(6,'0')}).setOrigin(.5).setDepth(4);
+    if(brandKey&&this.textures.exists(brandKey)){
+      const logo=this.add.image(x+w/2,y+225,brandKey).setDepth(5);
+      const maxW=w-52,maxH=64;
+      const scale=Math.min(maxW/Math.max(1,logo.width),maxH/Math.max(1,logo.height));
+      logo.setScale(scale);
+      fallback.setVisible(false);
+    }
   }
   lamp(x:number,y:number){
     const g=this.add.graphics().setDepth(8);g.fillStyle(0x263c48);g.fillRoundedRect(x,y-105,10,125,5);g.fillCircle(x+5,y-110,16);g.fillStyle(0xffe6a3);g.fillCircle(x+5,y-110,8);
@@ -515,8 +532,8 @@ class DameStreetScene extends Phaser.Scene{
       g.lineStyle(2,0xe1d6c3,.5);g.lineBetween(x,py,x+1800,py);
     }
     // Retail facades
-    this.shop(x+20,70,490,390,'BROWN THOMAS',0x6c655e,0xffffff);
-    this.shop(x+520,70,430,390,"BEWLEY'S",0x6a2b2d,0xf0d6a2);
+    this.shop(x+20,70,490,390,'BROWN THOMAS',0x6c655e,0xffffff,'brand-brown-thomas');
+    this.shop(x+520,70,430,390,"BEWLEY'S",0x6a2b2d,0xf0d6a2,'brand-bewleys');
     this.shop(x+960,70,390,390,'BUTLERS',0x3b2a26,0xf4d9a3);
     this.shop(x+1360,70,410,390,'SPORTS',0x263a58,0xffffff);
     this.add.text(x+900,1160,'GRAFTON STREET',{fontFamily:'Arial Black',fontSize:'42px',color:'#81745f',stroke:'#f1e6d2',strokeThickness:5}).setOrigin(.5).setDepth(8).setAngle(-2);

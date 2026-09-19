@@ -128,5 +128,20 @@
   "build": "1.0",
   "liveTarget": true,
   "releaseStage": "live",
-  "releaseDate": "2026-09-19"
+  "releaseDate": "2026-09-19",
+  "brandSignage": {
+    "build": "1.0 visual patch candidate",
+    "bundledLocal": true,
+    "environmentalOnly": true,
+    "brands": [
+      "Centra",
+      "SuperValu",
+      "Insomnia",
+      "McDonald's",
+      "SPAR",
+      "Boots",
+      "Brown Thomas",
+      "Bewley's"
+    ]
+  }
 }

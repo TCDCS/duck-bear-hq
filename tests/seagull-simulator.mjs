@@ -229,3 +229,27 @@ test('Seagull Build 1.0 is consistent across runtime and public entry points',()
   assert.match(hub,/BUILD 1\.0/);
   assert.match(home,/BUILD 1\.0/);
 });
+
+test('Seagull shop signage uses bundled real-brand marks with text fallbacks',()=>{
+  const files=[
+    'centra.svg','supervalu.svg','spar.svg','insomnia.svg',
+    'mcdonalds.svg','boots.svg','brown-thomas.svg','bewleys.svg'
+  ];
+  for(const file of files){
+    const svg=readFileSync('public/games/seagull-simulator/brands/'+file,'utf8');
+    assert.match(svg,/<svg/);
+    assert.equal(svg.includes('href="http'),false);
+    assert.equal(svg.includes("href='http"),false);
+  }
+  for(const key of [
+    'brand-centra','brand-supervalu','brand-insomnia','brand-mcdonalds',
+    'brand-spar','brand-boots','brand-brown-thomas','brand-bewleys'
+  ]) assert.match(source,new RegExp(key));
+  assert.match(source,/shop\(x:number,y:number,w:number,h:number,name:string,colour:number,sign:number,brandKey\?:string\)/);
+  assert.match(source,/brandKey&&this\.textures\.exists\(brandKey\)/);
+  assert.match(source,/fallback\.setVisible\(false\)/);
+  assert.match(source,/maxW=w-52,maxH=64/);
+  assert.equal(release.brandSignage.bundledLocal,true);
+  assert.equal(release.brandSignage.environmentalOnly,true);
+  assert.equal(release.brandSignage.brands.length,8);
+});
