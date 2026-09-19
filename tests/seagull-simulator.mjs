@@ -154,3 +154,15 @@ test('Seagull keeps background actors out of Arcade Physics',()=>{
   assert.match(source,/const nearby=Math\.abs\(t\.person\.x-this\.gull\.x\)<1650&&Math\.abs\(t\.person\.y-this\.gull\.y\)<1100/);
   assert.equal(release.performance.arcadePhysicsBodies,1);
 });
+
+test('Seagull ambient Dublin details stay lightweight',()=>{
+  assert.match(source,/spawnAmbientPigeons\(\)/);
+  assert.match(source,/updateAmbient\(time:number,dt:number\)/);
+  assert.match(source,/const p=this\.add\.sprite\(x,y,'pigeon'\)/);
+  assert.match(source,/Math\.abs\(p\.x-this\.gull\.x\)>1550/);
+  assert.match(source,/name:'grab'\|'dive'\|'hit'\|'wanted'\|'target'\|'bell'/);
+  assert.match(source,/time-this\.lastLuasBellAt>6500/);
+  assert.match(source,/♫/);
+  assert.equal(release.ambient.physics,false);
+  assert.equal(release.ambient.luasBellCooldownMs,6500);
+});
