@@ -464,7 +464,7 @@ class DameStreetScene extends Phaser.Scene{
       if(!this.toldWaddle){this.toldWaddle=true;this.toast('WADDLE MODE · FLAP TO TAKE OFF');}
     }else if(this.gull.texture.key==='gull-walk'&&!this.gull.anims.isPlaying)this.gull.play('fly');
     this.altitude=Phaser.Math.Linear(this.altitude,this.altitudeTarget,Math.min(1,dt*4.8));
-    const sc=this.grounded?.78:(.82+this.altitude*.5);this.gull.setScale(sc);
+    const sc=this.grounded ? .78 : (.82+this.altitude*.5);this.gull.setScale(sc);
     if(this.grounded)this.gull.setAngle(0);
     this.gull.setDepth(45+Math.round(this.altitude*28));
     this.shadow.setPosition(this.gull.x+16,this.gull.y+28+this.altitude*58);
