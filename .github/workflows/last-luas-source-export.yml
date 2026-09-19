@@ -8,13 +8,13 @@ permissions:
 jobs:
   snapshot:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
-      - name: Export tracked public source only
-        run: git archive --format=tar.gz HEAD > /tmp/last-luas-source.tar.gz
+      - name: Audit official identity URLs and bounded OSM geometry
+        run: python scripts/last-luas-reference-audit.py
       - uses: actions/upload-artifact@v4
         with:
-          name: last-luas-source
-          path: /tmp/last-luas-source.tar.gz
+          name: last-luas-reference
+          path: /tmp/last-luas-reference/
           retention-days: 1
