@@ -995,5 +995,5 @@ $('restartBtn')?.addEventListener('click',()=>location.reload());
 window.addEventListener('seagull-gameover',(ev:any)=>{
   $('controls')?.classList.add('hidden');$('gameOver')?.classList.remove('hidden');
   setText('finalScore',Number(ev.detail.score).toLocaleString());
-  setText('finalStolen',String(ev.detail.stolen));setText('bestScore',Number(ev.detail.best).toLocaleString());setText('coinsEarned',String(ev.detail.coins||0));renderProgression();
+  setText('finalStolen',String(ev.detail.stolen));setText('bestScore',Number(ev.detail.best).toLocaleString());setText('coinsEarned',String(ev.detail.coins||0));setText('finalBird',selectedBird().name);renderProgression();
 });
