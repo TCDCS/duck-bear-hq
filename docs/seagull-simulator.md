@@ -24,7 +24,7 @@ The final continuous route is:
 
 Dame Street → College Green → Grafton Street → St Stephen's Green.
 
-The first playable alpha deliberately contains Dame Street only. The next areas should extend the same world rather than become separate loading-screen levels.
+The current alpha contains the full continuous route. There are no loading screens between Dame Street, College Green, Grafton Street and St Stephen's Green.
 
 ## Visual direction
 
@@ -42,16 +42,16 @@ Garda characters are stylised and clearly recognisable through uniform colours, 
 
 Michael D. Higgins is a rare harmless cameo/background character. Real-person cameos are not attack targets and should remain non-political.
 
-## Expansion order
+## Current build priorities
 
-1. Tune flying, dive, grab, collisions and camera.
-2. Improve Dame Street art and animation.
-3. Add proper NPC reactions and more food.
-4. Add College Green and stronger Garda/wanted behaviour.
-5. Add Grafton Street crowds, buskers and retail detail.
-6. Add St Stephen's Green, benches, picnics, dogs, ducks and open-space gameplay.
-7. Add gull unlocks, upgrades, missions and achievements.
-8. Only then consider Duck & Bear account leaderboards or native mobile packaging.
+1. Tune flying, dive, landing, waddle, grab, collisions and camera.
+2. Improve character animation and environment detail across all four areas.
+3. Tune NPC reactions, Garda pursuit, wanted heat, food recycling, missions and combos.
+4. Add gull unlocks and simple upgrades only after the base run feels good.
+5. Add achievements and local progression.
+6. Only then consider Duck & Bear account leaderboards or native mobile packaging.
+
+The map scope is closed for the first release. Do not add more Dublin areas until the four-area route is polished and performs well on mobile.
 
 ## Release rule
 
