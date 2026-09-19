@@ -79,11 +79,17 @@ test('v0.4 uses real pinned Quaternius character assets rather than primitive pe
 
 test('v0.4 real Dawson Street facade pass is present',()=>{
   const source=read(game),html=read(index);
-  for(const facade of ['ARKET curved glass panel','Hodges Figgis red brick facade','Hodges curved display','Cafe en Seine teal frontage','Dawson Lounge iconic red door','The Ivy Dawson Street facade'])assert.match(source,new RegExp(facade));
-  for(const logo of ['ARKET real wordmark','Hodges Figgis real logo','Cafe en Seine real logo','Dawson Lounge real sign','Ivy real wordmark'])assert.match(source,new RegExp(logo));
+  for(const facade of ['ARKET curved glass panel','Hodges Figgis red brick facade','Hodges curved display','Cafe en Seine teal frontage','Dawson Lounge iconic red door','Royal Irish Academy facade',"St Ann's Church Dawson Street facade",'The Ivy Dawson Street facade'])assert.match(source,new RegExp(facade));
+  for(const logo of ['ARKET real wordmark','ARKET projecting sign','Hodges Figgis real logo','Hodges Figgis projecting sign','Cafe en Seine real logo','Cafe en Seine projecting sign','Dawson Lounge real sign','Dawson Lounge projecting sign','RIA nameboard','St Anns small plaque','Ivy real wordmark','Ivy projecting sign'])assert.match(source,new RegExp(logo));
   assert.match(source,/function brandMaterial/);
   assert.doesNotMatch(html,/class="rain"/);
   assert.doesNotMatch(source,/Puddle/);
+});
+
+test('cyclists use an actual riding silhouette and detailed bicycle',()=>{
+  const source=read(game);
+  for(const part of ['Front bicycle wheel','Rear bicycle wheel','Bike top tube','Bike down tube','Bike seat tube','Bike seat','Bike handlebars','Cyclist rider hip pivot','Delivery rider hip pivot'])assert.match(source,new RegExp(part));
+  assert.match(source,/riderPivot\.setLocalEulerAngles\(32,0,0\)/);
 });
 
 test('street polish includes distinct hazards and final sprint feedback',()=>{
