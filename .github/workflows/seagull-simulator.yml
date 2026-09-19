@@ -54,6 +54,10 @@ jobs:
           google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/birds-panel.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&panel=birds'
           google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/upgrades-panel.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&panel=upgrades'
           google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/trophies-panel.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&panel=trophies'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/settings-panel.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&panel=settings'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/update-log.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&panel=updates'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=844,390 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/mobile-settings.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&panel=settings'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=844,390 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/mobile-update-log.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&panel=updates'
           google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/run-summary.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&summarycheck=1'
           google-chrome --headless --no-sandbox --hide-scrollbars --window-size=844,390 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/mobile-run-summary.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&summarycheck=1'
           google-chrome --headless --no-sandbox --hide-scrollbars --window-size=844,390 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/mobile-trophies.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&panel=trophies'
@@ -71,6 +75,11 @@ jobs:
             echo "$feel" | grep -o 'data-seagull-feel-error="[^"]*"' || true
             exit 1
           fi
+          updates=$(google-chrome --headless --no-sandbox --dump-dom --virtual-time-budget=3500 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&panel=updates')
+          echo "$updates" | grep 'Build 1.1.0'
+          echo "$updates" | grep 'Trinity College Dublin'
+          echo "$updates" | grep 'Tesco'
+          echo "$updates" | grep 'Yeeros'
           summary=$(google-chrome --headless --no-sandbox --dump-dom --virtual-time-budget=6500 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&summarycheck=1')
           echo "$summary" | grep 'data-seagull-summary-scheduled="1"'
           echo "$summary" | grep 'data-seagull-summary-exercised="1"'
@@ -104,6 +113,10 @@ jobs:
           test -s /tmp/seagull-smoke/birds-panel.png
           test -s /tmp/seagull-smoke/upgrades-panel.png
           test -s /tmp/seagull-smoke/trophies-panel.png
+          test -s /tmp/seagull-smoke/settings-panel.png
+          test -s /tmp/seagull-smoke/update-log.png
+          test -s /tmp/seagull-smoke/mobile-settings.png
+          test -s /tmp/seagull-smoke/mobile-update-log.png
           test -s /tmp/seagull-smoke/run-summary.png
           test -s /tmp/seagull-smoke/mobile-run-summary.png
           test -s /tmp/seagull-smoke/mobile-trophies.png
