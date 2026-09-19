@@ -35,6 +35,7 @@ function findCharacterClip(asset,wanted){
   })||clips[0]||null;
 }
 function playCharacterClip(entity,asset,wanted){
+  if(!wanted)return;
   const clip=findCharacterClip(asset,wanted);if(!clip)return;
   entity.addComponent('anim',{activate:true});
   entity.anim.assignAnimation('clip',clip.resource);
@@ -403,7 +404,24 @@ async function boot(){
     if(smokeParams.get('smoke')==='1'){
       const preview=Math.max(0,Math.min(GAME.streetLength-8,Number(smokeParams.get('distance')||70)||70));
       player.distance=preview;player.entity.setPosition(lanes[1],player.y,-preview);
-      ui.start.classList.remove('visible');ui.start.hidden=true;updateHud();updateCamera(1);animateWorld();
+      ui.start.classList.remove('visible');ui.start.hidden=true;
+      if(smokeParams.get('modelcheck')==='1'){
+        player.entity.enabled=false;
+        const checks=[
+          {x:-3.6,pitch:0,clip:null,name:'BIND · PITCH 0'},
+          {x:-1.2,pitch:0,clip:'Idle_Neutral',name:'IDLE · PITCH 0'},
+          {x:1.2,pitch:90,clip:'Idle_Neutral',name:'IDLE · PITCH +90'},
+          {x:3.6,pitch:-90,clip:'Idle_Neutral',name:'IDLE · PITCH -90'}
+        ];
+        for(const c of checks){
+          const root=new pc.Entity(c.name);root.setPosition(c.x,0,-6);app.root.addChild(root);
+          spawnCharacter(root,{kind:'casual',clip:c.clip,scale:.92,pitch:c.pitch,yaw:180,name:c.name});
+          box(c.name+' marker',new pc.Vec3(c.x,.03,-6),new pc.Vec3(.75,.03,.75),M.yellow);
+        }
+        camera.setPosition(0,2.7,4.5);camera.lookAt(0,1.1,-6);camera.camera.fov=58;
+      }else{
+        updateHud();updateCamera(1);animateWorld();
+      }
     }else{
       playButton.disabled=false;playButton.textContent='RUN FOR IT →';
     }
