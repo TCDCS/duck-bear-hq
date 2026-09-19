@@ -36,7 +36,33 @@ function pedestrianForArea(x:number,seed:number){
 }
 const WORLD_W=8800;
 const WORLD_H=1800;
-const VERSION='1.0';
+const VERSION='1.1.0';
+const UPDATE_LOG=[
+  {
+    version:'1.1.0',
+    date:'19 September 2026',
+    title:'Dublin Detail & Identity Update',
+    changes:[
+      'Rebuilt College Green around Trinity College Dublin’s West Front and Front Gate.',
+      'Replaced Insomnia with Tesco on Dame Street.',
+      'Replaced Dublin Deli with Yeeros using the supplied Yeeros artwork.',
+      'Added current Grafton Street storefronts including LEGO Store and Disney Store.',
+      'Upgraded shop façades, paving, railings and street furniture with more geometry.',
+      'Added Settings and a clickable Update Log.'
+    ]
+  },
+  {
+    version:'1.0',
+    date:'19 September 2026',
+    title:'Initial Live Release',
+    changes:[
+      'Launched the four-area Dublin route from Dame Street to St Stephen’s Green.',
+      'Added free flight, diving, grabbing, landing, waddling and wanted/Garda gameplay.',
+      'Added local progression, gull unlocks, upgrades, missions, trophies and run statistics.',
+      'Added mobile performance, pause, accessibility and persistence hardening.'
+    ]
+  }
+] as const;
 
 type BirdId='dublin'|'big-lad'|'sneaky'|'absolute-unit';
 type UpgradeKey='wings'|'beak'|'nerve';
@@ -279,14 +305,17 @@ class DameStreetScene extends Phaser.Scene{
     this.load.svg('bus',base+'dublin-bus.svg',{width:220,height:140});
     this.load.svg('luas',base+'luas.svg',{width:260,height:88});
     const brand='/games/seagull-simulator/brands/';
-    this.load.svg('brand-centra',brand+'centra.svg',{width:520,height:130});
-    this.load.svg('brand-supervalu',brand+'supervalu.svg',{width:600,height:130});
-    this.load.svg('brand-insomnia',brand+'insomnia.svg',{width:520,height:180});
-    this.load.svg('brand-mcdonalds',brand+'mcdonalds.svg',{width:420,height:170});
-    this.load.svg('brand-spar',brand+'spar.svg',{width:620,height:150});
-    this.load.svg('brand-boots',brand+'boots.svg',{width:500,height:170});
-    this.load.svg('brand-brown-thomas',brand+'brown-thomas.svg',{width:700,height:150});
-    this.load.svg('brand-bewleys',brand+'bewleys.svg',{width:620,height:180});
+    this.load.svg('brand-centra',brand+'centra.svg');
+    this.load.svg('brand-supervalu',brand+'supervalu.svg');
+    this.load.svg('brand-tesco',brand+'tesco.svg');
+    this.load.svg('brand-mcdonalds',brand+'mcdonalds.svg');
+    this.load.svg('brand-spar',brand+'spar.svg');
+    this.load.svg('brand-boots',brand+'boots.svg');
+    this.load.svg('brand-brown-thomas',brand+'brown-thomas.svg');
+    this.load.svg('brand-bewleys',brand+'bewleys.svg');
+    this.load.svg('brand-lego',brand+'lego.svg');
+    this.load.svg('brand-disney-store',brand+'disney-store.svg');
+    this.load.image('brand-yeeros',brand+'yeeros.jpg');
   }
 
   create(){
@@ -426,11 +455,11 @@ class DameStreetScene extends Phaser.Scene{
     const shops=[
       {x:60,w:470,name:'CENTRA',c:0x167daf,s:0xffc52d,brand:'brand-centra'},
       {x:540,w:500,name:'SuperValu',c:0xb63036,s:0xffffff,brand:'brand-supervalu'},
-      {x:1050,w:430,name:'INSOMNIA',c:0x8d2c34,s:0xffffff,brand:'brand-insomnia'},
+      {x:1050,w:430,name:'TESCO',c:0xffffff,s:0xe31837,brand:'brand-tesco'},
       {x:1490,w:520,name:"McDONALD'S",c:0x202426,s:0xffffff,brand:'brand-mcdonalds'},
-      {x:2020,w:450,name:'SPAR',c:0x327b45,s:0xffffff,brand:'brand-spar'},
-      {x:2480,w:520,name:'BOOTS',c:0x244b9d,s:0xffffff,brand:'brand-boots'},
-      {x:3010,w:520,name:'DUBLIN DELI',c:0xd17832,s:0xfff1c5,brand:undefined}
+      {x:2020,w:450,name:'SPAR',c:0xffffff,s:0xd5222b,brand:'brand-spar'},
+      {x:2480,w:520,name:'DUBLIN CITY',c:0x34536a,s:0xffffff,brand:undefined},
+      {x:3010,w:520,name:'YEEROS',c:0x29479c,s:0xffffff,brand:'brand-yeeros'}
     ];
     for(const s of shops)this.shop(s.x,70,s.w,390,s.name,s.c,s.s,s.brand);
     this.collegeGreen(3600);
@@ -442,6 +471,9 @@ class DameStreetScene extends Phaser.Scene{
     for(let x=420;x<5200;x+=690)this.flowerBasket(x,545);
     for(let x=690;x<5200;x+=920)this.cafeBoard(x,676,x%1840<900?'COFFEE':'DELI');
     for(let x=120;x<5200;x+=115){g.fillStyle(0x2e3f49);g.fillRoundedRect(x,720,13,36,5);}
+    for(const x of [920,2190,3900,4790])this.trafficLight(x,720);
+    for(const x of [430,2670,5480,6400])this.bikeRack(x,690);
+    this.busStop(1780,688,'DAME ST');this.busStop(4320,688,'COLLEGE GREEN');
     // crossings
     for(const x of [980,2220,3920,4780]){
       g.fillStyle(0xf3f0dc,.9);
@@ -466,14 +498,29 @@ class DameStreetScene extends Phaser.Scene{
       g.fillStyle(0x7294a2);g.fillRoundedRect(wx,y+55,76,105,5);
       g.lineStyle(5,0xf0dfbf,.9);g.lineBetween(wx+38,y+58,wx+38,y+157);
     }
-    g.fillStyle(colour);g.fillRect(x+12,y+185,w-24,80);
-    g.fillStyle(0xf2efe1);for(let ax=x+22;ax<x+w-34;ax+=72)g.fillTriangle(ax,y+265,ax+62,y+265,ax+31,y+288);
-    g.fillStyle(0x456474);g.fillRect(x+25,y+285,w-50,155);
+    // deep fascia / cornice
+    g.fillStyle(0x5f5043,.28);g.fillRect(x+17,y+273,w-34,12);
+    g.fillStyle(colour);g.fillRoundedRect(x+12,y+182,w-24,84,4);
+    g.fillStyle(0xe9dcc3);g.fillRect(x+8,y+272,w-16,17);
+    g.fillStyle(0xc0a985);g.fillRect(x+8,y+286,w-16,5);
+    // projecting awning teeth
+    g.fillStyle(0xf2efe1);for(let ax=x+22;ax<x+w-34;ax+=72)g.fillTriangle(ax,y+265,ax+62,y+265,ax+31,y+291);
+    // lower shop front with pilasters and mullions
+    g.fillStyle(0x456474);g.fillRect(x+25,y+295,w-50,145);
+    for(let px=x+22;px<x+w-20;px+=124){g.fillStyle(0x8b755c);g.fillRect(px,y+289,9,157);g.fillStyle(0xd2bd98);g.fillRect(px+2,y+289,4,157);}
     for(let wx=x+35;wx<x+w-70;wx+=125){
-      g.fillStyle(0xb9e4e5,.75);g.fillRect(wx,y+300,96,119);
-      g.fillStyle(0xffffff,.26);g.fillTriangle(wx+7,y+307,wx+77,y+307,wx+7,y+370);
-      g.fillStyle(0xf8e7aa,.38);g.fillRect(wx+8,y+385,80,22);
+      g.fillStyle(0xb9e4e5,.78);g.fillRect(wx,y+305,96,112);
+      g.fillStyle(0xffffff,.28);g.fillTriangle(wx+7,y+311,wx+77,y+311,wx+7,y+370);
+      g.lineStyle(3,0x58717a,.7);g.lineBetween(wx+48,y+306,wx+48,y+417);g.lineBetween(wx+2,y+361,wx+94,y+361);
+      g.fillStyle(0xf8e7aa,.38);g.fillRect(wx+8,y+388,80,20);
     }
+    // recessed entrance and brass/stone sill
+    const doorX=x+w-82;g.fillStyle(0x273c47);g.fillRoundedRect(doorX,y+314,43,126,4);
+    g.fillStyle(0xaed1d5,.7);g.fillRect(doorX+6,y+322,31,71);g.fillStyle(0xc9a65f);g.fillCircle(doorX+32,y+407,3);
+    g.fillStyle(0xb8a17e);g.fillRect(x+18,y+439,w-36,8);
+    // upper façade corner blocks and shallow cornice shadow
+    g.fillStyle(0x9c8265,.5);g.fillRect(x+4,y+48,13,132);g.fillRect(x+w-17,y+48,13,132);
+    g.fillStyle(0x7f684f,.3);g.fillRect(x+12,y+174,w-24,9);
     const fallback=this.add.text(x+w/2,y+225,name,{fontFamily:'Arial Black, sans-serif',fontSize:Math.min(42,Math.max(24,w/name.length*.9))+'px',color:'#'+sign.toString(16).padStart(6,'0')}).setOrigin(.5).setDepth(4);
     if(brandKey&&this.textures.exists(brandKey)){
       const logo=this.add.image(x+w/2,y+225,brandKey).setDepth(5);
@@ -490,37 +537,106 @@ class DameStreetScene extends Phaser.Scene{
     const g=this.add.graphics().setDepth(8);g.fillStyle(0x263e45);g.fillRoundedRect(x,y-42,34,52,5);g.fillStyle(0x101e23);g.fillRect(x+5,y-33,24,8);
   }
 
-  collegeGreen(x:number){
-    const g=this.add.graphics().setDepth(2);
-    // Bank-style classical frontage: recognisable civic Dublin without pulling the game into full architectural simulation.
-    g.fillStyle(0xd8c39e);g.fillRect(x+28,62,720,408);
-    g.fillStyle(0xb79b72);g.fillRect(x+28,62,720,28);
-    g.fillStyle(0xe8d9bb);g.fillTriangle(x+70,150,x+388,58,x+706,150);
-    g.lineStyle(5,0xb59c76,.7);g.lineBetween(x+70,150,x+706,150);
-    for(let i=0;i<8;i++){
-      const px=x+92+i*82;
-      g.fillStyle(0xe7d8bb);g.fillRect(px,155,31,290);
-      g.fillStyle(0xb49a75);g.fillRect(px-5,145,41,14);g.fillRect(px-5,445,41,12);
-    }
-    g.fillStyle(0x627f87);for(let wx=x+142;wx<x+680;wx+=164)g.fillRoundedRect(wx,205,80,105,4);
-    g.fillStyle(0x3b565f);g.fillRoundedRect(x+337,335,104,135,5);
-    this.add.text(x+388,119,'BANK OF IRELAND',{fontFamily:'Arial Black',fontSize:'24px',color:'#47505a'}).setOrigin(.5).setDepth(4);
-    this.add.text(x+388,323,'BANK OF IRELAND',{fontFamily:'Arial Black',fontSize:'15px',color:'#55483b',backgroundColor:'#eadbbce6',padding:{x:10,y:5}}).setOrigin(.5).setDepth(5);
-    // Open College Green edge and secondary frontage.
-    g.fillStyle(0xe6d4b6);g.fillRect(x+790,105,760,365);
-    g.fillStyle(0xc5a980);g.fillRect(x+790,105,760,30);
-    for(let wx=x+830;wx<x+1500;wx+=118){
-      g.fillStyle(0x81a2aa);g.fillRoundedRect(wx,170,75,92,4);
-      g.fillStyle(0x5d6f73);g.fillRoundedRect(wx,325,75,112,4);
-    }
-    this.add.text(x+1165,145,'COLLEGE GREEN',{fontFamily:'Arial Black',fontSize:'26px',color:'#5b4d42'}).setOrigin(.5).setDepth(4);
-    // Stone planters and open-space details.
-    for(let px=x+810;px<x+1510;px+=220){
-      g.fillStyle(0x9b927e);g.fillRoundedRect(px,675,72,28,6);
-      g.fillStyle(0x4d9853);g.fillCircle(px+18,668,18);g.fillCircle(px+48,665,20);
-    }
+  trafficLight(x:number,y:number){
+    const g=this.add.graphics().setDepth(15);
+    g.fillStyle(0x24343d);g.fillRoundedRect(x,y-144,9,145,4);g.fillRoundedRect(x-12,y-145,34,74,6);
+    g.fillStyle(0x151f24);g.fillCircle(x+5,y-130,8);g.fillCircle(x+5,y-109,8);g.fillCircle(x+5,y-88,8);
+    g.fillStyle(0xe64b48);g.fillCircle(x+5,y-130,5);g.fillStyle(0xe7b83e,.35);g.fillCircle(x+5,y-109,5);g.fillStyle(0x55b968,.28);g.fillCircle(x+5,y-88,5);
+    g.fillStyle(0xd9e3e1);g.fillRoundedRect(x-18,y-64,46,30,4);
+    this.add.text(x+5,y-49,'WAIT',{fontFamily:'Arial Black',fontSize:'8px',color:'#24343d'}).setOrigin(.5).setDepth(16);
+  }
+  bikeRack(x:number,y:number){
+    const g=this.add.graphics().setDepth(10);g.lineStyle(4,0x67777d,.9);
+    for(let i=0;i<4;i++)g.strokeRoundedRect(x+i*24,y-35,20,36,9);
+  }
+  busStop(x:number,y:number,label:string){
+    const g=this.add.graphics().setDepth(12);g.fillStyle(0x2e4d5c);g.fillRoundedRect(x,y-105,8,110,4);
+    g.fillStyle(0x3c78a2);g.fillRoundedRect(x-13,y-116,34,32,6);g.fillStyle(0xf3cf45);g.fillCircle(x+4,y-100,8);
+    this.add.text(x+31,y-103,label,{fontFamily:'Arial Black',fontSize:'8px',color:'#29404c',backgroundColor:'#f4f1e6',padding:{x:5,y:3}}).setOrigin(0,.5).setDepth(13);
   }
 
+  collegeGreen(x:number){
+    const g=this.add.graphics().setDepth(6);
+    const left=x+24,right=x+1570,top=62,base=468,centre=x+790;
+
+    // Trinity College Dublin West Front: long grey-granite wings.
+    g.fillStyle(0xa7a69f);g.fillRect(left,top,right-left,base-top);
+    g.fillStyle(0x7f817e,.35);g.fillRect(left+12,top+20,right-left-24,10);
+    g.fillStyle(0xd0ccc0);g.fillRect(left,top,right-left,18);
+    g.fillStyle(0x72746f,.35);g.fillRect(left,base-20,right-left,20);
+
+    // Stone coursing and dressed corner blocks.
+    g.lineStyle(2,0x8f918c,.42);
+    for(let sy=top+48;sy<base-24;sy+=31)g.lineBetween(left+8,sy,right-8,sy);
+    for(const ex of [left+8,right-26]){
+      for(let sy=top+30;sy<base-28;sy+=38){g.fillStyle(0xc1beb3);g.fillRect(ex,sy,18,22);}
+    }
+
+    // Regular Georgian windows on both wings.
+    for(const side of [-1,1]){
+      const wingStart=side<0?left+55:centre+244;
+      const wingEnd=side<0?centre-245:right-55;
+      for(let wx=wingStart;wx<wingEnd;wx+=105){
+        for(const wy of [142,260]){
+          g.fillStyle(0x596d78);g.fillRoundedRect(wx,wy,54,76,3);
+          g.fillStyle(0xbfc8c5,.16);g.fillTriangle(wx+6,wy+7,wx+46,wy+7,wx+6,wy+58);
+          g.lineStyle(3,0xd8d4c8,.85);g.lineBetween(wx+27,wy+2,wx+27,wy+74);g.lineBetween(wx+2,wy+38,wx+52,wy+38);
+          g.lineStyle(5,0x87877f,.65);g.strokeRect(wx-5,wy-6,64,87);
+        }
+      }
+    }
+
+    // Projecting central pavilion.
+    g.fillStyle(0x969791);g.fillRect(centre-230,104,460,364);
+    g.fillStyle(0xbebbb0);g.fillRect(centre-245,112,490,18);
+    g.fillStyle(0x7c7d78,.35);g.fillRect(centre-245,452,490,16);
+
+    // Pediment and roofline.
+    g.fillStyle(0xaaa89f);g.fillTriangle(centre-226,104,centre,34,centre+226,104);
+    g.lineStyle(7,0xd2cec2,.9);g.lineBetween(centre-230,105,centre,30);g.lineBetween(centre,30,centre+230,105);
+    g.lineStyle(5,0x777974,.7);g.lineBetween(centre-205,106,centre+205,106);
+
+    // Four monumental columns with stepped bases/capitals.
+    for(const cx of [centre-158,centre-55,centre+55,centre+158]){
+      g.fillStyle(0xc7c3b8);g.fillRect(cx-19,165,38,246);
+      g.fillStyle(0xd9d5c8);g.fillRect(cx-27,151,54,17);g.fillRect(cx-24,405,48,13);
+      g.fillStyle(0x8e8f89,.28);g.fillRect(cx+10,170,7,229);
+      g.lineStyle(2,0x9c9b94,.5);for(let fl=0;fl<4;fl++)g.lineBetween(cx-12+fl*8,176,cx-12+fl*8,398);
+    }
+
+    // Circular clock in the pediment.
+    g.fillStyle(0xeee9da);g.fillCircle(centre,76,25);g.lineStyle(5,0x6b6d69);g.strokeCircle(centre,76,25);
+    g.lineStyle(3,0x343b3e);g.lineBetween(centre,76,centre,60);g.lineBetween(centre,76,centre+12,82);
+    for(let a=0;a<12;a++){const rad=a*Math.PI/6;g.fillStyle(0x42494b);g.fillCircle(centre+Math.cos(rad)*19,76+Math.sin(rad)*19,1.8);}
+
+    // Front Gate: deep arched opening with a glimpse toward Front Square/Campanile.
+    g.fillStyle(0x253238);g.fillRect(centre-72,295,144,173);g.fillCircle(centre,297,72);
+    g.fillStyle(0x6fa36a);g.fillRect(centre-57,323,114,139);
+    g.fillStyle(0xd6caa9);g.fillRect(centre-8,330,16,94);g.fillStyle(0xede3c9);g.fillRect(centre-22,326,44,10);
+    g.fillStyle(0x8f8a7d);g.fillRect(centre-28,414,56,8);g.fillStyle(0x4a6c66);g.fillCircle(centre,324,14);
+    g.fillStyle(0x272f31);g.fillRoundedRect(centre-69,339,9,127,4);g.fillRoundedRect(centre+60,339,9,127,4);
+
+    // Entrance keystone / moulding.
+    g.lineStyle(9,0xd0ccc0);g.strokeCircle(centre,299,79);g.fillStyle(0xd7d2c6);g.fillRect(centre-83,296,166,12);
+
+    // Trinity boundary lawns / biodiversity strips.
+    g.fillStyle(0x6da35e);g.fillRect(left,505,right-left,115);
+    g.fillStyle(0x51884d);g.fillRect(left,608,right-left,28);
+    for(let fx=left+30;fx<right-30;fx+=31){
+      g.fillStyle([0xf1d45c,0xe77b9b,0xf4eee3,0x8bc6dd][Math.floor(fx/31)%4]);g.fillCircle(fx,552+(fx%3)*13,4);
+    }
+
+    // Black iron perimeter railings with the central gates opened toward Front Gate.
+    g.lineStyle(6,0x26343a);g.lineBetween(left,648,right,648);
+    for(let rx=left;rx<centre-108;rx+=18){g.lineStyle(3,0x26343a);g.lineBetween(rx,557,rx,650);g.fillStyle(0x26343a);g.fillTriangle(rx-4,557,rx+4,557,rx,546);}
+    for(let rx=centre+108;rx<right;rx+=18){g.lineStyle(3,0x26343a);g.lineBetween(rx,557,rx,650);g.fillStyle(0x26343a);g.fillTriangle(rx-4,557,rx+4,557,rx,546);}
+    // Open gate leaves.
+    g.lineStyle(5,0x26343a);for(let i=0;i<7;i++){g.lineBetween(centre-110+i*14,563,centre-195+i*7,646);g.lineBetween(centre+110-i*14,563,centre+195-i*7,646);}
+    g.fillStyle(0x5a5b56);g.fillRoundedRect(centre-118,548,18,105,5);g.fillRoundedRect(centre+100,548,18,105,5);
+
+    // Subtle landmark plaque, avoiding a giant fictional sign on the historic front.
+    this.add.text(centre,492,'TRINITY COLLEGE DUBLIN',{fontFamily:'Georgia, serif',fontSize:'15px',fontStyle:'bold',color:'#404945',backgroundColor:'#e9e3d4d9',padding:{x:9,y:5}}).setOrigin(.5).setDepth(10);
+  }
   graftonStreet(x:number){
     const g=this.add.graphics().setDepth(6);
     // Cover the road completely: this section is pedestrian-first.
@@ -531,11 +647,14 @@ class DameStreetScene extends Phaser.Scene{
     for(let py=560;py<1530;py+=86){
       g.lineStyle(2,0xe1d6c3,.5);g.lineBetween(x,py,x+1800,py);
     }
-    // Retail facades
-    this.shop(x+20,70,490,390,'BROWN THOMAS',0x6c655e,0xffffff,'brand-brown-thomas');
-    this.shop(x+520,70,430,390,"BEWLEY'S",0x6a2b2d,0xf0d6a2,'brand-bewleys');
-    this.shop(x+960,70,390,390,'BUTLERS',0x3b2a26,0xf4d9a3);
-    this.shop(x+1360,70,410,390,'SPORTS',0x263a58,0xffffff);
+    g.lineStyle(5,0xb3a58b,.6);g.lineBetween(x+580,500,x+580,1550);g.lineBetween(x+1220,500,x+1220,1550);
+    g.lineStyle(3,0x8d816f,.45);for(let px=x+60;px<x+1760;px+=170)g.lineBetween(px,520,px+95,1535);
+    // Grafton Street businesses, ordered as a recognisable high-street run.
+    this.shop(x+18,70,275,390,'BOOTS',0x123d8d,0xffffff,'brand-boots');
+    this.shop(x+302,70,286,390,'LEGO',0xf00000,0xffffff,'brand-lego');
+    this.shop(x+598,70,324,390,'DISNEY STORE',0xf7f8fb,0x0a1d5a,'brand-disney-store');
+    this.shop(x+932,70,340,390,"BEWLEY'S",0x6a2b2d,0xf0d6a2,'brand-bewleys');
+    this.shop(x+1282,70,490,390,'BROWN THOMAS',0x1f2022,0xffffff,'brand-brown-thomas');
     this.add.text(x+900,1160,'GRAFTON STREET',{fontFamily:'Arial Black',fontSize:'42px',color:'#81745f',stroke:'#f1e6d2',strokeThickness:5}).setOrigin(.5).setDepth(8).setAngle(-2);
     // Planters, benches and busking spots.
     for(let px=x+180;px<x+1700;px+=310){
