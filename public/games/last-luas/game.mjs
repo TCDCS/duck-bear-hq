@@ -15,7 +15,13 @@ const CHARACTER_SOURCES={
   worker:'https://cdn.jsdelivr.net/gh/euuuuuuan/fatal-funnel-public@29a6bdfd01ad175c389cbd0bac80c30f926ff96b/packages/renderer/assets/models/quaternius-men/worker.glb'
 };
 const characterAssets=new Map();
-let characterDiagnosticsLogged=false;
+const CHARACTER_CLIP_INDEX={
+  Death:0,Gun_Shoot:1,HitRecieve:2,HitRecieve_2:3,Idle:4,Idle_Gun:5,
+  Idle_Gun_Pointing:6,Idle_Gun_Shoot:7,Idle_Neutral:8,Idle_Sword:9,
+  Interact:10,Kick_Left:11,Kick_Right:12,Punch_Left:13,Punch_Right:14,
+  Roll:15,Run:16,Run_Back:17,Run_Left:18,Run_Right:19,Run_Shoot:20,
+  Sword_Slash:21,Walk:22,Wave:23
+};
 function loadCharacterAsset(kind){
   if(characterAssets.has(kind))return Promise.resolve(characterAssets.get(kind));
   return new Promise((resolve,reject)=>{
@@ -29,11 +35,14 @@ async function preloadCharacters(){
   await Promise.all([loadCharacterAsset('casual'),loadCharacterAsset('worker')]);
 }
 function findCharacterClip(asset,wanted){
-  const clips=asset?.resource?.animations||[],needle=String(wanted||'').toLowerCase();
+  const clips=asset?.resource?.animations||[];
+  const index=CHARACTER_CLIP_INDEX[wanted];
+  if(Number.isInteger(index)&&clips[index])return clips[index];
+  const needle=String(wanted||'').toLowerCase();
   return clips.find(a=>{
-    const n=String(a.name||a.resource?.name||'').toLowerCase();
+    const n=String(a.resource?.name||a.name||'').toLowerCase();
     return n===needle||n.endsWith('|'+needle)||n.endsWith('/'+needle)||n.includes(needle);
-  })||clips[0]||null;
+  })||null;
 }
 function playCharacterClip(entity,asset,wanted){
   if(!wanted)return;
@@ -42,18 +51,12 @@ function playCharacterClip(entity,asset,wanted){
   entity.anim.assignAnimation('clip',clip.resource);
   entity.anim.baseLayer.transition('clip');
 }
-function spawnCharacter(parent,{kind='casual',clip='Idle_Neutral',scale=.92,pitch=-90,yaw=180,name='Quaternius character'}={}){
+function spawnCharacter(parent,{kind='casual',clip='Idle_Neutral',scale=.92,pitch=0,yaw=180,name='Quaternius character'}={}){
   const asset=characterAssets.get(kind);if(!asset)return null;
   const model=asset.resource.instantiateRenderEntity({castShadows:true});
   model.name=name;model.setLocalScale(scale,scale,scale);model.setLocalEulerAngles(pitch,yaw,0);
   parent.addChild(model);
   for(const render of model.findComponents('render')){render.castShadows=true;render.receiveShadows=true;}
-  if(!characterDiagnosticsLogged&&new URLSearchParams(location.search).get('modelcheck')==='1'){
-    characterDiagnosticsLogged=true;
-    const walk=(node,depth=0)=>({name:node.name,children:depth<4?node.children.map(c=>walk(c,depth+1)):[]});
-    console.info('Last Luas character clips',JSON.stringify((asset.resource.animations||[]).map(a=>a.name||a.resource?.name||'')));
-    console.info('Last Luas character hierarchy',JSON.stringify(walk(model)));
-  }
   playCharacterClip(model,asset,clip);
   return model;
 }
@@ -295,7 +298,7 @@ function obstacle(kind,d,lane,{jumpable=false}={}){
     box('bike frame',new pc.Vec3(0,.70,0),new pc.Vec3(.10,.10,1.10),M.rail,root);
     box('handlebars',new pc.Vec3(0,1.02,-.55),new pc.Vec3(.78,.07,.08),M.rail,root);
     const rider=spawnCharacter(root,{kind:kind==='delivery'?'worker':'casual',clip:'Idle_Neutral',scale:.78,yaw:180,name:kind==='delivery'?'Delivery rider model':'Cyclist rider model'});
-    if(rider){rider.setLocalPosition(0,.18,.08);rider.setLocalEulerAngles(-77,180,0);}
+    if(rider){rider.setLocalPosition(0,.18,.08);rider.setLocalEulerAngles(13,180,0);}
     if(kind==='delivery')box('delivery box',new pc.Vec3(0,1.12,.70),new pc.Vec3(.82,.70,.64),M.green,root);
     animated.push({type:kind,entity:root,baseX:lanes[lane],baseD:d,phase:d*.07});
   }
@@ -411,24 +414,7 @@ async function boot(){
     if(smokeParams.get('smoke')==='1'){
       const preview=Math.max(0,Math.min(GAME.streetLength-8,Number(smokeParams.get('distance')||70)||70));
       player.distance=preview;player.entity.setPosition(lanes[1],player.y,-preview);
-      ui.start.classList.remove('visible');ui.start.hidden=true;
-      if(smokeParams.get('modelcheck')==='1'){
-        player.entity.enabled=false;
-        const checks=[
-          {x:-3.6,pitch:0,clip:null,name:'BIND · PITCH 0'},
-          {x:-1.2,pitch:0,clip:'Idle_Neutral',name:'IDLE · PITCH 0'},
-          {x:1.2,pitch:90,clip:'Idle_Neutral',name:'IDLE · PITCH +90'},
-          {x:3.6,pitch:-90,clip:'Idle_Neutral',name:'IDLE · PITCH -90'}
-        ];
-        for(const c of checks){
-          const root=new pc.Entity(c.name);root.setPosition(c.x,0,-6);app.root.addChild(root);
-          spawnCharacter(root,{kind:'casual',clip:c.clip,scale:.92,pitch:c.pitch,yaw:180,name:c.name});
-          box(c.name+' marker',new pc.Vec3(c.x,.03,-6),new pc.Vec3(.75,.03,.75),M.yellow);
-        }
-        camera.setPosition(0,2.7,4.5);camera.lookAt(0,1.1,-6);camera.camera.fov=58;
-      }else{
-        updateHud();updateCamera(1);animateWorld();
-      }
+      ui.start.classList.remove('visible');ui.start.hidden=true;updateHud();updateCamera(1);animateWorld();
     }else{
       playButton.disabled=false;playButton.textContent='RUN FOR IT →';
     }
