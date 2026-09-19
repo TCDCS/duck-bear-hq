@@ -160,6 +160,7 @@ class DameStreetScene extends Phaser.Scene{
     this.cameras.main.setBackgroundColor('#92d7ee');
     this.drawWorld();
     this.makeTextures();
+    this.busker(5850,930);this.busker(6650,1040);
     this.spawnTraffic();
     this.spawnPeople();
     this.spawnCameos();
@@ -360,8 +361,6 @@ class DameStreetScene extends Phaser.Scene{
     for(let px=x+280;px<x+1650;px+=430){
       g.fillStyle(0x6b4d35);g.fillRoundedRect(px,1300,105,14,5);g.fillRect(px+12,1310,7,24);g.fillRect(px+84,1310,7,24);
     }
-    this.busker(x+650,930);
-    this.busker(x+1450,1040);
     this.cafeBoard(x+1040,850,'COFFEE');
     this.cafeBoard(x+1570,1240,'TREATS');
   }
