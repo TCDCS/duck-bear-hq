@@ -7,7 +7,7 @@
   <meta name="description" content="Seagull Simulator: Dublin — steal snacks, dodge traffic and become a public nuisance from Dame Street to Stephen's Green.">
   <title>Seagull Simulator: Dublin — Duck &amp; Bear</title>
   <link rel="icon" href="/games/seagull-simulator/icon.svg">
-  <link rel="stylesheet" href="/games/seagull-simulator/game.css?v=1.0">
+  <link rel="stylesheet" href="/games/seagull-simulator/game.css?v=1.0.1">
 </head>
 <body>
   <main class="game-shell">
@@ -18,7 +18,7 @@
       <div class="logo-mark" aria-hidden="true"><img src="/games/seagull-simulator/art/gull-mid.svg" alt=""></div>
       <p class="eyebrow">DUCK &amp; BEAR PRESENTS</p>
       <h1>SEAGULL<br><span>SIMULATOR</span></h1>
-      <div class="title-badges"><strong class="dublin">DUBLIN</strong><strong class="build-badge">BUILD <span id="version">1.0</span></strong></div>
+      <div class="title-badges"><strong class="dublin">DUBLIN</strong><strong class="build-badge">BUILD <span id="version">1.0.1</span></strong></div>
       <p class="tagline">STEAL. SQUAWK. REPEAT.</p>
       <p class="intro">Free-fly through Dame Street, College Green, Grafton Street and St Stephen's Green. Pick a snack, dive low, grab it and get away before Dublin has enough of you.</p>
       <button id="playBtn" class="play">PLAY</button>
@@ -27,11 +27,12 @@
         <span class="coin-pill">◉ <strong id="coinCount">0</strong></span>
         <button id="upgradesBtn" class="mini-button" type="button">UPGRADES</button>
         <button id="trophiesBtn" class="mini-button" type="button">TROPHIES <span id="trophyCount">0/8</span></button>
+        <button id="settingsBtn" class="mini-button" type="button">SETTINGS</button>
       </div>
       <p class="selected-bird">Flying as <strong id="selectedBirdName">Dublin Gull</strong></p>
       <p class="controls-note">Phone: stick + Dive/Grab/Flap · Hold Dive to land · Computer: WASD/Arrows + Space/E · P/Esc pause</p>
       <p class="best-line">Best run <strong id="startBest">0</strong></p>
-      <p class="build">Duck &amp; Bear release build 1.0</p>
+      <p class="build">Duck &amp; Bear release build 1.0.1</p>
     </section>
 
     <div id="hud" class="hud hidden" aria-live="polite">
@@ -63,6 +64,7 @@
       <p>Even a public nuisance needs a minute.</p>
       <button id="resumeBtn" class="play" type="button">RESUME</button>
       <button id="restartRunBtn" class="pause-secondary" type="button">RESTART RUN</button>
+      <button id="pauseSettingsBtn" class="pause-secondary" type="button">SETTINGS</button>
       <a class="secondary" href="/games/">BACK TO GAMES</a>
     </section>
 
@@ -116,8 +118,29 @@
       <div id="upgradeGrid" class="upgrade-grid"></div>
       <div class="panel-balance">Coins <strong id="upgradesCoinCount">0</strong></div>
     </section>
+
+    <section id="settingsPanel" class="panel progression-panel settings-panel hidden" aria-label="Settings">
+      <button class="panel-close" data-close-panel="settingsPanel" type="button">×</button>
+      <p class="eyebrow">SETTINGS</p>
+      <h2>Game settings.</h2>
+      <p class="panel-copy">Sound, build number and the update log.</p>
+      <div class="settings-grid">
+        <article class="settings-card"><div><h3>Sound effects</h3><p>Gull, traffic, wanted and Luas cues.</p></div><button id="settingsSoundBtn" class="mini-button" type="button">SFX ON</button></article>
+        <article class="settings-card"><div><h3>Current build</h3><p>Seagull Simulator: Dublin <strong>Build <span id="settingsVersion">1.0.1</span></strong></p></div><button id="changelogBtn" class="mini-button" type="button">VIEW CHANGELOG</button></article>
+      </div>
+    </section>
+
+    <section id="changelogPanel" class="panel progression-panel changelog-panel hidden" aria-label="Changelog">
+      <button class="panel-close" data-close-panel="changelogPanel" type="button">×</button>
+      <p class="eyebrow">CHANGELOG</p>
+      <h2>What changed.</h2>
+      <div class="changelog-list">
+        <article class="changelog-entry"><header><strong>Build 1.0.1</strong><time datetime="2026-09-19">19 Sep 2026</time></header><p>Visual Dublin pass: Trinity College Front Gate at College Green, Tesco and Yeeros signage on the Dame Street run, Disney and LEGO on Grafton Street, richer shop geometry, extra street detail and this in-game changelog.</p></article>
+        <article class="changelog-entry"><header><strong>Build 1.0</strong><time datetime="2026-09-19">19 Sep 2026</time></header><p>First live release: four-area Dublin route, arcade flight, food theft, wanted heat, Garda response, missions, gull unlocks, upgrades, trophies and local progression.</p></article>
+      </div>
+    </section>
   </main>
   <div class="rotate-hint" aria-hidden="true"><strong>ROTATE YOUR PHONE</strong><span>Seagulls need a bit more room to cause trouble.</span></div>
-  <script src="/games/seagull-simulator/game.js?v=1.0"></script>
+  <script src="/games/seagull-simulator/game.js?v=1.0.1"></script>
 </body>
 </html>
