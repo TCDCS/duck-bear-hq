@@ -141,6 +141,11 @@ const controls={
   consumeDive(){const v=this.dive;this.dive=false;return v;},
   consumeGrab(){const v=this.grab;this.grab=false;return v;}
 };
+function resetControls(){
+  controls.x=0;controls.y=0;controls.dive=false;controls.diveHeld=false;controls.grab=false;controls.boost=false;
+  const knob=document.getElementById('stickKnob');
+  if(knob)knob.style.transform='translate(-50%,-50%)';
+}
 
 function storageGet(key:string){try{return localStorage.getItem(key);}catch{return null;}}
 function storageSet(key:string,value:string){try{localStorage.setItem(key,value);return true;}catch{return false;}}
@@ -1242,6 +1247,7 @@ function setGamePaused(next:boolean){
   if(!game||paused===next)return;
   paused=next;
   if(next){
+    resetControls();
     game.scene.pause('DameStreet');
     $('pausePanel')?.classList.remove('hidden');
     $('controls')?.classList.add('hidden');
@@ -1253,10 +1259,14 @@ function setGamePaused(next:boolean){
 }
 $('pauseBtn')?.addEventListener('click',()=>setGamePaused(true));
 $('resumeBtn')?.addEventListener('click',()=>setGamePaused(false));
-const restartRun=()=>{location.href=location.pathname+'?autostart=1';};
+const restartRun=()=>{resetControls();location.href=location.pathname+'?autostart=1';};
 $('restartRunBtn')?.addEventListener('click',restartRun);
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden&&!new URLSearchParams(location.search).has('smoke')&&(window as any).__seagullGame)setGamePaused(true);
+});
+window.addEventListener('blur',()=>{
+  resetControls();
+  if(!new URLSearchParams(location.search).has('smoke')&&(window as any).__seagullGame)setGamePaused(true);
 });
 window.addEventListener('keydown',e=>{
   if((e.key==='Escape'||e.key.toLowerCase()==='p')&&(window as any).__seagullGame&&$('gameOver')?.classList.contains('hidden')){
@@ -1271,6 +1281,7 @@ function startGame(){
   $('hud')?.classList.remove('hidden');
   $('missionBar')?.classList.remove('hidden');
   $('controls')?.classList.remove('hidden');
+  resetControls();
   setupStick();bindButton('diveBtn','dive');bindButton('grabBtn','grab');bindButton('boostBtn','boost');
   const smoke=new URLSearchParams(location.search).has('smoke');
   (window as any).__seagullGame=new Phaser.Game({
