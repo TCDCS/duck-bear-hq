@@ -16,14 +16,18 @@ test('Seagull Simulator is locally bundled and CSP-friendly',()=>{
 });
 
 test('Seagull Simulator keeps the locked Dublin route',()=>{
-  assert.deepEqual(release.nextAreas,['Grafton Street',"St Stephen's Green"]);
-  assert.equal(release.area,'Dame Street + College Green');
+  assert.deepEqual(release.nextAreas,[]);
+  assert.equal(release.area,"Dame Street + College Green + Grafton Street + St Stephen's Green");
   assert.match(source,/CENTRA/);
   assert.match(source,/SuperValu/);
   assert.match(source,/Michael D\./);
   assert.match(source,/garda/);
   assert.match(source,/COLLEGE GREEN/);
   assert.match(source,/luas/);
+  assert.match(source,/GRAFTON STREET/);
+  assert.match(source,/ST STEPHEN'S GREEN/);
+  assert.match(source,/BROWN THOMAS/);
+  assert.match(source,/BEWLEY'S/);
 });
 
 test('Seagull Simulator exposes mobile and desktop controls',()=>{
