@@ -238,7 +238,8 @@ test('Seagull shop signage uses bundled real-brand marks with text fallbacks',()
   for(const file of files){
     const svg=readFileSync('public/games/seagull-simulator/brands/'+file,'utf8');
     assert.match(svg,/<svg/);
-    assert.doesNotMatch(svg,/<image\\b[^>]*href=["']https?:\\/\\//i);
+    assert.equal(svg.includes('href="http'),false);
+    assert.equal(svg.includes("href='http"),false);
   }
   for(const key of [
     'brand-centra','brand-supervalu','brand-insomnia','brand-mcdonalds',
