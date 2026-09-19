@@ -1,6 +1,6 @@
 import * as pc from 'https://cdn.jsdelivr.net/npm/playcanvas@2.22.2/build/playcanvas.mjs';
 
-const BUILD='0.1.0';
+const BUILD='0.2.0';
 const GAME={duration:90,streetLength:430,laneX:[-2.45,0,2.45],speed:5.25,hitSpeed:2.8,hitDuration:.66,jumpVelocity:7.1,gravity:18,laneSharpness:13,pullAwayAt:8.5,tramSpeed:3.25,catchGap:6.2,pixelRatio:1.5};
 const $=id=>document.getElementById(id);
 const canvas=$('application');
@@ -10,7 +10,7 @@ app.setCanvasResolution(pc.RESOLUTION_AUTO);
 app.graphicsDevice.maxPixelRatio=Math.min(window.devicePixelRatio||1,GAME.pixelRatio);
 app.scene.ambientLight=new pc.Color(.30,.34,.46);
 
-const ui={time:$('timeValue'),distance:$('distanceValue'),callout:$('streetCallout'),toast:$('toast'),timerCard:document.querySelector('.timer-card'),start:$('startPanel'),pause:$('pausePanel'),result:$('resultPanel'),resultTitle:$('resultTitle'),resultText:$('resultText'),resultDistance:$('resultDistance'),resultTime:$('resultTime')};
+const ui={shell:$('gameShell'),time:$('timeValue'),distance:$('distanceValue'),callout:$('streetCallout'),toast:$('toast'),timerCard:document.querySelector('.timer-card'),start:$('startPanel'),pause:$('pausePanel'),result:$('resultPanel'),resultTitle:$('resultTitle'),resultText:$('resultText'),resultDistance:$('resultDistance'),resultTime:$('resultTime')};
 
 const state={started:false,paused:false,finished:false,timeLeft:GAME.duration,elapsed:0,lastSecond:91,toastTimer:0};
 const obstacleRecords=[];
@@ -37,7 +37,7 @@ function sphere(name,pos,scale,material,parent=app.root){
 }
 
 const P={road:new pc.Color(.045,.055,.075),pave:new pc.Color(.30,.31,.33),rail:new pc.Color(.62,.65,.70),brick:new pc.Color(.49,.20,.13),cream:new pc.Color(.78,.72,.62),navy:new pc.Color(.025,.13,.20),green:new pc.Color(.03,.24,.12),glass:new pc.Color(.025,.075,.11),black:new pc.Color(.018,.022,.035),white:new pc.Color(.93,.96,1),orange:new pc.Color(.95,.28,.04),yellow:new pc.Color(1,.72,.12),purple:new pc.Color(.37,.17,.62),skin:new pc.Color(.72,.47,.33)};
-const M={road:mat(P.road,{gloss:.88,metal:.08}),pave:mat(P.pave,{gloss:.55}),rail:mat(P.rail,{gloss:.95,metal:.95}),brick:mat(P.brick,{gloss:.26}),cream:mat(P.cream,{gloss:.3}),navy:mat(P.navy,{gloss:.6}),green:mat(P.green,{gloss:.5}),glass:mat(P.glass,{gloss:.98,metal:.08}),black:mat(P.black,{gloss:.4}),white:mat(P.white,{gloss:.55}),orange:mat(P.orange,{gloss:.4}),yellow:mat(P.yellow,{gloss:.55}),purple:mat(P.purple,{gloss:.65}),skin:mat(P.skin,{gloss:.2}),lamp:mat(P.white,{emissive:new pc.Color(1,.56,.18),gloss:.35}),red:mat(new pc.Color(.64,.025,.03),{gloss:.55}),blue:mat(new pc.Color(.07,.30,.58),{gloss:.35})};
+const M={road:mat(P.road,{gloss:.88,metal:.08}),pave:mat(P.pave,{gloss:.55}),rail:mat(P.rail,{gloss:.95,metal:.95}),brick:mat(P.brick,{gloss:.26}),cream:mat(P.cream,{gloss:.3}),navy:mat(P.navy,{gloss:.6}),green:mat(P.green,{gloss:.5}),glass:mat(P.glass,{gloss:.98,metal:.08}),black:mat(P.black,{gloss:.4}),white:mat(P.white,{gloss:.55}),orange:mat(P.orange,{gloss:.4}),yellow:mat(P.yellow,{gloss:.55}),purple:mat(P.purple,{gloss:.65}),skin:mat(P.skin,{gloss:.2}),lamp:mat(P.white,{emissive:new pc.Color(1,.56,.18),gloss:.35}),red:mat(new pc.Color(.64,.025,.03),{gloss:.55}),blue:mat(new pc.Color(.07,.30,.58),{gloss:.35}),gold:mat(new pc.Color(.72,.51,.18),{gloss:.72,metal:.28}),leaf:mat(new pc.Color(.05,.34,.15),{gloss:.22}),stone:mat(new pc.Color(.56,.55,.52),{gloss:.35}),pink:mat(new pc.Color(.66,.23,.38),{gloss:.38}),wetGlass:mat(new pc.Color(.08,.15,.22),{gloss:1,metal:.06,opacity:.42})};
 
 const sun=new pc.Entity('Evening light');sun.addComponent('light',{type:'directional',color:new pc.Color(.74,.79,1),intensity:1.45,castShadows:true,shadowResolution:2048,shadowDistance:55});sun.setEulerAngles(48,32,0);app.root.addChild(sun);
 const fill=new pc.Entity('Warm city fill');fill.addComponent('light',{type:'directional',color:new pc.Color(1,.57,.30),intensity:.35,castShadows:false});fill.setEulerAngles(-25,-145,0);app.root.addChild(fill);
@@ -62,6 +62,9 @@ function buildStreet(){
   }
   buildGenericBlocks();
   buildLandmarks();
+  buildWetDetails();
+  buildStreetLife();
+  buildLuasStop();
 }
 
 function windows(parent,side,height,length,modern=false){
@@ -78,6 +81,23 @@ function building(z,length,height,side,material,modern=false){
 function shopfront(z,length,side,material=M.glass){
   box('Shopfront',new pc.Vec3(side*6.74,1.45,z),new pc.Vec3(.10,2.35,length*.78),material);
 }
+function trim(name,z,y,length,side,material=M.gold,height=.10){
+  return box(name,new pc.Vec3(side*6.58,y,z),new pc.Vec3(.18,height,length),material);
+}
+function awning(name,z,width,side,material=M.navy,y=3.12){
+  const a=box(name,new pc.Vec3(side*6.42,y,z),new pc.Vec3(.75,.15,width),material);
+  a.setLocalEulerAngles(0,0,side*10);return a;
+}
+function planter(z,side,offset=0){
+  const root=new pc.Entity('Planter');root.setPosition(side*5.10,.0,-z+offset);app.root.addChild(root);
+  box('Planter box',new pc.Vec3(0,.38,0),new pc.Vec3(.78,.76,.78),M.black,root);
+  sphere('Plant',new pc.Vec3(0,1.06,0),new pc.Vec3(.82,.90,.82),M.leaf,root);
+}
+function tree(z,side){
+  const root=new pc.Entity('Street tree');root.setPosition(side*5.30,0,-z);app.root.addChild(root);
+  cyl('Tree trunk',new pc.Vec3(0,1.65,0),new pc.Vec3(.19,1.65,.19),mat(new pc.Color(.28,.18,.10),{gloss:.12}),root);
+  sphere('Tree crown',new pc.Vec3(0,3.55,0),new pc.Vec3(1.25,1.45,1.15),M.leaf,root);
+}
 function buildGenericBlocks(){
   const fills=[M.brick,M.cream,mat(new pc.Color(.35,.28,.24),{gloss:.25}),mat(new pc.Color(.49,.42,.34),{gloss:.3})];
   let z=-11,i=0;
@@ -88,11 +108,79 @@ function buildGenericBlocks(){
   }
 }
 function buildLandmarks(){
-  const arket=box('ARKET Grafton Place',new pc.Vec3(9.78,7.0,-22),new pc.Vec3(6.9,14,24),M.cream);windows(arket,1,14,24,true);shopfront(-22,18,1,M.glass);
-  const hf=box('Hodges Figgis',new pc.Vec3(-9.82,7.3,-55),new pc.Vec3(6.8,14.6,19),M.brick);windows(hf,-1,14.6,19,false);box('Hodges frontage',new pc.Vec3(-6.72,1.55,-55),new pc.Vec3(.13,2.55,16),M.green);
-  const cafe=box('Cafe en Seine',new pc.Vec3(9.82,6.0,-185),new pc.Vec3(6.8,12,17),M.brick);windows(cafe,1,12,17,false);box('Cafe blue front',new pc.Vec3(6.70,1.75,-185),new pc.Vec3(.14,3.0,14),M.navy);for(let k=-5;k<=5;k+=2)box('Cafe awning stripe',new pc.Vec3(6.55,3.35,-185+k),new pc.Vec3(.28,.12,.75),k%4===0?M.white:M.black);
-  const lounge=box('Dawson Lounge',new pc.Vec3(-9.82,5.4,-292),new pc.Vec3(6.8,10.8,11),mat(new pc.Color(.20,.18,.17),{gloss:.25}));windows(lounge,-1,10.8,11,false);box('Dawson red door',new pc.Vec3(-6.66,1.25,-292),new pc.Vec3(.15,2.35,1.25),M.red);
-  const ivy=box('The Ivy Dawson Street',new pc.Vec3(9.82,6.6,-354),new pc.Vec3(6.8,13.2,22),M.cream);windows(ivy,1,13.2,22,true);box('Ivy green front',new pc.Vec3(6.66,1.55,-354),new pc.Vec3(.14,2.6,18),M.green);
+  // Modern glazed Grafton Place corner at the Nassau Street end.
+  const arket=box('ARKET Grafton Place',new pc.Vec3(9.72,7.25,-22),new pc.Vec3(6.95,14.5,24),M.stone);
+  windows(arket,1,14.5,24,true);
+  box('ARKET glass ground floor',new pc.Vec3(6.56,1.72,-22),new pc.Vec3(.16,3.15,20.8),M.glass);
+  for(let z=-31;z<=-13;z+=4.4)box('ARKET mullion',new pc.Vec3(6.38,1.75,z),new pc.Vec3(.25,3.25,.11),M.stone);
+
+  // Hodges Figgis: tall red-brick facade with a deep green, brass-trimmed shopfront.
+  const hf=box('Hodges Figgis',new pc.Vec3(-9.80,7.65,-55),new pc.Vec3(6.85,15.3,19),M.brick);
+  windows(hf,-1,15.3,19,false);
+  box('Hodges green frontage',new pc.Vec3(-6.55,1.62,-55),new pc.Vec3(.22,2.80,16.8),M.green);
+  trim('Hodges brass fascia',-55,3.05,16.6,-1,M.gold,.14);
+  for(let z=-61.2;z<=-48.8;z+=3.1)box('Hodges window bay',new pc.Vec3(-6.37,1.52,z),new pc.Vec3(.18,2.05,2.35),M.glass);
+
+  // Café en Seine: dark blue facade, pale stripes and planted outdoor edge.
+  const cafe=box('Cafe en Seine',new pc.Vec3(9.80,6.15,-185),new pc.Vec3(6.85,12.3,18),M.brick);
+  windows(cafe,1,12.3,18,false);
+  box('Cafe blue frontage',new pc.Vec3(6.54,1.60,-185),new pc.Vec3(.22,2.85,15.5),M.navy);
+  trim('Cafe gold fascia',-185,3.12,15.4,1,M.gold,.10);
+  for(let z=-190.5;z<=-179.5;z+=3.6){awning('Cafe striped awning',z,2.7,1,M.navy,3.43);box('Cafe awning stripe',new pc.Vec3(6.13,3.50,z),new pc.Vec3(.85,.07,.18),M.white);}
+  planter(181,1);planter(187,1);planter(193,1);tree(188,1);
+
+  // Dawson Lounge: darker townhouse treatment and a strong red entrance.
+  const lounge=box('Dawson Lounge',new pc.Vec3(-9.80,5.55,-292),new pc.Vec3(6.85,11.1,12),mat(new pc.Color(.20,.18,.17),{gloss:.25}));
+  windows(lounge,-1,11.1,12,false);
+  box('Dawson dark frontage',new pc.Vec3(-6.56,1.48,-292),new pc.Vec3(.22,2.55,9.8),M.black);
+  box('Dawson red door',new pc.Vec3(-6.35,1.32,-292),new pc.Vec3(.25,2.40,1.28),M.red);
+  trim('Dawson fascia',-292,2.93,9.6,-1,M.gold,.09);
+
+  // Ivy: pale modern facade, deep green entrance canopy and planting.
+  const ivy=box('The Ivy Dawson Street',new pc.Vec3(9.80,6.75,-354),new pc.Vec3(6.85,13.5,23),M.cream);
+  windows(ivy,1,13.5,23,true);
+  box('Ivy glass frontage',new pc.Vec3(6.56,1.60,-354),new pc.Vec3(.20,2.80,19.5),M.glass);
+  awning('Ivy green canopy',-348.5,5.8,1,M.green,3.15);
+  planter(347,1);planter(352,1);planter(357,1);
+}
+
+function buildWetDetails(){
+  // Thin glossy patches sell the rainy street without expensive planar reflections.
+  for(let d=20,i=0;d<GAME.streetLength-30;d+=17,i++){
+    const lane=lanes[i%3];
+    const p=box('Puddle',new pc.Vec3(lane+(i%2?.35:-.25),.018,-d),new pc.Vec3(1.45,.012,2.4+(i%3)*.5),M.wetGlass);
+    p.setLocalEulerAngles(0,(i%5-2)*7,0);
+  }
+}
+
+function ambientPerson(z,side,phase){
+  const root=new pc.Entity('Pavement pedestrian');
+  root.setPosition(side*(4.95+(phase%3)*.35),0,-z);app.root.addChild(root);
+  const coat=[M.blue,M.cream,M.green,M.pink][phase%4];
+  box('body',new pc.Vec3(0,1.0,0),new pc.Vec3(.56,1.2,.42),coat,root);
+  sphere('head',new pc.Vec3(0,1.83,0),new pc.Vec3(.43,.43,.43),M.skin,root);
+  animated.push({type:'pavement',entity:root,baseX:root.getPosition().x,baseD:z,phase:phase*.7});
+}
+function buildStreetLife(){
+  let phase=0;
+  for(let d=30;d<GAME.streetLength-25;d+=23){ambientPerson(d,-1,phase++);ambientPerson(d+9,1,phase++);}
+  [74,122,215,260,374].forEach((d,i)=>tree(d,i%2?1:-1));
+  [42,98,234,306,387].forEach((d,i)=>planter(d,i%2?1:-1));
+}
+
+function buildLuasStop(){
+  const start=389,length=37;
+  for(const side of [-1,1]){
+    const x=side*3.72;
+    box('Dawson raised platform',new pc.Vec3(x,.18,-(start+length/2)),new pc.Vec3(2.0,.34,length),M.pave);
+    box('Platform white edge',new pc.Vec3(side*2.82,.365,-(start+length/2)),new pc.Vec3(.12,.025,length),M.white);
+    const shelter=new pc.Entity('Glass Luas shelter');shelter.setPosition(side*4.55,.35,-407);app.root.addChild(shelter);
+    box('shelter roof',new pc.Vec3(0,2.55,0),new pc.Vec3(1.65,.16,5.0),M.stone,shelter);
+    box('shelter glass',new pc.Vec3(side*.68,1.32,0),new pc.Vec3(.08,2.35,4.8),M.wetGlass,shelter);
+    cyl('stop pole',new pc.Vec3(-side*.65,1.7,-3.8),new pc.Vec3(.08,1.7,.08),M.black,shelter);
+    box('stop marker',new pc.Vec3(-side*.65,3.15,-3.8),new pc.Vec3(.38,.55,.16),M.green,shelter);
+    box('ticket machine',new pc.Vec3(-side*.70,.95,3.1),new pc.Vec3(.46,1.55,.55),M.stone,shelter);
+  }
 }
 
 const landmarkCallouts=[
@@ -106,9 +194,14 @@ const landmarkCallouts=[
 
 function buildPlayer(){
   const root=new pc.Entity('Runner');app.root.addChild(root);
-  const hoodie=mat(new pc.Color(.035,.55,.24),{gloss:.28}),pants=mat(new pc.Color(.025,.035,.055),{gloss:.18}),bag=mat(new pc.Color(.45,.25,.10),{gloss:.25});
-  box('Body',new pc.Vec3(0,.05,0),new pc.Vec3(.92,1.2,.56),hoodie,root);sphere('Head',new pc.Vec3(0,.93,-.01),new pc.Vec3(.58,.58,.58),M.skin,root);box('Leg L',new pc.Vec3(-.21,-.87,0),new pc.Vec3(.26,.72,.30),pants,root);box('Leg R',new pc.Vec3(.21,-.87,0),new pc.Vec3(.26,.72,.30),pants,root);box('Bag',new pc.Vec3(0,.10,.38),new pc.Vec3(.69,.82,.27),bag,root);
-  root.setPosition(lanes[1],1.02,0);return {entity:root,lane:1,distance:0,y:1.02,vy:0,grounded:true,hit:0};
+  const hoodie=mat(new pc.Color(.035,.55,.24),{gloss:.28}),pants=mat(new pc.Color(.025,.035,.055),{gloss:.18}),bag=mat(new pc.Color(.45,.25,.10),{gloss:.25}),shoe=mat(new pc.Color(.92,.92,.88),{gloss:.22});
+  const body=box('Body',new pc.Vec3(0,.05,0),new pc.Vec3(.92,1.2,.56),hoodie,root);
+  sphere('Head',new pc.Vec3(0,.93,-.01),new pc.Vec3(.58,.58,.58),M.skin,root);
+  const legL=box('Leg L',new pc.Vec3(-.21,-.87,0),new pc.Vec3(.26,.72,.30),pants,root),legR=box('Leg R',new pc.Vec3(.21,-.87,0),new pc.Vec3(.26,.72,.30),pants,root);
+  const armL=box('Arm L',new pc.Vec3(-.57,.02,0),new pc.Vec3(.22,.78,.24),hoodie,root),armR=box('Arm R',new pc.Vec3(.57,.02,0),new pc.Vec3(.22,.78,.24),hoodie,root);
+  box('Shoe L',new pc.Vec3(-.21,-1.28,-.08),new pc.Vec3(.31,.20,.52),shoe,root);box('Shoe R',new pc.Vec3(.21,-1.28,-.08),new pc.Vec3(.31,.20,.52),shoe,root);
+  box('Bag',new pc.Vec3(0,.10,.38),new pc.Vec3(.69,.82,.27),bag,root);
+  root.setPosition(lanes[1],1.02,0);return {entity:root,body,legL,legR,armL,armR,lane:1,distance:0,y:1.02,vy:0,grounded:true,hit:0};
 }
 const player=buildPlayer();
 
@@ -118,7 +211,7 @@ function obstacle(kind,d,lane,{jumpable=false}={}){
   if(kind==='bin'){box('bin',new pc.Vec3(0,.72,0),new pc.Vec3(.92,1.42,.78),M.green,root);box('lid',new pc.Vec3(0,1.48,-.05),new pc.Vec3(1.0,.15,.86),M.black,root);}
   if(kind==='roadworks'){box('barrier',new pc.Vec3(0,.78,0),new pc.Vec3(1.95,1.12,.24),M.orange,root);box('barrier stripe',new pc.Vec3(0,.80,.14),new pc.Vec3(1.35,.18,.04),M.white,root);}
   if(kind==='tourist'){box('coat',new pc.Vec3(0,1.02,0),new pc.Vec3(.72,1.30,.48),M.blue,root);sphere('head',new pc.Vec3(0,1.90,0),new pc.Vec3(.48,.48,.48),M.skin,root);box('phone',new pc.Vec3(.34,1.45,-.18),new pc.Vec3(.08,.28,.16),M.black,root);animated.push({type:'tourist',entity:root,baseX:lanes[lane],baseD:d,phase:d*.11});}
-  if(kind==='umbrella'){box('person',new pc.Vec3(0,.95,0),new pc.Vec3(.60,1.2,.45),M.cream,root);sphere('umbrella',new pc.Vec3(0,2.05,0),new pc.Vec3(1.25,.28,1.25),M.purple,root);}
+  if(kind==='umbrella'){box('person',new pc.Vec3(0,.95,0),new pc.Vec3(.60,1.2,.45),M.cream,root);sphere('umbrella',new pc.Vec3(0,2.05,0),new pc.Vec3(1.25,.28,1.25),M.purple,root);animated.push({type:'umbrella',entity:root,baseX:lanes[lane],baseD:d,phase:d*.05});}
   if(kind==='cyclist'||kind==='delivery'){const body=kind==='delivery'?M.green:M.blue;cyl('wheel1',new pc.Vec3(0,.48,-.55),new pc.Vec3(.48,.10,.48),M.black,root,new pc.Vec3(90,0,0));cyl('wheel2',new pc.Vec3(0,.48,.55),new pc.Vec3(.48,.10,.48),M.black,root,new pc.Vec3(90,0,0));box('rider',new pc.Vec3(0,1.30,0),new pc.Vec3(.60,1.05,.55),body,root);if(kind==='delivery')box('delivery box',new pc.Vec3(0,1.42,.48),new pc.Vec3(.75,.62,.58),M.green,root);animated.push({type:kind,entity:root,baseX:lanes[lane],baseD:d,phase:d*.07});}
   obstacleRecords.push({kind,entity:root,d,lane,jumpable,hit:false,cleared:false});
 }
@@ -126,8 +219,15 @@ function obstacle(kind,d,lane,{jumpable=false}={}){
 obstacle('roadworks',146,0);obstacle('roadworks',146,1);obstacle('roadworks',322,1);obstacle('roadworks',322,2);
 
 function buildTram(){
-  const root=new pc.Entity('Last Luas');app.root.addChild(root);const silver=mat(new pc.Color(.72,.75,.80),{gloss:.78,metal:.16});
-  box('tram body',new pc.Vec3(0,1.35,0),new pc.Vec3(3.15,2.68,10),silver,root);box('purple lower',new pc.Vec3(0,.54,0),new pc.Vec3(3.18,.48,10.05),M.purple,root);box('front glass',new pc.Vec3(0,1.72,5.04),new pc.Vec3(2.35,1.34,.08),M.glass,root);box('destination',new pc.Vec3(0,2.38,5.09),new pc.Vec3(1.25,.28,.06),M.yellow,root);box('light l',new pc.Vec3(-.92,.62,5.10),new pc.Vec3(.28,.18,.10),M.lamp,root);box('light r',new pc.Vec3(.92,.62,5.10),new pc.Vec3(.28,.18,.10),M.lamp,root);return {entity:root,distance:GAME.streetLength,pulling:false};
+  const root=new pc.Entity('Last Luas');app.root.addChild(root);const silver=mat(new pc.Color(.74,.77,.81),{gloss:.84,metal:.18});
+  box('tram body',new pc.Vec3(0,1.38,0),new pc.Vec3(3.16,2.72,11.2),silver,root);
+  box('purple lower',new pc.Vec3(0,.54,0),new pc.Vec3(3.19,.48,11.25),M.purple,root);
+  box('front glass',new pc.Vec3(0,1.76,5.64),new pc.Vec3(2.35,1.38,.10),M.glass,root);
+  box('destination',new pc.Vec3(0,2.46,5.70),new pc.Vec3(1.35,.30,.08),M.yellow,root);
+  box('light l',new pc.Vec3(-.94,.63,5.72),new pc.Vec3(.30,.18,.11),M.lamp,root);box('light r',new pc.Vec3(.94,.63,5.72),new pc.Vec3(.30,.18,.11),M.lamp,root);
+  for(let z=-4.25;z<=4.25;z+=2.85){box('tram side glass L',new pc.Vec3(-1.59,1.65,z),new pc.Vec3(.08,1.28,2.25),M.glass,root);box('tram side glass R',new pc.Vec3(1.59,1.65,z),new pc.Vec3(.08,1.28,2.25),M.glass,root);}
+  box('roof equipment',new pc.Vec3(0,2.92,-.5),new pc.Vec3(1.15,.18,2.1),M.black,root);
+  return {entity:root,distance:GAME.streetLength,pulling:false};
 }
 const tram=buildTram();
 function syncTram(){tram.entity.setPosition(0,.02,-tram.distance);}syncTram();
@@ -150,12 +250,46 @@ function updatePlayer(dt){
   if(input.queue.has('left'))player.lane=Math.max(0,player.lane-1);if(input.queue.has('right'))player.lane=Math.min(2,player.lane+1);if(input.queue.has('jump')&&player.grounded){player.grounded=false;player.vy=GAME.jumpVelocity;audio.jump();}input.queue.clear();
   const pos=player.entity.getPosition(),tx=lanes[player.lane],x=pc.math.lerp(pos.x,tx,1-Math.exp(-GAME.laneSharpness*dt));
   if(!player.grounded){player.vy-=GAME.gravity*dt;player.y+=player.vy*dt;if(player.y<=1.02){player.y=1.02;player.vy=0;player.grounded=true;}}
-  player.hit=Math.max(0,player.hit-dt);const speed=player.hit>0?GAME.hitSpeed:GAME.speed;player.distance+=speed*dt;player.entity.setPosition(x,player.y,-player.distance);const bob=player.grounded?Math.sin(player.distance*7.8)*1.4:0;player.entity.setLocalEulerAngles(bob,0,0);
+  player.hit=Math.max(0,player.hit-dt);
+  const urgency=1+Math.max(0,(20-state.timeLeft)/20)*.055;
+  const speed=(player.hit>0?GAME.hitSpeed:GAME.speed)*urgency;
+  player.distance+=speed*dt;player.entity.setPosition(x,player.y,-player.distance);
+  const cycle=player.distance*6.8,swing=player.grounded?Math.sin(cycle)*34:0,bob=player.grounded?Math.abs(Math.sin(cycle))*-.035:0;
+  player.legL.setLocalEulerAngles(swing,0,0);player.legR.setLocalEulerAngles(-swing,0,0);player.armL.setLocalEulerAngles(-swing*.72,0,0);player.armR.setLocalEulerAngles(swing*.72,0,0);player.body.setLocalPosition(0,.05+bob,0);
 }
 function updateObstacles(){
-  for(const o of obstacleRecords){if(o.cleared)continue;const dz=o.d-player.distance;if(dz<-3){o.cleared=true;continue;}if(Math.abs(dz)>.92||o.lane!==player.lane)continue;if(o.jumpable&&!player.grounded){o.cleared=true;continue;}if(!o.hit){o.hit=true;player.hit=GAME.hitDuration;audio.hit();showToast(o.kind==='tourist'?'SORRY!':o.kind==='cyclist'||o.kind==='delivery'?'WATCH THE BIKE!':'OUCH!');}}
+  const px=player.entity.getPosition().x;
+  for(const o of obstacleRecords){
+    if(o.cleared)continue;
+    const op=o.entity.getPosition(),obstacleDistance=-op.z,dz=obstacleDistance-player.distance;
+    if(dz<-3){o.cleared=true;continue;}
+    const lateral=Math.abs(op.x-px);
+    if(Math.abs(dz)>.92||lateral>.82)continue;
+    if(o.jumpable&&!player.grounded){o.cleared=true;continue;}
+    if(!o.hit){
+      o.hit=true;player.hit=GAME.hitDuration;audio.hit();
+      if(o.kind==='umbrella'){ui.shell.classList.add('umbrella-hit');setTimeout(()=>ui.shell.classList.remove('umbrella-hit'),420);}
+      showToast(o.kind==='tourist'?'SORRY!':o.kind==='cyclist'||o.kind==='delivery'?'WATCH THE BIKE!':o.kind==='umbrella'?'UMBRELLA!':'OUCH!');
+    }
+  }
 }
-function animateWorld(){for(const a of animated){if(a.type==='tourist')a.entity.setPosition(a.baseX+Math.sin(state.elapsed*1.7+a.phase)*.13,0,-a.baseD);else a.entity.setPosition(a.baseX+Math.sin(state.elapsed*1.2+a.phase)*.18,0,-a.baseD+Math.sin(state.elapsed*1.9+a.phase)*.8);}}
+function animateWorld(){
+  for(const a of animated){
+    if(a.type==='tourist'){
+      const near=Math.max(0,1-Math.abs(a.baseD-player.distance)/26);
+      a.entity.setPosition(a.baseX+Math.sin(state.elapsed*1.35+a.phase)*(.16+near*.34),0,-a.baseD);
+    }else if(a.type==='umbrella'){
+      a.entity.setPosition(a.baseX+Math.sin(state.elapsed*.95+a.phase)*.12,0,-a.baseD);
+      a.entity.setLocalEulerAngles(0,Math.sin(state.elapsed*.7+a.phase)*7,0);
+    }else if(a.type==='pavement'){
+      a.entity.setPosition(a.baseX,0,-a.baseD+((state.elapsed*.45+a.phase)%5)-2.5);
+    }else{
+      const direction=a.type==='delivery'?-1:1;
+      a.entity.setPosition(a.baseX+Math.sin(state.elapsed*1.1+a.phase)*.28,0,-a.baseD+Math.sin(state.elapsed*1.45+a.phase)*1.25*direction);
+      a.entity.setLocalEulerAngles(0,Math.sin(state.elapsed*1.1+a.phase)*4,0);
+    }
+  }
+}
 function updateTram(dt){if(state.timeLeft<=GAME.pullAwayAt)tram.pulling=true;if(tram.pulling){tram.distance+=GAME.tramSpeed*dt;syncTram();}}
 function formatTime(seconds){const v=Math.max(0,Math.ceil(seconds)),m=String(Math.floor(v/60)).padStart(2,'0'),s=String(v%60).padStart(2,'0');return m+':'+s;}
 function currentCallout(){let label='DAWSON STREET';for(const item of landmarkCallouts)if(player.distance>=item.d)label=item.label;return label;}
