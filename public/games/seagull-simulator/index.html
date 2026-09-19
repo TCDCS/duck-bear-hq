@@ -7,7 +7,7 @@
   <meta name="description" content="Seagull Simulator: Dublin — steal snacks, dodge traffic and become a public nuisance from Dame Street to Stephen's Green.">
   <title>Seagull Simulator: Dublin — Duck &amp; Bear</title>
   <link rel="icon" href="/games/seagull-simulator/icon.svg">
-  <link rel="stylesheet" href="/games/seagull-simulator/game.css?v=0.1.0">
+  <link rel="stylesheet" href="/games/seagull-simulator/game.css?v=0.4.0">
 </head>
 <body>
   <main class="game-shell">
@@ -22,6 +22,12 @@
       <p class="tagline">STEAL. SQUAWK. REPEAT.</p>
       <p class="intro">Free-fly through Dame Street, College Green, Grafton Street and St Stephen's Green. Pick a snack, dive low, grab it and get away before Dublin has enough of you.</p>
       <button id="playBtn" class="play">PLAY</button>
+      <div class="progression-strip">
+        <button id="birdsBtn" class="mini-button" type="button">BIRDS</button>
+        <span class="coin-pill">◉ <strong id="coinCount">0</strong></span>
+        <button id="upgradesBtn" class="mini-button" type="button">UPGRADES</button>
+      </div>
+      <p class="selected-bird">Flying as <strong id="selectedBirdName">Dublin Gull</strong></p>
       <p class="controls-note">Phone: stick + Dive/Grab/Flap · Hold Dive to land · Computer: WASD/Arrows + Space/E</p>
       <p class="best-line">Best run <strong id="startBest">0</strong></p>
       <p class="build">Alpha <span id="version">0.3.0-alpha</span></p>
@@ -56,12 +62,31 @@
         <span>Score <strong id="finalScore">0</strong></span>
         <span>Food stolen <strong id="finalStolen">0</strong></span>
         <span>Best score <strong id="bestScore">0</strong></span>
+        <span>Coins earned <strong id="coinsEarned">0</strong></span>
       </div>
       <button id="restartBtn" class="play">PLAY AGAIN</button>
       <a class="secondary" href="/games/">BACK TO GAMES</a>
     </section>
+
+    <section id="birdsPanel" class="panel progression-panel hidden" aria-label="Birds">
+      <button class="panel-close" data-close-panel="birdsPanel" type="button">×</button>
+      <p class="eyebrow">BIRDS</p>
+      <h2>Choose your menace.</h2>
+      <p class="panel-copy">Different gulls change the feel a little. Unlocks stay on this device.</p>
+      <div id="birdGrid" class="choice-grid"></div>
+      <div class="panel-balance">Coins <strong id="birdsCoinCount">0</strong></div>
+    </section>
+
+    <section id="upgradesPanel" class="panel progression-panel hidden" aria-label="Upgrades">
+      <button class="panel-close" data-close-panel="upgradesPanel" type="button">×</button>
+      <p class="eyebrow">UPGRADES</p>
+      <h2>A slightly better nuisance.</h2>
+      <p class="panel-copy">Five levels each. Small boosts only—the game still needs timing.</p>
+      <div id="upgradeGrid" class="upgrade-grid"></div>
+      <div class="panel-balance">Coins <strong id="upgradesCoinCount">0</strong></div>
+    </section>
   </main>
   <div class="rotate-hint" aria-hidden="true"><strong>ROTATE YOUR PHONE</strong><span>Seagulls need a bit more room to cause trouble.</span></div>
-  <script src="/games/seagull-simulator/game.js?v=0.3.0"></script>
+  <script src="/games/seagull-simulator/game.js?v=0.4.0"></script>
 </body>
 </html>
