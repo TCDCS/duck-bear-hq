@@ -41,7 +41,52 @@ jobs:
             if curl -fsS http://127.0.0.1:4173/games/last-luas/ >/dev/null; then break; fi
             sleep 0.25
           done
-          python scripts/last-luas-visual.py
+
+          node --input-type=module <<'NODE'
+          import { chromium } from 'playwright';
+          import { writeFileSync } from 'node:fs';
+
+          const browser = await chromium.launch({headless:true});
+          const cases = [
+            {name:'player', url:'?smoke=1&distance=18', viewport:{width:1280,height:720}},
+            {name:'tourist', url:'?smoke=1&focus=tourist', viewport:{width:1280,height:720}},
+            {name:'cyclist', url:'?smoke=1&focus=cyclist', viewport:{width:1280,height:720}},
+            {name:'umbrella', url:'?smoke=1&focus=umbrella', viewport:{width:1280,height:720}},
+            {name:'delivery', url:'?smoke=1&focus=delivery', viewport:{width:1280,height:720}},
+            {name:'mobile-umbrella', url:'?smoke=1&focus=umbrella', viewport:{width:844,height:390}}
+          ];
+          const report=[];
+          for (const item of cases) {
+            const page=await browser.newPage({viewport:item.viewport});
+            const consoleMessages=[];
+            const pageErrors=[];
+            page.on('console',m=>consoleMessages.push(m.type()+': '+m.text()));
+            page.on('pageerror',e=>pageErrors.push(String(e)));
+            await page.goto('http://127.0.0.1:4173/games/last-luas/'+item.url,{waitUntil:'domcontentloaded',timeout:30000});
+            await page.waitForFunction(() => document.documentElement.dataset.lastLuasReady === '1', null, {timeout:30000});
+            await page.waitForFunction(() => document.documentElement.dataset.lastLuasSmokeStopped === '1', null, {timeout:10000});
+            const dataset=await page.evaluate(()=>({...document.documentElement.dataset}));
+            if(dataset.lastLuasBuild!=='0.4.0')throw new Error(item.name+': wrong build '+dataset.lastLuasBuild);
+            if(dataset.lastLuasCharacterAssets!=='2')throw new Error(item.name+': character assets not loaded');
+            if(dataset.lastLuasAssetError==='1')throw new Error(item.name+': asset load error');
+            if(item.name!=='player'&&!item.name.startsWith('mobile-')&&dataset.lastLuasReviewFocus!==item.name){
+              throw new Error(item.name+': review focus not active');
+            }
+            await page.screenshot({path:'/tmp/last-luas-real-characters/'+item.name+'.png',fullPage:true});
+            report.push({name:item.name,viewport:item.viewport,dataset,consoleMessages,pageErrors});
+            if(pageErrors.length)throw new Error(item.name+': '+pageErrors.join(' | '));
+            await page.close();
+          }
+          await browser.close();
+          writeFileSync('/tmp/last-luas-real-characters/report.json',JSON.stringify(report,null,2));
+          NODE
+
+          test -s /tmp/last-luas-real-characters/player.png
+          test -s /tmp/last-luas-real-characters/tourist.png
+          test -s /tmp/last-luas-real-characters/cyclist.png
+          test -s /tmp/last-luas-real-characters/umbrella.png
+          test -s /tmp/last-luas-real-characters/delivery.png
+          test -s /tmp/last-luas-real-characters/mobile-umbrella.png
 
       - name: Full repository tests
         run: npm test
