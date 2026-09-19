@@ -1,13 +1,27 @@
 {
   "game": "seagull-simulator",
   "title": "Seagull Simulator: Dublin",
-  "version": "0.1.0-alpha",
+  "version": "0.2.0-alpha",
   "engine": "Phaser 4 + TypeScript",
   "status": "playable-alpha",
-  "area": "Dame Street",
+  "area": "Dame Street + College Green",
   "controls": {
     "mobile": "virtual stick + flap + dive + grab",
     "desktop": "WASD/arrows + Shift + Space + E"
   },
-  "nextAreas": ["College Green", "Grafton Street", "St Stephen's Green"]
+  "nextAreas": [
+    "Grafton Street",
+    "St Stephen's Green"
+  ],
+  "features": [
+    "free flight",
+    "dive and grab",
+    "land and waddle",
+    "food recycling",
+    "wanted heat",
+    "Garda response",
+    "combos",
+    "missions",
+    "local high score"
+  ]
 }
