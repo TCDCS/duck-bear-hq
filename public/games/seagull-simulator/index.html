@@ -7,7 +7,7 @@
   <meta name="description" content="Seagull Simulator: Dublin — steal snacks, dodge traffic and become a public nuisance from Dame Street to Stephen's Green.">
   <title>Seagull Simulator: Dublin — Duck &amp; Bear</title>
   <link rel="icon" href="/games/seagull-simulator/icon.svg">
-  <link rel="stylesheet" href="/games/seagull-simulator/game.css?v=1.0">
+  <link rel="stylesheet" href="/games/seagull-simulator/game.css?v=1.1.0">
 </head>
 <body>
   <main class="game-shell">
@@ -18,7 +18,7 @@
       <div class="logo-mark" aria-hidden="true"><img src="/games/seagull-simulator/art/gull-mid.svg" alt=""></div>
       <p class="eyebrow">DUCK &amp; BEAR PRESENTS</p>
       <h1>SEAGULL<br><span>SIMULATOR</span></h1>
-      <div class="title-badges"><strong class="dublin">DUBLIN</strong><strong class="build-badge">BUILD <span id="version">1.0</span></strong></div>
+      <div class="title-badges"><strong class="dublin">DUBLIN</strong><strong class="build-badge">BUILD <span id="version">1.1.0</span></strong></div>
       <p class="tagline">STEAL. SQUAWK. REPEAT.</p>
       <p class="intro">Free-fly through Dame Street, College Green, Grafton Street and St Stephen's Green. Pick a snack, dive low, grab it and get away before Dublin has enough of you.</p>
       <button id="playBtn" class="play">PLAY</button>
@@ -27,11 +27,12 @@
         <span class="coin-pill">◉ <strong id="coinCount">0</strong></span>
         <button id="upgradesBtn" class="mini-button" type="button">UPGRADES</button>
         <button id="trophiesBtn" class="mini-button" type="button">TROPHIES <span id="trophyCount">0/8</span></button>
+        <button id="settingsBtn" class="mini-button" type="button">SETTINGS</button>
       </div>
       <p class="selected-bird">Flying as <strong id="selectedBirdName">Dublin Gull</strong></p>
       <p class="controls-note">Phone: stick + Dive/Grab/Flap · Hold Dive to land · Computer: WASD/Arrows + Space/E · P/Esc pause</p>
       <p class="best-line">Best run <strong id="startBest">0</strong></p>
-      <p class="build">Duck &amp; Bear release build 1.0</p>
+      <p class="build">Duck &amp; Bear release build 1.1.0</p>
     </section>
 
     <div id="hud" class="hud hidden" aria-live="polite">
@@ -63,6 +64,7 @@
       <p>Even a public nuisance needs a minute.</p>
       <button id="resumeBtn" class="play" type="button">RESUME</button>
       <button id="restartRunBtn" class="pause-secondary" type="button">RESTART RUN</button>
+      <button id="pauseSettingsBtn" class="pause-secondary" type="button">SETTINGS</button>
       <a class="secondary" href="/games/">BACK TO GAMES</a>
     </section>
 
@@ -108,6 +110,36 @@
       <div id="trophyGrid" class="trophy-grid"></div>
     </section>
 
+    <section id="settingsPanel" class="panel progression-panel settings-panel hidden" aria-label="Settings">
+      <button class="panel-close" data-close-panel="settingsPanel" type="button">×</button>
+      <p class="eyebrow">SETTINGS</p>
+      <h2>Seagull controls.</h2>
+      <p class="panel-copy">Build <strong id="settingsVersion">1.1.0</strong> · Progress and settings stay on this device.</p>
+      <div class="settings-grid">
+        <article class="setting-card">
+          <div><small>AUDIO</small><h3>Sound effects</h3><p>Generated arcade SFX. Your preference is saved locally.</p></div>
+          <button id="settingsSoundBtn" class="setting-action" type="button">ON</button>
+        </article>
+        <article class="setting-card">
+          <div><small>CONTROLS</small><h3>Landscape play</h3><p>Stick + Dive / Grab / Flap on phone. WASD/Arrows + Space/E on desktop.</p></div>
+          <span class="setting-state">AUTO</span>
+        </article>
+        <article class="setting-card setting-card-wide">
+          <div><small>RELEASE HISTORY</small><h3>Update Log</h3><p>See what changed in every live Seagull Simulator build.</p></div>
+          <button id="updateLogBtn" class="setting-action wide" type="button">OPEN UPDATE LOG</button>
+        </article>
+      </div>
+    </section>
+
+    <section id="updateLogPanel" class="panel progression-panel update-log-panel hidden" aria-label="Update Log">
+      <button id="updatesBackBtn" class="panel-back" type="button">← SETTINGS</button>
+      <button class="panel-close" data-close-panel="updateLogPanel" type="button">×</button>
+      <p class="eyebrow">UPDATE LOG</p>
+      <h2>What changed.</h2>
+      <p class="panel-copy">Every live update gets a version number and a dated entry here.</p>
+      <div id="updateLogList" class="update-log-list"></div>
+    </section>
+
     <section id="upgradesPanel" class="panel progression-panel hidden" aria-label="Upgrades">
       <button class="panel-close" data-close-panel="upgradesPanel" type="button">×</button>
       <p class="eyebrow">UPGRADES</p>
@@ -118,6 +150,6 @@
     </section>
   </main>
   <div class="rotate-hint" aria-hidden="true"><strong>ROTATE YOUR PHONE</strong><span>Seagulls need a bit more room to cause trouble.</span></div>
-  <script src="/games/seagull-simulator/game.js?v=1.0"></script>
+  <script src="/games/seagull-simulator/game.js?v=1.1.0"></script>
 </body>
 </html>
