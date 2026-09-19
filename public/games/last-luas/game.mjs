@@ -1,6 +1,6 @@
 import * as pc from 'https://cdn.jsdelivr.net/npm/playcanvas@2.22.2/build/playcanvas.mjs';
 
-const BUILD='0.2.0';
+const BUILD='0.3.0';
 const GAME={duration:90,streetLength:430,laneX:[-2.45,0,2.45],speed:5.25,hitSpeed:2.8,hitDuration:.66,jumpVelocity:7.1,gravity:18,laneSharpness:13,pullAwayAt:8.5,tramSpeed:3.25,catchGap:6.2,pixelRatio:1.5};
 const $=id=>document.getElementById(id);
 const canvas=$('application');
@@ -12,7 +12,7 @@ app.scene.ambientLight=new pc.Color(.30,.34,.46);
 
 const ui={shell:$('gameShell'),time:$('timeValue'),distance:$('distanceValue'),callout:$('streetCallout'),toast:$('toast'),timerCard:document.querySelector('.timer-card'),start:$('startPanel'),pause:$('pausePanel'),result:$('resultPanel'),resultTitle:$('resultTitle'),resultText:$('resultText'),resultDistance:$('resultDistance'),resultTime:$('resultTime')};
 
-const state={started:false,paused:false,finished:false,timeLeft:GAME.duration,elapsed:0,lastSecond:91,toastTimer:0};
+const state={started:false,paused:false,finished:false,timeLeft:GAME.duration,elapsed:0,lastSecond:91,toastTimer:0,doorsWarned:false,pullAwayWarned:false};
 const obstacleRecords=[];
 const animated=[];
 const lanes=GAME.laneX;
@@ -98,6 +98,23 @@ function tree(z,side){
   cyl('Tree trunk',new pc.Vec3(0,1.65,0),new pc.Vec3(.19,1.65,.19),mat(new pc.Color(.28,.18,.10),{gloss:.12}),root);
   sphere('Tree crown',new pc.Vec3(0,3.55,0),new pc.Vec3(1.25,1.45,1.15),M.leaf,root);
 }
+const signCache=new Map();
+function signMaterial(text,bg='#102235',fg='#ffffff',accent=null){
+  const key=[text,bg,fg,accent||''].join('|');if(signCache.has(key))return signCache.get(key);
+  const c=document.createElement('canvas');c.width=1024;c.height=192;const ctx=c.getContext('2d');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,c.width,c.height);
+  if(accent){ctx.fillStyle=accent;ctx.fillRect(0,0,22,c.height);ctx.fillRect(c.width-22,0,22,c.height);}
+  ctx.strokeStyle='rgba(255,255,255,.18)';ctx.lineWidth=5;ctx.strokeRect(3,3,c.width-6,c.height-6);
+  let size=104;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='900 '+size+'px Arial, sans-serif';
+  while(ctx.measureText(text).width>900&&size>48){size-=4;ctx.font='900 '+size+'px Arial, sans-serif';}
+  ctx.fillStyle=fg;ctx.fillText(text,c.width/2,c.height/2+4);
+  const texture=new pc.Texture(app.graphicsDevice,{width:c.width,height:c.height,format:pc.PIXELFORMAT_RGBA8,mipmaps:true});
+  texture.minFilter=pc.FILTER_LINEAR_MIPMAP_LINEAR;texture.magFilter=pc.FILTER_LINEAR;texture.addressU=pc.ADDRESS_CLAMP_TO_EDGE;texture.addressV=pc.ADDRESS_CLAMP_TO_EDGE;texture.setSource(c);
+  const m=new pc.StandardMaterial();m.diffuseMap=texture;m.diffuse=new pc.Color(1,1,1);m.emissiveMap=texture;m.emissive=new pc.Color(.48,.48,.48);m.emissiveIntensity=.32;m.gloss=.42;m.update();signCache.set(key,m);return m;
+}
+function nameboard(name,z,y,halfLength,side,material){
+  return box(name,new pc.Vec3(side*6.30,y,z),new pc.Vec3(.15,.52,halfLength),material);
+}
 function buildGenericBlocks(){
   const fills=[M.brick,M.cream,mat(new pc.Color(.35,.28,.24),{gloss:.25}),mat(new pc.Color(.49,.42,.34),{gloss:.3})];
   let z=-11,i=0;
@@ -113,12 +130,14 @@ function buildLandmarks(){
   windows(arket,1,14.5,24,true);
   box('ARKET glass ground floor',new pc.Vec3(6.56,1.72,-22),new pc.Vec3(.16,3.15,20.8),M.glass);
   for(let z=-31;z<=-13;z+=4.4)box('ARKET mullion',new pc.Vec3(6.38,1.75,z),new pc.Vec3(.25,3.25,.11),M.stone);
+  nameboard('ARKET wordmark',-22,3.52,3.7,1,signMaterial('ARKET','#eee9df','#151515'));
 
   // Hodges Figgis: tall red-brick facade with a deep green, brass-trimmed shopfront.
   const hf=box('Hodges Figgis',new pc.Vec3(-9.80,7.65,-55),new pc.Vec3(6.85,15.3,19),M.brick);
   windows(hf,-1,15.3,19,false);
   box('Hodges green frontage',new pc.Vec3(-6.55,1.62,-55),new pc.Vec3(.22,2.80,16.8),M.green);
   trim('Hodges brass fascia',-55,3.05,16.6,-1,M.gold,.14);
+  nameboard('Hodges Figgis nameboard',-55,3.24,7.5,-1,signMaterial('HODGES FIGGIS','#143a2b','#e4c477'));
   for(let z=-61.2;z<=-48.8;z+=3.1)box('Hodges window bay',new pc.Vec3(-6.37,1.52,z),new pc.Vec3(.18,2.05,2.35),M.glass);
 
   // Café en Seine: dark blue facade, pale stripes and planted outdoor edge.
@@ -126,6 +145,7 @@ function buildLandmarks(){
   windows(cafe,1,12.3,18,false);
   box('Cafe blue frontage',new pc.Vec3(6.54,1.60,-185),new pc.Vec3(.22,2.85,15.5),M.navy);
   trim('Cafe gold fascia',-185,3.12,15.4,1,M.gold,.10);
+  nameboard('Cafe en Seine nameboard',-185,3.28,6.9,1,signMaterial('CAFÉ en SEINE','#15364b','#e5cf99'));
   for(let z=-190.5;z<=-179.5;z+=3.6){awning('Cafe striped awning',z,2.7,1,M.navy,3.43);box('Cafe awning stripe',new pc.Vec3(6.13,3.50,z),new pc.Vec3(.85,.07,.18),M.white);}
   planter(181,1);planter(187,1);planter(193,1);tree(188,1);
 
@@ -135,12 +155,14 @@ function buildLandmarks(){
   box('Dawson dark frontage',new pc.Vec3(-6.56,1.48,-292),new pc.Vec3(.22,2.55,9.8),M.black);
   box('Dawson red door',new pc.Vec3(-6.35,1.32,-292),new pc.Vec3(.25,2.40,1.28),M.red);
   trim('Dawson fascia',-292,2.93,9.6,-1,M.gold,.09);
+  nameboard('Dawson Lounge nameboard',-292,3.08,4.1,-1,signMaterial('THE DAWSON LOUNGE','#171717','#d7b56b'));
 
   // Ivy: pale modern facade, deep green entrance canopy and planting.
   const ivy=box('The Ivy Dawson Street',new pc.Vec3(9.80,6.75,-354),new pc.Vec3(6.85,13.5,23),M.cream);
   windows(ivy,1,13.5,23,true);
   box('Ivy glass frontage',new pc.Vec3(6.56,1.60,-354),new pc.Vec3(.20,2.80,19.5),M.glass);
   awning('Ivy green canopy',-348.5,5.8,1,M.green,3.15);
+  nameboard('Ivy nameboard',-348.5,3.36,2.7,1,signMaterial('THE IVY','#123a2a','#e0bd71'));
   planter(347,1);planter(352,1);planter(357,1);
 }
 
@@ -179,6 +201,7 @@ function buildLuasStop(){
     box('shelter glass',new pc.Vec3(side*.68,1.32,0),new pc.Vec3(.08,2.35,4.8),M.wetGlass,shelter);
     cyl('stop pole',new pc.Vec3(-side*.65,1.7,-3.8),new pc.Vec3(.08,1.7,.08),M.black,shelter);
     box('stop marker',new pc.Vec3(-side*.65,3.15,-3.8),new pc.Vec3(.38,.55,.16),M.green,shelter);
+    box('Dawson stop nameboard',new pc.Vec3(-side*.59,2.72,-3.8),new pc.Vec3(.08,.30,1.28),signMaterial('DAWSON','#263133','#ffffff','#57b657'),shelter);
     box('ticket machine',new pc.Vec3(-side*.70,.95,3.1),new pc.Vec3(.46,1.55,.55),M.stone,shelter);
   }
 }
@@ -234,7 +257,12 @@ function syncTram(){tram.entity.setPosition(0,.02,-tram.distance);}syncTram();
 
 const camera=new pc.Entity('Camera');camera.addComponent('camera',{clearColor:new pc.Color(.028,.045,.09),fov:67,nearClip:.1,farClip:720});app.root.addChild(camera);camera.setPosition(0,4.2,7.2);
 
-function updateCamera(dt){const p=player.entity.getPosition(),target=new pc.Vec3(p.x*.16,4.25,p.z+7.15),cur=camera.getPosition(),t=1-Math.exp(-8*dt);camera.setPosition(pc.math.lerp(cur.x,target.x,t),pc.math.lerp(cur.y,target.y,t),pc.math.lerp(cur.z,target.z,t));camera.lookAt(p.x*.18,1.22,p.z-9.2);}
+function updateCamera(dt){
+  const p=player.entity.getPosition(),rush=state.started&&!state.finished?Math.max(0,(10-state.timeLeft)/10):0,shake=player.hit>0?Math.sin(state.elapsed*48)*.065:0;
+  const target=new pc.Vec3(p.x*.16+shake,4.25-rush*.30,p.z+7.15-rush*.62),cur=camera.getPosition(),t=1-Math.exp(-8*dt);
+  camera.setPosition(pc.math.lerp(cur.x,target.x,t),pc.math.lerp(cur.y,target.y,t),pc.math.lerp(cur.z,target.z,t));
+  camera.lookAt(p.x*.18,1.22,p.z-9.2-rush*1.8);camera.camera.fov=pc.math.lerp(camera.camera.fov,67+rush*7,1-Math.exp(-4*dt));
+}
 
 const input={queue:new Set(),downX:0,downY:0,tracking:false};
 function enqueue(action){if(state.finished||!state.started)return;input.queue.add(action);}
@@ -244,7 +272,7 @@ canvas.addEventListener('pointerup',e=>{if(!input.tracking)return;input.tracking
 canvas.addEventListener('pointercancel',()=>input.tracking=false,{passive:true});
 $('leftBtn').addEventListener('click',()=>enqueue('left'));$('rightBtn').addEventListener('click',()=>enqueue('right'));$('jumpBtn').addEventListener('click',()=>enqueue('jump'));
 
-const audio={ctx:null,lastBeep:-1,unlock(){if(!this.ctx)this.ctx=new (window.AudioContext||window.webkitAudioContext)();if(this.ctx.state==='suspended')this.ctx.resume();},tone(freq=.1,dur=.08,type='sine',vol=.045){if(!this.ctx)return;const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(vol,this.ctx.currentTime);g.gain.exponentialRampToValueAtTime(.0001,this.ctx.currentTime+dur);o.connect(g).connect(this.ctx.destination);o.start();o.stop(this.ctx.currentTime+dur);},hit(){this.tone(105,.12,'square',.04);},jump(){this.tone(390,.06,'triangle',.026);},beep(sec){if(sec===this.lastBeep)return;this.lastBeep=sec;this.tone(sec<=3?820:610,.055,'square',.025);},win(){this.tone(523,.12,'triangle',.035);setTimeout(()=>this.tone(659,.15,'triangle',.035),120);setTimeout(()=>this.tone(784,.22,'triangle',.035),250);}};
+const audio={ctx:null,lastBeep:-1,unlock(){if(!this.ctx)this.ctx=new (window.AudioContext||window.webkitAudioContext)();if(this.ctx.state==='suspended')this.ctx.resume();},tone(freq=.1,dur=.08,type='sine',vol=.045){if(!this.ctx)return;const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(vol,this.ctx.currentTime);g.gain.exponentialRampToValueAtTime(.0001,this.ctx.currentTime+dur);o.connect(g).connect(this.ctx.destination);o.start();o.stop(this.ctx.currentTime+dur);},hit(){this.tone(105,.12,'square',.04);},jump(){this.tone(390,.06,'triangle',.026);},beep(sec){if(sec===this.lastBeep)return;this.lastBeep=sec;this.tone(sec<=3?820:610,.055,'square',.025);},bell(){this.tone(740,.16,'sine',.042);setTimeout(()=>this.tone(990,.28,'sine',.036),120);},warning(){this.tone(620,.065,'square',.024);setTimeout(()=>this.tone(620,.065,'square',.024),145);setTimeout(()=>this.tone(620,.065,'square',.024),290);},win(){this.tone(523,.12,'triangle',.035);setTimeout(()=>this.tone(659,.15,'triangle',.035),120);setTimeout(()=>this.tone(784,.22,'triangle',.035),250);}};
 
 function updatePlayer(dt){
   if(input.queue.has('left'))player.lane=Math.max(0,player.lane-1);if(input.queue.has('right'))player.lane=Math.min(2,player.lane+1);if(input.queue.has('jump')&&player.grounded){player.grounded=false;player.vy=GAME.jumpVelocity;audio.jump();}input.queue.clear();
@@ -290,12 +318,21 @@ function animateWorld(){
     }
   }
 }
-function updateTram(dt){if(state.timeLeft<=GAME.pullAwayAt)tram.pulling=true;if(tram.pulling){tram.distance+=GAME.tramSpeed*dt;syncTram();}}
+function updateTram(dt){
+  if(state.timeLeft<=10&&!state.doorsWarned){state.doorsWarned=true;audio.warning();showToast('DOORS CLOSING!');}
+  if(state.timeLeft<=GAME.pullAwayAt&&!tram.pulling){tram.pulling=true;if(!state.pullAwayWarned){state.pullAwayWarned=true;audio.bell();showToast('THE LUAS IS MOVING!');}}
+  if(tram.pulling){tram.distance+=GAME.tramSpeed*dt;syncTram();}
+}
 function formatTime(seconds){const v=Math.max(0,Math.ceil(seconds)),m=String(Math.floor(v/60)).padStart(2,'0'),s=String(v%60).padStart(2,'0');return m+':'+s;}
 function currentCallout(){let label='DAWSON STREET';for(const item of landmarkCallouts)if(player.distance>=item.d)label=item.label;return label;}
 function updateHud(){ui.time.textContent=formatTime(state.timeLeft);ui.distance.textContent=String(Math.floor(player.distance));const gap=Math.max(0,tram.distance-player.distance);ui.shell.classList.toggle('final-sprint',state.started&&!state.finished&&state.timeLeft<=10);if(state.timeLeft<=GAME.pullAwayAt&&state.timeLeft>0){ui.callout.textContent="IT'S PULLING AWAY · "+Math.ceil(gap)+' m';ui.timerCard.classList.add('danger');}else if(player.distance>390){ui.callout.textContent='LUAS AHEAD · '+Math.ceil(gap)+' m';ui.timerCard.classList.remove('danger');}else{ui.callout.textContent=currentCallout();ui.timerCard.classList.remove('danger');}}
 function showToast(value){ui.toast.textContent=value;ui.toast.classList.add('show');state.toastTimer=.7;}
-function finish(won){if(state.finished)return;state.finished=true;state.paused=false;ui.result.hidden=false;ui.result.classList.add('visible');ui.resultTitle.textContent=won?'YOU MADE IT!':'MISSED IT!';ui.resultText.textContent=won?'Last Luas secured. Same panic tomorrow?':'The doors won this round.';ui.resultDistance.textContent=Math.floor(player.distance)+' m';ui.resultTime.textContent=formatTime(state.timeLeft);if(won)audio.win();}
+function finish(won){
+  if(state.finished)return;state.finished=true;state.paused=false;ui.shell.classList.remove('final-sprint');ui.result.hidden=false;ui.result.classList.add('visible');
+  let copy=won?'Last Luas secured. Same panic tomorrow?':'The doors won this round.';
+  if(won){try{const key='last-luas-best-v1',old=Number(localStorage.getItem(key)||-1);if(state.timeLeft>old){localStorage.setItem(key,String(state.timeLeft));copy='NEW BEST · You caught it with '+formatTime(state.timeLeft)+' left.';}}catch{}audio.win();}
+  ui.resultTitle.textContent=won?'YOU MADE IT!':'MISSED IT!';ui.resultText.textContent=copy;ui.resultDistance.textContent=Math.floor(player.distance)+' m';ui.resultTime.textContent=formatTime(state.timeLeft);
+}
 function reset(){location.reload();}
 function togglePause(force){if(!state.started||state.finished)return;state.paused=typeof force==='boolean'?force:!state.paused;ui.pause.hidden=!state.paused;ui.pause.classList.toggle('visible',state.paused);$('pauseBtn').textContent=state.paused?'▶':'Ⅱ';}
 
