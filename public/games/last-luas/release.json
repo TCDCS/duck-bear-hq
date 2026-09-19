@@ -1,7 +1,7 @@
 {
   "game": "Last Luas",
-  "version": "0.3.0",
-  "status": "playable vertical slice — street identity and finish polish",
+  "version": "0.4.0",
+  "status": "visual rebuild preview — real animated character assets",
   "engine": "PlayCanvas 2.22.2",
   "location": "Dawson Street, Dublin",
   "durationSeconds": 90,
@@ -19,7 +19,10 @@
     "raisedLuasPlatforms": true,
     "platformWhiteEdgeLines": true,
     "glassShelters": true,
-    "runtimeNameboards": true
+    "runtimeNameboards": true,
+    "realAnimatedCharacters": true,
+    "characterAssetCount": 2,
+    "proceduralPeople": false
   },
   "landmarks": [
     "ARKET Dawson Street",
@@ -42,5 +45,11 @@
     "camera FOV sprint effect",
     "local best catch time"
   ],
-  "notes": "v0.3 adds runtime-rendered Dawson Street nameboards, a stronger door-closing/Luas pull-away finale and camera/audio urgency. Street geometry remains stylised and replaceable with final Blender/GLB facades."
+  "notes": "v0.4 restarts from the stable v0.3 street and replaces primitive player/NPC bodies with pinned CC0 Quaternius animated character assets. No rejected v0.4 street-geometry rebuild is included.",
+  "thirdPartyAssets": {
+    "characters": "Quaternius Ultimate Modular Men",
+    "license": "CC0 1.0",
+    "pinnedSourceCommit": "29a6bdfd01ad175c389cbd0bac80c30f926ff96b",
+    "delivery": "jsDelivr pinned GitHub snapshot"
+  }
 }
