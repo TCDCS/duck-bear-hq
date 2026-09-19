@@ -31,10 +31,10 @@ jobs:
       - name: Capture official Cafe en Seine logo
         run: |
           set -euo pipefail
-          echo '---CAFE_LOGO_BEGIN---'
-          curl -LfsS 'https://www.cafeenseine.ie/wp-content/themes/sitetheme/library/images/logo.svg'
-          echo
-          echo '---CAFE_LOGO_END---'
+          mkdir -p /tmp/last-luas-real-characters
+          curl -LfsS 'https://www.cafeenseine.ie/wp-content/themes/sitetheme/library/images/logo.svg' -o /tmp/last-luas-real-characters/cafe-en-seine-official-logo.svg
+          test -s /tmp/last-luas-real-characters/cafe-en-seine-official-logo.svg
+          grep -qi '<svg' /tmp/last-luas-real-characters/cafe-en-seine-official-logo.svg
       - name: Last Luas source tests
         run: node --test tests/last-luas.test.mjs
       - name: Inspect pinned character GLBs
