@@ -1,7 +1,7 @@
 {
   "game": "seagull-simulator",
   "title": "Seagull Simulator: Dublin",
-  "version": "0.7.0-alpha",
+  "version": "0.8.0-alpha",
   "engine": "Phaser 4 + TypeScript",
   "status": "playable-alpha",
   "area": "Dame Street + College Green + Grafton Street + St Stephen's Green",
@@ -40,7 +40,10 @@
     "area-specific crowd mixes",
     "sandwiches",
     "doughnuts",
-    "high-value takeaway bags"
+    "high-value takeaway bags",
+    "single Arcade Physics player body",
+    "off-screen pedestrian update culling",
+    "non-physics traffic/NPC actors"
   ],
   "progression": {
     "storage": "local device",
@@ -92,5 +95,11 @@
     "College Green": "coffee/commuter-heavy",
     "Grafton Street": "café/treat-heavy",
     "St Stephen's Green": "picnic/ice-cream-heavy"
+  },
+  "performance": {
+    "arcadePhysicsBodies": 1,
+    "npcUpdateRadiusX": 1650,
+    "npcUpdateRadiusY": 1100,
+    "goal": "mid-range mobile browser stability"
   }
 }
