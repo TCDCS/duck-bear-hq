@@ -325,6 +325,7 @@ class DameStreetScene extends Phaser.Scene{
       this.time.delayedCall(6200,()=>this.toast('GRAB UP CLOSE · FLAP TO ESCAPE OR TAKE OFF'));
     }
     document.documentElement.dataset.seagullReady='1';
+    if(new URLSearchParams(location.search).has('smoke'))document.documentElement.dataset.seagullPhysicsBodies=String(this.physics.world.bodies.entries.length);
     if(new URLSearchParams(location.search).has('exercise')){
       document.documentElement.dataset.seagullExerciseScheduled='1';
       try{
