@@ -8,23 +8,25 @@ OUT = Path(os.environ.get("LAST_LUAS_OUT", "/tmp/last-luas-real-characters"))
 OUT.mkdir(parents=True, exist_ok=True)
 
 SHOTS = [
-    ("player", 12, 1280, 720),
-    ("tourist", 60, 1280, 720),
-    ("cyclist", 72, 1280, 720),
-    ("umbrella", 102, 1280, 720),
-    ("delivery", 148, 1280, 720),
-    ("mobile-umbrella", 102, 844, 390),
+    ("model-axis-check", 0, 1280, 720, "modelcheck=1"),
+    ("player", 12, 1280, 720, ""),
+    ("tourist", 60, 1280, 720, ""),
+    ("cyclist", 72, 1280, 720, ""),
+    ("umbrella", 102, 1280, 720, ""),
+    ("delivery", 148, 1280, 720, ""),
+    ("mobile-umbrella", 102, 844, 390, ""),
 ]
 
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True)
     report = []
-    for name, distance, width, height in SHOTS:
+    for name, distance, width, height, extra in SHOTS:
         page = browser.new_page(viewport={"width": width, "height": height})
         messages = []
         page.on("console", lambda msg, messages=messages: messages.append(f"{msg.type}: {msg.text}"))
         page.on("pageerror", lambda err, messages=messages: messages.append(f"pageerror: {err}"))
-        url = f"{BASE}?smoke=1&distance={distance}"
+        suffix = f"&{extra}" if extra else ""
+        url = f"{BASE}?smoke=1&distance={distance}{suffix}"
         page.goto(url, wait_until="domcontentloaded", timeout=30000)
         page.wait_for_function(
             """() => document.documentElement.dataset.lastLuasReady === '1'
