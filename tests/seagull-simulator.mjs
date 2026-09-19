@@ -166,3 +166,9 @@ test('Seagull ambient Dublin details stay lightweight',()=>{
   assert.equal(release.ambient.physics,false);
   assert.equal(release.ambient.luasBellCooldownMs,6500);
 });
+
+test('Seagull retry buttons restart directly into gameplay',()=>{
+  assert.match(source,/const restartRun=\(\)=>\{location\.href=location\.pathname\+'\?autostart=1';\}/);
+  assert.match(source,/restartRunBtn'\)\?\.addEventListener\('click',restartRun\)/);
+  assert.match(source,/restartBtn'\)\?\.addEventListener\('click',restartRun\)/);
+});
