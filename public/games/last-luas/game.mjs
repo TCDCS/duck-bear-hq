@@ -15,6 +15,7 @@ const CHARACTER_SOURCES={
   worker:'https://cdn.jsdelivr.net/gh/euuuuuuan/fatal-funnel-public@29a6bdfd01ad175c389cbd0bac80c30f926ff96b/packages/renderer/assets/models/quaternius-men/worker.glb'
 };
 const characterAssets=new Map();
+let characterDiagnosticsLogged=false;
 function loadCharacterAsset(kind){
   if(characterAssets.has(kind))return Promise.resolve(characterAssets.get(kind));
   return new Promise((resolve,reject)=>{
@@ -47,6 +48,12 @@ function spawnCharacter(parent,{kind='casual',clip='Idle_Neutral',scale=.92,pitc
   model.name=name;model.setLocalScale(scale,scale,scale);model.setLocalEulerAngles(pitch,yaw,0);
   parent.addChild(model);
   for(const render of model.findComponents('render')){render.castShadows=true;render.receiveShadows=true;}
+  if(!characterDiagnosticsLogged&&new URLSearchParams(location.search).get('modelcheck')==='1'){
+    characterDiagnosticsLogged=true;
+    const walk=(node,depth=0)=>({name:node.name,children:depth<4?node.children.map(c=>walk(c,depth+1)):[]});
+    console.info('Last Luas character clips',JSON.stringify((asset.resource.animations||[]).map(a=>a.name||a.resource?.name||'')));
+    console.info('Last Luas character hierarchy',JSON.stringify(walk(model)));
+  }
   playCharacterClip(model,asset,clip);
   return model;
 }
