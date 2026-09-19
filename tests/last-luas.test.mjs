@@ -56,7 +56,15 @@ test('Dawson Street geometry follows the south-to-north run and Dublin streetsca
   const source=read(game);
   for(const feature of ['St Stephens Green stone gate glimpse','Molesworth Street','South Anne Street','Duke Street','DAWSON STREET · SRÁID DHÁSAIN',"St Ann's Church",'Trinity College stone boundary glimpse'])assert.match(source,new RegExp(feature));
   for(const feature of ['Dublin street bin','Bike stand','Traffic signal','Drain grate','Luas track bed','Catenary contact line'])assert.match(source,new RegExp(feature));
-  for(const tramFeature of ['tram yellow waist band','tram purple skirt','BROOMBRIDGE','LUAS front wordmark','pantograph top'])assert.match(source,new RegExp(tramFeature));
+  for(const tramFeature of ['Front car','Centre car','Rear car','Articulation bellows','BROOMBRIDGE','LUAS front wordmark','pantograph collector','bogie wheel','door yellow edge'])assert.match(source,new RegExp(tramFeature));
+});
+
+test('v0.5 adds facade, kerb-life and browser readiness detail',()=>{
+  const source=read(game);
+  for(const detail of ['Granite kerb L','Dublin taxi 1','Delivery van','Locked bicycle','Ivy upper cornice','Mansion House crest','RIA stone quoin','St Anns pilaster','Hodges stone cornice','ARKET floor slab'])assert.match(source,new RegExp(detail));
+  assert.match(source,/data\.lastLuasReady/);
+  assert.match(source,/data\.lastLuasBuild/);
+  assert.match(source,/smokeParams/);
 });
 
 test('street polish includes distinct hazards and final sprint feedback',()=>{
@@ -72,7 +80,7 @@ test('street polish includes distinct hazards and final sprint feedback',()=>{
 test('release metadata matches the playable slice',()=>{
   const data=JSON.parse(read(release));
   assert.equal(data.game,'Last Luas');
-  assert.equal(data.version,'0.4.0');
+  assert.equal(data.version,'0.5.0');
   assert.equal(data.engine,'PlayCanvas 2.22.2');
   assert.equal(data.durationSeconds,90);
   assert.equal(data.location,'Dawson Street, Dublin');
@@ -82,4 +90,7 @@ test('release metadata matches the playable slice',()=>{
   assert.equal(data.environment.tactilePaving,true);
   assert.equal(data.environment.trafficSignals,true);
   assert.deepEqual(data.environment.sideStreetBreaks,['Molesworth Street','South Anne Street','Duke Street']);
+  assert.equal(data.environment.articulatedLuas,true);
+  assert.equal(data.environment.parkedDublinTaxis,true);
+  assert.equal(data.validation.browserSmokeSnapshots,true);
 });
