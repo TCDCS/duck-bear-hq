@@ -208,6 +208,11 @@ function brandMaterial(text,{bg='#ffffff',fg='#111111',font='Arial, sans-serif',
   ctx.fillStyle=bg;ctx.fillRect(0,0,c.width,c.height);
   ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=fg;
   let size=subline?128:154;ctx.font=weight+' '+size+'px '+font;
+  const trackedWidth=(value,spacing)=>{
+    const chars=[...value],widths=chars.map(ch=>ctx.measureText(ch).width);
+    return widths.reduce((a,b)=>a+b,0)+spacing*Math.max(0,chars.length-1);
+  };
+  while(trackedWidth(text,tracking)>1240&&size>52){size-=4;ctx.font=weight+' '+size+'px '+font;}
   const drawTracked=(value,y,spacing)=>{
     const chars=[...value],widths=chars.map(ch=>ctx.measureText(ch).width);
     const total=widths.reduce((a,b)=>a+b,0)+spacing*Math.max(0,chars.length-1);
@@ -401,12 +406,14 @@ function buildLuasStop(){
 }
 
 const landmarkCallouts=[
-  {d:15,label:'ARKET · 60 DAWSON STREET'},
-  {d:47,label:'HODGES FIGGIS · 56–58'},
-  {d:175,label:'CAFÉ EN SEINE · 39/40'},
-  {d:282,label:'THE DAWSON LOUNGE · 25'},
-  {d:342,label:'THE IVY · 13–17'},
-  {d:395,label:'DAWSON LUAS STOP'}
+  {d:5,label:'ARKET · 60 DAWSON STREET'},
+  {d:38,label:'HODGES FIGGIS · 56–58'},
+  {d:166,label:'CAFÉ EN SEINE · 39/40'},
+  {d:274,label:'THE DAWSON LOUNGE · 25'},
+  {d:303,label:'ROYAL IRISH ACADEMY · 19'},
+  {d:317,label:"ST ANN'S CHURCH · 18"},
+  {d:336,label:'THE IVY · 13–17'},
+  {d:391,label:'DAWSON LUAS STOP'}
 ];
 
 function buildPlayer(){
