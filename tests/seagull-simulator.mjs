@@ -151,7 +151,7 @@ test('Seagull keeps background actors out of Arcade Physics',()=>{
   assert.match(source,/gardai:Phaser\.GameObjects\.Sprite\[\]/);
   assert.match(source,/const p=this\.add\.sprite\(x,y,pedestrianForArea/);
   assert.match(source,/const s=this\.add\.sprite\(x,y,key\)/);
-  assert.match(source,/const nearby=Math\.abs\(t\.person\.x-this\.gull\.x\)<1650&&Math\.abs\(t\.person\.y-this\.gull\.y\)<1100/);
+  assert.match(source,/const nearby=Math\.abs\(t\.person\.x-this\.gull\.x\)<\(lowPowerMode\?1250:1650\)&&Math\.abs\(t\.person\.y-this\.gull\.y\)<\(lowPowerMode\?900:1100\)/);
   assert.equal(release.performance.arcadePhysicsBodies,1);
 });
 
@@ -159,7 +159,7 @@ test('Seagull ambient Dublin details stay lightweight',()=>{
   assert.match(source,/spawnAmbientPigeons\(\)/);
   assert.match(source,/updateAmbient\(time:number,dt:number\)/);
   assert.match(source,/const p=this\.add\.sprite\(x,y,'pigeon'\)/);
-  assert.match(source,/Math\.abs\(p\.x-this\.gull\.x\)>1550/);
+  assert.match(source,/Math\.abs\(p\.x-this\.gull\.x\)>\(lowPowerMode\?1100:1550\)/);
   assert.match(source,/name:'grab'\|'dive'\|'hit'\|'wanted'\|'target'\|'bell'/);
   assert.match(source,/time-this\.lastLuasBellAt>6500/);
   assert.match(source,/♫/);
@@ -168,7 +168,7 @@ test('Seagull ambient Dublin details stay lightweight',()=>{
 });
 
 test('Seagull retry buttons restart directly into gameplay',()=>{
-  assert.match(source,/const restartRun=\(\)=>\{location\.href=location\.pathname\+'\?autostart=1';\}/);
+  assert.match(source,/const restartRun=\(\)=>\{resetControls\(\);location\.href=location\.pathname\+'\?autostart=1';\}/);
   assert.match(source,/restartRunBtn'\)\?\.addEventListener\('click',restartRun\)/);
   assert.match(source,/restartBtn'\)\?\.addEventListener\('click',restartRun\)/);
 });
