@@ -23,8 +23,8 @@ test('Last Luas is a pinned PlayCanvas 90-second runner',()=>{
   assert.match(source,/duration:90/);
   assert.match(source,/pullAwayAt:8\.5/);
   assert.match(source,/streetLength:430/);
-  for(const name of ['ARKET','HODGES FIGGIS','CAFÉ EN SEINE','THE DAWSON LOUNGE','THE IVY','DAWSON LUAS STOP'])assert.match(source,new RegExp(name));
-  for(const feature of ['buildWetDetails','buildStreetLife','buildLuasStop','Dawson raised platform','Platform white edge','Glass Luas shelter'])assert.match(source,new RegExp(feature));
+  for(const name of ['ARKET','HODGES FIGGIS','CAFÉ EN SEINE','THE DAWSON LOUNGE','THE IVY','DAWSON LUAS STOP','MANSION HOUSE','ROYAL IRISH ACADEMY'])assert.match(source,new RegExp(name));
+  for(const feature of ['buildWetDetails','buildStreetLife','buildStreetGeometry','buildStreetFurniture','buildLuasStop','Dawson raised platform','Platform white edge','Platform tactile edge','Glass Luas shelter'])assert.match(source,new RegExp(feature));
 });
 
 test('Last Luas is exposed in every Games surface',()=>{
@@ -52,6 +52,13 @@ test('runtime-rendered nameboards and final Luas sequence are present',()=>{
   assert.match(source,/camera\.camera\.fov/);
 });
 
+test('Dawson Street geometry follows the south-to-north run and Dublin streetscape cues',()=>{
+  const source=read(game);
+  for(const feature of ['St Stephens Green stone gate glimpse','Molesworth Street','South Anne Street','Duke Street','DAWSON STREET · SRÁID DHÁSAIN','St Ann\\'s Church','Trinity College stone boundary glimpse'])assert.match(source,new RegExp(feature));
+  for(const feature of ['Dublin street bin','Bike stand','Traffic signal','Drain grate','Luas track bed','Catenary contact line'])assert.match(source,new RegExp(feature));
+  for(const tramFeature of ['tram yellow waist band','tram purple skirt','BROOMBRIDGE','LUAS front wordmark','pantograph top'])assert.match(source,new RegExp(tramFeature));
+});
+
 test('street polish includes distinct hazards and final sprint feedback',()=>{
   const source=read(game),styles=read(css);
   assert.match(source,/umbrella-hit/);
@@ -65,11 +72,14 @@ test('street polish includes distinct hazards and final sprint feedback',()=>{
 test('release metadata matches the playable slice',()=>{
   const data=JSON.parse(read(release));
   assert.equal(data.game,'Last Luas');
-  assert.equal(data.version,'0.3.0');
+  assert.equal(data.version,'0.4.0');
   assert.equal(data.engine,'PlayCanvas 2.22.2');
   assert.equal(data.durationSeconds,90);
   assert.equal(data.location,'Dawson Street, Dublin');
   assert.equal(data.environment.raisedLuasPlatforms,true);
   assert.equal(data.environment.puddleReflections,true);
   assert.equal(data.environment.runtimeNameboards,true);
+  assert.equal(data.environment.tactilePaving,true);
+  assert.equal(data.environment.trafficSignals,true);
+  assert.deepEqual(data.environment.sideStreetBreaks,['Molesworth Street','South Anne Street','Duke Street']);
 });
