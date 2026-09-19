@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
 
 const read=path=>readFileSync(path,'utf8');
 const index='public/games/last-luas/index.html';
@@ -10,6 +11,10 @@ const release='public/games/last-luas/release.json';
 
 test('Last Luas static game files exist',()=>{
   for(const path of [index,css,game,release])assert.ok(existsSync(path),path+' must exist');
+});
+
+test('Last Luas source parses as an ES module',()=>{
+  execFileSync(process.execPath,['--check',game],{stdio:'pipe'});
 });
 
 test('Last Luas is a pinned PlayCanvas 90-second runner',()=>{
