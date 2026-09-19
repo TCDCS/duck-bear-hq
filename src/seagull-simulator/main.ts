@@ -11,7 +11,52 @@ const FOOD_TYPES=[
 ] as const;
 const WORLD_W=8800;
 const WORLD_H=1800;
-const VERSION='0.3.0-alpha';
+const VERSION='0.4.0-alpha';
+
+type BirdId='dublin'|'big-lad'|'sneaky'|'absolute-unit';
+type UpgradeKey='wings'|'beak'|'nerve';
+type ProgressState={
+  coins:number;
+  selectedBird:BirdId;
+  unlockedBirds:BirdId[];
+  upgrades:Record<UpgradeKey,number>;
+};
+const BIRDS:Record<BirdId,{name:string;cost:number;speed:number;grab:number;heat:number;feathers:number;scale:number;tint?:number;previewFilter:string;blurb:string}>={
+  dublin:{name:'Dublin Gull',cost:0,speed:1,grab:92,heat:1,feathers:3,scale:1,previewFilter:'none',blurb:'Balanced. Loud. Completely shameless.'},
+  'big-lad':{name:'Big Lad',cost:250,speed:.94,grab:106,heat:1.08,feathers:4,scale:1.12,tint:0xffefd2,previewFilter:'sepia(.25) saturate(.8)',blurb:'Tougher and better at grabbing, but harder to ignore.'},
+  sneaky:{name:'Sneaky Gull',cost:450,speed:1.08,grab:88,heat:.82,feathers:3,scale:.94,tint:0xd9eef3,previewFilter:'hue-rotate(155deg) saturate(.6)',blurb:'Quick and less suspicious. Smaller reach.'},
+  'absolute-unit':{name:'Absolute Unit',cost:750,speed:.98,grab:116,heat:1.18,feathers:5,scale:1.2,tint:0xc8ced0,previewFilter:'grayscale(.45) brightness(.9)',blurb:'Huge reach and five feathers. Everyone notices.'}
+};
+const UPGRADE_COSTS=[75,125,200,300,450];
+const UPGRADE_META:Record<UpgradeKey,{name:string;blurb:string}>={
+  wings:{name:'Wings',blurb:'A little more flight and waddle speed.'},
+  beak:{name:'Beak',blurb:'A little more reach when grabbing food.'},
+  nerve:{name:'Nerve',blurb:'Wanted heat builds slightly more slowly.'}
+};
+function loadProgress():ProgressState{
+  const fallback:ProgressState={coins:0,selectedBird:'dublin',unlockedBirds:['dublin'],upgrades:{wings:0,beak:0,nerve:0}};
+  try{
+    const raw=JSON.parse(localStorage.getItem('seagull-progress-v1')||'null');
+    if(!raw||typeof raw!=='object')return fallback;
+    const unlocked=(Array.isArray(raw.unlockedBirds)?raw.unlockedBirds:[]).filter((id:any)=>id in BIRDS) as BirdId[];
+    if(!unlocked.includes('dublin'))unlocked.unshift('dublin');
+    const selected=(raw.selectedBird in BIRDS&&unlocked.includes(raw.selectedBird))?raw.selectedBird:'dublin';
+    return {
+      coins:Math.max(0,Math.floor(Number(raw.coins)||0)),
+      selectedBird:selected,
+      unlockedBirds:[...new Set(unlocked)],
+      upgrades:{
+        wings:Phaser.Math.Clamp(Math.floor(Number(raw.upgrades?.wings)||0),0,5),
+        beak:Phaser.Math.Clamp(Math.floor(Number(raw.upgrades?.beak)||0),0,5),
+        nerve:Phaser.Math.Clamp(Math.floor(Number(raw.upgrades?.nerve)||0),0,5)
+      }
+    };
+  }catch{return fallback;}
+}
+let progress=loadProgress();
+function saveProgress(){localStorage.setItem('seagull-progress-v1',JSON.stringify(progress));}
+function selectedBird(){return BIRDS[progress.selectedBird];}
+
 
 type Target = {
   person: Phaser.Physics.Arcade.Sprite;
@@ -78,7 +123,7 @@ function setWanted(level:number){
   const el=$('wantedStars');
   if(el)el.textContent='★'.repeat(level)+'☆'.repeat(5-level);
 }
-function setFeathers(n:number){setText('feathers','●'.repeat(n)+'○'.repeat(3-n));}
+function setFeathers(n:number,total=3){setText('feathers','●'.repeat(Math.max(0,n))+'○'.repeat(Math.max(0,total-n)));}
 
 function setupStick(){
   const zone=$('stickZone') as HTMLElement|null;
@@ -127,7 +172,10 @@ class DameStreetScene extends Phaser.Scene{
   stolen=0;
   wanted=0;
   heat=0;
-  feathers=3;
+  bird=selectedBird();
+  maxFeathers=this.bird.feathers;
+  feathers=this.maxFeathers;
+  completedMissions=0;
   combo=1;
   lastTheftAt=0;
   lastHeatEvent=0;
@@ -172,6 +220,7 @@ class DameStreetScene extends Phaser.Scene{
 
     this.shadow=this.add.ellipse(520,780,74,24,0x173747,.25).setDepth(39);
     this.gull=this.physics.add.sprite(520,690,'gull-1').setDepth(60).setDisplaySize(118,84);
+    if(this.bird.tint)this.gull.setTint(this.bird.tint);else this.gull.clearTint();
     this.gull.setCollideWorldBounds(true);
     this.gull.body!.setCircle(28,14,12);
     this.anims.create({key:'fly',frames:[{key:'gull-0'},{key:'gull-1'},{key:'gull-2'},{key:'gull-1'}],frameRate:8,repeat:-1});
@@ -204,7 +253,7 @@ class DameStreetScene extends Phaser.Scene{
     setText('version',VERSION);
     setText('score','0');
     setText('stolen','0');
-    setWanted(0);setFeathers(3);this.setMission(0);
+    setWanted(0);setFeathers(this.feathers,this.maxFeathers);this.setMission(0);
     this.time.delayedCall(900,()=>this.toast('Find food. Dive low. Grab it. Get out.'));
     const tutorialKey='seagull-tutorial-seen-v1';
     if(!new URLSearchParams(location.search).has('smoke')&&!localStorage.getItem(tutorialKey)){
@@ -606,7 +655,8 @@ class DameStreetScene extends Phaser.Scene{
     if(boost&&this.grounded){this.grounded=false;this.altitudeTarget=.74;this.gull.play('fly');this.toast('BACK IN THE AIR');}
     if(diveHeld&&!boost&&this.altitude<.16){this.grounded=true;this.altitudeTarget=.045;}
     if(this.grounded&&!boost)this.altitudeTarget=.045;
-    const speed=this.grounded?115:(boost?430:315);
+    const speedBoost=this.bird.speed*(1+progress.upgrades.wings*.025);
+    const speed=(this.grounded?115:(boost?430:315))*speedBoost;
     this.gull.setVelocity(dx*speed,dy*speed);
     if(Math.abs(dx)>.08)this.gull.setFlipX(dx<0);
     this.gull.setAngle(Phaser.Math.Clamp(dy*10,-10,10));
@@ -619,7 +669,7 @@ class DameStreetScene extends Phaser.Scene{
       if(!this.toldWaddle){this.toldWaddle=true;this.toast('WADDLE MODE · FLAP TO TAKE OFF');}
     }else if(this.gull.texture.key==='gull-walk'&&!this.gull.anims.isPlaying)this.gull.play('fly');
     this.altitude=Phaser.Math.Linear(this.altitude,this.altitudeTarget,Math.min(1,dt*4.8));
-    const sc=this.grounded ? .78 : (.82+this.altitude*.5);this.gull.setScale(sc);
+    const sc=(this.grounded ? .78 : (.82+this.altitude*.5))*this.bird.scale;this.gull.setScale(sc);
     if(this.grounded)this.gull.setAngle(0);
     this.gull.setDepth(45+Math.round(this.altitude*28));
     this.shadow.setPosition(this.gull.x+16,this.gull.y+28+this.altitude*58);
@@ -664,13 +714,14 @@ class DameStreetScene extends Phaser.Scene{
   tryGrab(time:number){
     let t=this.selected;
     if(!t||t.stolen){
-      let best:Target|null=null,d=95;
+      let best:Target|null=null,d=this.bird.grab+progress.upgrades.beak*5;
       for(const q of this.targets){if(q.stolen)continue;const nd=Phaser.Math.Distance.Between(this.gull.x,this.gull.y,q.person.x,q.person.y);if(nd<d){best=q;d=nd;}}
       t=best;
     }
     if(!t){this.toast('Nothing to grab.');return;}
     const d=Phaser.Math.Distance.Between(this.gull.x,this.gull.y,t.person.x,t.person.y);
-    if(this.altitude>.34||d>92){this.toast(this.altitude>.34?'Dive lower first.':'Too far away.');return;}
+    const grabReach=this.bird.grab+progress.upgrades.beak*5;
+    if(this.altitude>.34||d>grabReach){this.toast(this.altitude>.34?'Dive lower first.':'Too far away.');return;}
     t.stolen=true;t.food.setVisible(false);t.ring.setVisible(false);t.panicUntil=time+3200;
     this.combo=this.lastTheftAt>0&&time-this.lastTheftAt<8000?Math.min(4,this.combo+1):1;
     this.lastTheftAt=time;
@@ -683,7 +734,8 @@ class DameStreetScene extends Phaser.Scene{
     this.scorePop('+'+earned+(this.combo>1?'  x'+this.combo:''));
     this.toast('STOLEN: '+t.name.toUpperCase()+'  +'+earned);sfx('grab');haptic(30);
     this.emote(t.person,t.temperament==='defender'?'OI!':'!');
-    this.addHeat(13+(t.value>=50?5:0),time);
+    const heatGain=(13+(t.value>=50?5:0))*this.bird.heat*(1-progress.upgrades.nerve*.04);
+    this.addHeat(heatGain,time);
     this.advanceMission(t.name);
     this.time.delayedCall(Phaser.Math.Between(8500,14500),()=>this.recycleTarget(t));
     if(this.selected===t)this.selected=null;
@@ -753,7 +805,7 @@ class DameStreetScene extends Phaser.Scene{
     this.missionProgress++;
     setText('missionProgress',`${Math.min(this.missionProgress,this.missionTarget)}/${this.missionTarget}`);
     if(this.missionProgress>=this.missionTarget){
-      const bonus=150+this.missionIndex*50;this.score+=bonus;setText('score',Math.floor(this.score).toLocaleString());
+      const bonus=150+this.missionIndex*50;this.score+=bonus;this.completedMissions++;setText('score',Math.floor(this.score).toLocaleString());
       this.toast('MISSION COMPLETE  +'+bonus);this.scorePop('MISSION +'+bonus,'#ffe66f');tone(740,.08,'square',.025,160);haptic(45);
       this.time.delayedCall(900,()=>this.setMission(this.missionIndex+1));
     }
@@ -817,7 +869,7 @@ class DameStreetScene extends Phaser.Scene{
 
   hit(message:string,time:number,hard=false){
     if(time<this.invulnerableUntil||this.ended)return;
-    this.invulnerableUntil=time+1300;this.feathers-=hard?2:1;setFeathers(Math.max(0,this.feathers));
+    this.invulnerableUntil=time+1300;this.feathers-=hard?2:1;setFeathers(Math.max(0,this.feathers),this.maxFeathers);
     this.cameras.main.shake(160,.008);this.gull.setVelocity((Math.random()-.5)*450,-240);this.altitudeTarget=.75;
     this.toast(message);sfx('hit');haptic(80);
     if(this.missionIndex===4&&this.missionProgress>0){this.missionProgress=0;setText('missionProgress','0/'+this.missionTarget);this.toast('MISSION STREAK RESET');}
@@ -854,9 +906,59 @@ class DameStreetScene extends Phaser.Scene{
   gameOver(){
     if(this.ended)return;this.ended=true;this.physics.pause();
     const best=Number(localStorage.getItem('seagull-best')||0);if(this.score>best)localStorage.setItem('seagull-best',String(Math.floor(this.score)));
-    window.dispatchEvent(new CustomEvent('seagull-gameover',{detail:{score:Math.floor(this.score),stolen:this.stolen,best:Math.max(best,Math.floor(this.score))}}));
+    const coins=Math.max(2,Math.floor(this.score/90)+Math.floor(this.stolen/5)+this.completedMissions*5);
+    progress.coins+=coins;saveProgress();
+    window.dispatchEvent(new CustomEvent('seagull-gameover',{detail:{score:Math.floor(this.score),stolen:this.stolen,best:Math.max(best,Math.floor(this.score)),coins}}));
   }
 }
+
+function renderProgression(){
+  setText('coinCount',progress.coins.toLocaleString());setText('birdsCoinCount',progress.coins.toLocaleString());setText('upgradesCoinCount',progress.coins.toLocaleString());
+  setText('selectedBirdName',selectedBird().name);
+  const birds=$('birdGrid');if(birds){
+    birds.replaceChildren();
+    for(const [id,bird] of Object.entries(BIRDS) as [BirdId,(typeof BIRDS)[BirdId]][]){
+      const unlocked=progress.unlockedBirds.includes(id),selected=progress.selectedBird===id;
+      const card=document.createElement('article');card.className='bird-card'+(selected?' selected':'');
+      const img=document.createElement('img');img.className='bird-preview';img.src='/games/seagull-simulator/art/gull-mid.svg';img.alt='';img.style.filter=bird.previewFilter;
+      const copy=document.createElement('div');copy.className='bird-copy';
+      const name=document.createElement('h3');name.textContent=bird.name;
+      const blurb=document.createElement('p');blurb.textContent=bird.blurb;
+      const stats=document.createElement('div');stats.className='stats';
+      for(const txt of [`Speed ${Math.round(bird.speed*100)}`,`Grab ${bird.grab}`,`Feathers ${bird.feathers}`]){const s=document.createElement('span');s.textContent=txt;stats.append(s);}
+      copy.append(name,blurb,stats);
+      const action=document.createElement('button');action.type='button';action.className='bird-action';
+      if(selected){action.textContent='SELECTED';action.disabled=true;}
+      else if(unlocked){action.textContent='SELECT';action.addEventListener('click',()=>{progress.selectedBird=id;saveProgress();renderProgression();});}
+      else{
+        action.textContent=progress.coins>=bird.cost?`UNLOCK · ${bird.cost} COINS`:`LOCKED · ${bird.cost} COINS`;
+        action.disabled=progress.coins<bird.cost;
+        action.addEventListener('click',()=>{if(progress.coins<bird.cost)return;progress.coins-=bird.cost;progress.unlockedBirds.push(id);progress.selectedBird=id;saveProgress();renderProgression();});
+      }
+      card.append(img,copy,action);birds.append(card);
+    }
+  }
+  const upgrades=$('upgradeGrid');if(upgrades){
+    upgrades.replaceChildren();
+    for(const key of ['wings','beak','nerve'] as UpgradeKey[]){
+      const meta=UPGRADE_META[key],level=progress.upgrades[key],cost=level<5?UPGRADE_COSTS[level]:0;
+      const card=document.createElement('article');card.className='upgrade-card';
+      const name=document.createElement('h3');name.textContent=meta.name;
+      const dots=document.createElement('div');dots.className='level-dots';for(let i=0;i<5;i++){const dot=document.createElement('i');if(i<level)dot.className='on';dots.append(dot);}
+      const blurb=document.createElement('p');blurb.textContent=meta.blurb;
+      const buy=document.createElement('button');buy.type='button';buy.className='buy-upgrade';
+      if(level>=5){buy.textContent='MAX LEVEL';buy.disabled=true;}
+      else{buy.textContent=progress.coins>=cost?`UPGRADE · ${cost} COINS`:`NEED ${cost} COINS`;buy.disabled=progress.coins<cost;buy.addEventListener('click',()=>{if(progress.coins<cost||progress.upgrades[key]>=5)return;progress.coins-=cost;progress.upgrades[key]++;saveProgress();renderProgression();});}
+      card.append(name,dots,blurb,buy);upgrades.append(card);
+    }
+  }
+}
+function openPanel(id:string){$(id)?.classList.remove('hidden');renderProgression();}
+function closePanel(id:string){$(id)?.classList.add('hidden');}
+$('birdsBtn')?.addEventListener('click',()=>openPanel('birdsPanel'));
+$('upgradesBtn')?.addEventListener('click',()=>openPanel('upgradesPanel'));
+document.querySelectorAll<HTMLElement>('[data-close-panel]').forEach(b=>b.addEventListener('click',()=>closePanel(String(b.dataset.closePanel))));
+renderProgression();
 
 function startGame(){
   if((window as any).__seagullGame)return;
@@ -890,5 +992,5 @@ $('restartBtn')?.addEventListener('click',()=>location.reload());
 window.addEventListener('seagull-gameover',(ev:any)=>{
   $('controls')?.classList.add('hidden');$('gameOver')?.classList.remove('hidden');
   setText('finalScore',Number(ev.detail.score).toLocaleString());
-  setText('finalStolen',String(ev.detail.stolen));setText('bestScore',Number(ev.detail.best).toLocaleString());
+  setText('finalStolen',String(ev.detail.stolen));setText('bestScore',Number(ev.detail.best).toLocaleString());setText('coinsEarned',String(ev.detail.coins||0));renderProgression();
 });
