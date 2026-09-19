@@ -46,6 +46,10 @@ jobs:
           google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=4500 --screenshot=/tmp/seagull-smoke/college-green.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&area=college'
           google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=4500 --screenshot=/tmp/seagull-smoke/grafton-street.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&area=grafton'
           google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=4500 --screenshot=/tmp/seagull-smoke/stephens-green.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&area=green'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=844,390 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/mobile-title.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=844,390 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/mobile-game.png 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/birds-panel.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&panel=birds'
+          google-chrome --headless --no-sandbox --hide-scrollbars --window-size=1280,720 --virtual-time-budget=3500 --screenshot=/tmp/seagull-smoke/upgrades-panel.png 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&panel=upgrades'
           dom=$(google-chrome --headless --no-sandbox --dump-dom --virtual-time-budget=6500 'http://127.0.0.1:4173/games/seagull-simulator/?autostart=1&smoke=1&exercise=1')
           echo "$dom" | grep 'data-seagull-ready="1"'
           echo "$dom" | grep 'data-seagull-exercise-scheduled="1"'
@@ -57,6 +61,10 @@ jobs:
           test -s /tmp/seagull-smoke/college-green.png
           test -s /tmp/seagull-smoke/grafton-street.png
           test -s /tmp/seagull-smoke/stephens-green.png
+          test -s /tmp/seagull-smoke/mobile-title.png
+          test -s /tmp/seagull-smoke/mobile-game.png
+          test -s /tmp/seagull-smoke/birds-panel.png
+          test -s /tmp/seagull-smoke/upgrades-panel.png
       - name: Upload smoke screenshot
         uses: actions/upload-artifact@v4
         with:
