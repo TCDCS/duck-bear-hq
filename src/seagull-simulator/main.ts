@@ -267,8 +267,8 @@ class DameStreetScene extends Phaser.Scene{
     }
     this.add.text(110,796,'BUS LANE',{fontFamily:'Arial Black',fontSize:'28px',color:'#e9dcca'}).setDepth(2).setAngle(-2);
     this.add.text(2660,1155,'BUS LANE',{fontFamily:'Arial Black',fontSize:'28px',color:'#e9dcca'}).setDepth(2).setAngle(-2);
-    g.lineStyle(5,0x293a42,.9);g.lineBetween(3600,935,WORLD_W,935);g.lineBetween(3600,1005,WORLD_W,1005);
-    g.lineStyle(2,0xc5d1ce,.85);g.lineBetween(3600,944,WORLD_W,944);g.lineBetween(3600,996,WORLD_W,996);
+    g.lineStyle(5,0x293a42,.9);g.lineBetween(3600,895,WORLD_W,895);g.lineBetween(3600,955,WORLD_W,955);
+    g.lineStyle(2,0xc5d1ce,.85);g.lineBetween(3600,904,WORLD_W,904);g.lineBetween(3600,946,WORLD_W,946);
     this.add.text(3890,1085,'COLLEGE GREEN',{fontFamily:'Arial Black',fontSize:'30px',color:'#f3e9c8',stroke:'#354e59',strokeThickness:5}).setDepth(3).setAngle(-2);
   }
 
@@ -316,6 +316,7 @@ class DameStreetScene extends Phaser.Scene{
     g.fillStyle(0x627f87);for(let wx=x+142;wx<x+680;wx+=164)g.fillRoundedRect(wx,205,80,105,4);
     g.fillStyle(0x3b565f);g.fillRoundedRect(x+337,335,104,135,5);
     this.add.text(x+388,119,'BANK OF IRELAND',{fontFamily:'Arial Black',fontSize:'24px',color:'#47505a'}).setOrigin(.5).setDepth(4);
+    this.add.text(x+388,323,'BANK OF IRELAND',{fontFamily:'Arial Black',fontSize:'15px',color:'#55483b',backgroundColor:'#eadbbce6',padding:{x:10,y:5}}).setOrigin(.5).setDepth(5);
     // Open College Green edge and secondary frontage.
     g.fillStyle(0xe6d4b6);g.fillRect(x+790,105,760,365);
     g.fillStyle(0xc5a980);g.fillRect(x+790,105,760,30);
@@ -444,7 +445,7 @@ class DameStreetScene extends Phaser.Scene{
     };
     for(let i=0;i<5;i++)add(i%3===0?'bus':i%3===1?'taxi':'van',450+i*680,835,100+Math.random()*30,0);
     for(let i=0;i<5;i++){add(i%2?'taxi':'bus',260+i*720,1165,-105-Math.random()*25,1);this.vehicles[this.vehicles.length-1].sprite.setFlipX(true);}
-    add('luas',3900,970,72,2,3600,5200);add('luas',4920,970,-68,2,3600,5200);this.vehicles[this.vehicles.length-1].sprite.setFlipX(true);
+    add('luas',3900,925,72,2,3600,5200);add('luas',4920,925,-68,2,3600,5200);this.vehicles[this.vehicles.length-1].sprite.setFlipX(true);
   }
 
   spawnPeople(){
