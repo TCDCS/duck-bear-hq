@@ -11,15 +11,19 @@ const FOOD_TYPES=[
 ] as const;
 const WORLD_W=8800;
 const WORLD_H=1800;
-const VERSION='0.5.0-alpha';
+const VERSION='0.6.0-alpha';
 
 type BirdId='dublin'|'big-lad'|'sneaky'|'absolute-unit';
 type UpgradeKey='wings'|'beak'|'nerve';
+type AchievementId='mine-now'|'spice-raider'|'combo-four'|'public-menace'|'ground-job'|'full-tour'|'mission-machine'|'feeding-frenzy';
+type LifetimeStats={runs:number;totalFood:number;totalScore:number;bestCombo:number;highestWanted:number;missionsCompleted:number};
 type ProgressState={
   coins:number;
   selectedBird:BirdId;
   unlockedBirds:BirdId[];
   upgrades:Record<UpgradeKey,number>;
+  achievements:AchievementId[];
+  stats:LifetimeStats;
 };
 const BIRDS:Record<BirdId,{name:string;cost:number;speed:number;grab:number;heat:number;feathers:number;scale:number;tint?:number;previewFilter:string;blurb:string}>={
   dublin:{name:'Dublin Gull',cost:0,speed:1,grab:92,heat:1,feathers:3,scale:1,previewFilter:'none',blurb:'Balanced. Loud. Completely shameless.'},
@@ -33,8 +37,18 @@ const UPGRADE_META:Record<UpgradeKey,{name:string;blurb:string}>={
   beak:{name:'Beak',blurb:'A little more reach when grabbing food.'},
   nerve:{name:'Nerve',blurb:'Wanted heat builds slightly more slowly.'}
 };
+const ACHIEVEMENTS:Record<AchievementId,{name:string;desc:string;icon:string}>={
+  'mine-now':{name:'Mine Now',desc:'Steal your first snack.',icon:'01'},
+  'spice-raider':{name:'Spice Raider',desc:'Steal a spice bag.',icon:'SB'},
+  'combo-four':{name:'Four on the Floor',desc:'Reach a x4 theft combo.',icon:'x4'},
+  'public-menace':{name:'Public Menace',desc:'Reach five-star wanted heat.',icon:'★'},
+  'ground-job':{name:'Ground Job',desc:'Steal food while waddling on the ground.',icon:'G'},
+  'full-tour':{name:'Full Tour',desc:'Visit all four Dublin areas in one run.',icon:'4'},
+  'mission-machine':{name:'Mission Machine',desc:'Complete three missions in one run.',icon:'M'},
+  'feeding-frenzy':{name:'Feeding Frenzy',desc:'Steal 25 items in one run.',icon:'25'}
+};
 function loadProgress():ProgressState{
-  const fallback:ProgressState={coins:0,selectedBird:'dublin',unlockedBirds:['dublin'],upgrades:{wings:0,beak:0,nerve:0}};
+  const fallback:ProgressState={coins:0,selectedBird:'dublin',unlockedBirds:['dublin'],upgrades:{wings:0,beak:0,nerve:0},achievements:[],stats:{runs:0,totalFood:0,totalScore:0,bestCombo:1,highestWanted:0,missionsCompleted:0}};
   try{
     const raw=JSON.parse(storageGet('seagull-progress-v1')||'null');
     if(!raw||typeof raw!=='object')return fallback;
@@ -49,6 +63,15 @@ function loadProgress():ProgressState{
         wings:Phaser.Math.Clamp(Math.floor(Number(raw.upgrades?.wings)||0),0,5),
         beak:Phaser.Math.Clamp(Math.floor(Number(raw.upgrades?.beak)||0),0,5),
         nerve:Phaser.Math.Clamp(Math.floor(Number(raw.upgrades?.nerve)||0),0,5)
+      },
+      achievements:(Array.isArray(raw.achievements)?raw.achievements:[]).filter((id:any)=>id in ACHIEVEMENTS) as AchievementId[],
+      stats:{
+        runs:Math.max(0,Math.floor(Number(raw.stats?.runs)||0)),
+        totalFood:Math.max(0,Math.floor(Number(raw.stats?.totalFood)||0)),
+        totalScore:Math.max(0,Math.floor(Number(raw.stats?.totalScore)||0)),
+        bestCombo:Phaser.Math.Clamp(Math.floor(Number(raw.stats?.bestCombo)||1),1,4),
+        highestWanted:Phaser.Math.Clamp(Math.floor(Number(raw.stats?.highestWanted)||0),0,5),
+        missionsCompleted:Math.max(0,Math.floor(Number(raw.stats?.missionsCompleted)||0))
       }
     };
   }catch{return fallback;}
@@ -56,6 +79,10 @@ function loadProgress():ProgressState{
 let progress=loadProgress();
 function saveProgress(){storageSet('seagull-progress-v1',JSON.stringify(progress));}
 function selectedBird(){return BIRDS[progress.selectedBird];}
+function unlockAchievement(id:AchievementId){
+  if(progress.achievements.includes(id))return false;
+  progress.achievements.push(id);saveProgress();renderProgression();return true;
+}
 
 
 type Target = {
@@ -178,6 +205,12 @@ class DameStreetScene extends Phaser.Scene{
   maxFeathers=this.bird.feathers;
   feathers=this.maxFeathers;
   completedMissions=0;
+  highestWanted=0;
+  bestCombo=1;
+  bestTheftName='—';
+  bestTheftValue=0;
+  activeRunMs=0;
+  areasVisited=new Set<string>();
   combo=1;
   lastTheftAt=0;
   lastHeatEvent=0;
@@ -666,6 +699,7 @@ class DameStreetScene extends Phaser.Scene{
 
   update(time:number,delta:number){
     if(this.ended)return;
+    this.activeRunMs+=delta;
     const dt=Math.min(delta,50)/1000;
     let dx=controls.x,dy=controls.y;
     if(this.keys){
@@ -734,6 +768,8 @@ class DameStreetScene extends Phaser.Scene{
     this.districtText.setText(zone);
     if(this.lastZone&&zone!==this.lastZone)this.toast('ENTERING '+zone);
     this.lastZone=zone;
+    this.areasVisited.add(zone);
+    if(this.areasVisited.size===4)this.award('full-tour');
     const cameraBias=this.gull.x>=7000?0:(this.gull.x>=5200?330:190);
     this.cameras.main.setFollowOffset(0,cameraBias);
   }
@@ -773,6 +809,13 @@ class DameStreetScene extends Phaser.Scene{
     this.lastTheftAt=time;
     const earned=Math.round(t.value*this.combo*(1+this.wanted*.12));
     this.score+=earned;this.stolen++;
+    this.bestCombo=Math.max(this.bestCombo,this.combo);
+    if(t.value>this.bestTheftValue){this.bestTheftValue=t.value;this.bestTheftName=t.name;}
+    this.award('mine-now');
+    if(t.name==='spice bag')this.award('spice-raider');
+    if(this.combo>=4)this.award('combo-four');
+    if(this.grounded)this.award('ground-job');
+    if(this.stolen>=25)this.award('feeding-frenzy');
     this.altitudeTarget=.82;this.diveUntil=time;this.diveTarget=null;this.diveAssistUntil=0;
     this.carryText.setText(this.combo>1?`${t.name.toUpperCase()} · x${this.combo}`:t.name.toUpperCase()+'!');
     this.time.delayedCall(1150,()=>this.carryText.setText(''));
@@ -806,7 +849,8 @@ class DameStreetScene extends Phaser.Scene{
     const level=Phaser.Math.Clamp(Math.ceil(this.heat/20),0,5);
     if(level===this.wanted){setWanted(level);return;}
     const previous=this.wanted,rising=level>previous;
-    this.wanted=level;setWanted(level);
+    this.wanted=level;this.highestWanted=Math.max(this.highestWanted,level);setWanted(level);
+    if(level>=5)this.award('public-menace');
     if(rising){
       sfx('wanted');
       this.toast(level>=4?'DUBLIN HAS HAD ENOUGH.':'WANTED LEVEL '+level);
@@ -856,7 +900,7 @@ class DameStreetScene extends Phaser.Scene{
     this.missionProgress++;
     setText('missionProgress',`${Math.min(this.missionProgress,this.missionTarget)}/${this.missionTarget}`);
     if(this.missionProgress>=this.missionTarget){
-      const bonus=150+this.missionIndex*50;this.score+=bonus;this.completedMissions++;setText('score',Math.floor(this.score).toLocaleString());
+      const bonus=150+this.missionIndex*50;this.score+=bonus;this.completedMissions++;if(this.completedMissions>=3)this.award('mission-machine');setText('score',Math.floor(this.score).toLocaleString());
       this.toast('MISSION COMPLETE  +'+bonus);this.scorePop('MISSION +'+bonus,'#ffe66f');tone(740,.08,'square',.025,160);haptic(45);
       this.time.delayedCall(900,()=>this.setMission(this.missionIndex+1));
     }
@@ -943,6 +987,14 @@ class DameStreetScene extends Phaser.Scene{
     if(this.feathers<=0)this.gameOver();
   }
 
+  award(id:AchievementId){
+    if(!unlockAchievement(id))return;
+    const a=ACHIEVEMENTS[id];
+    this.toast('TROPHY · '+a.name.toUpperCase());
+    this.scorePop('TROPHY UNLOCKED','#ffe66f');
+    tone(660,.07,'square',.02,110);setTimeout(()=>tone(920,.1,'triangle',.024,140),75);haptic(45);
+  }
+
   scorePop(text:string,color='#ffffff'){
     const pop=this.add.text(this.gull.x,this.gull.y-70,text,{fontFamily:'Arial Black',fontSize:'24px',color,stroke:'#17384b',strokeThickness:6}).setOrigin(.5).setDepth(120);
     this.tweens.add({targets:pop,y:pop.y-70,alpha:0,scale:1.16,duration:850,ease:'Cubic.easeOut',onComplete:()=>pop.destroy()});
@@ -975,14 +1027,42 @@ class DameStreetScene extends Phaser.Scene{
     if(this.ended)return;this.ended=true;this.physics.pause();
     const best=Number(storageGet('seagull-best')||0);if(this.score>best)storageSet('seagull-best',String(Math.floor(this.score)));
     const coins=Math.max(5,Math.floor(this.score/50)+Math.floor(this.stolen/3)+this.completedMissions*8);
-    progress.coins+=coins;saveProgress();
-    window.dispatchEvent(new CustomEvent('seagull-gameover',{detail:{score:Math.floor(this.score),stolen:this.stolen,best:Math.max(best,Math.floor(this.score)),coins}}));
+    progress.coins+=coins;
+    progress.stats.runs++;
+    progress.stats.totalFood+=this.stolen;
+    progress.stats.totalScore+=Math.floor(this.score);
+    progress.stats.bestCombo=Math.max(progress.stats.bestCombo,this.bestCombo);
+    progress.stats.highestWanted=Math.max(progress.stats.highestWanted,this.highestWanted);
+    progress.stats.missionsCompleted+=this.completedMissions;
+    saveProgress();
+    window.dispatchEvent(new CustomEvent('seagull-gameover',{detail:{
+      score:Math.floor(this.score),stolen:this.stolen,best:Math.max(best,Math.floor(this.score)),coins,
+      bestTheft:this.bestTheftName,bestCombo:this.bestCombo,highestWanted:this.highestWanted,
+      areas:this.areasVisited.size,runSeconds:Math.max(1,Math.round(this.activeRunMs/1000))
+    }}));
   }
 }
 
 function renderProgression(){
   setText('coinCount',progress.coins.toLocaleString());setText('birdsCoinCount',progress.coins.toLocaleString());setText('upgradesCoinCount',progress.coins.toLocaleString());
   setText('selectedBirdName',selectedBird().name);
+  setText('trophyCount',progress.achievements.length+'/'+Object.keys(ACHIEVEMENTS).length);
+  setText('lifetimeRuns',progress.stats.runs.toLocaleString());
+  setText('lifetimeFood',progress.stats.totalFood.toLocaleString());
+  setText('lifetimeScore',progress.stats.totalScore.toLocaleString());
+  setText('lifetimeCombo','x'+progress.stats.bestCombo);
+  const trophies=$('trophyGrid');if(trophies){
+    trophies.replaceChildren();
+    for(const [id,a] of Object.entries(ACHIEVEMENTS) as [AchievementId,(typeof ACHIEVEMENTS)[AchievementId]][]){
+      const unlocked=progress.achievements.includes(id);
+      const card=document.createElement('article');card.className='trophy-card'+(unlocked?'':' locked');
+      const icon=document.createElement('div');icon.className='trophy-icon';icon.textContent=a.icon;
+      const copy=document.createElement('div');const name=document.createElement('h3');name.textContent=unlocked?a.name:'???';
+      const desc=document.createElement('p');desc.textContent=unlocked?a.desc:'Keep causing trouble to reveal this trophy.';
+      const state=document.createElement('small');state.textContent=unlocked?'UNLOCKED':'LOCKED';
+      copy.append(name,desc,state);card.append(icon,copy);trophies.append(card);
+    }
+  }
   const birds=$('birdGrid');if(birds){
     birds.replaceChildren();
     for(const [id,bird] of Object.entries(BIRDS) as [BirdId,(typeof BIRDS)[BirdId]][]){
@@ -1025,11 +1105,13 @@ function openPanel(id:string){$(id)?.classList.remove('hidden');renderProgressio
 function closePanel(id:string){$(id)?.classList.add('hidden');}
 $('birdsBtn')?.addEventListener('click',()=>openPanel('birdsPanel'));
 $('upgradesBtn')?.addEventListener('click',()=>openPanel('upgradesPanel'));
+$('trophiesBtn')?.addEventListener('click',()=>openPanel('trophiesPanel'));
 document.querySelectorAll<HTMLElement>('[data-close-panel]').forEach(b=>b.addEventListener('click',()=>closePanel(String(b.dataset.closePanel))));
 renderProgression();
 const previewPanel=new URLSearchParams(location.search).get('panel');
 if(previewPanel==='birds')openPanel('birdsPanel');
 if(previewPanel==='upgrades')openPanel('upgradesPanel');
+if(previewPanel==='trophies')openPanel('trophiesPanel');
 
 let paused=false;
 function setGamePaused(next:boolean){
@@ -1090,5 +1172,9 @@ $('restartBtn')?.addEventListener('click',()=>location.reload());
 window.addEventListener('seagull-gameover',(ev:any)=>{
   paused=false;$('pausePanel')?.classList.add('hidden');$('controls')?.classList.add('hidden');$('gameOver')?.classList.remove('hidden');
   setText('finalScore',Number(ev.detail.score).toLocaleString());
-  setText('finalStolen',String(ev.detail.stolen));setText('bestScore',Number(ev.detail.best).toLocaleString());setText('coinsEarned',String(ev.detail.coins||0));setText('finalBird',selectedBird().name);renderProgression();
+  setText('finalStolen',String(ev.detail.stolen));setText('bestScore',Number(ev.detail.best).toLocaleString());setText('coinsEarned',String(ev.detail.coins||0));setText('finalBird',selectedBird().name);
+  setText('finalBestTheft',String(ev.detail.bestTheft||'—'));setText('finalBestCombo','x'+String(ev.detail.bestCombo||1));
+  setText('finalWanted',String(ev.detail.highestWanted||0)+'/5');setText('finalAreas',String(ev.detail.areas||1)+'/4');
+  const secs=Math.max(0,Number(ev.detail.runSeconds)||0);setText('finalRunTime',Math.floor(secs/60)+':'+String(secs%60).padStart(2,'0'));
+  renderProgression();
 });
