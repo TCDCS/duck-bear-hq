@@ -136,6 +136,7 @@ class DameStreetScene extends Phaser.Scene{
     setText('stolen','0');
     setWanted(0);setFeathers(3);
     this.time.delayedCall(900,()=>this.toast('Find food. Dive low. Grab it. Get out.'));
+    document.documentElement.dataset.seagullReady='1';
   }
 
   drawWorld(){
@@ -481,8 +482,9 @@ function startGame(){
   $('hud')?.classList.remove('hidden');
   $('controls')?.classList.remove('hidden');
   setupStick();bindButton('diveBtn','dive');bindButton('grabBtn','grab');bindButton('boostBtn','boost');
+  const smoke=new URLSearchParams(location.search).has('smoke');
   (window as any).__seagullGame=new Phaser.Game({
-    type:Phaser.AUTO,
+    type:smoke?Phaser.CANVAS:Phaser.AUTO,
     parent:'game',
     width:GAME_W,
     height:GAME_H,
@@ -495,6 +497,7 @@ function startGame(){
   });
 }
 $('playBtn')?.addEventListener('click',startGame);
+if(new URLSearchParams(location.search).has('autostart'))startGame();
 $('restartBtn')?.addEventListener('click',()=>location.reload());
 window.addEventListener('seagull-gameover',(ev:any)=>{
   $('controls')?.classList.add('hidden');$('gameOver')?.classList.remove('hidden');
