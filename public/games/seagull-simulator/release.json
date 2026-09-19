@@ -1,7 +1,7 @@
 {
   "game": "seagull-simulator",
   "title": "Seagull Simulator: Dublin",
-  "version": "0.5.0-alpha",
+  "version": "0.6.0-alpha",
   "engine": "Phaser 4 + TypeScript",
   "status": "playable-alpha",
   "area": "Dame Street + College Green + Grafton Street + St Stephen's Green",
@@ -31,7 +31,11 @@
     "smoothed arcade flight",
     "persistent dive steering assist",
     "high-altitude heat escape",
-    "Garda line-of-sight loss"
+    "Garda line-of-sight loss",
+    "eight local trophies",
+    "lifetime run statistics",
+    "richer run-end summary",
+    "active play-time tracking"
   ],
   "progression": {
     "storage": "local device",
@@ -45,5 +49,23 @@
     "diveAssistMs": 760,
     "gardaLoseSightMs": 1900,
     "gardaCooldownMs": 3200
-  }
+  },
+  "achievements": {
+    "count": 8,
+    "storage": "local device",
+    "examples": [
+      "Mine Now",
+      "Four on the Floor",
+      "Public Menace",
+      "Full Tour",
+      "Feeding Frenzy"
+    ]
+  },
+  "runSummary": [
+    "best theft",
+    "best combo",
+    "highest wanted",
+    "areas visited",
+    "active run time"
+  ]
 }
