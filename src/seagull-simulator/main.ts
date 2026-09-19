@@ -311,6 +311,7 @@ class DameStreetScene extends Phaser.Scene{
     this.anims.create({key:'fly',frames:[{key:'gull-0'},{key:'gull-1'},{key:'gull-2'},{key:'gull-1'}],frameRate:8,repeat:-1});
     this.gull.play('fly');
     const startArea=new URLSearchParams(location.search).get('area');
+    if(startArea==='dame-east')this.gull.setPosition(2200,690);
     if(startArea==='college')this.gull.setPosition(4080,690);
     if(startArea==='grafton')this.gull.setPosition(5950,760);
     if(startArea==='green')this.gull.setPosition(7700,1000);
