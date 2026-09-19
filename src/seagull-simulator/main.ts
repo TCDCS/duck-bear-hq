@@ -11,7 +11,7 @@ const FOOD_TYPES=[
 ] as const;
 const WORLD_W=5200;
 const WORLD_H=1800;
-const VERSION='0.1.0-alpha';
+const VERSION='0.2.0-alpha';
 
 type Target = {
   person: Phaser.Physics.Arcade.Sprite;
