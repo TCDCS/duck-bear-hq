@@ -52,6 +52,17 @@ test('runtime-rendered nameboards and final Luas sequence are present',()=>{
   assert.match(source,/camera\.camera\.fov/);
 });
 
+test('clean v0.4 replaces placeholder people with humanoid rigs',()=>{
+  const source=read(game);
+  assert.match(source,/function humanoid/);
+  for(const part of ['Torso','Left leg','Right leg','Left arm','Right arm','Left hand','Right hand','Hair','Left shoe','Right shoe'])assert.match(source,new RegExp(part));
+  for(const person of ['Pavement pedestrian','Cyclist rider','Delivery rider','Umbrella handle','Umbrella canopy'])assert.match(source,new RegExp(person));
+  assert.doesNotMatch(source,/box\('rider'/);
+  assert.doesNotMatch(source,/box\('person'/);
+  assert.match(source,/dataset\.lastLuasReady/);
+  assert.match(source,/smokeParams/);
+});
+
 test('street polish includes distinct hazards and final sprint feedback',()=>{
   const source=read(game),styles=read(css);
   assert.match(source,/umbrella-hit/);
@@ -65,11 +76,13 @@ test('street polish includes distinct hazards and final sprint feedback',()=>{
 test('release metadata matches the playable slice',()=>{
   const data=JSON.parse(read(release));
   assert.equal(data.game,'Last Luas');
-  assert.equal(data.version,'0.3.0');
+  assert.equal(data.version,'0.4.0');
   assert.equal(data.engine,'PlayCanvas 2.22.2');
   assert.equal(data.durationSeconds,90);
   assert.equal(data.location,'Dawson Street, Dublin');
   assert.equal(data.environment.raisedLuasPlatforms,true);
   assert.equal(data.environment.puddleReflections,true);
   assert.equal(data.environment.runtimeNameboards,true);
+  assert.equal(data.environment.humanoidPedestrians,true);
+  assert.equal(data.environment.seatedCyclists,true);
 });
