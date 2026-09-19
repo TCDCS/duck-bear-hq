@@ -1,7 +1,7 @@
 {
   "game": "Last Luas",
-  "version": "0.3.0",
-  "status": "playable vertical slice — street identity and finish polish",
+  "version": "0.4.0",
+  "status": "visual rebuild preview — humanoid NPC pass",
   "engine": "PlayCanvas 2.22.2",
   "location": "Dawson Street, Dublin",
   "durationSeconds": 90,
@@ -19,7 +19,11 @@
     "raisedLuasPlatforms": true,
     "platformWhiteEdgeLines": true,
     "glassShelters": true,
-    "runtimeNameboards": true
+    "runtimeNameboards": true,
+    "humanoidPedestrians": true,
+    "humanoidTourists": true,
+    "seatedCyclists": true,
+    "handledUmbrellas": true
   },
   "landmarks": [
     "ARKET Dawson Street",
@@ -42,5 +46,5 @@
     "camera FOV sprint effect",
     "local best catch time"
   ],
-  "notes": "v0.3 adds runtime-rendered Dawson Street nameboards, a stronger door-closing/Luas pull-away finale and camera/audio urgency. Street geometry remains stylised and replaceable with final Blender/GLB facades."
+  "notes": "Clean v0.4 restarts from the stable v0.3 street and replaces placeholder crowd blocks with reusable humanoid rigs. No v0.4 geometry rebuild is carried over."
 }
