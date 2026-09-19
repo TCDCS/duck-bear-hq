@@ -97,6 +97,13 @@ jobs:
           name: seagull-simulator-smoke
           path: /tmp/seagull-smoke/
           if-no-files-found: error
+      - name: Upload playable Seagull build
+        uses: actions/upload-artifact@v4
+        with:
+          name: seagull-simulator-build
+          path: public/games/seagull-simulator/
+          if-no-files-found: error
+          retention-days: 30
       - name: Repository checks
         run: npm run check
       - name: Site tests
