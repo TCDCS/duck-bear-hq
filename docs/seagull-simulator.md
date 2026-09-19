@@ -78,3 +78,9 @@ The current feature branch has moved beyond the original MVP. It now includes:
 - a mobile optimisation pass that leaves only the player gull in Arcade Physics and culls distant pedestrian updates.
 
 The map and major-system scope is closed for the first release. Future work before merge should be driven by hands-on feel/performance findings rather than adding more streets, currencies, menus or modes.
+
+## Build 1.0 release rule
+
+Build 1.0 is the first live Duck & Bear release. The opening game screen must visibly show **BUILD 1.0** before play begins. The Duck & Bear homepage and Games hub also surface Build 1.0.
+
+Do not create another pre-release version number after this point. Any remaining branch changes before deployment are release-candidate hardening for Build 1.0. Once the exact Build 1.0 head passes the full validation matrix, the release path is: mark PR #61 ready, merge to main, verify the normal site deployment, then confirm the live game displays Build 1.0.
