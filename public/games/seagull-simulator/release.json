@@ -153,8 +153,8 @@
       "Disney",
       "LEGO"
     ],
-    "deployed": false,
-    "deployedDate": null
+    "deployed": true,
+    "deployedDate": "2026-09-19"
   },
   "environmentDetail": {
     "collegeGreen": "Trinity College Dublin west front / Front Gate landmark",
