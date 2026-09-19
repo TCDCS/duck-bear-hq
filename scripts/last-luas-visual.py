@@ -14,11 +14,13 @@ SHOTS = [
     {"name": "umbrella", "query": "smoke=1&focus=umbrella", "viewport": (1280, 720), "focus": "umbrella"},
     {"name": "delivery", "query": "smoke=1&focus=delivery", "viewport": (1280, 720), "focus": "delivery"},
     {"name": "mobile-umbrella", "query": "smoke=1&focus=umbrella", "viewport": (844, 390), "focus": "umbrella"},
-    {"name": "facade-arket", "query": "smoke=1&distance=10", "viewport": (1280, 720), "focus": None},
-    {"name": "facade-hodges", "query": "smoke=1&distance=43", "viewport": (1280, 720), "focus": None},
-    {"name": "facade-cafe", "query": "smoke=1&distance=171", "viewport": (1280, 720), "focus": None},
-    {"name": "facade-dawson-lounge", "query": "smoke=1&distance=279", "viewport": (1280, 720), "focus": None},
-    {"name": "facade-ivy", "query": "smoke=1&distance=340", "viewport": (1280, 720), "focus": None},
+    {"name": "facade-arket", "query": "smoke=1&landmark=arket", "viewport": (1280, 720), "focus": None, "landmark": "arket"},
+    {"name": "facade-hodges", "query": "smoke=1&landmark=hodges", "viewport": (1280, 720), "focus": None, "landmark": "hodges"},
+    {"name": "facade-cafe", "query": "smoke=1&landmark=cafe", "viewport": (1280, 720), "focus": None, "landmark": "cafe"},
+    {"name": "facade-dawson-lounge", "query": "smoke=1&landmark=dawson-lounge", "viewport": (1280, 720), "focus": None, "landmark": "dawson-lounge"},
+    {"name": "facade-ria", "query": "smoke=1&landmark=ria", "viewport": (1280, 720), "focus": None, "landmark": "ria"},
+    {"name": "facade-stanns", "query": "smoke=1&landmark=stanns", "viewport": (1280, 720), "focus": None, "landmark": "stanns"},
+    {"name": "facade-ivy", "query": "smoke=1&landmark=ivy", "viewport": (1280, 720), "focus": None, "landmark": "ivy"},
 ]
 
 with sync_playwright() as p:
@@ -59,8 +61,10 @@ with sync_playwright() as p:
             raise RuntimeError(f"{name}: expected 2 character assets, got {data.get('lastLuasCharacterAssets')}")
         if data.get("lastLuasObstacleCount") != "29":
             raise RuntimeError(f"{name}: expected 29 obstacles, got {data.get('lastLuasObstacleCount')}")
-        if shot["focus"] and data.get("lastLuasReviewFocus") != shot["focus"]:
+        if shot.get("focus") and data.get("lastLuasReviewFocus") != shot["focus"]:
             raise RuntimeError(f"{name}: review focus did not activate")
+        if shot.get("landmark") and data.get("lastLuasReviewLandmark") != shot["landmark"]:
+            raise RuntimeError(f"{name}: landmark review did not activate")
         page.wait_for_function(
             "() => document.documentElement.dataset.lastLuasSmokeStopped === '1'",
             timeout=10000,
