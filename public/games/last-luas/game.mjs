@@ -1,6 +1,6 @@
 import * as pc from 'https://cdn.jsdelivr.net/npm/playcanvas@2.22.2/build/playcanvas.mjs';
 
-const BUILD='0.3.0';
+const BUILD='0.4.0';
 const GAME={duration:90,streetLength:430,laneX:[-2.45,0,2.45],speed:5.25,hitSpeed:2.8,hitDuration:.66,jumpVelocity:7.1,gravity:18,laneSharpness:13,pullAwayAt:8.5,tramSpeed:3.25,catchGap:6.2,pixelRatio:1.5};
 const $=id=>document.getElementById(id);
 const canvas=$('application');
@@ -50,14 +50,14 @@ function buildStreet(){
   for(let d=7;d<GAME.streetLength;d+=7){box('Paving seam L'+d,new pc.Vec3(-4.35,.155,-d),new pc.Vec3(.055,.018,1.7),M.rail);box('Paving seam R'+d,new pc.Vec3(4.35,.155,-d),new pc.Vec3(.055,.018,1.7),M.rail);}
   for(let d=16,i=0;d<GAME.streetLength;d+=19,i++){
     for(const side of [-1,1]){
-      cyl('Lamp post',new pc.Vec3(side*4.72,2.35,-d),new pc.Vec3(.10,2.35,.10),M.black);
+      cyl('Lamp post',new pc.Vec3(side*4.72,2.35,-d),new pc.Vec3(.065,2.35,.065),M.black);
       box('Lamp',new pc.Vec3(side*4.72,4.82,-d),new pc.Vec3(.34,.44,.34),M.lamp);
       if(i%2===0)cyl('Bollard',new pc.Vec3(side*4.15,.52,-d-4.2),new pc.Vec3(.22,.52,.22),M.black);
     }
   }
   for(let d=28;d<GAME.streetLength;d+=34){
     box('Cross wire',new pc.Vec3(0,5.85,-d),new pc.Vec3(10.0,.025,.025),M.black);
-    cyl('Wire pole L',new pc.Vec3(-4.9,3.0,-d),new pc.Vec3(.07,3.0,.07),M.black);
+    cyl('Wire pole L',new pc.Vec3(-4.9,3.0,-d),new pc.Vec3(.045,3.0,.045),M.black);
     cyl('Wire pole R',new pc.Vec3(4.9,3.0,-d),new pc.Vec3(.07,3.0,.07),M.black);
   }
   buildGenericBlocks();
@@ -175,13 +175,41 @@ function buildWetDetails(){
   }
 }
 
+function humanoid(root,{coat=M.blue,pants=M.black,skin=M.skin,hair=M.black,shoes=M.white,scale=1,pose='walk',bag=null}={}){
+  const torso=box('Torso',new pc.Vec3(0,1.12*scale,0),new pc.Vec3(.62*scale,.86*scale,.40*scale),coat,root);
+  box('Neck',new pc.Vec3(0,1.65*scale,0),new pc.Vec3(.16*scale,.18*scale,.16*scale),skin,root);
+  sphere('Head',new pc.Vec3(0,1.92*scale,-.01),new pc.Vec3(.42*scale,.46*scale,.40*scale),skin,root);
+  box('Hair',new pc.Vec3(0,2.18*scale,.02),new pc.Vec3(.44*scale,.16*scale,.40*scale),hair,root);
+  const legL=box('Left leg',new pc.Vec3(-.18*scale,.52*scale,.02),new pc.Vec3(.22*scale,.66*scale,.26*scale),pants,root);
+  const legR=box('Right leg',new pc.Vec3(.18*scale,.52*scale,.02),new pc.Vec3(.22*scale,.66*scale,.26*scale),pants,root);
+  box('Left shoe',new pc.Vec3(-.18*scale,.13*scale,-.09*scale),new pc.Vec3(.27*scale,.16*scale,.44*scale),shoes,root);
+  box('Right shoe',new pc.Vec3(.18*scale,.13*scale,-.09*scale),new pc.Vec3(.27*scale,.16*scale,.44*scale),shoes,root);
+  const armL=box('Left arm',new pc.Vec3(-.43*scale,1.16*scale,0),new pc.Vec3(.18*scale,.68*scale,.20*scale),coat,root);
+  const armR=box('Right arm',new pc.Vec3(.43*scale,1.16*scale,0),new pc.Vec3(.18*scale,.68*scale,.20*scale),coat,root);
+  sphere('Left hand',new pc.Vec3(-.43*scale,.79*scale,-.01),new pc.Vec3(.16*scale,.16*scale,.16*scale),skin,root);
+  sphere('Right hand',new pc.Vec3(.43*scale,.79*scale,-.01),new pc.Vec3(.16*scale,.16*scale,.16*scale),skin,root);
+  if(bag)box('Backpack',new pc.Vec3(0,1.18*scale,.30*scale),new pc.Vec3(.50*scale,.60*scale,.22*scale),bag,root);
+  if(pose==='phone'){
+    armR.setLocalEulerAngles(-54,0,-16);
+    box('Phone',new pc.Vec3(.54*scale,1.48*scale,-.20*scale),new pc.Vec3(.08*scale,.23*scale,.14*scale),M.black,root);
+  }else if(pose==='umbrella'){
+    armR.setLocalEulerAngles(-72,0,-7);
+  }else if(pose==='ride'){
+    torso.setLocalEulerAngles(12,0,0);
+    armL.setLocalEulerAngles(-58,0,18);
+    armR.setLocalEulerAngles(-58,0,-18);
+    legL.setLocalEulerAngles(38,0,0);
+    legR.setLocalEulerAngles(-24,0,0);
+  }
+  return {torso,legL,legR,armL,armR};
+}
+
 function ambientPerson(z,side,phase){
   const root=new pc.Entity('Pavement pedestrian');
   root.setPosition(side*(4.95+(phase%3)*.35),0,-z);app.root.addChild(root);
-  const coat=[M.blue,M.cream,M.green,M.pink][phase%4];
-  box('body',new pc.Vec3(0,1.0,0),new pc.Vec3(.56,1.2,.42),coat,root);
-  sphere('head',new pc.Vec3(0,1.83,0),new pc.Vec3(.43,.43,.43),M.skin,root);
-  animated.push({type:'pavement',entity:root,baseX:root.getPosition().x,baseD:z,phase:phase*.7});
+  const coats=[M.blue,M.cream,M.green,M.pink],pants=[M.black,M.navy,M.black,M.blue];
+  const rig=humanoid(root,{coat:coats[phase%coats.length],pants:pants[phase%pants.length],hair:phase%3===0?M.black:M.brick,shoes:M.white,scale:.88+(phase%3)*.04,bag:phase%4===0?M.gold:null});
+  animated.push({type:'pavement',entity:root,rig,baseX:root.getPosition().x,baseD:z,phase:phase*.7});
 }
 function buildStreetLife(){
   let phase=0;
@@ -230,12 +258,31 @@ const player=buildPlayer();
 
 function obstacle(kind,d,lane,{jumpable=false}={}){
   const root=new pc.Entity(kind+' '+d);root.setPosition(lanes[lane],0,-d);app.root.addChild(root);
-  if(kind==='bollard'){cyl('bollard',new pc.Vec3(0,.55,0),new pc.Vec3(.38,.55,.38),M.black,root);}
+  let rig=null;
+  if(kind==='bollard'){cyl('bollard',new pc.Vec3(0,.55,0),new pc.Vec3(.30,.55,.30),M.black,root);box('bollard cap',new pc.Vec3(0,1.08,0),new pc.Vec3(.38,.10,.38),M.gold,root);}
   if(kind==='bin'){box('bin',new pc.Vec3(0,.72,0),new pc.Vec3(.92,1.42,.78),M.green,root);box('lid',new pc.Vec3(0,1.48,-.05),new pc.Vec3(1.0,.15,.86),M.black,root);}
   if(kind==='roadworks'){box('barrier',new pc.Vec3(0,.78,0),new pc.Vec3(1.95,1.12,.24),M.orange,root);box('barrier stripe',new pc.Vec3(0,.80,.14),new pc.Vec3(1.35,.18,.04),M.white,root);}
-  if(kind==='tourist'){box('coat',new pc.Vec3(0,1.02,0),new pc.Vec3(.72,1.30,.48),M.blue,root);sphere('head',new pc.Vec3(0,1.90,0),new pc.Vec3(.48,.48,.48),M.skin,root);box('phone',new pc.Vec3(.34,1.45,-.18),new pc.Vec3(.08,.28,.16),M.black,root);animated.push({type:'tourist',entity:root,baseX:lanes[lane],baseD:d,phase:d*.11});}
-  if(kind==='umbrella'){box('person',new pc.Vec3(0,.95,0),new pc.Vec3(.60,1.2,.45),M.cream,root);sphere('umbrella',new pc.Vec3(0,2.05,0),new pc.Vec3(1.25,.28,1.25),M.purple,root);animated.push({type:'umbrella',entity:root,baseX:lanes[lane],baseD:d,phase:d*.05});}
-  if(kind==='cyclist'||kind==='delivery'){const body=kind==='delivery'?M.green:M.blue;cyl('wheel1',new pc.Vec3(0,.48,-.55),new pc.Vec3(.48,.10,.48),M.black,root,new pc.Vec3(90,0,0));cyl('wheel2',new pc.Vec3(0,.48,.55),new pc.Vec3(.48,.10,.48),M.black,root,new pc.Vec3(90,0,0));box('rider',new pc.Vec3(0,1.30,0),new pc.Vec3(.60,1.05,.55),body,root);if(kind==='delivery')box('delivery box',new pc.Vec3(0,1.42,.48),new pc.Vec3(.75,.62,.58),M.green,root);animated.push({type:kind,entity:root,baseX:lanes[lane],baseD:d,phase:d*.07});}
+  if(kind==='tourist'){
+    rig=humanoid(root,{coat:M.blue,pants:M.black,hair:M.brick,shoes:M.white,pose:'phone',bag:M.gold});
+    animated.push({type:'tourist',entity:root,rig,baseX:lanes[lane],baseD:d,phase:d*.11});
+  }
+  if(kind==='umbrella'){
+    rig=humanoid(root,{coat:M.cream,pants:M.navy,hair:M.black,shoes:M.white,pose:'umbrella'});
+    box('Umbrella handle',new pc.Vec3(.40,1.78,-.04),new pc.Vec3(.05,1.20,.05),M.black,root);
+    sphere('Umbrella canopy',new pc.Vec3(.40,2.55,-.04),new pc.Vec3(1.22,.24,1.22),M.purple,root);
+    animated.push({type:'umbrella',entity:root,rig,baseX:lanes[lane],baseD:d,phase:d*.05});
+  }
+  if(kind==='cyclist'||kind==='delivery'){
+    const riderRoot=new pc.Entity(kind==='delivery'?'Delivery rider':'Cyclist rider');root.addChild(riderRoot);riderRoot.setLocalPosition(0,.28,-.08);
+    rig=humanoid(riderRoot,{coat:kind==='delivery'?M.green:M.blue,pants:M.black,hair:M.black,shoes:M.white,scale:.86,pose:'ride',bag:kind==='delivery'?M.green:null});
+    cyl('Front bicycle wheel',new pc.Vec3(0,.48,-.72),new pc.Vec3(.48,.07,.48),M.black,root,new pc.Vec3(90,0,0));
+    cyl('Rear bicycle wheel',new pc.Vec3(0,.48,.72),new pc.Vec3(.48,.07,.48),M.black,root,new pc.Vec3(90,0,0));
+    box('Bike top tube',new pc.Vec3(0,.72,0),new pc.Vec3(.10,.10,1.12),M.rail,root);
+    box('Bike down tube',new pc.Vec3(0,.60,-.08),new pc.Vec3(.10,.68,.10),M.rail,root).setLocalEulerAngles(38,0,0);
+    box('Handlebars',new pc.Vec3(0,1.02,-.58),new pc.Vec3(.82,.07,.08),M.rail,root);
+    if(kind==='delivery')box('Delivery box',new pc.Vec3(0,1.12,.70),new pc.Vec3(.82,.70,.64),M.green,root);
+    animated.push({type:kind,entity:root,rig,baseX:lanes[lane],baseD:d,phase:d*.07});
+  }
   obstacleRecords.push({kind,entity:root,d,lane,jumpable,hit:false,cleared:false});
 }
 [[35,0,'bollard',1],[50,2,'bin'],[64,1,'tourist'],[78,0,'cyclist'],[92,2,'roadworks'],[108,1,'umbrella'],[124,0,'bin'],[139,2,'tourist'],[154,1,'delivery'],[170,0,'roadworks'],[186,2,'bollard',1],[202,1,'tourist'],[218,0,'cyclist'],[235,2,'bin'],[251,1,'roadworks'],[267,0,'umbrella'],[283,2,'delivery'],[299,1,'bollard',1],[315,0,'tourist'],[331,2,'bin'],[347,1,'roadworks'],[363,0,'cyclist'],[379,2,'umbrella'],[394,1,'tourist'],[407,0,'bollard',1]].forEach(([d,l,k,j])=>obstacle(k,d,l,{jumpable:Boolean(j)}));
@@ -306,11 +353,17 @@ function animateWorld(){
     if(a.type==='tourist'){
       const near=Math.max(0,1-Math.abs(a.baseD-player.distance)/26);
       a.entity.setPosition(a.baseX+Math.sin(state.elapsed*1.35+a.phase)*(.16+near*.34),0,-a.baseD);
+      if(a.rig){const sway=Math.sin(state.elapsed*2+a.phase)*5;a.rig.torso.setLocalEulerAngles(0,0,sway);}
     }else if(a.type==='umbrella'){
       a.entity.setPosition(a.baseX+Math.sin(state.elapsed*.95+a.phase)*.12,0,-a.baseD);
       a.entity.setLocalEulerAngles(0,Math.sin(state.elapsed*.7+a.phase)*7,0);
     }else if(a.type==='pavement'){
       a.entity.setPosition(a.baseX,0,-a.baseD+((state.elapsed*.45+a.phase)%5)-2.5);
+      if(a.rig){
+        const swing=Math.sin(state.elapsed*4.2+a.phase)*18;
+        a.rig.legL.setLocalEulerAngles(swing,0,0);a.rig.legR.setLocalEulerAngles(-swing,0,0);
+        a.rig.armL.setLocalEulerAngles(-swing*.65,0,0);a.rig.armR.setLocalEulerAngles(swing*.65,0,0);
+      }
     }else{
       const direction=a.type==='delivery'?-1:1;
       a.entity.setPosition(a.baseX+Math.sin(state.elapsed*1.1+a.phase)*.28,0,-a.baseD+Math.sin(state.elapsed*1.45+a.phase)*1.25*direction);
@@ -339,6 +392,14 @@ function togglePause(force){if(!state.started||state.finished)return;state.pause
 $('playBtn').addEventListener('click',()=>{audio.unlock();state.started=true;ui.start.classList.remove('visible');ui.start.hidden=true;showToast('90 SECONDS. GO!');});$('pauseBtn').addEventListener('click',()=>togglePause());$('resumeBtn').addEventListener('click',()=>togglePause(false));$('restartBtn').addEventListener('click',reset);document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.started&&!state.finished)togglePause(true);});window.addEventListener('resize',()=>app.resizeCanvas());
 
 buildStreet();updateHud();updateCamera(0);app.start();
+document.documentElement.dataset.lastLuasReady='1';
+document.documentElement.dataset.lastLuasBuild=BUILD;
+const smokeParams=new URLSearchParams(location.search);
+if(smokeParams.get('smoke')==='1'){
+  const preview=Math.max(0,Math.min(GAME.streetLength-8,Number(smokeParams.get('distance')||80)||80));
+  player.distance=preview;player.entity.setPosition(lanes[1],player.y,-preview);
+  ui.start.classList.remove('visible');ui.start.hidden=true;updateHud();updateCamera(1);animateWorld();
+}
 app.on('update',dt=>{
   dt=Math.min(dt,.05);if(!state.started||state.paused||state.finished)return;
   state.elapsed+=dt;state.timeLeft-=dt;updatePlayer(dt);updateObstacles();animateWorld();updateTram(dt);updateCamera(dt);updateHud();
