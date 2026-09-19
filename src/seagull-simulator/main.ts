@@ -9,7 +9,7 @@ const FOOD_TYPES=[
   {key:'food-ice',name:'ice cream',value:30},
   {key:'food-spice',name:'spice bag',value:75}
 ] as const;
-const WORLD_W=3600;
+const WORLD_W=5200;
 const WORLD_H=1800;
 const VERSION='0.1.0-alpha';
 
@@ -149,6 +149,7 @@ class DameStreetScene extends Phaser.Scene{
     this.load.svg('gull-walk',base+'gull-walk.svg',{width:120,height:110});
     this.load.svg('garda',base+'garda.svg',{width:76,height:112});
     this.load.svg('bus',base+'dublin-bus.svg',{width:220,height:140});
+    this.load.svg('luas',base+'luas.svg',{width:260,height:88});
   }
 
   create(){
@@ -161,6 +162,7 @@ class DameStreetScene extends Phaser.Scene{
     this.spawnPeople();
     this.spawnCameos();
     this.spawnGarda(1840,610,false);
+    this.spawnGarda(4210,640,false);
 
     this.shadow=this.add.ellipse(520,780,74,24,0x173747,.25).setDepth(39);
     this.gull=this.physics.add.sprite(520,690,'gull-1').setDepth(60).setDisplaySize(118,84);
@@ -247,6 +249,7 @@ class DameStreetScene extends Phaser.Scene{
       {x:3010,w:520,name:'DUBLIN DELI',c:0xd17832,s:0xfff1c5}
     ];
     for(const s of shops)this.shop(s.x,70,s.w,390,s.name,s.c,s.s);
+    this.collegeGreen(3600);
     // street furniture
     for(let x=160;x<WORLD_W;x+=300)this.lamp(x,610);
     for(let x=280;x<WORLD_W;x+=520)this.bin(x,680);
@@ -254,12 +257,15 @@ class DameStreetScene extends Phaser.Scene{
     for(let x=690;x<WORLD_W;x+=920)this.cafeBoard(x,676,x%1840<900?'COFFEE':'DELI');
     for(let x=120;x<WORLD_W;x+=115){g.fillStyle(0x2e3f49);g.fillRoundedRect(x,720,13,36,5);}
     // crossings
-    for(const x of [980,2220]){
+    for(const x of [980,2220,3920,4780]){
       g.fillStyle(0xf3f0dc,.9);
       for(let i=0;i<8;i++)g.fillRect(x+i*24,885,13,205);
     }
     this.add.text(110,796,'BUS LANE',{fontFamily:'Arial Black',fontSize:'28px',color:'#e9dcca'}).setDepth(2).setAngle(-2);
     this.add.text(2660,1155,'BUS LANE',{fontFamily:'Arial Black',fontSize:'28px',color:'#e9dcca'}).setDepth(2).setAngle(-2);
+    g.lineStyle(5,0x293a42,.9);g.lineBetween(3600,935,WORLD_W,935);g.lineBetween(3600,1005,WORLD_W,1005);
+    g.lineStyle(2,0xc5d1ce,.85);g.lineBetween(3600,944,WORLD_W,944);g.lineBetween(3600,996,WORLD_W,996);
+    this.add.text(3890,1085,'COLLEGE GREEN',{fontFamily:'Arial Black',fontSize:'30px',color:'#f3e9c8',stroke:'#354e59',strokeThickness:5}).setDepth(3).setAngle(-2);
   }
 
   shop(x:number,y:number,w:number,h:number,name:string,colour:number,sign:number){
@@ -289,6 +295,36 @@ class DameStreetScene extends Phaser.Scene{
   }
   bin(x:number,y:number){
     const g=this.add.graphics().setDepth(8);g.fillStyle(0x263e45);g.fillRoundedRect(x,y-42,34,52,5);g.fillStyle(0x101e23);g.fillRect(x+5,y-33,24,8);
+  }
+
+  collegeGreen(x:number){
+    const g=this.add.graphics().setDepth(2);
+    // Bank-style classical frontage: recognisable civic Dublin without pulling the game into full architectural simulation.
+    g.fillStyle(0xd8c39e);g.fillRect(x+28,62,720,408);
+    g.fillStyle(0xb79b72);g.fillRect(x+28,62,720,28);
+    g.fillStyle(0xe8d9bb);g.fillTriangle(x+70,150,x+388,58,x+706,150);
+    g.lineStyle(5,0xb59c76,.7);g.lineBetween(x+70,150,x+706,150);
+    for(let i=0;i<8;i++){
+      const px=x+92+i*82;
+      g.fillStyle(0xe7d8bb);g.fillRect(px,155,31,290);
+      g.fillStyle(0xb49a75);g.fillRect(px-5,145,41,14);g.fillRect(px-5,445,41,12);
+    }
+    g.fillStyle(0x627f87);for(let wx=x+142;wx<x+680;wx+=164)g.fillRoundedRect(wx,205,80,105,4);
+    g.fillStyle(0x3b565f);g.fillRoundedRect(x+337,335,104,135,5);
+    this.add.text(x+388,119,'BANK OF IRELAND',{fontFamily:'Arial Black',fontSize:'24px',color:'#47505a'}).setOrigin(.5).setDepth(4);
+    // Open College Green edge and secondary frontage.
+    g.fillStyle(0xe6d4b6);g.fillRect(x+790,105,760,365);
+    g.fillStyle(0xc5a980);g.fillRect(x+790,105,760,30);
+    for(let wx=x+830;wx<x+1500;wx+=118){
+      g.fillStyle(0x81a2aa);g.fillRoundedRect(wx,170,75,92,4);
+      g.fillStyle(0x5d6f73);g.fillRoundedRect(wx,325,75,112,4);
+    }
+    this.add.text(x+1165,145,'COLLEGE GREEN',{fontFamily:'Arial Black',fontSize:'26px',color:'#5b4d42'}).setOrigin(.5).setDepth(4);
+    // Stone planters and open-space details.
+    for(let px=x+810;px<x+1510;px+=220){
+      g.fillStyle(0x9b927e);g.fillRoundedRect(px,675,72,28,6);
+      g.fillStyle(0x4d9853);g.fillCircle(px+18,668,18);g.fillCircle(px+48,665,20);
+    }
   }
 
   flowerBasket(x:number,y:number){
@@ -380,6 +416,12 @@ class DameStreetScene extends Phaser.Scene{
     };
     vehicle('taxi',0x24292c,100,58);
     vehicle('van',0xd9d4c8,122,64);
+    if(!this.textures.exists('luas')){
+      const tram=this.make.graphics({x:0,y:0},false);
+      tram.fillStyle(0xdfe5e2);tram.fillRoundedRect(5,8,190,58,12);tram.fillStyle(0x63a856);tram.fillRect(8,48,184,12);
+      tram.fillStyle(0xa9d8df);for(let tx=18;tx<176;tx+=35)tram.fillRoundedRect(tx,16,28,24,4);
+      tram.generateTexture('luas',200,74);tram.destroy();
+    }
     if(!this.textures.exists('bus')){
       const bus=this.make.graphics({x:0,y:0},false);
       bus.fillStyle(0x000000,.18);bus.fillEllipse(82,67,136,18);
@@ -394,16 +436,17 @@ class DameStreetScene extends Phaser.Scene{
 
   spawnTraffic(){
     const add=(key:string,x:number,y:number,speed:number,lane:number)=>{
-      const s=this.physics.add.sprite(x,y,key).setDepth(26);if(key==='bus')s.setDisplaySize(188,120);s.body!.setImmovable(true);this.vehicles.push({sprite:s,speed,lane});
+      const s=this.physics.add.sprite(x,y,key).setDepth(26);if(key==='bus')s.setDisplaySize(188,120);if(key==='luas')s.setDisplaySize(235,80);s.body!.setImmovable(true);this.vehicles.push({sprite:s,speed,lane});
     };
     for(let i=0;i<5;i++)add(i%3===0?'bus':i%3===1?'taxi':'van',450+i*680,835,100+Math.random()*30,0);
     for(let i=0;i<5;i++){add(i%2?'taxi':'bus',260+i*720,1165,-105-Math.random()*25,1);this.vehicles[this.vehicles.length-1].sprite.setFlipX(true);}
+    add('luas',3900,970,72,2);add('luas',4920,970,-68,2);this.vehicles[this.vehicles.length-1].sprite.setFlipX(true);
   }
 
   spawnPeople(){
     const tex=['person-blue','person-red','person-green','person-tan','person-dark','person-office','person-tourist','person-builder','person-runner'];
 
-    for(let i=0;i<34;i++){
+    for(let i=0;i<48;i++){
       const upper=i<20;
       const x=120+Math.random()*(WORLD_W-240);
       const y=upper?535+Math.random()*160:1300+Math.random()*210;
@@ -478,7 +521,7 @@ class DameStreetScene extends Phaser.Scene{
     this.updateHeat(time,dt);
     this.updateSelection();
 
-    const zone=this.gull.x<900?'DAME STREET':this.gull.x<1750?'DAME STREET · EAST':this.gull.x<2650?'COLLEGE GREEN APPROACH':'CITY CENTRE';
+    const zone=this.gull.x<1700?'DAME STREET':this.gull.x<3400?'DAME STREET · EAST':this.gull.x<3900?'COLLEGE GREEN APPROACH':'COLLEGE GREEN';
     this.districtText.setText(zone);
   }
 
