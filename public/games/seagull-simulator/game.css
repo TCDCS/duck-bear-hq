@@ -41,3 +41,9 @@
   .trophy-card small{font-size:5.5px;margin-top:2px}
   .trophies-panel .panel-copy{margin-bottom:4px}
 }
+
+@media(prefers-reduced-motion:reduce){
+  .toast.show{animation:none;opacity:1;transform:translate(-50%,0)}
+  .play:active,.action:active,.mini-button:active{transform:none}
+  *{scroll-behavior:auto}
+}
