@@ -1366,13 +1366,38 @@ function renderProgression(){
     }
   }
 }
-function openPanel(id:string){$(id)?.classList.remove('hidden');renderProgression();}
+function renderUpdateLog(){
+  setText('settingsVersion',VERSION);
+  const list=$('updateLogList');if(!list)return;
+  list.replaceChildren();
+  for(const entry of UPDATE_LOG){
+    const article=document.createElement('article');
+    article.className='update-entry'+(entry.version===VERSION?' current':'');
+    const head=document.createElement('div');head.className='update-entry-head';
+    const version=document.createElement('strong');version.className='update-version';version.textContent='Build '+entry.version;
+    const date=document.createElement('span');date.className='update-date';date.textContent=entry.date;
+    head.append(version,date);
+    const title=document.createElement('h3');title.textContent=entry.title;
+    const ul=document.createElement('ul');
+    for(const change of entry.changes){const li=document.createElement('li');li.textContent=change;ul.append(li);}
+    article.append(head,title,ul);list.append(article);
+  }
+}
+function openPanel(id:string){
+  $(id)?.classList.remove('hidden');
+  renderProgression();
+  if(id==='settingsPanel'||id==='updateLogPanel')renderUpdateLog();
+}
 function closePanel(id:string){$(id)?.classList.add('hidden');}
 $('birdsBtn')?.addEventListener('click',()=>openPanel('birdsPanel'));
 $('upgradesBtn')?.addEventListener('click',()=>openPanel('upgradesPanel'));
 $('trophiesBtn')?.addEventListener('click',()=>openPanel('trophiesPanel'));
+$('settingsBtn')?.addEventListener('click',()=>openPanel('settingsPanel'));
+$('pauseSettingsBtn')?.addEventListener('click',()=>openPanel('settingsPanel'));
+$('updateLogBtn')?.addEventListener('click',()=>{closePanel('settingsPanel');openPanel('updateLogPanel');});
+$('updatesBackBtn')?.addEventListener('click',()=>{closePanel('updateLogPanel');openPanel('settingsPanel');});
 document.querySelectorAll<HTMLElement>('[data-close-panel]').forEach(b=>b.addEventListener('click',()=>closePanel(String(b.dataset.closePanel))));
-renderProgression();
+renderProgression();renderUpdateLog();
 const persistCheck=new URLSearchParams(location.search).get('persistcheck');
 if(persistCheck==='seed'){
   progress={coins:321,selectedBird:'big-lad',unlockedBirds:['dublin','big-lad'],upgrades:{wings:2,beak:1,nerve:3},achievements:['mine-now','combo-four'],stats:{runs:4,totalFood:31,totalScore:2480,bestCombo:4,highestWanted:5,missionsCompleted:6}};
@@ -1387,6 +1412,8 @@ const previewPanel=new URLSearchParams(location.search).get('panel');
 if(previewPanel==='birds')openPanel('birdsPanel');
 if(previewPanel==='upgrades')openPanel('upgradesPanel');
 if(previewPanel==='trophies')openPanel('trophiesPanel');
+if(previewPanel==='settings')openPanel('settingsPanel');
+if(previewPanel==='updates')openPanel('updateLogPanel');
 
 let paused=false;
 let orientationPaused=false;
@@ -1460,8 +1487,13 @@ function startGame(){
   setTimeout(syncOrientationPause,120);
 }
 setText('startBest',Number(storageGet('seagull-best')||0).toLocaleString());
-function syncSoundButton(){const b=$('soundBtn');if(!b)return;b.textContent=soundEnabled?'SFX':'MUTE';b.classList.toggle('muted',!soundEnabled);b.setAttribute('aria-pressed',String(!soundEnabled));}
-$('soundBtn')?.addEventListener('click',()=>{soundEnabled=!soundEnabled;storageSet('seagull-muted',soundEnabled?'0':'1');if(soundEnabled)initAudio();syncSoundButton();});
+function syncSoundButton(){
+  const hud=$('soundBtn');if(hud){hud.textContent=soundEnabled?'SFX':'MUTE';hud.classList.toggle('muted',!soundEnabled);hud.setAttribute('aria-pressed',String(!soundEnabled));}
+  const settings=$('settingsSoundBtn');if(settings){settings.textContent=soundEnabled?'ON':'OFF';settings.classList.toggle('muted',!soundEnabled);settings.setAttribute('aria-pressed',String(!soundEnabled));}
+}
+function toggleSound(){soundEnabled=!soundEnabled;storageSet('seagull-muted',soundEnabled?'0':'1');if(soundEnabled)initAudio();syncSoundButton();}
+$('soundBtn')?.addEventListener('click',toggleSound);
+$('settingsSoundBtn')?.addEventListener('click',toggleSound);
 syncSoundButton();
 window.addEventListener('seagull-gameover',(ev:any)=>{
   paused=false;$('pausePanel')?.classList.add('hidden');$('controls')?.classList.add('hidden');$('gameOver')?.classList.remove('hidden');
