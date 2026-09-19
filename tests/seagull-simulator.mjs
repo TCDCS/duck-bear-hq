@@ -16,12 +16,14 @@ test('Seagull Simulator is locally bundled and CSP-friendly',()=>{
 });
 
 test('Seagull Simulator keeps the locked Dublin route',()=>{
-  assert.deepEqual(release.nextAreas,['College Green','Grafton Street',"St Stephen's Green"]);
-  assert.equal(release.area,'Dame Street');
+  assert.deepEqual(release.nextAreas,['Grafton Street',"St Stephen's Green"]);
+  assert.equal(release.area,'Dame Street + College Green');
   assert.match(source,/CENTRA/);
   assert.match(source,/SuperValu/);
   assert.match(source,/Michael D\./);
   assert.match(source,/garda/);
+  assert.match(source,/COLLEGE GREEN/);
+  assert.match(source,/luas/);
 });
 
 test('Seagull Simulator exposes mobile and desktop controls',()=>{
@@ -43,4 +45,11 @@ test('Seagull Simulator has replayable progression systems',()=>{
   assert.match(html,/id="missionBar"/);
   assert.match(html,/id="combo"/);
   assert.match(html,/id="heat"/);
+});
+
+test('Seagull can land and waddle without another control button',()=>{
+  assert.match(source,/diveHeld/);
+  assert.match(source,/grounded/);
+  assert.match(source,/gull-walk/);
+  assert.match(source,/WADDLE MODE/);
 });
