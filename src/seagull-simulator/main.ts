@@ -743,7 +743,8 @@ class DameStreetScene extends Phaser.Scene{
     if(this.selected&&!this.selected.stolen){
       const dist=Phaser.Math.Distance.Between(this.gull.x,this.gull.y,this.selected.person.x,this.selected.person.y);
       this.selected.panicUntil=Math.max(this.selected.panicUntil,time+(this.selected.temperament==='oblivious'?350:1200));
-      if(dist<145&&this.wanted>=2&&this.selected.temperament==='defender'&&Math.random()<.42){
+      const defendChance=Math.min(.43,.10+this.wanted*.065);
+      if(dist<145&&this.wanted>=2&&this.selected.temperament==='defender'&&Math.random()<defendChance){
         this.emote(this.selected.person,'!');
         this.hit('Umbrella! Pick a softer target.',time);
         return;
@@ -896,7 +897,8 @@ class DameStreetScene extends Phaser.Scene{
       const min=v.minX??-180,max=v.maxX??WORLD_W+180;
       if(v.speed>0&&v.sprite.x>max+180)v.sprite.x=min-180;
       if(v.speed<0&&v.sprite.x<min-180)v.sprite.x=max+180;
-      if(this.altitude<.2&&Phaser.Math.Distance.Between(this.gull.x,this.gull.y,v.sprite.x,v.sprite.y)<72)this.hit('Ouch. Dublin traffic.',performance.now());
+      const collisionRadius=v.sprite.texture.key==='luas'?118:v.sprite.texture.key==='bus'?102:70;
+      if(this.altitude<.2&&Phaser.Math.Distance.Between(this.gull.x,this.gull.y,v.sprite.x,v.sprite.y)<collisionRadius)this.hit('Ouch. Dublin traffic.',performance.now());
     }
   }
 
@@ -952,7 +954,8 @@ class DameStreetScene extends Phaser.Scene{
     if(this.selected&&!this.selected.stolen){
       this.targetMarker.setVisible(true).setPosition(this.selected.person.x,this.selected.person.y);
       const d=Phaser.Math.Distance.Between(this.gull.x,this.gull.y,this.selected.person.x,this.selected.person.y);
-      this.targetMarker.setStrokeStyle(5,d<100?0x64e69a:0xffd54f,.95);
+      const reach=this.bird.grab+progress.upgrades.beak*5;
+      this.targetMarker.setStrokeStyle(5,d<reach?0x64e69a:0xffd54f,.95);
     }else{
       this.targetMarker.setVisible(false);
       let best:Target|null=null,d=155;
