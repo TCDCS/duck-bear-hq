@@ -894,8 +894,9 @@ class DameStreetScene extends Phaser.Scene{
   updateTraffic(dt:number){
     for(const v of this.vehicles){
       v.sprite.x+=v.speed*dt;
-      const min=v.minX??-180,max=v.maxX??WORLD_W+180;
-      if(v.speed>0&&v.sprite.x>max+180)v.sprite.x=min-180;
+      const bounded=v.minX!==undefined||v.maxX!==undefined;
+      const min=v.minX??-180,max=v.maxX??WORLD_W+180,pad=bounded?0:180;
+      if(v.speed>0&&v.sprite.x>max+pad)v.sprite.x=min-180;
       if(v.speed<0&&v.sprite.x<min-180)v.sprite.x=max+180;
       const collisionRadius=v.sprite.texture.key==='luas'?118:v.sprite.texture.key==='bus'?102:70;
       if(this.altitude<.2&&Phaser.Math.Distance.Between(this.gull.x,this.gull.y,v.sprite.x,v.sprite.y)<collisionRadius)this.hit('Ouch. Dublin traffic.',performance.now());
