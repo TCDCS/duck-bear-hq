@@ -223,12 +223,32 @@ function arketCurvePanel(z,xOffset,y,angle,height,width){
   mullion.setLocalEulerAngles(0,angle,0);
 }
 
+function bladeSign(name,z,y,side,material,width=1.25,height=.48){
+  const sign=box(name,new pc.Vec3(side*5.88,y,z),new pc.Vec3(width,height,.12),material);
+  sign.setLocalEulerAngles(0,90,0);return sign;
+}
+function streetNumber(name,z,y,side,value){
+  return box(name,new pc.Vec3(side*6.23,y,z),new pc.Vec3(.11,.30,.48),brandMaterial(String(value),{bg:'#eee9de',fg:'#222222',font:'Georgia, serif',weight:700}),app.root);
+}
+function genericFacadeDetail(z,length,height,side,index){
+  const frontX=side*6.47;
+  const stone=index%3===0?F.limestone:F.paleStone;
+  box('Generic Dublin cornice',new pc.Vec3(frontX,height-.42,z),new pc.Vec3(.28,.22,length*.92),stone);
+  if(height>10)box('Generic Dublin string course',new pc.Vec3(frontX,5.15,z),new pc.Vec3(.22,.12,length*.90),stone);
+  const bays=Math.max(2,Math.min(4,Math.floor(length/3.1)));
+  for(let b=0;b<bays;b++){
+    const bz=z+(b-(bays-1)/2)*(length*.72/Math.max(1,bays-1));
+    box('Generic shop glass',new pc.Vec3(side*6.42,1.45,bz),new pc.Vec3(.16,2.18,Math.min(1.45,length/(bays*2.1))),F.warmGlass);
+    if((b+index)%3===0)box('Generic shop door',new pc.Vec3(side*6.30,1.35,bz),new pc.Vec3(.10,2.36,.72),F.darkWood);
+  }
+  box('Generic shop fascia',new pc.Vec3(side*6.38,3.08,z),new pc.Vec3(.22,.20,length*.82),index%2?M.navy:F.darkWood);
+}
 function buildGenericBlocks(){
   const fills=[M.brick,M.cream,mat(new pc.Color(.35,.28,.24),{gloss:.25}),mat(new pc.Color(.49,.42,.34),{gloss:.3})];
   let z=-11,i=0;
   while(z>-GAME.streetLength-15){
     const len=10+(i%4)*2.1,height=9.5+(i%5)*1.15;
-    for(const side of [-1,1]){building(z,len,height,side,fills[(i+(side>0?1:0))%fills.length]);shopfront(z,len,side,i%3===0?M.navy:M.glass);}
+    for(const side of [-1,1]){building(z,len,height,side,fills[(i+(side>0?1:0))%fills.length]);genericFacadeDetail(z,len,height,side,i+(side>0?1:0));}
     z-=len+1.35;i++;
   }
 }
@@ -242,6 +262,8 @@ function buildLandmarks(){
   }
   for(const y of [3.78,7.78,11.4])facadeBand('ARKET pale stone floor band',-22,y,21.0,1,F.paleStone,.20,.46);
   nameboard('ARKET real wordmark',-22,3.36,3.85,1,brandMaterial('ARKET',{bg:'#e9e7e1',fg:'#111111',font:'Arial, sans-serif',weight:500,tracking:12}));
+  bladeSign('ARKET projecting sign',-17.2,3.40,1,brandMaterial('ARKET',{bg:'#f4f3ef',fg:'#111111',font:'Arial, sans-serif',weight:500,tracking:10}),1.32,.50);
+  streetNumber('ARKET number 60',-30.6,3.24,1,'60');
 
   // Hodges Figgis, 56–58 Dawson Street: Victorian red brick, arched upper windows and curved dark-green shop bays.
   const hf=box('Hodges Figgis red brick facade',new pc.Vec3(-9.82,7.6,-55),new pc.Vec3(6.9,15.2,19.2),F.redBrick);
@@ -259,6 +281,8 @@ function buildLandmarks(){
   box('Hodges central door',new pc.Vec3(-6.28,1.40,-55),new pc.Vec3(.18,2.55,2.10),F.darkWood);
   facadeBand('Hodges fascia moulding',-55,3.05,17.25,-1,F.hodgesGreen,.22,.46);
   nameboard('Hodges Figgis real logo',-55,3.42,7.65,-1,brandMaterial('HODGES FIGGIS',{bg:'#073020',fg:'#d5ae5d',font:'Georgia, serif',weight:500,tracking:17,subline:'THE BOOKSTORE',subFg:'#d8c28c'}));
+  bladeSign('Hodges Figgis projecting sign',-48.1,3.55,-1,brandMaterial('HODGES FIGGIS',{bg:'#073020',fg:'#d5ae5d',font:'Georgia, serif',weight:600,tracking:7}),1.46,.52);
+  streetNumber('Hodges number 56 58',-62.1,3.28,-1,'56–58');
 
   // Café en Seine, 39/40 Dawson Street: deep teal, brass detailing, awnings and planting.
   const cafe=box('Cafe en Seine brick upper facade',new pc.Vec3(9.80,6.2,-185),new pc.Vec3(6.85,12.4,18.4),F.redBrick);
@@ -268,6 +292,8 @@ function buildLandmarks(){
   for(const z of [-191.6,-188.3,-185,-181.7,-178.4])facadePier('Cafe brass upright',z,1.65,3.0,1,F.brass,.17,.40);
   facadeBand('Cafe gold fascia',-185,3.12,16.0,1,F.brass,.12,.42);
   nameboard('Cafe en Seine real logo',-185,3.38,6.55,1,brandMaterial('CAFÉ en SEINE',{bg:'#073234',fg:'#e9d5a0',font:'Georgia, serif',weight:500,tracking:8}));
+  bladeSign('Cafe en Seine projecting sign',-178.8,3.62,1,brandMaterial('CAFÉ en SEINE',{bg:'#073234',fg:'#e9d5a0',font:'Georgia, serif',weight:600,tracking:4}),1.42,.52);
+  streetNumber('Cafe number 39 40',-191.1,3.25,1,'39/40');
   for(const z of [-189.8,-185,-180.2])awning('Cafe awning',z,3.2,1,F.cafeTeal,3.67);
   for(const z of [-191.5,-188,-184.5,-181,-178.5])facadePlant('Cafe facade plant',z,4.25,1,.50);
   planter(181,1);planter(187,1);planter(193,1);
@@ -279,6 +305,27 @@ function buildLandmarks(){
   box('Dawson Lounge iconic red door',new pc.Vec3(-6.26,1.34,-292),new pc.Vec3(.18,2.48,1.30),M.red);
   for(let i=0;i<4;i++)box('Dawson basement step '+i,new pc.Vec3(-5.92-i*.18,.10+i*.10,-292),new pc.Vec3(.42,.12,1.80),F.limestone);
   nameboard('Dawson Lounge real sign',-292,3.04,4.20,-1,brandMaterial('THE DAWSON LOUNGE',{bg:'#1a1612',fg:'#d0ac67',font:'Georgia, serif',weight:600,tracking:8}));
+  bladeSign('Dawson Lounge projecting sign',-288.1,3.30,-1,brandMaterial('DAWSON LOUNGE',{bg:'#1a1612',fg:'#d0ac67',font:'Georgia, serif',weight:600,tracking:4}),1.30,.48);
+  streetNumber('Dawson Lounge number 25',-295.2,3.15,-1,'25');
+
+  // Royal Irish Academy, 19 Dawson Street: restrained red brick and pale stone entrance.
+  const ria=box('Royal Irish Academy facade',new pc.Vec3(-9.80,6.35,-319),new pc.Vec3(6.85,12.7,13.5),F.redBrick);
+  for(const z of [-323,-319,-315])box('RIA sash window',new pc.Vec3(-6.35,7.0,z),new pc.Vec3(.14,2.9,1.55),F.warmGlass);
+  box('RIA pale stone entrance',new pc.Vec3(-6.48,1.65,-319),new pc.Vec3(.34,3.05,3.45),F.limestone);
+  box('RIA dark door',new pc.Vec3(-6.25,1.42,-319),new pc.Vec3(.16,2.55,1.55),F.darkWood);
+  facadeBand('RIA stone cornice',-319,4.05,12.0,-1,F.limestone,.18,.40);
+  nameboard('RIA nameboard',-319,3.48,4.35,-1,brandMaterial('ROYAL IRISH ACADEMY',{bg:'#e4dfd3',fg:'#1d1d1b',font:'Georgia, serif',weight:600,tracking:5}));
+  streetNumber('RIA number 19',-323.9,3.10,-1,'19');
+
+  // St Ann's Church beside the Academy: tall pale stone vertical frontage.
+  const stanns=box("St Ann's Church Dawson Street facade",new pc.Vec3(9.82,7.15,-330),new pc.Vec3(6.85,14.3,15.0),F.limestone);
+  for(const z of [-334.4,-330,-325.6])box('St Anns tall window',new pc.Vec3(6.34,6.65,z),new pc.Vec3(.15,5.25,1.52),F.warmGlass);
+  facadePier('St Anns left pier',-336.2,6.75,10.8,1,F.paleStone,.48,.48);
+  facadePier('St Anns right pier',-323.8,6.75,10.8,1,F.paleStone,.48,.48);
+  box('St Anns entrance',new pc.Vec3(6.24,1.70,-330),new pc.Vec3(.18,3.20,2.25),F.darkWood);
+  facadeBand('St Anns parapet',-330,11.55,13.5,1,F.paleStone,.30,.48);
+  nameboard('St Anns small plaque',-330,3.60,2.6,1,brandMaterial("ST ANN'S",{bg:'#e9e3d7',fg:'#222222',font:'Georgia, serif',weight:600,tracking:7}));
+  streetNumber('St Anns number 18',-335.0,3.12,1,'18');
 
   // The Ivy, 13–17 Dawson Street: pale facade, rich green frontage and abundant planting.
   const ivy=box('The Ivy Dawson Street facade',new pc.Vec3(9.80,6.75,-354),new pc.Vec3(6.85,13.5,23.4),F.ivyCream);
@@ -291,6 +338,8 @@ function buildLandmarks(){
   facadeBand('Ivy gold fascia',-354,3.08,19.8,1,F.brass,.11,.40);
   awning('Ivy green entrance canopy',-350.0,6.0,1,F.ivyGreen,3.45);
   nameboard('Ivy real wordmark',-350.0,3.62,3.0,1,brandMaterial('THE IVY',{bg:'#0b432d',fg:'#d8b76b',font:'Georgia, serif',weight:600,tracking:14}));
+  bladeSign('Ivy projecting sign',-345.2,3.70,1,brandMaterial('THE IVY',{bg:'#0b432d',fg:'#d8b76b',font:'Georgia, serif',weight:700,tracking:12}),1.22,.52);
+  streetNumber('Ivy number 13 17',-362.0,3.25,1,'13–17');
   for(const z of [-363,-359,-355,-351,-347,-343])facadePlant('Ivy frontage greenery',z,3.65,1,.50);
   planter(347,1);planter(352,1);planter(357,1);
 }
@@ -366,13 +415,19 @@ function obstacle(kind,d,lane,{jumpable=false}={}){
     animated.push({type:'umbrella',entity:root,baseX:lanes[lane],baseD:d,phase:d*.05});
   }
   if(kind==='cyclist'||kind==='delivery'){
-    cyl('wheel1',new pc.Vec3(0,.48,-.64),new pc.Vec3(.48,.07,.48),M.black,root,new pc.Vec3(90,0,0));
-    cyl('wheel2',new pc.Vec3(0,.48,.64),new pc.Vec3(.48,.07,.48),M.black,root,new pc.Vec3(90,0,0));
-    box('bike frame',new pc.Vec3(0,.70,0),new pc.Vec3(.10,.10,1.10),M.rail,root);
-    box('handlebars',new pc.Vec3(0,1.02,-.55),new pc.Vec3(.78,.07,.08),M.rail,root);
-    const rider=spawnCharacter(root,{kind:kind==='delivery'?'worker':'casual',clip:'Idle_Neutral',scale:.98,yaw:180,name:kind==='delivery'?'Delivery rider model':'Cyclist rider model'});
-    if(rider){rider.setLocalPosition(0,.10,.08);rider.setLocalEulerAngles(16,180,0);}
-    if(kind==='delivery')box('delivery box',new pc.Vec3(0,1.12,.70),new pc.Vec3(.82,.70,.64),M.green,root);
+    cyl('Front bicycle wheel',new pc.Vec3(0,.46,-.76),new pc.Vec3(.50,.06,.50),M.black,root,new pc.Vec3(90,0,0));
+    cyl('Rear bicycle wheel',new pc.Vec3(0,.46,.76),new pc.Vec3(.50,.06,.50),M.black,root,new pc.Vec3(90,0,0));
+    const top=box('Bike top tube',new pc.Vec3(0,.75,-.02),new pc.Vec3(.09,.09,1.15),M.rail,root);
+    const down=box('Bike down tube',new pc.Vec3(0,.62,-.08),new pc.Vec3(.09,.66,.09),M.rail,root);down.setLocalEulerAngles(38,0,0);
+    const seatTube=box('Bike seat tube',new pc.Vec3(0,.67,.28),new pc.Vec3(.09,.58,.09),M.rail,root);seatTube.setLocalEulerAngles(-22,0,0);
+    box('Bike seat',new pc.Vec3(0,.99,.30),new pc.Vec3(.38,.09,.28),M.black,root);
+    box('Bike handlebars',new pc.Vec3(0,1.13,-.65),new pc.Vec3(.86,.07,.09),M.rail,root);
+    box('Bike stem',new pc.Vec3(0,.92,-.59),new pc.Vec3(.08,.48,.08),M.rail,root).setLocalEulerAngles(-17,0,0);
+    const riderPivot=new pc.Entity(kind==='delivery'?'Delivery rider hip pivot':'Cyclist rider hip pivot');
+    riderPivot.setLocalPosition(0,1.02,.24);riderPivot.setLocalEulerAngles(32,0,0);root.addChild(riderPivot);
+    const rider=spawnCharacter(riderPivot,{kind:kind==='delivery'?'worker':'casual',clip:'Idle_Neutral',scale:.96,yaw:180,name:kind==='delivery'?'Delivery rider model':'Cyclist rider model'});
+    if(rider)rider.setLocalPosition(0,-.96,-.10);
+    if(kind==='delivery')box('delivery box',new pc.Vec3(0,1.22,.80),new pc.Vec3(.88,.76,.68),M.green,root);
     animated.push({type:kind,entity:root,baseX:lanes[lane],baseD:d,phase:d*.07});
   }
   obstacleRecords.push({kind,entity:root,d,lane,jumpable,hit:false,cleared:false});
@@ -423,6 +478,15 @@ function updatePlayer(dt){
   const urgency=1+Math.max(0,(20-state.timeLeft)/20)*.055;
   const speed=(player.hit>0?GAME.hitSpeed:GAME.speed)*urgency;
   player.distance+=speed*dt;player.entity.setPosition(x,player.y,-player.distance);
+}
+function prepareFacadeReview(name){
+  const map={arket:12,hodges:45,cafe:173,'dawson-lounge':280,ria:308,stanns:319,ivy:341};
+  const preview=map[name];if(preview===undefined)return null;
+  for(const o of obstacleRecords)o.entity.enabled=false;
+  for(const a of animated)a.entity.enabled=false;
+  player.distance=preview;player.entity.setPosition(lanes[1],player.y,-preview);
+  document.documentElement.dataset.lastLuasReviewLandmark=name;
+  return preview;
 }
 function prepareVisualReview(focus){
   const targetMap={tourist:64,cyclist:78,umbrella:108,delivery:154};
@@ -513,8 +577,8 @@ async function boot(){
     document.documentElement.dataset.lastLuasWorkerClips=(characterAssets.get('worker')?.resource?.animations||[]).map(a=>a.name||a.resource?.name||'').join(',');
     const smokeParams=new URLSearchParams(location.search);
     if(smokeParams.get('smoke')==='1'){
-      const focus=smokeParams.get('focus');
-      let preview=focus?prepareVisualReview(focus):null;
+      const focus=smokeParams.get('focus'),landmark=smokeParams.get('landmark');
+      let preview=landmark?prepareFacadeReview(landmark):(focus?prepareVisualReview(focus):null);
       if(preview===null){
         preview=Math.max(0,Math.min(GAME.streetLength-8,Number(smokeParams.get('distance')||18)||18));
         player.distance=preview;player.entity.setPosition(lanes[1],player.y,-preview);
