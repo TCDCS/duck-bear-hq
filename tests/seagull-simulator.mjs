@@ -133,3 +133,15 @@ test('Seagull run summary uses active gameplay time and tracked milestones',()=>
   assert.match(source,/runSeconds:Math\.max\(1,Math\.round\(this\.activeRunMs\/1000\)\)/);
   assert.match(source,/finalRunTime/);
 });
+
+test('Seagull areas have distinct food and crowd flavour',()=>{
+  assert.match(source,/foodForArea\(x:number/);
+  assert.match(source,/pedestrianForArea\(x:number/);
+  assert.match(source,/food-sandwich/);
+  assert.match(source,/food-doughnut/);
+  assert.match(source,/food-takeaway/);
+  assert.match(source,/t\.value>=90\?10:t\.value>=50\?5:0/);
+  assert.equal(release.food.count,8);
+  assert.equal(release.food.highestValue,'takeaway bag');
+  assert.equal(release.areaFlavour["Grafton Street"],'café/treat-heavy');
+});
