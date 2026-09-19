@@ -1052,6 +1052,11 @@ $('restartRunBtn')?.addEventListener('click',()=>location.reload());
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden&&!new URLSearchParams(location.search).has('smoke')&&(window as any).__seagullGame)setGamePaused(true);
 });
+window.addEventListener('keydown',e=>{
+  if((e.key==='Escape'||e.key.toLowerCase()==='p')&&(window as any).__seagullGame&&$('gameOver')?.classList.contains('hidden')){
+    e.preventDefault();setGamePaused(!paused);
+  }
+});
 
 function startGame(){
   if((window as any).__seagullGame)return;
