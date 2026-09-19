@@ -8,24 +8,26 @@ OUT = Path(os.environ.get("LAST_LUAS_OUT", "/tmp/last-luas-real-characters"))
 OUT.mkdir(parents=True, exist_ok=True)
 
 SHOTS = [
-    ("player", 12, 1280, 720, ""),
-    ("tourist", 52, 1280, 720, ""),
-    ("cyclist", 66, 1280, 720, ""),
-    ("umbrella", 96, 1280, 720, ""),
-    ("delivery", 142, 1280, 720, ""),
-    ("mobile-umbrella", 96, 844, 390, ""),
+    {"name": "player", "query": "smoke=1&distance=18", "viewport": (1280, 720), "focus": None},
+    {"name": "tourist", "query": "smoke=1&focus=tourist", "viewport": (1280, 720), "focus": "tourist"},
+    {"name": "cyclist", "query": "smoke=1&focus=cyclist", "viewport": (1280, 720), "focus": "cyclist"},
+    {"name": "umbrella", "query": "smoke=1&focus=umbrella", "viewport": (1280, 720), "focus": "umbrella"},
+    {"name": "delivery", "query": "smoke=1&focus=delivery", "viewport": (1280, 720), "focus": "delivery"},
+    {"name": "mobile-umbrella", "query": "smoke=1&focus=umbrella", "viewport": (844, 390), "focus": "umbrella"},
 ]
 
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True)
     report = []
-    for name, distance, width, height, extra in SHOTS:
+    for shot in SHOTS:
+        name = shot["name"]
+        width, height = shot["viewport"]
         page = browser.new_page(viewport={"width": width, "height": height})
-        messages = []
-        page.on("console", lambda msg, messages=messages: messages.append(f"{msg.type}: {msg.text}"))
-        page.on("pageerror", lambda err, messages=messages: messages.append(f"pageerror: {err}"))
-        suffix = f"&{extra}" if extra else ""
-        url = f"{BASE}?smoke=1&distance={distance}{suffix}"
+        console_messages = []
+        page_errors = []
+        page.on("console", lambda msg, messages=console_messages: messages.append(f"{msg.type}: {msg.text}"))
+        page.on("pageerror", lambda err, errors=page_errors: errors.append(str(err)))
+        url = f"{BASE}?{shot['query']}"
         page.goto(url, wait_until="domcontentloaded", timeout=30000)
         page.wait_for_function(
             """() => document.documentElement.dataset.lastLuasReady === '1'
@@ -34,17 +36,32 @@ with sync_playwright() as p:
         )
         data = page.evaluate("""() => ({...document.documentElement.dataset})""")
         if data.get("lastLuasAssetError") == "1":
-            print(json.dumps({"url": url, "dataset": data, "console": messages}, indent=2))
             page.screenshot(path=str(OUT / f"{name}-asset-error.png"), full_page=True)
-            raise RuntimeError("Last Luas character assets failed to load")
-        if data.get("lastLuasBuild") != "0.4.0" or data.get("lastLuasCharacterAssets") != "2":
-            print(json.dumps({"url": url, "dataset": data, "console": messages}, indent=2))
-            raise RuntimeError("Last Luas readiness metadata is incorrect")
-        page.wait_for_timeout(900)
-        page.screenshot(path=str(OUT / f"{name}.png"))
-        report.append({"name": name, "distance": distance, "viewport": [width, height], "dataset": data, "console": messages})
+            raise RuntimeError(f"{name}: Last Luas character assets failed to load")
+        if data.get("lastLuasBuild") != "0.4.0":
+            raise RuntimeError(f"{name}: wrong build {data.get('lastLuasBuild')}")
+        if data.get("lastLuasCharacterAssets") != "2":
+            raise RuntimeError(f"{name}: expected 2 character assets, got {data.get('lastLuasCharacterAssets')}")
+        if shot["focus"] and data.get("lastLuasReviewFocus") != shot["focus"]:
+            raise RuntimeError(f"{name}: review focus did not activate")
+        page.wait_for_function(
+            "() => document.documentElement.dataset.lastLuasSmokeStopped === '1'",
+            timeout=10000,
+        )
+        data = page.evaluate("""() => ({...document.documentElement.dataset})""")
+        page.screenshot(path=str(OUT / f"{name}.png"), full_page=True)
+        report.append({
+            "name": name,
+            "query": shot["query"],
+            "viewport": [width, height],
+            "dataset": data,
+            "console": console_messages,
+            "pageErrors": page_errors,
+        })
+        if page_errors:
+            raise RuntimeError(f"{name}: browser errors: {' | '.join(page_errors)}")
         page.close()
     browser.close()
 
 (OUT / "report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
-print(json.dumps({"shots": [x[0] for x in SHOTS], "count": len(SHOTS)}, indent=2))
+print(json.dumps({"shots": [x["name"] for x in SHOTS], "count": len(SHOTS)}, indent=2))
