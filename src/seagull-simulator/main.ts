@@ -36,7 +36,7 @@ function pedestrianForArea(x:number,seed:number){
 }
 const WORLD_W=8800;
 const WORLD_H=1800;
-const VERSION='0.8.0-alpha';
+const VERSION='0.9.0-alpha';
 
 type BirdId='dublin'|'big-lad'|'sneaky'|'absolute-unit';
 type UpgradeKey='wings'|'beak'|'nerve';
@@ -162,12 +162,13 @@ function tone(freq:number,duration=.08,type:OscillatorType='sine',gain=.035,slid
   g.gain.setValueAtTime(gain,now);g.gain.exponentialRampToValueAtTime(.0001,now+duration);
   o.connect(g);g.connect(audioCtx.destination);o.start(now);o.stop(now+duration+.02);
 }
-function sfx(name:'grab'|'dive'|'hit'|'wanted'|'target'){
+function sfx(name:'grab'|'dive'|'hit'|'wanted'|'target'|'bell'){
   if(name==='grab'){tone(520,.06,'square',.025,220);setTimeout(()=>tone(880,.09,'triangle',.03,180),45);}
   if(name==='dive'){tone(240,.13,'sawtooth',.018,-120);}
   if(name==='hit'){tone(120,.16,'square',.035,-55);}
   if(name==='wanted'){tone(620,.07,'square',.025,0);setTimeout(()=>tone(760,.08,'square',.025,0),80);}
   if(name==='target')tone(440,.045,'triangle',.014,90);
+  if(name==='bell'){tone(920,.06,'sine',.018,70);setTimeout(()=>tone(1080,.08,'sine',.016,-80),95);}
 }
 function haptic(ms:number){try{navigator.vibrate?.(ms);}catch{}}
 
@@ -217,6 +218,8 @@ class DameStreetScene extends Phaser.Scene{
   targets:Target[]=[];
   gardai:Phaser.GameObjects.Sprite[]=[];
   vehicles:Vehicle[]=[];
+  pigeons:Phaser.GameObjects.Sprite[]=[];
+  lastLuasBellAt=0;
   keys:any;
   altitude=.7;
   altitudeTarget=.7;
@@ -277,6 +280,7 @@ class DameStreetScene extends Phaser.Scene{
     this.busker(5850,930);this.busker(6650,1040);
     this.spawnTraffic();
     this.spawnPeople();
+    this.spawnAmbientPigeons();
     this.spawnCameos();
     this.spawnGarda(1840,610,false);
     this.spawnGarda(4210,640,false);
@@ -555,6 +559,10 @@ class DameStreetScene extends Phaser.Scene{
     g.fillStyle(0xb7783f);g.fillEllipse(x+25,y+8,20,27);g.fillStyle(0x5b3b29);g.fillRect(x+30,y-25,5,34);g.fillCircle(x+25,y+8,4);
     g.fillStyle(0x333e43);g.fillEllipse(x+60,y+35,70,20);g.lineStyle(3,0x8d6f4c);g.strokeEllipse(x+60,y+35,70,20);
     this.add.text(x+59,y+35,'€',{fontFamily:'Arial Black',fontSize:'10px',color:'#f6d85c'}).setOrigin(.5).setDepth(27);
+    for(let i=0;i<3;i++){
+      const note=this.add.text(x+12+i*16,y-32-i*7,i%2?'♫':'♪',{fontFamily:'Arial',fontSize:'15px',color:'#6a355d',stroke:'#fff5d0',strokeThickness:2}).setDepth(28).setAlpha(.1);
+      this.tweens.add({targets:note,y:note.y-42,alpha:{from:.15,to:.9},duration:1100+i*180,delay:i*330,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
+    }
   }
 
   dog(x:number,y:number,flip=false){
@@ -631,6 +639,15 @@ class DameStreetScene extends Phaser.Scene{
     person('person-tourist',0x4b7ba5,0xe3b58d,0xd9b13d,0xd65b49);
     person('person-builder',0x4f5961,0xc98962,0xf0cc38,0xe8793c);
     person('person-runner',0x7a3d85,0xa96c50,null,0x44c4c9);
+    const pg=this.make.graphics({x:0,y:0},false);
+    pg.fillStyle(0x000000,.12);pg.fillEllipse(24,34,32,8);
+    pg.fillStyle(0x697780);pg.fillEllipse(24,24,30,20);
+    pg.fillStyle(0x55636c);pg.fillCircle(36,18,10);
+    pg.fillStyle(0x3e8a7c);pg.fillEllipse(31,20,11,8);
+    pg.fillStyle(0xd9954a);pg.fillTriangle(45,18,55,21,45,24);
+    pg.fillStyle(0xf2a0a4);pg.fillRoundedRect(17,32,3,8,1);pg.fillRoundedRect(28,32,3,8,1);
+    pg.fillStyle(0x172830);pg.fillCircle(39,15,2);
+    pg.generateTexture('pigeon',58,44);pg.destroy();
     // Garda - SVG is preferred; this fallback keeps the game playable if an art file ever fails.
     if(!this.textures.exists('garda')){
       const gd=this.make.graphics({x:0,y:0},false);
@@ -710,6 +727,41 @@ class DameStreetScene extends Phaser.Scene{
       const ring=this.add.circle(x,y,34,0xffe784,0).setStrokeStyle(3,0xffe784,0).setDepth(18);
       const temperament=(['oblivious','suspicious','runner','defender'] as const)[i%4];
       this.targets.push({person:p,food:fi,ring,value:f.value,name:f.name,stolen:false,vx:(Math.random()-.5),vy:(Math.random()-.5)*.4,panicUntil:0,temperament});
+    }
+  }
+
+  spawnAmbientPigeons(){
+    const zones=[
+      {minX:220,maxX:3200,minY:540,maxY:700,count:6},
+      {minX:5350,maxX:6900,minY:700,maxY:1320,count:7},
+      {minX:7200,maxX:8580,minY:720,maxY:1320,count:7}
+    ];
+    let n=0;
+    for(const z of zones)for(let i=0;i<z.count;i++){
+      const x=Phaser.Math.Linear(z.minX,z.maxX,(i+1)/(z.count+1));
+      const y=Phaser.Math.Linear(z.minY,z.maxY,((i*37)%z.count+1)/(z.count+1));
+      const p=this.add.sprite(x,y,'pigeon').setDepth(20).setScale(.76+(i%3)*.08);
+      p.setData('homeX',x);p.setData('homeY',y);p.setData('minX',z.minX);p.setData('maxX',z.maxX);p.setData('minY',z.minY);p.setData('maxY',z.maxY);p.setData('phase',n++*.83);
+      this.pigeons.push(p);
+    }
+  }
+
+  updateAmbient(time:number,dt:number){
+    for(const p of this.pigeons){
+      if(Math.abs(p.x-this.gull.x)>1550)continue;
+      const d=Phaser.Math.Distance.Between(p.x,p.y,this.gull.x,this.gull.y);
+      if(d<175&&this.altitude<.48){
+        const a=Phaser.Math.Angle.Between(this.gull.x,this.gull.y,p.x,p.y);
+        p.x+=Math.cos(a)*190*dt;p.y+=Math.sin(a)*190*dt;
+        p.setFlipX(Math.cos(a)<0);p.setAngle(Math.sin(time*.02+Number(p.getData('phase')))*7);
+      }else{
+        const hx=Number(p.getData('homeX')),hy=Number(p.getData('homeY')),phase=Number(p.getData('phase'));
+        const tx=hx+Math.sin(time*.00055+phase)*34,ty=hy+Math.cos(time*.0007+phase)*18;
+        p.x=Phaser.Math.Linear(p.x,tx,Math.min(1,dt*.9));p.y=Phaser.Math.Linear(p.y,ty,Math.min(1,dt*.9));
+        p.setAngle(Math.sin(time*.001+phase)*2);
+      }
+      p.x=Phaser.Math.Clamp(p.x,Number(p.getData('minX')),Number(p.getData('maxX')));
+      p.y=Phaser.Math.Clamp(p.y,Number(p.getData('minY')),Number(p.getData('maxY')));
     }
   }
 
@@ -799,7 +851,8 @@ class DameStreetScene extends Phaser.Scene{
     this.carryText.setPosition(this.gull.x,this.gull.y-58*sc);
 
     this.updateTargets(time,dt);
-    this.updateTraffic(dt);
+    this.updateTraffic(time,dt);
+    this.updateAmbient(time,dt);
     this.updateGardai(time,dt);
     this.updateHeat(time,dt);
     this.updateSelection();
@@ -979,15 +1032,17 @@ class DameStreetScene extends Phaser.Scene{
     }
   }
 
-  updateTraffic(dt:number){
+  updateTraffic(time:number,dt:number){
     for(const v of this.vehicles){
       v.sprite.x+=v.speed*dt;
       const bounded=v.minX!==undefined||v.maxX!==undefined;
       const min=v.minX??-180,max=v.maxX??WORLD_W+180,pad=bounded?0:180;
       if(v.speed>0&&v.sprite.x>max+pad)v.sprite.x=min-180;
       if(v.speed<0&&v.sprite.x<min-180)v.sprite.x=max+180;
+      const distance=Phaser.Math.Distance.Between(this.gull.x,this.gull.y,v.sprite.x,v.sprite.y);
+      if(v.sprite.texture.key==='luas'&&distance<330&&time-this.lastLuasBellAt>6500){this.lastLuasBellAt=time;sfx('bell');}
       const collisionRadius=v.sprite.texture.key==='luas'?118:v.sprite.texture.key==='bus'?102:70;
-      if(this.altitude<.2&&Phaser.Math.Distance.Between(this.gull.x,this.gull.y,v.sprite.x,v.sprite.y)<collisionRadius)this.hit('Ouch. Dublin traffic.',performance.now());
+      if(this.altitude<.2&&distance<collisionRadius)this.hit('Ouch. Dublin traffic.',performance.now());
     }
   }
 
