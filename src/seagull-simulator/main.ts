@@ -112,7 +112,7 @@ class DameStreetScene extends Phaser.Scene{
     this.anims.create({key:'fly',frames:[{key:'gull-0'},{key:'gull-1'},{key:'gull-2'},{key:'gull-1'}],frameRate:8,repeat:-1});
     this.gull.play('fly');
     this.cameras.main.startFollow(this.gull,true,.09,.09);
-    this.cameras.main.setFollowOffset(0,-135);
+    this.cameras.main.setFollowOffset(0,190);
     this.cameras.main.setZoom(1.02);
 
     this.targetMarker=this.add.circle(0,0,62,0xffd54f,.08).setStrokeStyle(5,0xffd54f,.95).setVisible(false).setDepth(30);
