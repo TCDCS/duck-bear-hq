@@ -1,7 +1,7 @@
 {
   "game": "seagull-simulator",
   "title": "Seagull Simulator: Dublin",
-  "version": "0.6.0-alpha",
+  "version": "0.7.0-alpha",
   "engine": "Phaser 4 + TypeScript",
   "status": "playable-alpha",
   "area": "Dame Street + College Green + Grafton Street + St Stephen's Green",
@@ -35,7 +35,12 @@
     "eight local trophies",
     "lifetime run statistics",
     "richer run-end summary",
-    "active play-time tracking"
+    "active play-time tracking",
+    "area-specific food pools",
+    "area-specific crowd mixes",
+    "sandwiches",
+    "doughnuts",
+    "high-value takeaway bags"
   ],
   "progression": {
     "storage": "local device",
@@ -67,5 +72,25 @@
     "highest wanted",
     "areas visited",
     "active run time"
-  ]
+  ],
+  "food": {
+    "count": 8,
+    "types": [
+      "chips",
+      "chicken fillet roll",
+      "coffee",
+      "ice cream",
+      "spice bag",
+      "sandwich",
+      "doughnut",
+      "takeaway bag"
+    ],
+    "highestValue": "takeaway bag"
+  },
+  "areaFlavour": {
+    "Dame Street": "takeaway-heavy",
+    "College Green": "coffee/commuter-heavy",
+    "Grafton Street": "café/treat-heavy",
+    "St Stephen's Green": "picnic/ice-cream-heavy"
+  }
 }
