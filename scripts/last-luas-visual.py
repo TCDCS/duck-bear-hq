@@ -14,6 +14,11 @@ SHOTS = [
     {"name": "umbrella", "query": "smoke=1&focus=umbrella", "viewport": (1280, 720), "focus": "umbrella"},
     {"name": "delivery", "query": "smoke=1&focus=delivery", "viewport": (1280, 720), "focus": "delivery"},
     {"name": "mobile-umbrella", "query": "smoke=1&focus=umbrella", "viewport": (844, 390), "focus": "umbrella"},
+    {"name": "facade-arket", "query": "smoke=1&distance=10", "viewport": (1280, 720), "focus": None},
+    {"name": "facade-hodges", "query": "smoke=1&distance=43", "viewport": (1280, 720), "focus": None},
+    {"name": "facade-cafe", "query": "smoke=1&distance=171", "viewport": (1280, 720), "focus": None},
+    {"name": "facade-dawson-lounge", "query": "smoke=1&distance=279", "viewport": (1280, 720), "focus": None},
+    {"name": "facade-ivy", "query": "smoke=1&distance=340", "viewport": (1280, 720), "focus": None},
 ]
 
 with sync_playwright() as p:
@@ -42,6 +47,8 @@ with sync_playwright() as p:
             raise RuntimeError(f"{name}: wrong build {data.get('lastLuasBuild')}")
         if data.get("lastLuasCharacterAssets") != "2":
             raise RuntimeError(f"{name}: expected 2 character assets, got {data.get('lastLuasCharacterAssets')}")
+        if data.get("lastLuasObstacleCount") != "29":
+            raise RuntimeError(f"{name}: expected 29 obstacles, got {data.get('lastLuasObstacleCount')}")
         if shot["focus"] and data.get("lastLuasReviewFocus") != shot["focus"]:
             raise RuntimeError(f"{name}: review focus did not activate")
         page.wait_for_function(
