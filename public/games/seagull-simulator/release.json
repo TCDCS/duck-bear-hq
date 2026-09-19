@@ -1,7 +1,7 @@
 {
   "game": "seagull-simulator",
   "title": "Seagull Simulator: Dublin",
-  "version": "1.0",
+  "version": "1.0.1",
   "engine": "Phaser 4 + TypeScript",
   "status": "live",
   "area": "Dame Street + College Green + Grafton Street + St Stephen's Green",
@@ -51,7 +51,14 @@
     "automatic ambient low-power mode",
     "real browser persistence reload check",
     "reduced-motion support",
-    "playable CI build artifact"
+    "playable CI build artifact",
+    "Trinity College Front Gate College Green landmark",
+    "richer storefront geometry",
+    "clickable in-game changelog",
+    "Tesco storefront signage",
+    "Yeeros storefront signage",
+    "Disney Grafton Street signage",
+    "LEGO Grafton Street signage"
   ],
   "progression": {
     "storage": "local device",
@@ -125,25 +132,67 @@
     "forced low-power browser path",
     "reduced-motion source/UI checks"
   ],
-  "build": "1.0",
+  "build": "1.0.1",
   "liveTarget": true,
   "releaseStage": "live",
   "releaseDate": "2026-09-19",
   "brandSignage": {
-    "build": "Build 1.0 live storefront patch",
+    "build": "Build 1.0.1 Dublin detail patch",
     "bundledLocal": true,
     "environmentalOnly": true,
     "brands": [
       "Centra",
       "SuperValu",
-      "Insomnia",
+      "Tesco",
       "McDonald's",
       "SPAR",
       "Boots",
+      "Yeeros",
       "Brown Thomas",
-      "Bewley's"
+      "Bewley's",
+      "Disney",
+      "LEGO"
     ],
-    "deployed": true,
-    "deployedDate": "2026-09-19"
-  }
+    "deployed": false,
+    "deployedDate": null
+  },
+  "environmentDetail": {
+    "collegeGreen": "Trinity College Dublin west front / Front Gate landmark",
+    "storefrontPass": "expanded masonry, windows, doors, roofline shapes and fascia depth",
+    "graftonStreet": [
+      "Brown Thomas",
+      "Bewley's",
+      "Disney",
+      "LEGO"
+    ],
+    "dameStreetRun": [
+      "Centra",
+      "SuperValu",
+      "Tesco",
+      "McDonald's",
+      "SPAR",
+      "Boots",
+      "Yeeros"
+    ]
+  },
+  "changelog": [
+    {
+      "version": "1.0.1",
+      "date": "2026-09-19",
+      "changes": [
+        "Replaced the College Green classical block with a Trinity College Front Gate landmark.",
+        "Replaced Insomnia with Tesco and the generic Dublin Deli with Yeeros.",
+        "Added Disney and LEGO storefront signage to Grafton Street.",
+        "Added more storefront geometry, masonry, window, door, railing, bollard and cycle-stand detail.",
+        "Added Settings and a clickable in-game changelog."
+      ]
+    },
+    {
+      "version": "1.0",
+      "date": "2026-09-19",
+      "changes": [
+        "First live Duck & Bear release."
+      ]
+    }
+  ]
 }

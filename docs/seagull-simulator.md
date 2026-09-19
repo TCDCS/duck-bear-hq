@@ -36,7 +36,7 @@ The seagull must remain the strongest character on screen: readable silhouette, 
 
 ## Dublin references
 
-Real business names may appear as environmental references where useful, including Centra, SuperValu, Insomnia, McDonald's, Spar and Boots. Their appearance must not imply sponsorship or endorsement. Exact trademark artwork should be reviewed before any commercial/app-store release.
+Real business names may appear as environmental references where useful, including Centra, SuperValu, Tesco, McDonald's, Spar, Boots, Yeeros, Brown Thomas, Bewley's, Disney and LEGO. Their appearance must not imply sponsorship or endorsement. Exact trademark artwork should be reviewed before any commercial/app-store release.
 
 Garda characters are stylised and clearly recognisable through uniform colours, cap and high-vis treatment, without relying on exact official crest artwork.
 
@@ -84,3 +84,17 @@ The map and major-system scope is closed for the first release. Future work befo
 Build 1.0 is the first live Duck & Bear release. The opening game screen must visibly show **BUILD 1.0** before play begins. The Duck & Bear homepage and Games hub also surface Build 1.0.
 
 Do not create another pre-release version number after this point. Any remaining branch changes before deployment are release-candidate hardening for Build 1.0. Once the exact Build 1.0 head passes the full validation matrix, the release path is: mark PR #61 ready, merge to main, verify the normal site deployment, then confirm the live game displays Build 1.0.
+
+
+## Build 1.0.1 visual patch
+
+Build 1.0.1 keeps the Build 1.0 gameplay balance and focuses on making the route read more clearly as Dublin.
+
+- College Green now uses the Trinity College Dublin west front / Front Gate as its main landmark.
+- Tesco replaces Insomnia on the Dame Street run.
+- Yeeros replaces the generic Dublin Deli frontage.
+- Grafton Street adds Disney and LEGO storefront references alongside Brown Thomas and Bewley's.
+- Generic shopfronts have more masonry, sash-window, doorway, roofline and fascia detail.
+- Settings now includes the current build number and a clickable changelog.
+
+The route remains a stylised continuous game map. Storefront placement is for environmental recognition and is not a claim that every business occupies that exact game-map position.

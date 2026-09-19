@@ -219,20 +219,20 @@ test('Seagull landing has a procedural art fallback',()=>{
   assert.match(source,/gw\.generateTexture\('gull-walk'/);
 });
 
-test('Seagull Build 1.0 is consistent across runtime and public entry points',()=>{
-  assert.match(source,/const VERSION='1\.0'/);
-  assert.equal(release.version,'1.0');
-  assert.equal(release.build,'1.0');
+test('Seagull Build 1.0.1 is consistent across runtime and public entry points',()=>{
+  assert.match(source,/const VERSION='1\.0\.1'/);
+  assert.equal(release.version,'1.0.1');
+  assert.equal(release.build,'1.0.1');
   assert.equal(release.liveTarget,true);
-  assert.match(html,/BUILD <span id="version">1\.0<\/span>/);
+  assert.match(html,/BUILD <span id="version">1\.0\.1<\/span>/);
   assert.doesNotMatch(html,/0\.9\.1-alpha|Alpha <span id="version"/);
-  assert.match(hub,/BUILD 1\.0/);
-  assert.match(home,/BUILD 1\.0/);
+  assert.match(hub,/BUILD 1\.0\.1/);
+  assert.match(home,/BUILD 1\.0\.1/);
 });
 
-test('Seagull shop signage uses bundled real-brand marks with text fallbacks',()=>{
+test('Seagull shop signage uses bundled brand marks with text fallbacks',()=>{
   const files=[
-    'centra.svg','supervalu.svg','spar.svg','insomnia.svg',
+    'centra.svg','supervalu.svg','spar.svg','tesco.svg','yeeros.svg','disney.svg','lego.svg',
     'mcdonalds.svg','boots.svg','brown-thomas.svg','bewleys.svg'
   ];
   for(const file of files){
@@ -242,14 +242,26 @@ test('Seagull shop signage uses bundled real-brand marks with text fallbacks',()
     assert.equal(svg.includes("href='http"),false);
   }
   for(const key of [
-    'brand-centra','brand-supervalu','brand-insomnia','brand-mcdonalds',
-    'brand-spar','brand-boots','brand-brown-thomas','brand-bewleys'
+    'brand-centra','brand-supervalu','brand-tesco','brand-mcdonalds','brand-spar','brand-boots',
+    'brand-yeeros','brand-brown-thomas','brand-bewleys','brand-disney','brand-lego'
   ]) assert.match(source,new RegExp(key));
-  assert.match(source,/shop\(x:number,y:number,w:number,h:number,name:string,colour:number,sign:number,brandKey\?:string\)/);
+  assert.doesNotMatch(source,/brand-insomnia|DUBLIN DELI/);
+  assert.match(source,/TRINITY COLLEGE DUBLIN/);
   assert.match(source,/brandKey&&this\.textures\.exists\(brandKey\)/);
   assert.match(source,/fallback\.setVisible\(false\)/);
   assert.match(source,/maxW=w-52,maxH=64/);
   assert.equal(release.brandSignage.bundledLocal,true);
   assert.equal(release.brandSignage.environmentalOnly,true);
-  assert.equal(release.brandSignage.brands.length,8);
+  assert.equal(release.brandSignage.brands.length,11);
+});
+
+test('Seagull Settings exposes build and changelog',()=>{
+  assert.match(html,/id="settingsBtn"/);
+  assert.match(html,/id="settingsPanel"/);
+  assert.match(html,/id="changelogBtn"/);
+  assert.match(html,/id="changelogPanel"/);
+  assert.match(html,/Build <span id="settingsVersion">1\.0\.1<\/span>/);
+  assert.match(source,/settingsSoundBtn/);
+  assert.match(source,/previewPanel==='changelog'/);
+  assert.equal(release.changelog[0].version,'1.0.1');
 });
