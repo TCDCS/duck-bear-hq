@@ -72,6 +72,13 @@ jobs:
           echo "$summary" | grep 'data-seagull-summary-scheduled="1"'
           echo "$summary" | grep 'data-seagull-summary-exercised="1"'
           echo "$summary" | grep '1:34'
+          rm -rf /tmp/seagull-profile
+          seed=$(google-chrome --headless --no-sandbox --user-data-dir=/tmp/seagull-profile --dump-dom --virtual-time-budget=3000 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&persistcheck=seed')
+          echo "$seed" | grep 'data-seagull-persist-seeded="1"'
+          verify=$(google-chrome --headless --no-sandbox --user-data-dir=/tmp/seagull-profile --dump-dom --virtual-time-budget=3000 'http://127.0.0.1:4173/games/seagull-simulator/?smoke=1&persistcheck=verify')
+          echo "$verify" | grep 'data-seagull-persist-verified="1"'
+          echo "$verify" | grep 'Big Lad'
+          echo "$verify" | grep '>321<'
           test -s /tmp/seagull-smoke/dame-street.png
           test -s /tmp/seagull-smoke/college-green.png
           test -s /tmp/seagull-smoke/grafton-street.png
