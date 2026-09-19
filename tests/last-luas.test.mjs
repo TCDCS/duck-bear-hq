@@ -45,7 +45,7 @@ test('runtime-rendered nameboards and final Luas sequence are present',()=>{
   const source=read(game);
   assert.match(source,/function signMaterial/);
   assert.match(source,/Texture\(app\.graphicsDevice/);
-  for(const sign of ['ARKET wordmark','Hodges Figgis nameboard','Cafe en Seine nameboard','Dawson Lounge nameboard','Ivy nameboard','Dawson stop nameboard'])assert.match(source,new RegExp(sign));
+  for(const sign of ['ARKET real wordmark','Hodges Figgis real logo','Cafe en Seine real logo','Dawson Lounge real sign','Ivy real wordmark','Dawson stop nameboard'])assert.match(source,new RegExp(sign));
   assert.match(source,/DOORS CLOSING!/);
   assert.match(source,/THE LUAS IS MOVING!/);
   assert.match(source,/last-luas-best-v1/);
