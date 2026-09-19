@@ -112,6 +112,7 @@ class DameStreetScene extends Phaser.Scene{
     this.anims.create({key:'fly',frames:[{key:'gull-0'},{key:'gull-1'},{key:'gull-2'},{key:'gull-1'}],frameRate:8,repeat:-1});
     this.gull.play('fly');
     this.cameras.main.startFollow(this.gull,true,.09,.09);
+    this.cameras.main.setFollowOffset(0,-135);
     this.cameras.main.setZoom(1.02);
 
     this.targetMarker=this.add.circle(0,0,62,0xffd54f,.08).setStrokeStyle(5,0xffd54f,.95).setVisible(false).setDepth(30);
@@ -177,6 +178,8 @@ class DameStreetScene extends Phaser.Scene{
     // street furniture
     for(let x=160;x<WORLD_W;x+=300)this.lamp(x,610);
     for(let x=280;x<WORLD_W;x+=520)this.bin(x,680);
+    for(let x=420;x<WORLD_W;x+=690)this.flowerBasket(x,545);
+    for(let x=690;x<WORLD_W;x+=920)this.cafeBoard(x,676,x%1840<900?'COFFEE':'DELI');
     for(let x=120;x<WORLD_W;x+=115){g.fillStyle(0x2e3f49);g.fillRoundedRect(x,720,13,36,5);}
     // crossings
     for(const x of [980,2220]){
@@ -191,17 +194,21 @@ class DameStreetScene extends Phaser.Scene{
     const g=this.add.graphics().setDepth(2);
     g.fillStyle(0x5d6870,.25);g.fillRect(x+18,y+24,w,h);
     g.fillStyle(0xe7d7bb);g.fillRect(x,y,w,h);
-    g.fillStyle(0x9b7e61);g.fillRect(x,y,w,35);
+    g.fillStyle(0xa78564);g.fillRect(x,y,w,35);
+    g.fillStyle(0xf2e2c7);g.fillRect(x+8,y+38,w-16,13);
+    g.lineStyle(2,0xc6ad89,.45);for(let by=y+62;by<y+175;by+=24)g.lineBetween(x+8,by,x+w-8,by);
     // upper windows
     for(let wx=x+30;wx<x+w-50;wx+=105){
       g.fillStyle(0x7294a2);g.fillRoundedRect(wx,y+55,76,105,5);
       g.lineStyle(5,0xf0dfbf,.9);g.lineBetween(wx+38,y+58,wx+38,y+157);
     }
     g.fillStyle(colour);g.fillRect(x+12,y+185,w-24,80);
+    g.fillStyle(0xf2efe1);for(let ax=x+22;ax<x+w-34;ax+=72)g.fillTriangle(ax,y+265,ax+62,y+265,ax+31,y+288);
     g.fillStyle(0x456474);g.fillRect(x+25,y+285,w-50,155);
     for(let wx=x+35;wx<x+w-70;wx+=125){
       g.fillStyle(0xb9e4e5,.75);g.fillRect(wx,y+300,96,119);
       g.fillStyle(0xffffff,.26);g.fillTriangle(wx+7,y+307,wx+77,y+307,wx+7,y+370);
+      g.fillStyle(0xf8e7aa,.38);g.fillRect(wx+8,y+385,80,22);
     }
     this.add.text(x+w/2,y+225,name,{fontFamily:'Arial Black, sans-serif',fontSize:Math.min(42,Math.max(24,w/name.length*.9))+'px',color:'#'+sign.toString(16).padStart(6,'0')}).setOrigin(.5).setDepth(4);
   }
@@ -210,6 +217,22 @@ class DameStreetScene extends Phaser.Scene{
   }
   bin(x:number,y:number){
     const g=this.add.graphics().setDepth(8);g.fillStyle(0x263e45);g.fillRoundedRect(x,y-42,34,52,5);g.fillStyle(0x101e23);g.fillRect(x+5,y-33,24,8);
+  }
+
+  flowerBasket(x:number,y:number){
+    const g=this.add.graphics().setDepth(10);
+    g.lineStyle(3,0x263c48);g.lineBetween(x,y-50,x,y-18);
+    g.fillStyle(0x6a4b32);g.fillRoundedRect(x-22,y-20,44,18,6);
+    g.fillStyle(0x3e914d);g.fillCircle(x-13,y-22,12);g.fillCircle(x+10,y-23,13);
+    for(const [dx,dy,col] of [[-15,-25,0xe9556d],[0,-20,0xf2cf4d],[13,-26,0xf17ab0],[-4,-30,0xffffff]] as any[]){
+      g.fillStyle(col);g.fillCircle(x+dx,y+dy,5);
+    }
+  }
+  cafeBoard(x:number,y:number,label:string){
+    const g=this.add.graphics().setDepth(13);
+    g.fillStyle(0x2a363b);g.fillRoundedRect(x-22,y-44,44,46,4);
+    g.lineStyle(3,0x76563d);g.lineBetween(x-14,y+1,x-20,y+18);g.lineBetween(x+14,y+1,x+20,y+18);
+    this.add.text(x,y-22,label,{fontFamily:'Arial Black',fontSize:'9px',color:'#fff2cf',align:'center'}).setOrigin(.5).setDepth(14);
   }
 
   makeTextures(){
@@ -269,8 +292,15 @@ class DameStreetScene extends Phaser.Scene{
       g.generateTexture(key,w,h);g.destroy();
     };
     vehicle('taxi',0x24292c,100,58);
-    vehicle('bus',0x2f80b9,164,74);
     vehicle('van',0xd9d4c8,122,64);
+    const bus=this.make.graphics({x:0,y:0},false);
+    bus.fillStyle(0x000000,.18);bus.fillEllipse(82,67,136,18);
+    bus.fillStyle(0x26313a);bus.fillRoundedRect(10,48,15,21,4);bus.fillRoundedRect(139,48,15,21,4);
+    bus.fillStyle(0x2f80b9);bus.fillRoundedRect(7,8,150,57,10);
+    bus.fillStyle(0xf2c844);bus.fillRect(7,42,150,14);
+    bus.fillStyle(0xbfe0e6);for(let bx=18;bx<142;bx+=31)bus.fillRoundedRect(bx,15,25,20,4);
+    bus.fillStyle(0x172c3a);bus.fillRoundedRect(49,45,67,9,3);
+    bus.generateTexture('bus',164,74);bus.destroy();
   }
 
   spawnTraffic(){
@@ -342,7 +372,7 @@ class DameStreetScene extends Phaser.Scene{
     if(controls.consumeGrab())this.tryGrab(time);
     if(time>this.diveUntil&&this.altitudeTarget<.6)this.altitudeTarget=.7;
     this.altitude=Phaser.Math.Linear(this.altitude,this.altitudeTarget,Math.min(1,dt*4.8));
-    const sc=.72+this.altitude*.42;this.gull.setScale(sc);
+    const sc=.82+this.altitude*.5;this.gull.setScale(sc);
     this.gull.setDepth(45+Math.round(this.altitude*28));
     this.shadow.setPosition(this.gull.x+16,this.gull.y+28+this.altitude*58);
     this.shadow.setScale(1.15-this.altitude*.38,.9-this.altitude*.25);
