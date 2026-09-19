@@ -11,7 +11,7 @@
   ],
   "artDirection": "playful 3D cartoon Dublin based on real Dawson Street architecture",
   "environment": {
-    "wetRoad": true,
+    "wetRoad": false,
     "puddleReflections": false,
     "overheadLuasWires": true,
     "ambientPedestrians": true,
@@ -27,7 +27,12 @@
     "realFacadeReferences": true,
     "realBrandWordmarks": true,
     "brighterStreetLighting": true,
-    "slimmedStreetPoles": true
+    "slimmedStreetPoles": true,
+    "dryCartoonAsphalt": true,
+    "realInstitutionalFacades": [
+      "Royal Irish Academy",
+      "St Ann's Church"
+    ]
   },
   "landmarks": [
     "ARKET Dawson Street",
@@ -50,7 +55,7 @@
     "camera FOV sprint effect",
     "local best catch time"
   ],
-  "notes": "v0.4 keeps the stable runner gameplay, removes the rain overlay, enlarges the real animated Quaternius characters, brightens the street, and rebuilds ARKET, Hodges Figgis, Café en Seine, The Dawson Lounge and The Ivy from real Dawson Street frontage references. Signage uses the real public-facing wordmarks, colours and facade treatments rather than generic labels.",
+  "notes": "v0.4 keeps the stable runner gameplay, removes the rain and wet-road look, enlarges the real animated Quaternius characters, brightens the street, improves bicycle riding poses, and rebuilds ARKET, Hodges Figgis, Café en Seine, The Dawson Lounge, Royal Irish Academy, St Ann's Church and The Ivy from real Dawson Street frontage references. Signage uses recognisable public-facing wordmarks, colours, projecting signs and street numbers rather than generic labels.",
   "thirdPartyAssets": {
     "characters": "Quaternius Ultimate Modular Men",
     "license": "CC0 1.0",
