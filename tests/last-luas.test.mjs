@@ -52,6 +52,24 @@ test('runtime-rendered nameboards and final Luas sequence are present',()=>{
   assert.match(source,/camera\.camera\.fov/);
 });
 
+test('v0.4 uses real pinned Quaternius character assets rather than primitive people',()=>{
+  const source=read(game);
+  assert.match(source,/fatal-funnel-public@29a6bdfd01ad175c389cbd0bac80c30f926ff96b/);
+  assert.match(source,/casual-character\.glb/);
+  assert.match(source,/worker\.glb/);
+  assert.match(source,/loadFromUrl\(CHARACTER_SOURCES\[kind\],'container'/);
+  assert.match(source,/instantiateRenderEntity/);
+  assert.match(source,/spawnCharacter/);
+  assert.match(source,/Runner character model/);
+  assert.match(source,/Tourist character model/);
+  assert.match(source,/Umbrella pedestrian model/);
+  assert.match(source,/Cyclist rider model/);
+  assert.match(source,/Delivery rider model/);
+  assert.doesNotMatch(source,/sphere\('head'/i);
+  assert.doesNotMatch(source,/box\('body'/i);
+  assert.match(source,/dataset\.lastLuasCharacterAssets/);
+});
+
 test('street polish includes distinct hazards and final sprint feedback',()=>{
   const source=read(game),styles=read(css);
   assert.match(source,/umbrella-hit/);
@@ -65,11 +83,14 @@ test('street polish includes distinct hazards and final sprint feedback',()=>{
 test('release metadata matches the playable slice',()=>{
   const data=JSON.parse(read(release));
   assert.equal(data.game,'Last Luas');
-  assert.equal(data.version,'0.3.0');
+  assert.equal(data.version,'0.4.0');
   assert.equal(data.engine,'PlayCanvas 2.22.2');
   assert.equal(data.durationSeconds,90);
   assert.equal(data.location,'Dawson Street, Dublin');
   assert.equal(data.environment.raisedLuasPlatforms,true);
   assert.equal(data.environment.puddleReflections,true);
   assert.equal(data.environment.runtimeNameboards,true);
+  assert.equal(data.environment.realAnimatedCharacters,true);
+  assert.equal(data.environment.proceduralPeople,false);
+  assert.equal(data.thirdPartyAssets.license,'CC0 1.0');
 });
