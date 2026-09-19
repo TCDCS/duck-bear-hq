@@ -109,8 +109,8 @@ function sphere(name,pos,scale,material,parent=app.root){
   const e=new pc.Entity(name);e.addComponent('render',{type:'sphere'});e.setPosition(pos);e.setLocalScale(scale);e.render.material=material;parent.addChild(e);return e;
 }
 
-const P={road:new pc.Color(.045,.055,.075),pave:new pc.Color(.30,.31,.33),rail:new pc.Color(.62,.65,.70),brick:new pc.Color(.49,.20,.13),cream:new pc.Color(.78,.72,.62),navy:new pc.Color(.025,.13,.20),green:new pc.Color(.03,.24,.12),glass:new pc.Color(.025,.075,.11),black:new pc.Color(.018,.022,.035),white:new pc.Color(.93,.96,1),orange:new pc.Color(.95,.28,.04),yellow:new pc.Color(1,.72,.12),purple:new pc.Color(.37,.17,.62),skin:new pc.Color(.72,.47,.33)};
-const M={road:mat(P.road,{gloss:.88,metal:.08}),pave:mat(P.pave,{gloss:.55}),rail:mat(P.rail,{gloss:.95,metal:.95}),brick:mat(P.brick,{gloss:.26}),cream:mat(P.cream,{gloss:.3}),navy:mat(P.navy,{gloss:.6}),green:mat(P.green,{gloss:.5}),glass:mat(P.glass,{gloss:.98,metal:.08}),black:mat(P.black,{gloss:.4}),white:mat(P.white,{gloss:.55}),orange:mat(P.orange,{gloss:.4}),yellow:mat(P.yellow,{gloss:.55}),purple:mat(P.purple,{gloss:.65}),skin:mat(P.skin,{gloss:.2}),lamp:mat(P.white,{emissive:new pc.Color(1,.56,.18),gloss:.35}),red:mat(new pc.Color(.64,.025,.03),{gloss:.55}),blue:mat(new pc.Color(.07,.30,.58),{gloss:.35}),gold:mat(new pc.Color(.72,.51,.18),{gloss:.72,metal:.28}),leaf:mat(new pc.Color(.05,.34,.15),{gloss:.22}),stone:mat(new pc.Color(.56,.55,.52),{gloss:.35}),pink:mat(new pc.Color(.66,.23,.38),{gloss:.38}),wetGlass:mat(new pc.Color(.08,.15,.22),{gloss:1,metal:.06,opacity:.42})};
+const P={road:new pc.Color(.105,.115,.13),pave:new pc.Color(.30,.31,.33),rail:new pc.Color(.62,.65,.70),brick:new pc.Color(.49,.20,.13),cream:new pc.Color(.78,.72,.62),navy:new pc.Color(.025,.13,.20),green:new pc.Color(.03,.24,.12),glass:new pc.Color(.025,.075,.11),black:new pc.Color(.018,.022,.035),white:new pc.Color(.93,.96,1),orange:new pc.Color(.95,.28,.04),yellow:new pc.Color(1,.72,.12),purple:new pc.Color(.37,.17,.62),skin:new pc.Color(.72,.47,.33)};
+const M={road:mat(P.road,{gloss:.44,metal:.02}),pave:mat(P.pave,{gloss:.55}),rail:mat(P.rail,{gloss:.95,metal:.95}),brick:mat(P.brick,{gloss:.26}),cream:mat(P.cream,{gloss:.3}),navy:mat(P.navy,{gloss:.6}),green:mat(P.green,{gloss:.5}),glass:mat(P.glass,{gloss:.98,metal:.08}),black:mat(P.black,{gloss:.4}),white:mat(P.white,{gloss:.55}),orange:mat(P.orange,{gloss:.4}),yellow:mat(P.yellow,{gloss:.55}),purple:mat(P.purple,{gloss:.65}),skin:mat(P.skin,{gloss:.2}),lamp:mat(P.white,{emissive:new pc.Color(1,.56,.18),gloss:.35}),red:mat(new pc.Color(.64,.025,.03),{gloss:.55}),blue:mat(new pc.Color(.07,.30,.58),{gloss:.35}),gold:mat(new pc.Color(.72,.51,.18),{gloss:.72,metal:.28}),leaf:mat(new pc.Color(.05,.34,.15),{gloss:.22}),stone:mat(new pc.Color(.56,.55,.52),{gloss:.35}),pink:mat(new pc.Color(.66,.23,.38),{gloss:.38}),wetGlass:mat(new pc.Color(.08,.15,.22),{gloss:1,metal:.06,opacity:.42})};
 
 const F={
   limestone:mat(new pc.Color(.82,.80,.74),{gloss:.35}),
@@ -454,8 +454,9 @@ function obstacle(kind,d,lane,{jumpable=false}={}){
     riderPivot.setLocalPosition(0,1.03,.24);riderPivot.setLocalEulerAngles(8,0,0);root.addChild(riderPivot);
     const rider=spawnCharacter(riderPivot,{kind:kind==='delivery'?'worker':'casual',clip:null,scale:.96,yaw:180,name:kind==='delivery'?'Delivery rider model':'Cyclist rider model'});
     if(rider){rider.setLocalPosition(0,-.96,-.10);poseRiderCharacter(rider);}
-    if(kind==='delivery')box('delivery box',new pc.Vec3(0,1.22,.80),new pc.Vec3(.88,.76,.68),M.green,root);
-    animated.push({type:kind,entity:root,baseX:lanes[lane],baseD:d,phase:d*.07});
+    if(kind==='delivery')box('delivery box',new pc.Vec3(0,.93,.92),new pc.Vec3(.72,.58,.58),M.green,root);
+    const baseYaw=kind==='delivery'?-12:12;root.setLocalEulerAngles(0,baseYaw,0);
+    animated.push({type:kind,entity:root,baseX:lanes[lane],baseD:d,phase:d*.07,baseYaw});
   }
   obstacleRecords.push({kind,entity:root,d,lane,jumpable,hit:false,cleared:false});
 }
@@ -533,7 +534,7 @@ function prepareVisualReview(focus){
   player.entity.setPosition(lanes[target?.lane??1],player.y,-preview);
   if(target){
     target.entity.setPosition(lanes[target.lane],0,-targetD);
-    target.entity.setLocalEulerAngles(0,0,0);
+    const baseYaw=target.kind==='delivery'?-12:target.kind==='cyclist'?12:0;target.entity.setLocalEulerAngles(0,baseYaw,0);
   }
   document.documentElement.dataset.lastLuasReviewFocus=focus;
   return preview;
@@ -568,7 +569,7 @@ function animateWorld(){
     }else{
       const direction=a.type==='delivery'?-1:1;
       a.entity.setPosition(a.baseX+Math.sin(state.elapsed*1.1+a.phase)*.28,0,-a.baseD+Math.sin(state.elapsed*1.45+a.phase)*1.25*direction);
-      a.entity.setLocalEulerAngles(0,Math.sin(state.elapsed*1.1+a.phase)*4,0);
+      a.entity.setLocalEulerAngles(0,(a.baseYaw||0)+Math.sin(state.elapsed*1.1+a.phase)*7,0);
     }
   }
 }
