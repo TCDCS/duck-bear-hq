@@ -34,3 +34,13 @@ test('Duck & Bear surfaces the new game',()=>{
   assert.match(hub,/\/games\/seagull-simulator\//);
   assert.match(home,/\/games\/seagull-simulator\//);
 });
+
+test('Seagull Simulator has replayable progression systems',()=>{
+  assert.match(source,/recycleTarget\(t:Target\)/);
+  assert.match(source,/updateHeat\(time:number,dt:number\)/);
+  assert.match(source,/combo=time-this\.lastTheftAt<8000/);
+  assert.match(source,/setMission\(index:number\)/);
+  assert.match(html,/id="missionBar"/);
+  assert.match(html,/id="combo"/);
+  assert.match(html,/id="heat"/);
+});
