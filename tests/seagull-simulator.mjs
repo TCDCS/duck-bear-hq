@@ -205,3 +205,11 @@ test('Seagull clears touch state across pause blur and restart',()=>{
   assert.match(source,/resetControls\(\);\n    game\.scene\.pause/);
   assert.match(source,/const restartRun=\(\)=>\{resetControls\(\);location\.href/);
 });
+
+test('Seagull portrait rotation pauses without overriding manual pause',()=>{
+  assert.match(source,/let orientationPaused=false/);
+  assert.match(source,/const phonePortrait=innerWidth<=900&&innerHeight>innerWidth/);
+  assert.match(source,/orientationPaused=true;setGamePaused\(true\)/);
+  assert.match(source,/!phonePortrait&&orientationPaused/);
+  assert.match(source,/orientationchange/);
+});
