@@ -21,6 +21,13 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install visual browser
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
       - name: Last Luas source tests
         run: node --test tests/last-luas.test.mjs
       - name: Render real-character smoke views
@@ -34,21 +41,7 @@ jobs:
             if curl -fsS http://127.0.0.1:4173/games/last-luas/ >/dev/null; then break; fi
             sleep 0.25
           done
-
-          shot () {
-            name="$1"
-            distance="$2"
-            size="$3"
-            target="/tmp/last-luas-real-characters/$name.png"
-            timeout 30s google-chrome --headless --no-sandbox --hide-scrollbars --window-size="$size" --virtual-time-budget=8000 --run-all-compositor-stages-before-draw --screenshot="$target" "http://127.0.0.1:4173/games/last-luas/?smoke=1&distance=$distance" || test -s "$target"
-            test -s "$target"
-          }
-          shot player 12 1280,720
-          shot tourist 60 1280,720
-          shot cyclist 72 1280,720
-          shot umbrella 102 1280,720
-          shot delivery 148 1280,720
-          shot mobile-umbrella 102 844,390
+          python scripts/last-luas-visual.py
 
       - name: Full repository tests
         run: npm test
