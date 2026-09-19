@@ -1,9 +1,9 @@
 {
   "game": "seagull-simulator",
   "title": "Seagull Simulator: Dublin",
-  "version": "1.0",
+  "version": "1.1.0",
   "engine": "Phaser 4 + TypeScript",
-  "status": "live",
+  "status": "release-candidate",
   "area": "Dame Street + College Green + Grafton Street + St Stephen's Green",
   "controls": {
     "mobile": "virtual stick + flap + dive + grab",
@@ -125,25 +125,53 @@
     "forced low-power browser path",
     "reduced-motion source/UI checks"
   ],
-  "build": "1.0",
+  "build": "1.1.0",
   "liveTarget": true,
-  "releaseStage": "live",
-  "releaseDate": "2026-09-19",
+  "releaseStage": "Build 1.1.0 release candidate",
+  "releaseDate": null,
   "brandSignage": {
-    "build": "Build 1.0 live storefront patch",
+    "build": "Build 1.1.0 release candidate",
     "bundledLocal": true,
     "environmentalOnly": true,
     "brands": [
       "Centra",
       "SuperValu",
-      "Insomnia",
+      "Tesco",
       "McDonald's",
       "SPAR",
       "Boots",
+      "LEGO",
+      "Disney Store",
+      "Bewley's",
       "Brown Thomas",
-      "Bewley's"
+      "Yeeros"
     ],
-    "deployed": true,
-    "deployedDate": "2026-09-19"
+    "yeerosSource": "user-supplied artwork"
+  },
+  "environmentDetail": {
+    "trinityCollegeWestFront": true,
+    "enhancedShopFacades": true,
+    "additionalStreetFurniture": true,
+    "graftonBusinesses": [
+      "Boots",
+      "LEGO Store",
+      "Disney Store",
+      "Bewley's",
+      "Brown Thomas"
+    ],
+    "dameStreetBusinesses": [
+      "Centra",
+      "SuperValu",
+      "Tesco",
+      "McDonald's",
+      "SPAR",
+      "Yeeros"
+    ]
+  },
+  "updateLog": {
+    "enabled": true,
+    "settingsEntry": true,
+    "current": "1.1.0",
+    "file": "/games/seagull-simulator/changelog.json"
   }
 }
