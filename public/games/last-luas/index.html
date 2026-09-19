@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#11162b">
+  <meta name="description" content="Last Luas — a Duck & Bear endless runner down a cartoon Dawson Street, Dublin.">
+  <title>Last Luas | Duck &amp; Bear Games</title>
+  <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/games/last-luas/game.css?v=0.1.0">
+</head>
+<body>
+  <main id="gameShell">
+    <canvas id="application" aria-label="Last Luas game"></canvas>
+    <div class="rain" aria-hidden="true"></div>
+
+    <header class="game-topbar">
+      <a class="back-link" href="/games/">← Games</a>
+      <span class="brand">🐤🐻 Duck &amp; Bear</span>
+      <button id="pauseBtn" class="icon-button" type="button" aria-label="Pause game">Ⅱ</button>
+    </header>
+
+    <section id="hud" class="hud" aria-live="polite">
+      <div class="hud-card timer-card"><small>LAST LUAS</small><strong id="timeValue">01:30</strong></div>
+      <div id="streetCallout" class="street-callout">DAWSON STREET</div>
+      <div class="hud-card distance-card"><small>DISTANCE</small><strong><span id="distanceValue">0</span> m</strong></div>
+    </section>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <section id="startPanel" class="overlay visible">
+      <div class="panel start-card">
+        <p class="eyebrow">DUCK &amp; BEAR PRESENTS</p>
+        <h1>LAST<br><span>LUAS</span></h1>
+        <p class="tagline">90 seconds. One street. Don't miss it.</p>
+        <p class="intro">Sprint down a rainy cartoon Dawson Street. Dodge tourists, cyclists, bins and roadworks before the final Luas pulls away.</p>
+        <div class="controls-copy"><span>← → / swipe</span><b>CHANGE LANE</b><span>Space / tap</span><b>JUMP</b></div>
+        <button id="playBtn" class="primary" type="button">RUN FOR IT →</button>
+        <p class="small">Build 0.1 · PlayCanvas · Keyboard and touch</p>
+      </div>
+    </section>
+
+    <section id="pausePanel" class="overlay" hidden>
+      <div class="panel compact-card">
+        <p class="eyebrow">HOLD ON</p>
+        <h2>Paused</h2>
+        <button id="resumeBtn" class="primary" type="button">KEEP RUNNING</button>
+        <a class="secondary-link" href="/games/">Back to Games</a>
+      </div>
+    </section>
+
+    <section id="resultPanel" class="overlay" hidden>
+      <div class="panel result-card">
+        <p class="eyebrow">LAST LUAS</p>
+        <h2 id="resultTitle">YOU MADE IT!</h2>
+        <p id="resultText">Last Luas secured.</p>
+        <div class="result-stats"><span><small>DISTANCE</small><strong id="resultDistance">0 m</strong></span><span><small>TIME LEFT</small><strong id="resultTime">00:00</strong></span></div>
+        <button id="restartBtn" class="primary" type="button">RUN AGAIN</button>
+        <a class="secondary-link" href="/games/">Back to Games</a>
+      </div>
+    </section>
+
+    <nav id="touchControls" class="touch-controls" aria-label="Game controls">
+      <button id="leftBtn" type="button" aria-label="Move left">←</button>
+      <button id="jumpBtn" class="jump" type="button" aria-label="Jump">↑</button>
+      <button id="rightBtn" type="button" aria-label="Move right">→</button>
+    </nav>
+  </main>
+  <script type="module" src="/games/last-luas/game.mjs?v=0.1.0"></script>
+</body>
+</html>
