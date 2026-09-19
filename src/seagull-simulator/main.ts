@@ -46,7 +46,9 @@ const controls={
 };
 
 let audioCtx:AudioContext|null=null;
+let soundEnabled=localStorage.getItem('seagull-muted')!=='1';
 function initAudio(){
+  if(!soundEnabled)return;
   if(new URLSearchParams(location.search).has('smoke'))return;
   try{
     const Ctx=window.AudioContext||(window as any).webkitAudioContext;
@@ -54,7 +56,7 @@ function initAudio(){
   }catch{}
 }
 function tone(freq:number,duration=.08,type:OscillatorType='sine',gain=.035,slide=0){
-  if(!audioCtx)return;
+  if(!soundEnabled||!audioCtx)return;
   const now=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();
   o.type=type;o.frequency.setValueAtTime(freq,now);
   if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(40,freq+slide),now+duration);
@@ -879,6 +881,9 @@ function startGame(){
   });
 }
 setText('startBest',Number(localStorage.getItem('seagull-best')||0).toLocaleString());
+function syncSoundButton(){const b=$('soundBtn');if(!b)return;b.textContent=soundEnabled?'SFX':'MUTE';b.classList.toggle('muted',!soundEnabled);b.setAttribute('aria-pressed',String(!soundEnabled));}
+$('soundBtn')?.addEventListener('click',()=>{soundEnabled=!soundEnabled;localStorage.setItem('seagull-muted',soundEnabled?'0':'1');if(soundEnabled)initAudio();syncSoundButton();});
+syncSoundButton();
 $('playBtn')?.addEventListener('click',startGame);
 if(new URLSearchParams(location.search).has('autostart'))startGame();
 $('restartBtn')?.addEventListener('click',()=>location.reload());
