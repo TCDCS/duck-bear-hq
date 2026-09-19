@@ -377,8 +377,10 @@ function obstacle(kind,d,lane,{jumpable=false}={}){
   }
   obstacleRecords.push({kind,entity:root,d,lane,jumpable,hit:false,cleared:false});
 }
-[[35,0,'bollard',1],[50,2,'bin'],[64,1,'tourist'],[78,0,'cyclist'],[92,2,'roadworks'],[108,1,'umbrella'],[124,0,'bin'],[139,2,'tourist'],[154,1,'delivery'],[170,0,'roadworks'],[186,2,'bollard',1],[202,1,'tourist'],[218,0,'cyclist'],[235,2,'bin'],[251,1,'roadworks'],[267,0,'umbrella'],[283,2,'delivery'],[299,1,'bollard',1],[315,0,'tourist'],[331,2,'bin'],[347,1,'roadworks'],[363,0,'cyclist'],[379,2,'umbrella'],[394,1,'tourist'],[407,0,'bollard',1]].forEach(([d,l,k,j])=>obstacle(k,d,l,{jumpable:Boolean(j)}));
-obstacle('roadworks',146,0);obstacle('roadworks',146,1);obstacle('roadworks',322,1);obstacle('roadworks',322,2);
+function buildObstacles(){
+  [[35,0,'bollard',1],[50,2,'bin'],[64,1,'tourist'],[78,0,'cyclist'],[92,2,'roadworks'],[108,1,'umbrella'],[124,0,'bin'],[139,2,'tourist'],[154,1,'delivery'],[170,0,'roadworks'],[186,2,'bollard',1],[202,1,'tourist'],[218,0,'cyclist'],[235,2,'bin'],[251,1,'roadworks'],[267,0,'umbrella'],[283,2,'delivery'],[299,1,'bollard',1],[315,0,'tourist'],[331,2,'bin'],[347,1,'roadworks'],[363,0,'cyclist'],[379,2,'umbrella'],[394,1,'tourist'],[407,0,'bollard',1]].forEach(([d,l,k,j])=>obstacle(k,d,l,{jumpable:Boolean(j)}));
+  obstacle('roadworks',146,0);obstacle('roadworks',146,1);obstacle('roadworks',322,1);obstacle('roadworks',322,2);
+}
 
 function buildTram(){
   const root=new pc.Entity('Last Luas');app.root.addChild(root);const silver=mat(new pc.Color(.74,.77,.81),{gloss:.84,metal:.18});
@@ -503,10 +505,10 @@ playButton.addEventListener('click',()=>{audio.unlock();state.started=true;ui.st
 async function boot(){
   try{
     await preloadCharacters();
-    player=buildPlayer();tram=buildTram();syncTram();buildStreet();updateHud();updateCamera(0);app.start();
+    player=buildPlayer();tram=buildTram();syncTram();buildStreet();buildObstacles();updateHud();updateCamera(0);app.start();
     document.documentElement.dataset.lastLuasReady='1';
     document.documentElement.dataset.lastLuasBuild=BUILD;
-    document.documentElement.dataset.lastLuasCharacterAssets=String(characterAssets.size);
+    document.documentElement.dataset.lastLuasCharacterAssets=String(characterAssets.size);document.documentElement.dataset.lastLuasObstacleCount=String(obstacleRecords.length);
     document.documentElement.dataset.lastLuasCasualClips=(characterAssets.get('casual')?.resource?.animations||[]).map(a=>a.name||a.resource?.name||'').join(',');
     document.documentElement.dataset.lastLuasWorkerClips=(characterAssets.get('worker')?.resource?.animations||[]).map(a=>a.name||a.resource?.name||'').join(',');
     const smokeParams=new URLSearchParams(location.search);
