@@ -1,6 +1,6 @@
 import * as pc from 'https://cdn.jsdelivr.net/npm/playcanvas@2.22.2/build/playcanvas.mjs';
 
-const BUILD='0.3.0';
+const BUILD='0.4.0';
 const GAME={duration:90,streetLength:430,laneX:[-2.45,0,2.45],speed:5.25,hitSpeed:2.8,hitDuration:.66,jumpVelocity:7.1,gravity:18,laneSharpness:13,pullAwayAt:8.5,tramSpeed:3.25,catchGap:6.2,pixelRatio:1.5};
 const $=id=>document.getElementById(id);
 const canvas=$('application');
@@ -9,6 +9,47 @@ app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
 app.setCanvasResolution(pc.RESOLUTION_AUTO);
 app.graphicsDevice.maxPixelRatio=Math.min(window.devicePixelRatio||1,GAME.pixelRatio);
 app.scene.ambientLight=new pc.Color(.30,.34,.46);
+
+const CHARACTER_SOURCES={
+  casual:'https://cdn.jsdelivr.net/gh/euuuuuuan/fatal-funnel-public@29a6bdfd01ad175c389cbd0bac80c30f926ff96b/packages/renderer/assets/models/quaternius-men/casual-character.glb',
+  worker:'https://cdn.jsdelivr.net/gh/euuuuuuan/fatal-funnel-public@29a6bdfd01ad175c389cbd0bac80c30f926ff96b/packages/renderer/assets/models/quaternius-men/worker.glb'
+};
+const characterAssets=new Map();
+function loadCharacterAsset(kind){
+  if(characterAssets.has(kind))return Promise.resolve(characterAssets.get(kind));
+  return new Promise((resolve,reject)=>{
+    app.assets.loadFromUrl(CHARACTER_SOURCES[kind],'container',(err,asset)=>{
+      if(err){reject(err);return;}
+      characterAssets.set(kind,asset);resolve(asset);
+    });
+  });
+}
+async function preloadCharacters(){
+  await Promise.all([loadCharacterAsset('casual'),loadCharacterAsset('worker')]);
+}
+function findCharacterClip(asset,wanted){
+  const clips=asset?.resource?.animations||[],needle=String(wanted||'').toLowerCase();
+  return clips.find(a=>{
+    const n=String(a.name||a.resource?.name||'').toLowerCase();
+    return n===needle||n.endsWith('|'+needle)||n.endsWith('/'+needle)||n.includes(needle);
+  })||clips[0]||null;
+}
+function playCharacterClip(entity,asset,wanted){
+  const clip=findCharacterClip(asset,wanted);if(!clip)return;
+  entity.addComponent('anim',{activate:true});
+  entity.anim.assignAnimation('clip',clip.resource);
+  entity.anim.baseLayer.transition('clip');
+}
+function spawnCharacter(parent,{kind='casual',clip='Idle_Neutral',scale=.92,yaw=180,name='Quaternius character'}={}){
+  const asset=characterAssets.get(kind);if(!asset)return null;
+  const model=asset.resource.instantiateRenderEntity({castShadows:true});
+  model.name=name;model.setLocalScale(scale,scale,scale);model.setLocalEulerAngles(0,yaw,0);
+  parent.addChild(model);
+  for(const render of model.findComponents('render')){render.castShadows=true;render.receiveShadows=true;}
+  playCharacterClip(model,asset,clip);
+  return model;
+}
+
 
 const ui={shell:$('gameShell'),time:$('timeValue'),distance:$('distanceValue'),callout:$('streetCallout'),toast:$('toast'),timerCard:document.querySelector('.timer-card'),start:$('startPanel'),pause:$('pausePanel'),result:$('resultPanel'),resultTitle:$('resultTitle'),resultText:$('resultText'),resultDistance:$('resultDistance'),resultTime:$('resultTime')};
 
@@ -178,9 +219,8 @@ function buildWetDetails(){
 function ambientPerson(z,side,phase){
   const root=new pc.Entity('Pavement pedestrian');
   root.setPosition(side*(4.95+(phase%3)*.35),0,-z);app.root.addChild(root);
-  const coat=[M.blue,M.cream,M.green,M.pink][phase%4];
-  box('body',new pc.Vec3(0,1.0,0),new pc.Vec3(.56,1.2,.42),coat,root);
-  sphere('head',new pc.Vec3(0,1.83,0),new pc.Vec3(.43,.43,.43),M.skin,root);
+  const kind=phase%3===0?'worker':'casual';
+  spawnCharacter(root,{kind,clip:'Walk',scale:.88+(phase%3)*.025,yaw:phase%2?0:180,name:'Pedestrian model'});
   animated.push({type:'pavement',entity:root,baseX:root.getPosition().x,baseD:z,phase:phase*.7});
 }
 function buildStreetLife(){
@@ -217,25 +257,40 @@ const landmarkCallouts=[
 
 function buildPlayer(){
   const root=new pc.Entity('Runner');app.root.addChild(root);
-  const hoodie=mat(new pc.Color(.035,.55,.24),{gloss:.28}),pants=mat(new pc.Color(.025,.035,.055),{gloss:.18}),bag=mat(new pc.Color(.45,.25,.10),{gloss:.25}),shoe=mat(new pc.Color(.92,.92,.88),{gloss:.22});
-  const body=box('Body',new pc.Vec3(0,.05,0),new pc.Vec3(.92,1.2,.56),hoodie,root);
-  sphere('Head',new pc.Vec3(0,.93,-.01),new pc.Vec3(.58,.58,.58),M.skin,root);
-  const legL=box('Leg L',new pc.Vec3(-.21,-.87,0),new pc.Vec3(.26,.72,.30),pants,root),legR=box('Leg R',new pc.Vec3(.21,-.87,0),new pc.Vec3(.26,.72,.30),pants,root);
-  const armL=box('Arm L',new pc.Vec3(-.57,.02,0),new pc.Vec3(.22,.78,.24),hoodie,root),armR=box('Arm R',new pc.Vec3(.57,.02,0),new pc.Vec3(.22,.78,.24),hoodie,root);
-  box('Shoe L',new pc.Vec3(-.21,-1.28,-.08),new pc.Vec3(.31,.20,.52),shoe,root);box('Shoe R',new pc.Vec3(.21,-1.28,-.08),new pc.Vec3(.31,.20,.52),shoe,root);
-  box('Bag',new pc.Vec3(0,.10,.38),new pc.Vec3(.69,.82,.27),bag,root);
-  root.setPosition(lanes[1],1.02,0);return {entity:root,body,legL,legR,armL,armR,lane:1,distance:0,y:1.02,vy:0,grounded:true,hit:0};
+  const model=spawnCharacter(root,{kind:'casual',clip:'Run',scale:.96,yaw:180,name:'Runner character model'});
+  box('Runner backpack',new pc.Vec3(0,1.05,.24),new pc.Vec3(.52,.62,.24),mat(new pc.Color(.45,.25,.10),{gloss:.25}),root);
+  const groundY=.04;root.setPosition(lanes[1],groundY,0);
+  return {entity:root,model,lane:1,distance:0,y:groundY,groundY,vy:0,grounded:true,hit:0};
 }
-const player=buildPlayer();
+let player=null;
+
 
 function obstacle(kind,d,lane,{jumpable=false}={}){
   const root=new pc.Entity(kind+' '+d);root.setPosition(lanes[lane],0,-d);app.root.addChild(root);
   if(kind==='bollard'){cyl('bollard',new pc.Vec3(0,.55,0),new pc.Vec3(.38,.55,.38),M.black,root);}
   if(kind==='bin'){box('bin',new pc.Vec3(0,.72,0),new pc.Vec3(.92,1.42,.78),M.green,root);box('lid',new pc.Vec3(0,1.48,-.05),new pc.Vec3(1.0,.15,.86),M.black,root);}
   if(kind==='roadworks'){box('barrier',new pc.Vec3(0,.78,0),new pc.Vec3(1.95,1.12,.24),M.orange,root);box('barrier stripe',new pc.Vec3(0,.80,.14),new pc.Vec3(1.35,.18,.04),M.white,root);}
-  if(kind==='tourist'){box('coat',new pc.Vec3(0,1.02,0),new pc.Vec3(.72,1.30,.48),M.blue,root);sphere('head',new pc.Vec3(0,1.90,0),new pc.Vec3(.48,.48,.48),M.skin,root);box('phone',new pc.Vec3(.34,1.45,-.18),new pc.Vec3(.08,.28,.16),M.black,root);animated.push({type:'tourist',entity:root,baseX:lanes[lane],baseD:d,phase:d*.11});}
-  if(kind==='umbrella'){box('person',new pc.Vec3(0,.95,0),new pc.Vec3(.60,1.2,.45),M.cream,root);sphere('umbrella',new pc.Vec3(0,2.05,0),new pc.Vec3(1.25,.28,1.25),M.purple,root);animated.push({type:'umbrella',entity:root,baseX:lanes[lane],baseD:d,phase:d*.05});}
-  if(kind==='cyclist'||kind==='delivery'){const body=kind==='delivery'?M.green:M.blue;cyl('wheel1',new pc.Vec3(0,.48,-.55),new pc.Vec3(.48,.10,.48),M.black,root,new pc.Vec3(90,0,0));cyl('wheel2',new pc.Vec3(0,.48,.55),new pc.Vec3(.48,.10,.48),M.black,root,new pc.Vec3(90,0,0));box('rider',new pc.Vec3(0,1.30,0),new pc.Vec3(.60,1.05,.55),body,root);if(kind==='delivery')box('delivery box',new pc.Vec3(0,1.42,.48),new pc.Vec3(.75,.62,.58),M.green,root);animated.push({type:kind,entity:root,baseX:lanes[lane],baseD:d,phase:d*.07});}
+  if(kind==='tourist'){
+    spawnCharacter(root,{kind:'casual',clip:'Idle_Neutral',scale:.94,yaw:180,name:'Tourist character model'});
+    box('phone',new pc.Vec3(.33,1.36,-.18),new pc.Vec3(.07,.24,.14),M.black,root);
+    animated.push({type:'tourist',entity:root,baseX:lanes[lane],baseD:d,phase:d*.11});
+  }
+  if(kind==='umbrella'){
+    spawnCharacter(root,{kind:'worker',clip:'Idle_Neutral',scale:.91,yaw:180,name:'Umbrella pedestrian model'});
+    box('umbrella handle',new pc.Vec3(.38,1.55,0),new pc.Vec3(.045,1.55,.045),M.black,root);
+    sphere('umbrella canopy',new pc.Vec3(.38,2.43,0),new pc.Vec3(1.18,.24,1.18),M.purple,root);
+    animated.push({type:'umbrella',entity:root,baseX:lanes[lane],baseD:d,phase:d*.05});
+  }
+  if(kind==='cyclist'||kind==='delivery'){
+    cyl('wheel1',new pc.Vec3(0,.48,-.64),new pc.Vec3(.48,.07,.48),M.black,root,new pc.Vec3(90,0,0));
+    cyl('wheel2',new pc.Vec3(0,.48,.64),new pc.Vec3(.48,.07,.48),M.black,root,new pc.Vec3(90,0,0));
+    box('bike frame',new pc.Vec3(0,.70,0),new pc.Vec3(.10,.10,1.10),M.rail,root);
+    box('handlebars',new pc.Vec3(0,1.02,-.55),new pc.Vec3(.78,.07,.08),M.rail,root);
+    const rider=spawnCharacter(root,{kind:kind==='delivery'?'worker':'casual',clip:'Idle_Neutral',scale:.78,yaw:180,name:kind==='delivery'?'Delivery rider model':'Cyclist rider model'});
+    if(rider){rider.setLocalPosition(0,.18,.08);rider.setLocalEulerAngles(13,180,0);}
+    if(kind==='delivery')box('delivery box',new pc.Vec3(0,1.12,.70),new pc.Vec3(.82,.70,.64),M.green,root);
+    animated.push({type:kind,entity:root,baseX:lanes[lane],baseD:d,phase:d*.07});
+  }
   obstacleRecords.push({kind,entity:root,d,lane,jumpable,hit:false,cleared:false});
 }
 [[35,0,'bollard',1],[50,2,'bin'],[64,1,'tourist'],[78,0,'cyclist'],[92,2,'roadworks'],[108,1,'umbrella'],[124,0,'bin'],[139,2,'tourist'],[154,1,'delivery'],[170,0,'roadworks'],[186,2,'bollard',1],[202,1,'tourist'],[218,0,'cyclist'],[235,2,'bin'],[251,1,'roadworks'],[267,0,'umbrella'],[283,2,'delivery'],[299,1,'bollard',1],[315,0,'tourist'],[331,2,'bin'],[347,1,'roadworks'],[363,0,'cyclist'],[379,2,'umbrella'],[394,1,'tourist'],[407,0,'bollard',1]].forEach(([d,l,k,j])=>obstacle(k,d,l,{jumpable:Boolean(j)}));
@@ -252,7 +307,7 @@ function buildTram(){
   box('roof equipment',new pc.Vec3(0,2.92,-.5),new pc.Vec3(1.15,.18,2.1),M.black,root);
   return {entity:root,distance:GAME.streetLength,pulling:false};
 }
-const tram=buildTram();
+let tram=null;
 function syncTram(){tram.entity.setPosition(0,.02,-tram.distance);}syncTram();
 
 const camera=new pc.Entity('Camera');camera.addComponent('camera',{clearColor:new pc.Color(.028,.045,.09),fov:67,nearClip:.1,farClip:720});app.root.addChild(camera);camera.setPosition(0,4.2,7.2);
@@ -277,13 +332,11 @@ const audio={ctx:null,lastBeep:-1,unlock(){if(!this.ctx)this.ctx=new (window.Aud
 function updatePlayer(dt){
   if(input.queue.has('left'))player.lane=Math.max(0,player.lane-1);if(input.queue.has('right'))player.lane=Math.min(2,player.lane+1);if(input.queue.has('jump')&&player.grounded){player.grounded=false;player.vy=GAME.jumpVelocity;audio.jump();}input.queue.clear();
   const pos=player.entity.getPosition(),tx=lanes[player.lane],x=pc.math.lerp(pos.x,tx,1-Math.exp(-GAME.laneSharpness*dt));
-  if(!player.grounded){player.vy-=GAME.gravity*dt;player.y+=player.vy*dt;if(player.y<=1.02){player.y=1.02;player.vy=0;player.grounded=true;}}
+  if(!player.grounded){player.vy-=GAME.gravity*dt;player.y+=player.vy*dt;if(player.y<=player.groundY){player.y=player.groundY;player.vy=0;player.grounded=true;}}
   player.hit=Math.max(0,player.hit-dt);
   const urgency=1+Math.max(0,(20-state.timeLeft)/20)*.055;
   const speed=(player.hit>0?GAME.hitSpeed:GAME.speed)*urgency;
   player.distance+=speed*dt;player.entity.setPosition(x,player.y,-player.distance);
-  const cycle=player.distance*6.8,swing=player.grounded?Math.sin(cycle)*34:0,bob=player.grounded?Math.abs(Math.sin(cycle))*-.035:0;
-  player.legL.setLocalEulerAngles(swing,0,0);player.legR.setLocalEulerAngles(-swing,0,0);player.armL.setLocalEulerAngles(-swing*.72,0,0);player.armR.setLocalEulerAngles(swing*.72,0,0);player.body.setLocalPosition(0,.05+bob,0);
 }
 function updateObstacles(){
   const px=player.entity.getPosition().x;
@@ -336,9 +389,31 @@ function finish(won){
 function reset(){location.reload();}
 function togglePause(force){if(!state.started||state.finished)return;state.paused=typeof force==='boolean'?force:!state.paused;ui.pause.hidden=!state.paused;ui.pause.classList.toggle('visible',state.paused);$('pauseBtn').textContent=state.paused?'▶':'Ⅱ';}
 
-$('playBtn').addEventListener('click',()=>{audio.unlock();state.started=true;ui.start.classList.remove('visible');ui.start.hidden=true;showToast('90 SECONDS. GO!');});$('pauseBtn').addEventListener('click',()=>togglePause());$('resumeBtn').addEventListener('click',()=>togglePause(false));$('restartBtn').addEventListener('click',reset);document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.started&&!state.finished)togglePause(true);});window.addEventListener('resize',()=>app.resizeCanvas());
+const playButton=$('playBtn');playButton.disabled=true;playButton.textContent='LOADING CHARACTERS…';
+playButton.addEventListener('click',()=>{audio.unlock();state.started=true;ui.start.classList.remove('visible');ui.start.hidden=true;showToast('90 SECONDS. GO!');});$('pauseBtn').addEventListener('click',()=>togglePause());$('resumeBtn').addEventListener('click',()=>togglePause(false));$('restartBtn').addEventListener('click',reset);document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.started&&!state.finished)togglePause(true);});window.addEventListener('resize',()=>app.resizeCanvas());
 
-buildStreet();updateHud();updateCamera(0);app.start();
+async function boot(){
+  try{
+    await preloadCharacters();
+    player=buildPlayer();tram=buildTram();syncTram();buildStreet();updateHud();updateCamera(0);app.start();
+    document.documentElement.dataset.lastLuasReady='1';
+    document.documentElement.dataset.lastLuasBuild=BUILD;
+    document.documentElement.dataset.lastLuasCharacterAssets=String(characterAssets.size);
+    const smokeParams=new URLSearchParams(location.search);
+    if(smokeParams.get('smoke')==='1'){
+      const preview=Math.max(0,Math.min(GAME.streetLength-8,Number(smokeParams.get('distance')||70)||70));
+      player.distance=preview;player.entity.setPosition(lanes[1],player.y,-preview);
+      ui.start.classList.remove('visible');ui.start.hidden=true;updateHud();updateCamera(1);animateWorld();
+    }else{
+      playButton.disabled=false;playButton.textContent='RUN FOR IT →';
+    }
+  }catch(err){
+    console.error('Last Luas character load failed',err);
+    playButton.textContent='CHARACTERS FAILED TO LOAD';showToast('CHARACTER ASSETS FAILED TO LOAD');
+    document.documentElement.dataset.lastLuasAssetError='1';
+  }
+}
+boot();
 app.on('update',dt=>{
   dt=Math.min(dt,.05);if(!state.started||state.paused||state.finished)return;
   state.elapsed+=dt;state.timeLeft-=dt;updatePlayer(dt);updateObstacles();animateWorld();updateTram(dt);updateCamera(dt);updateHud();
