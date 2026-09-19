@@ -7,11 +7,36 @@ const FOOD_TYPES=[
   {key:'food-roll',name:'chicken fillet roll',value:50},
   {key:'food-coffee',name:'coffee',value:15},
   {key:'food-ice',name:'ice cream',value:30},
-  {key:'food-spice',name:'spice bag',value:75}
+  {key:'food-spice',name:'spice bag',value:75},
+  {key:'food-sandwich',name:'sandwich',value:35},
+  {key:'food-doughnut',name:'doughnut',value:25},
+  {key:'food-takeaway',name:'takeaway bag',value:100}
 ] as const;
+type FoodDef=(typeof FOOD_TYPES)[number];
+function foodForArea(x:number,seed:number=Math.random()*1000):FoodDef{
+  const pools=x>=7000
+    ? ['food-sandwich','food-sandwich','food-ice','food-chips','food-takeaway','food-coffee']
+    : x>=5200
+      ? ['food-coffee','food-coffee','food-ice','food-doughnut','food-doughnut','food-roll']
+      : x>=3400
+        ? ['food-coffee','food-coffee','food-roll','food-chips','food-doughnut','food-ice']
+        : ['food-chips','food-chips','food-roll','food-spice','food-coffee','food-takeaway'];
+  const key=pools[Math.abs(Math.floor(seed))%pools.length];
+  return FOOD_TYPES.find(f=>f.key===key)!;
+}
+function pedestrianForArea(x:number,seed:number){
+  const pools=x>=7000
+    ? ['person-runner','person-green','person-tan','person-blue','person-dark']
+    : x>=5200
+      ? ['person-tourist','person-red','person-tan','person-office','person-blue']
+      : x>=3400
+        ? ['person-office','person-blue','person-dark','person-tourist','person-green']
+        : ['person-tourist','person-builder','person-office','person-tan','person-blue','person-red','person-dark'];
+  return pools[Math.abs(Math.floor(seed))%pools.length];
+}
 const WORLD_W=8800;
 const WORLD_H=1800;
-const VERSION='0.6.0-alpha';
+const VERSION='0.7.0-alpha';
 
 type BirdId='dublin'|'big-lad'|'sneaky'|'absolute-unit';
 type UpgradeKey='wings'|'beak'|'nerve';
@@ -620,16 +645,19 @@ class DameStreetScene extends Phaser.Scene{
     michael.fillStyle(0xe9e4d9);michael.fillCircle(34,17,13);michael.fillStyle(0xe3b28a);michael.fillCircle(34,22,11);michael.fillStyle(0xe9e4d9);michael.fillRoundedRect(22,8,24,7,3);michael.fillRoundedRect(23,24,22,4,2);
     michael.generateTexture('michael',68,92);michael.destroy();
 
-    const food=(key:string,kind:'chips'|'roll'|'coffee'|'ice'|'spice')=>{
+    const food=(key:string,kind:'chips'|'roll'|'coffee'|'ice'|'spice'|'sandwich'|'doughnut'|'takeaway')=>{
       const g=this.make.graphics({x:0,y:0},false);
       if(kind==='chips'){g.fillStyle(0xd7373f);g.fillRoundedRect(8,14,30,31,5);g.fillStyle(0xf5d34f);for(let i=0;i<5;i++)g.fillRoundedRect(10+i*6,4+(i%2)*4,5,21,2);}
       if(kind==='roll'){g.fillStyle(0xc98d48);g.fillRoundedRect(4,14,42,22,11);g.fillStyle(0x70a756);g.fillRect(14,16,18,4);g.fillStyle(0xf6d8a2);g.fillEllipse(25,15,38,8);}
       if(kind==='coffee'){g.fillStyle(0xead7bd);g.fillRoundedRect(9,10,28,36,5);g.fillStyle(0x6c3928);g.fillRect(10,19,26,16);g.fillStyle(0xffffff);g.fillRect(12,8,22,5);}
       if(kind==='ice'){g.fillStyle(0xd5a168);g.fillTriangle(13,23,37,23,25,48);g.fillStyle(0xf1b4d1);g.fillCircle(25,18,13);}
       if(kind==='spice'){g.fillStyle(0x402d26);g.fillRoundedRect(5,12,40,32,5);g.fillStyle(0xf5c650);for(let i=0;i<6;i++)g.fillCircle(12+(i%3)*11,19+Math.floor(i/3)*12,6);}
+      if(kind==='sandwich'){g.fillStyle(0xf0d3a0);g.fillTriangle(5,13,44,13,25,44);g.fillStyle(0x66a657);g.fillTriangle(9,17,40,17,25,38);g.fillStyle(0xd85e55);g.fillRect(14,20,22,5);}
+      if(kind==='doughnut'){g.fillStyle(0xd89356);g.fillCircle(25,27,18);g.fillStyle(0xf19abd);g.fillCircle(25,23,15);g.fillStyle(0x72513c);g.fillCircle(25,25,6);for(const [sx,sy,col] of [[16,18,0xffe256],[31,16,0x69b6d7],[35,28,0xffffff],[18,31,0x78c777]] as any[]){g.fillStyle(col);g.fillRoundedRect(sx,sy,5,2,1);}}
+      if(kind==='takeaway'){g.fillStyle(0xc9945a);g.fillRoundedRect(8,13,34,36,5);g.lineStyle(3,0x7c5635);g.strokeCircle(18,14,7);g.strokeCircle(32,14,7);g.fillStyle(0x3d7b46);g.fillRoundedRect(13,24,24,9,3);g.fillStyle(0xf4e4b7);g.fillRect(16,26,18,5);}
       g.generateTexture(key,50,54);g.destroy();
     };
-    food('food-chips','chips');food('food-roll','roll');food('food-coffee','coffee');food('food-ice','ice');food('food-spice','spice');
+    food('food-chips','chips');food('food-roll','roll');food('food-coffee','coffee');food('food-ice','ice');food('food-spice','spice');food('food-sandwich','sandwich');food('food-doughnut','doughnut');food('food-takeaway','takeaway');
 
     const vehicle=(key:string,c:number,w:number,h:number)=>{
       const g=this.make.graphics({x:0,y:0},false);
@@ -667,8 +695,6 @@ class DameStreetScene extends Phaser.Scene{
   }
 
   spawnPeople(){
-    const tex=['person-blue','person-red','person-green','person-tan','person-dark','person-office','person-tourist','person-builder','person-runner'];
-
     for(let i=0;i<78;i++){
       const upper=i<35;
       const x=120+Math.random()*(WORLD_W-240);
@@ -676,9 +702,9 @@ class DameStreetScene extends Phaser.Scene{
       if(x>=7000)y=690+Math.random()*760;
       else if(x>=5200)y=610+Math.random()*830;
       else y=upper?535+Math.random()*160:1300+Math.random()*210;
-      const p=this.physics.add.sprite(x,y,tex[i%tex.length]).setDepth(22);
+      const p=this.physics.add.sprite(x,y,pedestrianForArea(x,i)).setDepth(22);
       p.body!.setCircle(16,14,42);p.setData('baseSpeed',18+Math.random()*22);
-      const f=FOOD_TYPES[i%FOOD_TYPES.length];
+      const f=foodForArea(x,i);
       const fi=this.add.image(x+24,y-20,f.key).setScale(.66).setDepth(23);
       const ring=this.add.circle(x,y,34,0xffe784,0).setStrokeStyle(3,0xffe784,0).setDepth(18);
       const temperament=(['oblivious','suspicious','runner','defender'] as const)[i%4];
@@ -836,7 +862,7 @@ class DameStreetScene extends Phaser.Scene{
     this.scorePop('+'+earned+(this.combo>1?'  x'+this.combo:''));
     this.toast('STOLEN: '+t.name.toUpperCase()+'  +'+earned);sfx('grab');haptic(30);
     this.emote(t.person,t.temperament==='defender'?'OI!':'!');
-    const heatGain=(13+(t.value>=50?5:0))*this.bird.heat*(1-progress.upgrades.nerve*.04);
+    const heatGain=(13+(t.value>=90?10:t.value>=50?5:0))*this.bird.heat*(1-progress.upgrades.nerve*.04);
     this.addHeat(heatGain,time);
     this.advanceMission(t.name);
     this.time.delayedCall(Phaser.Math.Between(8500,14500),()=>this.recycleTarget(t));
@@ -882,9 +908,9 @@ class DameStreetScene extends Phaser.Scene{
 
   recycleTarget(t:Target){
     if(this.ended)return;
-    const f=FOOD_TYPES[Phaser.Math.Between(0,FOOD_TYPES.length-1)];
-    t.name=f.name;t.value=f.value;t.food.setTexture(f.key).setVisible(true);
     const rx=Phaser.Math.Between(80,WORLD_W-80);
+    const f=foodForArea(rx,Phaser.Math.Between(0,9999));
+    t.name=f.name;t.value=f.value;t.food.setTexture(f.key).setVisible(true);
     let ry:number;
     if(rx>=7000)ry=Phaser.Math.Between(690,1460);
     else if(rx>=5200)ry=Phaser.Math.Between(620,1420);
