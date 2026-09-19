@@ -22,3 +22,5 @@
   .upgrade-grid{grid-template-columns:repeat(3,1fr);width:min(820px,95vw);gap:7px}.upgrade-card{display:block;text-align:center;padding:8px}.upgrade-card h3{font-size:12px}.upgrade-card p{font-size:8px;min-height:24px}.level-dots{justify-content:center;margin:5px 0}.level-dots i{width:10px;height:10px}.buy-upgrade{font-size:7px;padding:5px}
   .panel-balance{margin:8px 0 10px;padding:5px 10px;font-size:9px}
 }
+
+.pause-panel{background:radial-gradient(circle at 50% 25%,#2f708b,#173d53 58%,#0d2839)}.pause-panel h2{font:1000 clamp(54px,9vw,94px)/1 Arial Black,sans-serif;margin:0 0 8px;color:#ffd84c;text-shadow:0 5px 0 #0e2837}.pause-panel>p:not(.eyebrow){font-size:13px;color:#d7edf5;margin:0 0 20px}.pause-secondary{margin-top:14px;border:2px solid #fff7;border-radius:10px;background:#ffffff14;color:#fff;padding:9px 18px;font:1000 10px Arial Black,sans-serif;cursor:pointer}
