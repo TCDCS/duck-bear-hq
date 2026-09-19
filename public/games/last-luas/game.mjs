@@ -1,6 +1,6 @@
 import * as pc from 'https://cdn.jsdelivr.net/npm/playcanvas@2.22.2/build/playcanvas.mjs';
 
-const BUILD='0.4.0';
+const BUILD='0.5.0';
 const GAME={duration:90,streetLength:430,laneX:[-2.45,0,2.45],speed:5.25,hitSpeed:2.8,hitDuration:.66,jumpVelocity:7.1,gravity:18,laneSharpness:13,pullAwayAt:8.5,tramSpeed:3.25,catchGap:6.2,pixelRatio:1.5};
 const $=id=>document.getElementById(id);
 const canvas=$('application');
@@ -47,7 +47,10 @@ const M2={
   signalGreen:mat(new pc.Color(.10,.72,.34),{emissive:new pc.Color(.05,.50,.18),gloss:.46}),
   tramSilver:mat(new pc.Color(.72,.75,.78),{gloss:.88,metal:.22}),
   tramYellow:mat(new pc.Color(.94,.62,.08),{gloss:.64}),
-  tramPurple:mat(new pc.Color(.31,.18,.43),{gloss:.58})
+  tramPurple:mat(new pc.Color(.31,.18,.43),{gloss:.58}),
+  stoneLight:mat(new pc.Color(.73,.70,.64),{gloss:.34}),
+  taxi:mat(new pc.Color(.13,.16,.18),{gloss:.72,metal:.10}),
+  van:mat(new pc.Color(.74,.76,.75),{gloss:.55,metal:.06})
 };
 
 const sun=new pc.Entity('Evening light');sun.addComponent('light',{type:'directional',color:new pc.Color(.74,.79,1),intensity:1.45,castShadows:true,shadowResolution:2048,shadowDistance:55});sun.setEulerAngles(48,32,0);app.root.addChild(sun);
@@ -58,6 +61,8 @@ function buildStreet(){
   box('Luas track bed',new pc.Vec3(0,-.055,-GAME.streetLength/2),new pc.Vec3(2.82,.065,GAME.streetLength+35),M2.trackBed);
   box('Left pavement',new pc.Vec3(-6.25,.02,-GAME.streetLength/2),new pc.Vec3(4.0,.25,GAME.streetLength+35),M.pave);
   box('Right pavement',new pc.Vec3(6.25,.02,-GAME.streetLength/2),new pc.Vec3(4.0,.25,GAME.streetLength+35),M.pave);
+  box('Granite kerb L',new pc.Vec3(-4.16,.17,-GAME.streetLength/2),new pc.Vec3(.22,.25,GAME.streetLength+35),M2.granite);
+  box('Granite kerb R',new pc.Vec3(4.16,.17,-GAME.streetLength/2),new pc.Vec3(.22,.25,GAME.streetLength+35),M2.granite);
   [-1.20,1.20].forEach((x,i)=>box('Rail '+i,new pc.Vec3(x,.015,-GAME.streetLength/2),new pc.Vec3(.095,.055,GAME.streetLength+35),M.rail));
   for(let d=7;d<GAME.streetLength;d+=7){box('Paving seam L'+d,new pc.Vec3(-4.35,.155,-d),new pc.Vec3(.055,.018,1.7),M.rail);box('Paving seam R'+d,new pc.Vec3(4.35,.155,-d),new pc.Vec3(.055,.018,1.7),M.rail);}
   for(let d=16,i=0;d<GAME.streetLength;d+=19,i++){
@@ -80,6 +85,7 @@ function buildStreet(){
   buildWetDetails();
   buildStreetLife();
   buildStreetFurniture();
+  buildKerbLife();
   buildLuasStop();
 }
 
@@ -188,6 +194,36 @@ function buildStreetFurniture(){
   }
 }
 
+function cornice(name,z,y,length,side,material=M.cream){
+  box(name,new pc.Vec3(side*6.48,y,z),new pc.Vec3(.34,.18,length),material);
+}
+function pilaster(name,z,y,height,side,material=M2.stoneLight||M.cream){
+  box(name,new pc.Vec3(side*6.42,y,z),new pc.Vec3(.34,height,.42),material);
+}
+function facadePlant(name,z,y,side,scale=.62){
+  sphere(name,new pc.Vec3(side*6.24,y,z),new pc.Vec3(scale,scale*.9,scale),M.leaf);
+}
+function parkedVehicle(name,d,side,kind='taxi'){
+  const root=new pc.Entity(name);root.setPosition(side*3.74,.08,-d);app.root.addChild(root);
+  const body=kind==='taxi'?M2.taxi:M2.van;
+  box(name+' body',new pc.Vec3(0,.62,0),new pc.Vec3(1.42,.74,3.20),body,root);
+  box(name+' cabin',new pc.Vec3(0,1.17,-.18),new pc.Vec3(1.22,.65,1.70),M.glass,root);
+  if(kind==='taxi')box(name+' roof sign',new pc.Vec3(0,1.58,-.18),new pc.Vec3(.52,.18,.72),M.yellow,root);
+  if(kind==='van')box(name+' rear box',new pc.Vec3(0,1.10,.62),new pc.Vec3(1.38,1.22,1.75),body,root);
+  for(const x of [-.72,.72])for(const z of [-1.03,1.03])cyl(name+' wheel',new pc.Vec3(x,.36,z),new pc.Vec3(.28,.10,.28),M.black,root,new pc.Vec3(0,0,90));
+}
+function buildKerbLife(){
+  parkedVehicle('Dublin taxi 1',166,1,'taxi');
+  parkedVehicle('Dublin taxi 2',307,-1,'taxi');
+  parkedVehicle('Delivery van',231,-1,'van');
+  for(const [d,side] of [[69,1],[201,-1],[345,1]]){
+    const root=new pc.Entity('Locked bicycle');root.setPosition(side*5.05,0,-d);app.root.addChild(root);
+    cyl('bike wheel front',new pc.Vec3(0,.42,-.54),new pc.Vec3(.43,.055,.43),M.black,root,new pc.Vec3(90,0,0));
+    cyl('bike wheel rear',new pc.Vec3(0,.42,.54),new pc.Vec3(.43,.055,.43),M.black,root,new pc.Vec3(90,0,0));
+    box('bike frame',new pc.Vec3(0,.72,0),new pc.Vec3(.10,.10,1.05),M.rail,root);
+  }
+}
+
 function buildGenericBlocks(){
   const fills=[M.brick,M.cream,mat(new pc.Color(.35,.28,.24),{gloss:.25}),mat(new pc.Color(.49,.42,.34),{gloss:.3})];
   let z=-11,i=0;
@@ -209,6 +245,8 @@ function buildLandmarks(){
   awning('Ivy green canopy',-47.5,5.8,1,M.green,3.15);
   nameboard('Ivy nameboard',-47.5,3.36,2.7,1,signMaterial('THE IVY','#123a2a','#e0bd71'));
   planter(47,1);planter(52,1);planter(57,1);
+  cornice('Ivy upper cornice',-52,5.35,20.4,1,M2.stoneLight);
+  for(const [z,y] of [[-59,4.4],[-55,5.9],[-49,4.8],[-45,6.4]])facadePlant('Ivy facade planting',z,y,1,.52);
 
   // Dawson Lounge: tiny dark frontage and red door.
   const lounge=box('Dawson Lounge',new pc.Vec3(-9.80,5.55,-90),new pc.Vec3(6.85,11.1,12),mat(new pc.Color(.20,.18,.17),{gloss:.25}));
@@ -225,6 +263,9 @@ function buildLandmarks(){
   for(const z of [-130.3,-125.7])cyl('Mansion House portico column',new pc.Vec3(6.22,1.80,z),new pc.Vec3(.22,1.80,.22),M2.granite);
   box('Mansion House portico',new pc.Vec3(6.20,3.58,-128),new pc.Vec3(.90,.25,6.1),M2.granite);
   nameboard('Mansion House plaque',-128,3.98,2.4,1,signMaterial('MANSION HOUSE','#e7e0cf','#252525'));
+  cornice('Mansion House cornice',-128,5.25,18.8,1,M2.stoneLight);
+  box('Mansion House pediment beam',new pc.Vec3(6.28,4.14,-128),new pc.Vec3(.86,.28,6.55),M2.stoneLight);
+  sphere('Mansion House crest',new pc.Vec3(6.12,4.67,-128),new pc.Vec3(.34,.42,.34),M.gold);
 
   // Royal Irish Academy: red brick with restrained stone trim.
   const ria=box('Royal Irish Academy',new pc.Vec3(-9.82,6.35,-194),new pc.Vec3(6.85,12.7,17),M.brick);
@@ -232,12 +273,16 @@ function buildLandmarks(){
   box('RIA stone entrance',new pc.Vec3(-6.54,1.65,-194),new pc.Vec3(.22,2.95,3.3),M2.granite);
   box('RIA door',new pc.Vec3(-6.32,1.35,-194),new pc.Vec3(.20,2.45,1.55),M.black);
   nameboard('Royal Irish Academy nameboard',-194,3.35,5.6,-1,signMaterial('ROYAL IRISH ACADEMY','#ebe6d8','#1b1b1b'));
+  cornice('RIA stone string course',-194,5.28,15.4,-1,M2.stoneLight);
+  for(const z of [-201.2,-186.8])box('RIA stone quoin',new pc.Vec3(-6.40,5.8,z),new pc.Vec3(.38,8.6,.52),M2.stoneLight);
 
   // St Ann's Church: tall stone frontage with a central doorway and vertical glazing.
   const ann=box("St Ann's Church",new pc.Vec3(9.90,7.2,-215),new pc.Vec3(6.9,14.4,18),M2.granite);
   box('St Anns dark doorway',new pc.Vec3(6.48,1.65,-215),new pc.Vec3(.24,3.1,2.7),M.black);
   for(const z of [-220,-215,-210])box('St Anns tall window',new pc.Vec3(6.45,6.35,z),new pc.Vec3(.18,4.2,1.55),M.glass);
   box('St Anns parapet',new pc.Vec3(6.38,10.7,-215),new pc.Vec3(.28,.35,14.8),M.cream);
+  for(const z of [-222,-208])box('St Anns pilaster',new pc.Vec3(6.37,5.8,z),new pc.Vec3(.34,9.7,.55),M2.stoneLight);
+  cornice('St Anns lower cornice',-215,3.65,15.2,1,M2.stoneLight);
 
   // Café en Seine: blue frontage, pale striped awnings and planting.
   const cafe=box('Cafe en Seine',new pc.Vec3(9.80,6.15,-254),new pc.Vec3(6.85,12.3,18),M.brick);
@@ -247,6 +292,7 @@ function buildLandmarks(){
   nameboard('Cafe en Seine nameboard',-254,3.28,6.9,1,signMaterial('CAFÉ en SEINE','#15364b','#e5cf99'));
   for(let z=-259.5;z<=-248.5;z+=3.6){awning('Cafe striped awning',z,2.7,1,M.navy,3.43);box('Cafe awning stripe',new pc.Vec3(6.13,3.50,z),new pc.Vec3(.85,.07,.18),M.white);}
   planter(249,1);planter(255,1);planter(261,1);tree(257,1);
+  cornice('Cafe en Seine upper trim',-254,5.05,16.2,1,M.gold);
 
   // Hodges Figgis sits close to the Dawson stop end.
   const hf=box('Hodges Figgis',new pc.Vec3(-9.80,7.65,-334),new pc.Vec3(6.85,15.3,19),M.brick);
@@ -255,6 +301,8 @@ function buildLandmarks(){
   trim('Hodges brass fascia',-334,3.05,16.6,-1,M.gold,.14);
   nameboard('Hodges Figgis nameboard',-334,3.24,7.5,-1,signMaterial('HODGES FIGGIS','#143a2b','#e4c477'));
   for(let z=-340.2;z<=-327.8;z+=3.1)box('Hodges window bay',new pc.Vec3(-6.37,1.52,z),new pc.Vec3(.18,2.05,2.35),M.glass);
+  cornice('Hodges stone cornice',-334,5.52,17.2,-1,M2.stoneLight);
+  for(const z of [-341.5,-326.5])box('Hodges stone edge',new pc.Vec3(-6.40,6.9,z),new pc.Vec3(.38,9.8,.45),M2.stoneLight);
 
   // Modern glazed corner near Nassau Street.
   const arket=box('ARKET Grafton Place',new pc.Vec3(9.72,7.25,-359),new pc.Vec3(6.95,14.5,24),M.stone);
@@ -262,6 +310,7 @@ function buildLandmarks(){
   box('ARKET glass ground floor',new pc.Vec3(6.56,1.72,-359),new pc.Vec3(.16,3.15,20.8),M.glass);
   for(let z=-368;z<=-350;z+=4.4)box('ARKET mullion',new pc.Vec3(6.38,1.75,z),new pc.Vec3(.25,3.25,.11),M.stone);
   nameboard('ARKET wordmark',-359,3.52,3.7,1,signMaterial('ARKET','#eee9df','#151515'));
+  for(const y of [4.25,7.15,10.05])cornice('ARKET floor slab '+y,-359,y,21.0,1,M2.stoneLight);
 
   // A final stone edge gives a glimpse of the Nassau Street / Trinity end beyond the stop.
   box('Trinity College stone boundary glimpse',new pc.Vec3(-10.0,2.5,-445),new pc.Vec3(7.0,5.0,24),M2.granite);
@@ -355,26 +404,41 @@ obstacle('roadworks',146,0);obstacle('roadworks',146,1);obstacle('roadworks',322
 
 function buildTram(){
   const root=new pc.Entity('Last Luas');app.root.addChild(root);
-  box('tram body',new pc.Vec3(0,1.38,0),new pc.Vec3(3.16,2.72,11.2),M2.tramSilver,root);
-  box('tram purple skirt',new pc.Vec3(0,.43,0),new pc.Vec3(3.20,.30,11.25),M2.tramPurple,root);
-  box('tram yellow waist band',new pc.Vec3(0,.82,0),new pc.Vec3(3.22,.16,11.26),M2.tramYellow,root);
-  box('front glass',new pc.Vec3(0,1.76,5.64),new pc.Vec3(2.35,1.38,.10),M.glass,root);
-  box('destination display',new pc.Vec3(0,2.46,5.70),new pc.Vec3(1.35,.30,.08),signMaterial('BROOMBRIDGE','#071c12','#75ff9b'),root);
-  box('LUAS front wordmark',new pc.Vec3(0,1.02,5.73),new pc.Vec3(.82,.24,.08),signMaterial('LUAS','#d9dde0','#6f4b85'),root);
-  box('front yellow band',new pc.Vec3(0,.76,5.72),new pc.Vec3(2.75,.18,.11),M2.tramYellow,root);
-  box('light l',new pc.Vec3(-.94,.58,5.74),new pc.Vec3(.30,.18,.11),M.lamp,root);box('light r',new pc.Vec3(.94,.58,5.74),new pc.Vec3(.30,.18,.11),M.lamp,root);
-  for(let z=-4.25;z<=4.25;z+=2.85){
-    box('tram side glass L',new pc.Vec3(-1.59,1.65,z),new pc.Vec3(.08,1.28,2.25),M.glass,root);
-    box('tram side glass R',new pc.Vec3(1.59,1.65,z),new pc.Vec3(.08,1.28,2.25),M.glass,root);
-    box('door yellow edge L',new pc.Vec3(-1.64,1.25,z+.92),new pc.Vec3(.04,1.65,.08),M2.tramYellow,root);
-    box('door yellow edge R',new pc.Vec3(1.64,1.25,z+.92),new pc.Vec3(.04,1.65,.08),M2.tramYellow,root);
+  const segment=(label,z,front=false)=>{
+    box(label+' silver body',new pc.Vec3(0,1.38,z),new pc.Vec3(3.16,2.72,7.45),M2.tramSilver,root);
+    box(label+' purple skirt',new pc.Vec3(0,.43,z),new pc.Vec3(3.20,.30,7.50),M2.tramPurple,root);
+    box(label+' yellow waist band',new pc.Vec3(0,.82,z),new pc.Vec3(3.22,.16,7.52),M2.tramYellow,root);
+    for(const side of [-1,1]){
+      for(const wz of [-2.35,0,2.35])box(label+' side glass',new pc.Vec3(side*1.59,1.76,z+wz),new pc.Vec3(.08,1.18,1.72),M.glass,root);
+      for(const dz of [-1.17,1.17]){
+        box(label+' door glass',new pc.Vec3(side*1.60,1.48,z+dz),new pc.Vec3(.075,1.58,1.02),M.glass,root);
+        box(label+' door yellow edge',new pc.Vec3(side*1.65,1.45,z+dz+.52),new pc.Vec3(.04,1.78,.065),M2.tramYellow,root);
+      }
+      box(label+' LUAS side wordmark',new pc.Vec3(side*1.64,1.02,z+2.83),new pc.Vec3(.05,.24,.72),signMaterial('LUAS','#dfe1df','#715184'),root);
+    }
+    for(const wz of [-2.45,2.45])for(const side of [-1,1])cyl(label+' bogie wheel',new pc.Vec3(side*1.53,.34,z+wz),new pc.Vec3(.31,.10,.31),M.black,root,new pc.Vec3(0,0,90));
+    if(front){
+      box('front glass',new pc.Vec3(0,1.78,z+3.78),new pc.Vec3(2.36,1.42,.10),M.glass,root);
+      box('destination display',new pc.Vec3(0,2.46,z+3.84),new pc.Vec3(1.35,.30,.08),signMaterial('BROOMBRIDGE','#071c12','#75ff9b'),root);
+      box('LUAS front wordmark',new pc.Vec3(0,1.04,z+3.86),new pc.Vec3(.82,.24,.08),signMaterial('LUAS','#d9dde0','#6f4b85'),root);
+      box('front yellow band',new pc.Vec3(0,.76,z+3.84),new pc.Vec3(2.75,.18,.11),M2.tramYellow,root);
+      box('light l',new pc.Vec3(-.94,.58,z+3.87),new pc.Vec3(.30,.18,.11),M.lamp,root);
+      box('light r',new pc.Vec3(.94,.58,z+3.87),new pc.Vec3(.30,.18,.11),M.lamp,root);
+    }
+  };
+  segment('Front car',0,true);
+  segment('Centre car',-8.25,false);
+  segment('Rear car',-16.50,false);
+  for(const z of [-4.13,-12.38]){
+    box('Articulation bellows',new pc.Vec3(0,1.45,z),new pc.Vec3(3.05,2.40,.72),M.black,root);
+    for(const x of [-1.15,-.58,0,.58,1.15])box('Bellows rib',new pc.Vec3(x,1.45,z-.38),new pc.Vec3(.055,2.22,.08),M.rail,root);
   }
-  box('roof equipment',new pc.Vec3(0,2.92,-.5),new pc.Vec3(1.15,.18,2.1),M.black,root);
-  box('pantograph lower',new pc.Vec3(0,3.20,-.8),new pc.Vec3(.08,.55,1.25),M.black,root);
-  box('pantograph top',new pc.Vec3(0,3.72,-.8),new pc.Vec3(1.15,.05,.10),M.black,root);
+  box('roof equipment',new pc.Vec3(0,2.92,-8.25),new pc.Vec3(1.25,.18,2.55),M.black,root);
+  box('pantograph lower A',new pc.Vec3(-.38,3.26,-8.25),new pc.Vec3(.07,.72,1.18),M.black,root);
+  box('pantograph lower B',new pc.Vec3(.38,3.26,-8.25),new pc.Vec3(.07,.72,1.18),M.black,root);
+  box('pantograph collector',new pc.Vec3(0,4.02,-8.25),new pc.Vec3(1.52,.055,.12),M.black,root);
   return {entity:root,distance:GAME.streetLength,pulling:false};
 }
-
 const tram=buildTram();
 function syncTram(){tram.entity.setPosition(0,.02,-tram.distance);}syncTram();
 
@@ -462,6 +526,16 @@ function togglePause(force){if(!state.started||state.finished)return;state.pause
 $('playBtn').addEventListener('click',()=>{audio.unlock();state.started=true;ui.start.classList.remove('visible');ui.start.hidden=true;showToast('90 SECONDS. GO!');});$('pauseBtn').addEventListener('click',()=>togglePause());$('resumeBtn').addEventListener('click',()=>togglePause(false));$('restartBtn').addEventListener('click',reset);document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.started&&!state.finished)togglePause(true);});window.addEventListener('resize',()=>app.resizeCanvas());
 
 buildStreet();updateHud();updateCamera(0);app.start();
+document.documentElement.dataset.lastLuasReady='1';
+document.documentElement.dataset.lastLuasBuild=BUILD;
+const smokeParams=new URLSearchParams(location.search);
+if(smokeParams.get('smoke')==='1'){
+  const preview=Math.max(0,Math.min(GAME.streetLength-6,Number(smokeParams.get('distance')||180)||180));
+  player.distance=preview;
+  player.entity.setPosition(lanes[1],player.y,-preview);
+  ui.start.classList.remove('visible');ui.start.hidden=true;
+  updateHud();updateCamera(1);animateWorld();
+}
 app.on('update',dt=>{
   dt=Math.min(dt,.05);if(!state.started||state.paused||state.finished)return;
   state.elapsed+=dt;state.timeLeft-=dt;updatePlayer(dt);updateObstacles();animateWorld();updateTram(dt);updateCamera(dt);updateHud();
