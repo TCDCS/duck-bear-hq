@@ -6,6 +6,7 @@ const html=readFileSync('public/games/seagull-simulator/index.html','utf8');
 const css=readFileSync('public/games/seagull-simulator/game.css','utf8');
 const source=readFileSync('src/seagull-simulator/main.ts','utf8');
 const release=JSON.parse(readFileSync('public/games/seagull-simulator/release.json','utf8'));
+const changelog=JSON.parse(readFileSync('public/games/seagull-simulator/changelog.json','utf8'));
 const hub=readFileSync('public/games/index.html','utf8');
 const home=readFileSync('public/index.html','utf8');
 
@@ -219,31 +220,37 @@ test('Seagull landing has a procedural art fallback',()=>{
   assert.match(source,/gw\.generateTexture\('gull-walk'/);
 });
 
-test('Seagull Build 1.0 is consistent across runtime and public entry points',()=>{
-  assert.match(source,/const VERSION='1\.0'/);
-  assert.equal(release.version,'1.0');
-  assert.equal(release.build,'1.0');
+test('Seagull Build 1.1.0 is consistent across runtime, changelog and public entry points',()=>{
+  assert.match(source,/const VERSION='1\.1\.0'/);
+  assert.equal(release.version,'1.1.0');
+  assert.equal(release.build,'1.1.0');
+  assert.equal(release.status,'release-candidate');
   assert.equal(release.liveTarget,true);
-  assert.match(html,/BUILD <span id="version">1\.0<\/span>/);
-  assert.doesNotMatch(html,/0\.9\.1-alpha|Alpha <span id="version"/);
-  assert.match(hub,/BUILD 1\.0/);
-  assert.match(home,/BUILD 1\.0/);
+  assert.equal(changelog.current,'1.1.0');
+  assert.equal(changelog.entries[0].version,'1.1.0');
+  assert.match(html,/BUILD <span id="version">1\.1\.0<\/span>/);
+  assert.match(html,/release build 1\.1\.0/);
+  assert.match(hub,/BUILD 1\.1\.0/);
+  assert.match(home,/BUILD 1\.1\.0/);
 });
 
-test('Seagull shop signage uses bundled real-brand marks with text fallbacks',()=>{
-  const files=[
-    'centra.svg','supervalu.svg','spar.svg','insomnia.svg',
-    'mcdonalds.svg','boots.svg','brown-thomas.svg','bewleys.svg'
+test('Seagull Build 1.1.0 storefronts use local brand assets with text fallbacks',()=>{
+  const svgFiles=[
+    'centra.svg','supervalu.svg','tesco.svg','spar.svg','mcdonalds.svg',
+    'boots.svg','brown-thomas.svg','bewleys.svg','lego.svg','disney-store.svg'
   ];
-  for(const file of files){
+  for(const file of svgFiles){
     const svg=readFileSync('public/games/seagull-simulator/brands/'+file,'utf8');
     assert.match(svg,/<svg/);
     assert.equal(svg.includes('href="http'),false);
     assert.equal(svg.includes("href='http"),false);
   }
+  const yeeros=readFileSync('public/games/seagull-simulator/brands/yeeros.jpg');
+  assert.ok(yeeros.length>5000);
+  assert.equal(yeeros[0],0xff);assert.equal(yeeros[1],0xd8);
   for(const key of [
-    'brand-centra','brand-supervalu','brand-insomnia','brand-mcdonalds',
-    'brand-spar','brand-boots','brand-brown-thomas','brand-bewleys'
+    'brand-centra','brand-supervalu','brand-tesco','brand-mcdonalds','brand-spar',
+    'brand-boots','brand-lego','brand-disney-store','brand-brown-thomas','brand-bewleys','brand-yeeros'
   ]) assert.match(source,new RegExp(key));
   assert.match(source,/shop\(x:number,y:number,w:number,h:number,name:string,colour:number,sign:number,brandKey\?:string\)/);
   assert.match(source,/brandKey&&this\.textures\.exists\(brandKey\)/);
@@ -251,5 +258,47 @@ test('Seagull shop signage uses bundled real-brand marks with text fallbacks',()
   assert.match(source,/maxW=w-52,maxH=64/);
   assert.equal(release.brandSignage.bundledLocal,true);
   assert.equal(release.brandSignage.environmentalOnly,true);
-  assert.equal(release.brandSignage.brands.length,8);
+  assert.equal(release.brandSignage.brands.length,11);
+});
+
+test('Build 1.1.0 replaces the requested storefronts and rebuilds College Green around Trinity',()=>{
+  assert.match(source,/name:'TESCO'/);
+  assert.match(source,/name:'YEEROS'/);
+  assert.match(source,/name:'LEGO'/);
+  assert.match(source,/name:'DISNEY STORE'/);
+  assert.match(source,/TRINITY COLLEGE DUBLIN/);
+  assert.match(source,/West Front/);
+  assert.match(source,/Front Gate/);
+  assert.match(source,/Circular clock|Circular clock/i);
+  assert.match(source,/brand:'brand-yeeros'/);
+  assert.equal(release.environmentDetail.trinityCollegeWestFront,true);
+  assert.deepEqual(release.environmentDetail.graftonBusinesses,['Boots','LEGO Store','Disney Store',"Bewley's",'Brown Thomas']);
+});
+
+test('Build 1.1.0 has Settings and a clickable Update Log',()=>{
+  assert.match(html,/id="settingsBtn"/);
+  assert.match(html,/id="pauseSettingsBtn"/);
+  assert.match(html,/id="settingsPanel"/);
+  assert.match(html,/id="settingsSoundBtn"/);
+  assert.match(html,/id="updateLogBtn"/);
+  assert.match(html,/id="updateLogPanel"/);
+  assert.match(html,/id="updateLogList"/);
+  assert.match(source,/const UPDATE_LOG=/);
+  assert.match(source,/function renderUpdateLog\(\)/);
+  assert.match(source,/previewPanel==='settings'/);
+  assert.match(source,/previewPanel==='updates'/);
+  assert.equal(release.updateLog.enabled,true);
+  assert.equal(release.updateLog.current,'1.1.0');
+});
+
+test('Every Build 1.1.0 changelog entry is visible release data',()=>{
+  assert.ok(Array.isArray(changelog.entries));
+  assert.ok(changelog.entries.length>=2);
+  const current=changelog.entries.find(e=>e.version==='1.1.0');
+  assert.ok(current);
+  assert.match(current.title,/Dublin Detail & Identity Update/);
+  assert.ok(current.changes.some(x=>/Trinity College Dublin/.test(x)));
+  assert.ok(current.changes.some(x=>/Tesco/.test(x)));
+  assert.ok(current.changes.some(x=>/Yeeros/.test(x)));
+  assert.ok(current.changes.some(x=>/Update Log/.test(x)));
 });
