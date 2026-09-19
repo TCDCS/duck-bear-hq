@@ -47,8 +47,8 @@ Michael D. Higgins is a rare harmless cameo/background character. Real-person ca
 1. Tune flying, dive, landing, waddle, grab, collisions and camera.
 2. Improve character animation and environment detail across all four areas.
 3. Tune NPC reactions, Garda pursuit, wanted heat, food recycling, missions and combos.
-4. Add gull unlocks and simple upgrades only after the base run feels good.
-5. Add achievements and local progression.
+4. Tune the local gull unlocks and the Wings, Beak and Nerve upgrade costs. Keep boosts small.
+5. Add achievements only after progression has been play-tested.
 6. Only then consider Duck & Bear account leaderboards or native mobile packaging.
 
 The map scope is closed for the first release. Do not add more Dublin areas until the four-area route is polished and performs well on mobile.
@@ -56,3 +56,7 @@ The map scope is closed for the first release. Do not add more Dublin areas unti
 ## Release rule
 
 Do not merge or deploy a new major gameplay stage solely because it compiles. The browser build should be played on phone and desktop first, with movement, controls, readability and restart behaviour checked.
+
+## Local progression
+
+The alpha uses local-device progression only. Run coins are earned through play and cannot be bought. The four gulls are Dublin Gull, Big Lad, Sneaky Gull and Absolute Unit. Upgrade tracks are Wings, Beak and Nerve, each capped at five small levels. Keep this system simple and avoid login streaks, premium currency or pay-to-win mechanics.
