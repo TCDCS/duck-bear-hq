@@ -47,3 +47,6 @@
   .play:active,.action:active,.mini-button:active{transform:none}
   *{scroll-behavior:auto}
 }
+
+.title-badges{display:flex;align-items:center;justify-content:center;gap:9px;margin:14px 0 8px}.title-badges .dublin{margin:0}.build-badge{display:inline-block;background:#17384b;border:3px solid #fff;border-radius:8px;padding:5px 12px;font:1000 14px Arial Black,sans-serif;letter-spacing:.1em;color:#fff;box-shadow:0 4px 0 #0b2534;transform:rotate(1deg)}.build-badge span{color:#ffd84c}.build{margin-top:5px!important}
+@media(max-height:520px) and (orientation:landscape){.title-badges{margin:7px 0 3px}.build-badge{font-size:9px;padding:3px 7px;border-width:2px;box-shadow:0 2px 0 #0b2534}.start-panel .dublin{margin:0}.start-panel .build{font-size:7px;margin-top:2px!important}}
