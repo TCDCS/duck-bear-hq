@@ -329,6 +329,19 @@ class DameStreetScene extends Phaser.Scene{
         document.documentElement.dataset.seagullFeelError=String(err).slice(0,120);
       }
     }
+    if(new URLSearchParams(location.search).has('summarycheck')){
+      document.documentElement.dataset.seagullSummaryScheduled='1';
+      try{
+        this.score=1240;this.stolen=12;this.bestCombo=4;this.combo=4;
+        this.bestTheftName='spice bag';this.bestTheftValue=75;this.highestWanted=4;
+        this.completedMissions=2;this.activeRunMs=93500;
+        ['DAME STREET','COLLEGE GREEN','GRAFTON STREET',"ST STEPHEN'S GREEN"].forEach(z=>this.areasVisited.add(z));
+        this.gameOver();
+        document.documentElement.dataset.seagullSummaryExercised='1';
+      }catch(err){
+        document.documentElement.dataset.seagullSummaryError=String(err).slice(0,120);
+      }
+    }
   }
 
   drawWorld(){
@@ -1166,9 +1179,6 @@ setText('startBest',Number(storageGet('seagull-best')||0).toLocaleString());
 function syncSoundButton(){const b=$('soundBtn');if(!b)return;b.textContent=soundEnabled?'SFX':'MUTE';b.classList.toggle('muted',!soundEnabled);b.setAttribute('aria-pressed',String(!soundEnabled));}
 $('soundBtn')?.addEventListener('click',()=>{soundEnabled=!soundEnabled;storageSet('seagull-muted',soundEnabled?'0':'1');if(soundEnabled)initAudio();syncSoundButton();});
 syncSoundButton();
-$('playBtn')?.addEventListener('click',startGame);
-if(new URLSearchParams(location.search).has('autostart'))startGame();
-$('restartBtn')?.addEventListener('click',()=>location.reload());
 window.addEventListener('seagull-gameover',(ev:any)=>{
   paused=false;$('pausePanel')?.classList.add('hidden');$('controls')?.classList.add('hidden');$('gameOver')?.classList.remove('hidden');
   setText('finalScore',Number(ev.detail.score).toLocaleString());
@@ -1178,3 +1188,6 @@ window.addEventListener('seagull-gameover',(ev:any)=>{
   const secs=Math.max(0,Number(ev.detail.runSeconds)||0);setText('finalRunTime',Math.floor(secs/60)+':'+String(secs%60).padStart(2,'0'));
   renderProgression();
 });
+$('playBtn')?.addEventListener('click',startGame);
+$('restartBtn')?.addEventListener('click',()=>location.reload());
+if(new URLSearchParams(location.search).has('autostart'))startGame();
