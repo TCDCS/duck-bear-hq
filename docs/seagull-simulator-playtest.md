@@ -15,6 +15,9 @@ Check:
 - Flap gets the gull out of danger quickly enough after a theft;
 - controls do not overlap HUD or mission text;
 - pause/resume works, including backgrounding the browser and returning;
+- background the browser while holding Dive or Flap, then return and confirm no control remains stuck;
+- rotate to portrait mid-run and confirm gameplay pauses behind the rotate screen;
+- rotate back to landscape and confirm it resumes only when orientation caused the pause;
 - phone stays in a usable landscape layout without accidental vertical scrolling.
 
 ## Desktop
@@ -54,7 +57,8 @@ Finish a run and confirm:
 - score, food, best theft, combo, wanted peak, area count and active run time make sense;
 - coins are awarded;
 - Play Again goes directly into another run;
-- a bird unlock or upgrade persists after a reload;
+- a bird unlock or upgrade persists after a full browser reload;
+- coins, selected gull, upgrades, trophies and lifetime stats survive a reload together;
 - Trophy Cabinet shows real locked goals and correctly unlocked trophies;
 - lifetime totals increase only when a run ends.
 
@@ -71,3 +75,16 @@ Treat these as blockers before merge:
 - result/progression screens clipping on a landscape phone.
 
 Treat small speed, heat, coin-cost, grab-range and Garda-speed preferences as tuning rather than blockers.
+
+## Weak-device / low-power check
+
+On a weaker phone, or by forcing `?lowpower=1` in a local test build:
+- the map, gull, food, Garda logic and missions must remain unchanged;
+- fewer pigeons / simpler busker effects are acceptable;
+- controls and stealing must feel identical;
+- there must be no blank textures when landing/waddling;
+- no obvious visual stutter should appear at area boundaries.
+
+## CI artifact
+
+Every green Seagull validation run publishes a `seagull-simulator-build` artifact containing the exact built browser-game folder. Use that artifact if a branch build needs to be tested independently of the live Duck & Bear deployment.
