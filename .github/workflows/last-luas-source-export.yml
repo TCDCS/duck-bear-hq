@@ -11,14 +11,13 @@ jobs:
     timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
-      - run: python -m pip install --quiet cryptography
-      - name: Prepare encrypted private artwork and owner identity reference
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Stage four official shop marks in private R2
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: python scripts/last-luas-private-reference.py
-      - uses: actions/upload-artifact@v4
-        with:
-          name: last-luas-encrypted-reference
-          path: /tmp/last-luas-private.encrypted.json
-          retention-days: 1
+        run: python scripts/last-luas-stage-assets.py
