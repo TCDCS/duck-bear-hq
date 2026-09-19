@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 104">
+<ellipse cx="105" cy="94" rx="91" ry="8" fill="#19313c" opacity=".18"/>
+<g stroke="#203745" stroke-width="3" stroke-linejoin="round">
+<rect x="7" y="10" width="196" height="78" rx="12" fill="#2f86bb"/>
+<path d="M7 61h196v18H7Z" fill="#efc836"/>
+<path d="M17 18h174v33H17Z" fill="#c6e7eb"/>
+<path d="M48 18v33M80 18v33M112 18v33M144 18v33M176 18v33" stroke="#426579" stroke-width="4"/>
+<rect x="74" y="64" width="72" height="11" rx="3" fill="#18313f"/>
+<text x="110" y="72.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" font-weight="700" fill="#ffd84f">46A DUBLIN</text>
+<circle cx="43" cy="88" r="12" fill="#26323a"/><circle cx="43" cy="88" r="5" fill="#78878d"/>
+<circle cx="169" cy="88" r="12" fill="#26323a"/><circle cx="169" cy="88" r="5" fill="#78878d"/>
+<rect x="12" y="70" width="9" height="7" rx="2" fill="#fff1a0"/><rect x="189" y="70" width="9" height="7" rx="2" fill="#f26b5a"/>
+</g></svg>
