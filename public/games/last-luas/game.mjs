@@ -269,7 +269,7 @@ const landmarkCallouts=[
 function buildPlayer(){
   const root=new pc.Entity('Runner');app.root.addChild(root);
   const model=spawnCharacter(root,{kind:'casual',clip:'Run',scale:.96,yaw:180,name:'Runner character model'});
-  box('Runner backpack',new pc.Vec3(0,1.05,.24),new pc.Vec3(.52,.62,.24),mat(new pc.Color(.45,.25,.10),{gloss:.25}),root);
+  box('Runner backpack',new pc.Vec3(0,1.05,.23),new pc.Vec3(.34,.44,.16),mat(new pc.Color(.45,.25,.10),{gloss:.25}),root);
   const groundY=.04;root.setPosition(lanes[1],groundY,0);
   return {entity:root,model,lane:1,distance:0,y:groundY,groundY,vy:0,grounded:true,hit:0};
 }
@@ -298,7 +298,7 @@ function obstacle(kind,d,lane,{jumpable=false}={}){
     box('bike frame',new pc.Vec3(0,.70,0),new pc.Vec3(.10,.10,1.10),M.rail,root);
     box('handlebars',new pc.Vec3(0,1.02,-.55),new pc.Vec3(.78,.07,.08),M.rail,root);
     const rider=spawnCharacter(root,{kind:kind==='delivery'?'worker':'casual',clip:'Idle_Neutral',scale:.78,yaw:180,name:kind==='delivery'?'Delivery rider model':'Cyclist rider model'});
-    if(rider){rider.setLocalPosition(0,.18,.08);rider.setLocalEulerAngles(13,180,0);}
+    if(rider){rider.setLocalPosition(0,.10,.08);rider.setLocalEulerAngles(16,180,0);}
     if(kind==='delivery')box('delivery box',new pc.Vec3(0,1.12,.70),new pc.Vec3(.82,.70,.64),M.green,root);
     animated.push({type:kind,entity:root,baseX:lanes[lane],baseD:d,phase:d*.07});
   }
