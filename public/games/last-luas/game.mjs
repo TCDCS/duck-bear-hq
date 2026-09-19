@@ -62,6 +62,27 @@ function spawnCharacter(parent,{kind='casual',clip='Idle_Neutral',scale=.92,pitc
 }
 
 
+function bendBone(model,name,x=0,y=0,z=0){
+  const bone=model?.findByName?.(name);if(!bone)return false;
+  bone.rotateLocal(x,y,z);return true;
+}
+function poseRiderCharacter(model){
+  if(!model)return false;
+  // Character assets face +Z before the parent yaw. Bend the unanimated skeleton into a bike pose.
+  bendBone(model,'Body',-12,0,0);
+  bendBone(model,'Torso',-10,0,0);
+  bendBone(model,'UpperLeg.L',-68,0,0);
+  bendBone(model,'UpperLeg.R',-68,0,0);
+  bendBone(model,'LowerLeg.L',92,0,0);
+  bendBone(model,'LowerLeg.R',92,0,0);
+  bendBone(model,'UpperArm.L',-54,0,-8);
+  bendBone(model,'UpperArm.R',-54,0,8);
+  bendBone(model,'LowerArm.L',-34,0,0);
+  bendBone(model,'LowerArm.R',-34,0,0);
+  return true;
+}
+
+
 const ui={shell:$('gameShell'),time:$('timeValue'),distance:$('distanceValue'),callout:$('streetCallout'),toast:$('toast'),timerCard:document.querySelector('.timer-card'),start:$('startPanel'),pause:$('pausePanel'),result:$('resultPanel'),resultTitle:$('resultTitle'),resultText:$('resultText'),resultDistance:$('resultDistance'),resultTime:$('resultTime')};
 
 const state={started:false,paused:false,finished:false,timeLeft:GAME.duration,elapsed:0,lastSecond:91,toastTimer:0,doorsWarned:false,pullAwayWarned:false};
@@ -391,7 +412,6 @@ const landmarkCallouts=[
 function buildPlayer(){
   const root=new pc.Entity('Runner');app.root.addChild(root);
   const model=spawnCharacter(root,{kind:'casual',clip:'Run',scale:1.26,yaw:180,name:'Runner character model'});
-  box('Runner backpack',new pc.Vec3(0,1.05,.23),new pc.Vec3(.34,.44,.16),mat(new pc.Color(.45,.25,.10),{gloss:.25}),root);
   const groundY=.04;root.setPosition(lanes[1],groundY,0);
   return {entity:root,model,lane:1,distance:0,y:groundY,groundY,vy:0,grounded:true,hit:0};
 }
@@ -424,9 +444,9 @@ function obstacle(kind,d,lane,{jumpable=false}={}){
     box('Bike handlebars',new pc.Vec3(0,1.13,-.65),new pc.Vec3(.86,.07,.09),M.rail,root);
     box('Bike stem',new pc.Vec3(0,.92,-.59),new pc.Vec3(.08,.48,.08),M.rail,root).setLocalEulerAngles(-17,0,0);
     const riderPivot=new pc.Entity(kind==='delivery'?'Delivery rider hip pivot':'Cyclist rider hip pivot');
-    riderPivot.setLocalPosition(0,1.02,.24);riderPivot.setLocalEulerAngles(32,0,0);root.addChild(riderPivot);
-    const rider=spawnCharacter(riderPivot,{kind:kind==='delivery'?'worker':'casual',clip:'Idle_Neutral',scale:.96,yaw:180,name:kind==='delivery'?'Delivery rider model':'Cyclist rider model'});
-    if(rider)rider.setLocalPosition(0,-.96,-.10);
+    riderPivot.setLocalPosition(0,1.03,.24);riderPivot.setLocalEulerAngles(8,0,0);root.addChild(riderPivot);
+    const rider=spawnCharacter(riderPivot,{kind:kind==='delivery'?'worker':'casual',clip:null,scale:.96,yaw:180,name:kind==='delivery'?'Delivery rider model':'Cyclist rider model'});
+    if(rider){rider.setLocalPosition(0,-.96,-.10);poseRiderCharacter(rider);}
     if(kind==='delivery')box('delivery box',new pc.Vec3(0,1.22,.80),new pc.Vec3(.88,.76,.68),M.green,root);
     animated.push({type:kind,entity:root,baseX:lanes[lane],baseD:d,phase:d*.07});
   }
