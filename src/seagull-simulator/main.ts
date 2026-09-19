@@ -630,6 +630,17 @@ class DameStreetScene extends Phaser.Scene{
       g.generateTexture(key,104,76);g.destroy();
     };
     if(!this.textures.exists('gull-0')){gull('gull-0',21);gull('gull-1',7);gull('gull-2',-13);}
+    if(!this.textures.exists('gull-walk')){
+      const gw=this.make.graphics({x:0,y:0},false);
+      gw.fillStyle(0x000000,.12);gw.fillEllipse(48,78,60,12);
+      gw.fillStyle(0xf7f7f0);gw.fillEllipse(48,48,58,34);
+      gw.fillStyle(0xd4dadd);gw.fillEllipse(32,51,30,19);
+      gw.fillStyle(0xf7f7f0);gw.fillCircle(73,39,17);
+      gw.fillStyle(0xf0a92f);gw.fillTriangle(87,39,108,44,87,48);
+      gw.fillStyle(0x1d2c35);gw.fillCircle(78,34,3);
+      gw.lineStyle(4,0xe5a62b);gw.lineBetween(41,64,41,85);gw.lineBetween(60,64,60,85);
+      gw.generateTexture('gull-walk',116,92);gw.destroy();
+    }
 
     const person=(key:string,coat:number,skin:number=0xd99d75,hat:number|null=null,accent:number=0xc99b55)=>{
       const g=this.make.graphics({x:0,y:0},false);
