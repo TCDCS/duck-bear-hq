@@ -36,6 +36,7 @@
     <div id="hud" class="hud hidden" aria-live="polite">
       <a class="hud-home" href="/games/" aria-label="Back to games">←</a>
       <button id="soundBtn" class="hud-sound" type="button" aria-label="Toggle sound effects">SFX</button>
+      <button id="pauseBtn" class="hud-sound" type="button" aria-label="Pause game">Ⅱ</button>
       <div class="hud-chip"><small>SCORE</small><strong id="score">0</strong></div>
       <div class="hud-chip"><small>FOOD</small><strong id="stolen">0</strong></div>
       <div class="hud-chip combo"><small>COMBO</small><strong id="combo">x1</strong></div>
@@ -54,6 +55,15 @@
         <button id="grabBtn" class="action grab" aria-label="Grab food">GRAB</button>
       </div>
     </div>
+
+    <section id="pausePanel" class="panel pause-panel hidden">
+      <p class="eyebrow">SEAGULL ON A BREAK</p>
+      <h2>PAUSED</h2>
+      <p>Even a public nuisance needs a minute.</p>
+      <button id="resumeBtn" class="play" type="button">RESUME</button>
+      <button id="restartRunBtn" class="pause-secondary" type="button">RESTART RUN</button>
+      <a class="secondary" href="/games/">BACK TO GAMES</a>
+    </section>
 
     <section id="gameOver" class="panel over-panel hidden">
       <p class="eyebrow">RUN OVER</p>
