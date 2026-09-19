@@ -9,12 +9,6 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 SHOTS = [
     ("model-axis-check", 0, 1280, 720, "modelcheck=1"),
-    ("player", 12, 1280, 720, ""),
-    ("tourist", 60, 1280, 720, ""),
-    ("cyclist", 72, 1280, 720, ""),
-    ("umbrella", 102, 1280, 720, ""),
-    ("delivery", 148, 1280, 720, ""),
-    ("mobile-umbrella", 102, 844, 390, ""),
 ]
 
 with sync_playwright() as p:
