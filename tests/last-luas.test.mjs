@@ -41,6 +41,17 @@ test('Last Luas CSP permits only the pinned engine CDN in addition to self',()=>
   assert.doesNotMatch(read(index),/<script[^>]+src="https:/);
 });
 
+test('runtime-rendered nameboards and final Luas sequence are present',()=>{
+  const source=read(game);
+  assert.match(source,/function signMaterial/);
+  assert.match(source,/Texture\(app\.graphicsDevice/);
+  for(const sign of ['ARKET wordmark','Hodges Figgis nameboard','Cafe en Seine nameboard','Dawson Lounge nameboard','Ivy nameboard','Dawson stop nameboard'])assert.match(source,new RegExp(sign));
+  assert.match(source,/DOORS CLOSING!/);
+  assert.match(source,/THE LUAS IS MOVING!/);
+  assert.match(source,/last-luas-best-v1/);
+  assert.match(source,/camera\.camera\.fov/);
+});
+
 test('street polish includes distinct hazards and final sprint feedback',()=>{
   const source=read(game),styles=read(css);
   assert.match(source,/umbrella-hit/);
@@ -54,10 +65,11 @@ test('street polish includes distinct hazards and final sprint feedback',()=>{
 test('release metadata matches the playable slice',()=>{
   const data=JSON.parse(read(release));
   assert.equal(data.game,'Last Luas');
-  assert.equal(data.version,'0.2.0');
+  assert.equal(data.version,'0.3.0');
   assert.equal(data.engine,'PlayCanvas 2.22.2');
   assert.equal(data.durationSeconds,90);
   assert.equal(data.location,'Dawson Street, Dublin');
   assert.equal(data.environment.raisedLuasPlatforms,true);
   assert.equal(data.environment.puddleReflections,true);
+  assert.equal(data.environment.runtimeNameboards,true);
 });
