@@ -186,3 +186,13 @@ test('Seagull respects reduced-motion preference without changing gameplay rules
   assert.match(source,/if\(!reducedMotion\)this\.tweens\.add\(\{targets:this\.cameras\.main/);
   assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
 });
+
+test('Seagull low-power mode only trims ambient work',()=>{
+  assert.match(source,/lowPowerMode=new URLSearchParams\(location\.search\)\.has\('lowpower'\)/);
+  assert.match(source,/const count=lowPowerMode\?Math\.max\(2,Math\.ceil\(z\.count\*\.5\)\):z\.count/);
+  assert.match(source,/lowPowerMode\?1100:1550/);
+  assert.match(source,/lowPowerMode\?1250:1650/);
+  assert.match(source,/lowPowerMode\?900:1100/);
+  assert.equal(release.performance.lowPowerNpcRadiusX,1250);
+  assert.equal(release.performance.lowPowerNpcRadiusY,900);
+});
