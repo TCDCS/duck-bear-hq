@@ -87,3 +87,11 @@ test('Seagull risk feedback matches visible gameplay',()=>{
   assert.match(source,/const reach=this\.bird\.grab\+progress\.upgrades\.beak\*5/);
   assert.match(source,/texture\.key==='luas'\?118:v\.sprite\.texture\.key==='bus'\?102:70/);
 });
+
+test('Seagull supports safe pause and backgrounding',()=>{
+  assert.match(html,/id="pauseBtn"/);
+  assert.match(html,/id="pausePanel"/);
+  assert.match(source,/game\.scene\.pause\('DameStreet'\)/);
+  assert.match(source,/game\.scene\.resume\('DameStreet'\)/);
+  assert.match(source,/visibilitychange/);
+});
