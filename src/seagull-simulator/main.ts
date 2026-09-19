@@ -36,6 +36,7 @@ const controls={
   x:0,
   y:0,
   dive:false,
+  diveHeld:false,
   grab:false,
   boost:false,
   consumeDive(){const v=this.dive;this.dive=false;return v;},
@@ -100,7 +101,10 @@ function bindButton(id:string,key:'dive'|'grab'|'boost'){
   if(key==='boost'){
     el.addEventListener('pointerdown',()=>controls.boost=true);
     ['pointerup','pointercancel','pointerleave'].forEach(n=>el.addEventListener(n,()=>controls.boost=false));
-  }else el.addEventListener('pointerdown',()=>{controls[key]=true;});
+  }else if(key==='dive'){
+    el.addEventListener('pointerdown',()=>{controls.dive=true;controls.diveHeld=true;});
+    ['pointerup','pointercancel','pointerleave'].forEach(n=>el.addEventListener(n,()=>controls.diveHeld=false));
+  }else el.addEventListener('pointerdown',()=>{controls.grab=true;});
 }
 
 class DameStreetScene extends Phaser.Scene{
@@ -113,6 +117,8 @@ class DameStreetScene extends Phaser.Scene{
   keys:any;
   altitude=.7;
   altitudeTarget=.7;
+  grounded=false;
+  toldWaddle=false;
   score=0;
   stolen=0;
   wanted=0;
@@ -140,6 +146,7 @@ class DameStreetScene extends Phaser.Scene{
     this.load.svg('gull-0',base+'gull-up.svg',{width:140,height:100});
     this.load.svg('gull-1',base+'gull-mid.svg',{width:140,height:100});
     this.load.svg('gull-2',base+'gull-down.svg',{width:140,height:100});
+    this.load.svg('gull-walk',base+'gull-walk.svg',{width:120,height:110});
     this.load.svg('garda',base+'garda.svg',{width:76,height:112});
     this.load.svg('bus',base+'dublin-bus.svg',{width:220,height:140});
   }
@@ -440,16 +447,25 @@ class DameStreetScene extends Phaser.Scene{
     }
     const len=Math.hypot(dx,dy)||1;dx/=Math.max(1,len);dy/=Math.max(1,len);
     const boost=controls.boost||this.keys?.SHIFT?.isDown;
-    const speed=boost?430:315;
+    const diveHeld=controls.diveHeld||Boolean(this.keys?.SPACE?.isDown);
+    if(boost&&this.grounded){this.grounded=false;this.altitudeTarget=.74;this.gull.play('fly');this.toast('BACK IN THE AIR');}
+    if(diveHeld&&!boost&&this.altitude<.16){this.grounded=true;this.altitudeTarget=.045;}
+    if(this.grounded&&!diveHeld&&!boost){this.grounded=false;this.altitudeTarget=.62;this.gull.play('fly');}
+    const speed=this.grounded?115:(boost?430:315);
     this.gull.setVelocity(dx*speed,dy*speed);
     if(Math.abs(dx)>.08)this.gull.setFlipX(dx<0);
     this.gull.setAngle(Phaser.Math.Clamp(dy*10,-10,10));
 
     if(controls.consumeDive())this.startDive(time);
     if(controls.consumeGrab())this.tryGrab(time);
-    if(time>this.diveUntil&&this.altitudeTarget<.6)this.altitudeTarget=.7;
+    if(!diveHeld&&!this.grounded&&time>this.diveUntil&&this.altitudeTarget<.6)this.altitudeTarget=.7;
+    if(this.grounded){
+      if(this.gull.texture.key!=='gull-walk'){this.gull.anims.stop();this.gull.setTexture('gull-walk');}
+      if(!this.toldWaddle){this.toldWaddle=true;this.toast('WADDLE MODE · FLAP TO TAKE OFF');}
+    }else if(this.gull.texture.key==='gull-walk'&&!this.gull.anims.isPlaying)this.gull.play('fly');
     this.altitude=Phaser.Math.Linear(this.altitude,this.altitudeTarget,Math.min(1,dt*4.8));
-    const sc=.82+this.altitude*.5;this.gull.setScale(sc);
+    const sc=this.grounded?.78:(.82+this.altitude*.5);this.gull.setScale(sc);
+    if(this.grounded)this.gull.setAngle(0);
     this.gull.setDepth(45+Math.round(this.altitude*28));
     this.shadow.setPosition(this.gull.x+16,this.gull.y+28+this.altitude*58);
     this.shadow.setScale(1.15-this.altitude*.38,.9-this.altitude*.25);
@@ -467,6 +483,7 @@ class DameStreetScene extends Phaser.Scene{
   }
 
   startDive(time:number){
+    if(this.grounded)return;
     this.altitudeTarget=.08;this.diveUntil=time+850;sfx('dive');
     if(this.selected&&!this.selected.stolen){
       const dist=Phaser.Math.Distance.Between(this.gull.x,this.gull.y,this.selected.person.x,this.selected.person.y);
