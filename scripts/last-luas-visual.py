@@ -9,11 +9,11 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 SHOTS = [
     ("player", 12, 1280, 720, ""),
-    ("tourist", 60, 1280, 720, ""),
-    ("cyclist", 72, 1280, 720, ""),
-    ("umbrella", 102, 1280, 720, ""),
-    ("delivery", 148, 1280, 720, ""),
-    ("mobile-umbrella", 102, 844, 390, ""),
+    ("tourist", 52, 1280, 720, ""),
+    ("cyclist", 66, 1280, 720, ""),
+    ("umbrella", 96, 1280, 720, ""),
+    ("delivery", 142, 1280, 720, ""),
+    ("mobile-umbrella", 96, 844, 390, ""),
 ]
 
 with sync_playwright() as p:
