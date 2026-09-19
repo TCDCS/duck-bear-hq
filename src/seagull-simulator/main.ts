@@ -1070,8 +1070,8 @@ function renderProgression(){
       const unlocked=progress.achievements.includes(id);
       const card=document.createElement('article');card.className='trophy-card'+(unlocked?'':' locked');
       const icon=document.createElement('div');icon.className='trophy-icon';icon.textContent=a.icon;
-      const copy=document.createElement('div');const name=document.createElement('h3');name.textContent=unlocked?a.name:'???';
-      const desc=document.createElement('p');desc.textContent=unlocked?a.desc:'Keep causing trouble to reveal this trophy.';
+      const copy=document.createElement('div');const name=document.createElement('h3');name.textContent=a.name;
+      const desc=document.createElement('p');desc.textContent=a.desc;
       const state=document.createElement('small');state.textContent=unlocked?'UNLOCKED':'LOCKED';
       copy.append(name,desc,state);card.append(icon,copy);trophies.append(card);
     }
