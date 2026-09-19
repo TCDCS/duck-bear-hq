@@ -60,3 +60,21 @@ Do not merge or deploy a new major gameplay stage solely because it compiles. Th
 ## Local progression
 
 The alpha uses local-device progression only. Run coins are earned through play and cannot be bought. The four gulls are Dublin Gull, Big Lad, Sneaky Gull and Absolute Unit. Upgrade tracks are Wings, Beak and Nerve, each capped at five small levels. Keep this system simple and avoid login streaks, premium currency or pay-to-win mechanics.
+
+## 0.9 alpha checkpoint
+
+The current feature branch has moved beyond the original MVP. It now includes:
+
+- the complete four-area route with no level loading screens;
+- smoothed arcade flight, short dive assist, landing and waddling;
+- wanted heat, Garda line-of-sight loss, defender reactions and traffic hazards;
+- eight food types with area-specific weighting and crowd mixes;
+- local coins, four gulls and three five-level upgrade tracks;
+- eight local trophies plus lifetime run statistics;
+- richer end-of-run summaries and instant retry;
+- automatic/manual pause and safe local-storage fallbacks;
+- mobile-landscape layouts and portrait rotation guidance;
+- lightweight ambient pigeons, animated Grafton buskers and a cooldown-limited Luas bell;
+- a mobile optimisation pass that leaves only the player gull in Arcade Physics and culls distant pedestrian updates.
+
+The map and major-system scope is closed for the first release. Future work before merge should be driven by hands-on feel/performance findings rather than adding more streets, currencies, menus or modes.
