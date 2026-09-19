@@ -36,7 +36,7 @@ const UPGRADE_META:Record<UpgradeKey,{name:string;blurb:string}>={
 function loadProgress():ProgressState{
   const fallback:ProgressState={coins:0,selectedBird:'dublin',unlockedBirds:['dublin'],upgrades:{wings:0,beak:0,nerve:0}};
   try{
-    const raw=JSON.parse(localStorage.getItem('seagull-progress-v1')||'null');
+    const raw=JSON.parse(storageGet('seagull-progress-v1')||'null');
     if(!raw||typeof raw!=='object')return fallback;
     const unlocked=(Array.isArray(raw.unlockedBirds)?raw.unlockedBirds:[]).filter((id:any)=>id in BIRDS) as BirdId[];
     if(!unlocked.includes('dublin'))unlocked.unshift('dublin');
@@ -54,7 +54,7 @@ function loadProgress():ProgressState{
   }catch{return fallback;}
 }
 let progress=loadProgress();
-function saveProgress(){localStorage.setItem('seagull-progress-v1',JSON.stringify(progress));}
+function saveProgress(){storageSet('seagull-progress-v1',JSON.stringify(progress));}
 function selectedBird(){return BIRDS[progress.selectedBird];}
 
 
@@ -90,8 +90,10 @@ const controls={
   consumeGrab(){const v=this.grab;this.grab=false;return v;}
 };
 
+function storageGet(key:string){try{return localStorage.getItem(key);}catch{return null;}}
+function storageSet(key:string,value:string){try{localStorage.setItem(key,value);return true;}catch{return false;}}
 let audioCtx:AudioContext|null=null;
-let soundEnabled=localStorage.getItem('seagull-muted')!=='1';
+let soundEnabled=storageGet('seagull-muted')!=='1';
 function initAudio(){
   if(!soundEnabled)return;
   if(new URLSearchParams(location.search).has('smoke'))return;
@@ -259,8 +261,8 @@ class DameStreetScene extends Phaser.Scene{
     setWanted(0);setFeathers(this.feathers,this.maxFeathers);this.setMission(0);
     this.time.delayedCall(900,()=>this.toast('Find food. Dive low. Grab it. Get out.'));
     const tutorialKey='seagull-tutorial-seen-v1';
-    if(!new URLSearchParams(location.search).has('smoke')&&!localStorage.getItem(tutorialKey)){
-      localStorage.setItem(tutorialKey,'1');
+    if(!new URLSearchParams(location.search).has('smoke')&&!storageGet(tutorialKey)){
+      storageSet(tutorialKey,'1');
       this.time.delayedCall(3400,()=>this.toast('HOLD DIVE TO SWOOP DOWN · KEEP HOLDING TO LAND'));
       this.time.delayedCall(6200,()=>this.toast('GRAB UP CLOSE · FLAP TO ESCAPE OR TAKE OFF'));
     }
@@ -971,7 +973,7 @@ class DameStreetScene extends Phaser.Scene{
 
   gameOver(){
     if(this.ended)return;this.ended=true;this.physics.pause();
-    const best=Number(localStorage.getItem('seagull-best')||0);if(this.score>best)localStorage.setItem('seagull-best',String(Math.floor(this.score)));
+    const best=Number(storageGet('seagull-best')||0);if(this.score>best)storageSet('seagull-best',String(Math.floor(this.score)));
     const coins=Math.max(5,Math.floor(this.score/50)+Math.floor(this.stolen/3)+this.completedMissions*8);
     progress.coins+=coins;saveProgress();
     window.dispatchEvent(new CustomEvent('seagull-gameover',{detail:{score:Math.floor(this.score),stolen:this.stolen,best:Math.max(best,Math.floor(this.score)),coins}}));
@@ -1073,9 +1075,9 @@ function startGame(){
     render:{antialias:true,pixelArt:false,roundPixels:false}
   });
 }
-setText('startBest',Number(localStorage.getItem('seagull-best')||0).toLocaleString());
+setText('startBest',Number(storageGet('seagull-best')||0).toLocaleString());
 function syncSoundButton(){const b=$('soundBtn');if(!b)return;b.textContent=soundEnabled?'SFX':'MUTE';b.classList.toggle('muted',!soundEnabled);b.setAttribute('aria-pressed',String(!soundEnabled));}
-$('soundBtn')?.addEventListener('click',()=>{soundEnabled=!soundEnabled;localStorage.setItem('seagull-muted',soundEnabled?'0':'1');if(soundEnabled)initAudio();syncSoundButton();});
+$('soundBtn')?.addEventListener('click',()=>{soundEnabled=!soundEnabled;storageSet('seagull-muted',soundEnabled?'0':'1');if(soundEnabled)initAudio();syncSoundButton();});
 syncSoundButton();
 $('playBtn')?.addEventListener('click',startGame);
 if(new URLSearchParams(location.search).has('autostart'))startGame();
