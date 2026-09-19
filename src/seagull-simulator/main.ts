@@ -1270,13 +1270,15 @@ window.addEventListener('blur',()=>{
   if(!new URLSearchParams(location.search).has('smoke')&&(window as any).__seagullGame)setGamePaused(true);
 });
 function syncOrientationPause(){
-  if(new URLSearchParams(location.search).has('smoke'))return;
+  const params=new URLSearchParams(location.search);
+  if(params.has('smoke')&&!params.has('orientationcheck'))return;
   const phonePortrait=innerWidth<=900&&innerHeight>innerWidth;
   if(phonePortrait&&(window as any).__seagullGame&&!paused){
     orientationPaused=true;setGamePaused(true);
   }else if(!phonePortrait&&orientationPaused){
     orientationPaused=false;setGamePaused(false);
   }
+  if(params.has('orientationcheck'))document.documentElement.dataset.seagullOrientationPaused=orientationPaused?'1':'0';
 }
 window.addEventListener('resize',syncOrientationPause);
 window.addEventListener('orientationchange',()=>setTimeout(syncOrientationPause,80));
