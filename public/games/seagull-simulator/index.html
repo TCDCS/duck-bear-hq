@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en-IE">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#173b50">
+  <meta name="description" content="Seagull Simulator: Dublin — steal snacks, dodge traffic and become a public nuisance from Dame Street to Stephen's Green.">
+  <title>Seagull Simulator: Dublin — Duck &amp; Bear</title>
+  <link rel="icon" href="/games/seagull-simulator/icon.svg">
+  <link rel="stylesheet" href="/games/seagull-simulator/game.css?v=0.1.0">
+</head>
+<body>
+  <main class="game-shell">
+    <div id="game" class="game-stage" aria-label="Seagull Simulator: Dublin game"></div>
+
+    <section id="startScreen" class="panel start-panel">
+      <a class="back" href="/games/">← Duck &amp; Bear Games</a>
+      <div class="logo-mark" aria-hidden="true">🐦</div>
+      <p class="eyebrow">DUCK &amp; BEAR PRESENTS</p>
+      <h1>SEAGULL<br><span>SIMULATOR</span></h1>
+      <strong class="dublin">DUBLIN</strong>
+      <p class="tagline">STEAL. SQUAWK. REPEAT.</p>
+      <p class="intro">Free-fly around Dame Street. Pick a snack, dive low, grab it and get away before Dublin has enough of you.</p>
+      <button id="playBtn" class="play">PLAY</button>
+      <p class="controls-note">Phone: left stick + Dive/Grab · Computer: WASD/Arrows + Space/E</p>
+      <p class="build">Alpha <span id="version">0.1.0-alpha</span></p>
+    </section>
+
+    <div id="hud" class="hud hidden" aria-live="polite">
+      <a class="hud-home" href="/games/" aria-label="Back to games">←</a>
+      <div class="hud-chip"><small>SCORE</small><strong id="score">0</strong></div>
+      <div class="hud-chip"><small>FOOD</small><strong id="stolen">0</strong></div>
+      <div class="hud-chip wanted"><small>WANTED</small><strong id="wantedStars">☆☆☆☆☆</strong></div>
+      <div class="hud-chip feathers"><small>FEATHERS</small><strong id="feathers">●●●</strong></div>
+    </div>
+
+    <div id="toast" class="toast" role="status"></div>
+
+    <div id="controls" class="mobile-controls hidden" aria-label="Game controls">
+      <div id="stickZone" class="stick-zone"><div class="stick-base"><div id="stickKnob" class="stick-knob"></div></div></div>
+      <div class="action-buttons">
+        <button id="boostBtn" class="action boost" aria-label="Flap faster">FLAP</button>
+        <button id="diveBtn" class="action dive" aria-label="Dive">DIVE</button>
+        <button id="grabBtn" class="action grab" aria-label="Grab food">GRAB</button>
+      </div>
+    </div>
+
+    <section id="gameOver" class="panel over-panel hidden">
+      <p class="eyebrow">RUN OVER</p>
+      <h2>CAUGHT!</h2>
+      <div class="results">
+        <span>Score <strong id="finalScore">0</strong></span>
+        <span>Food stolen <strong id="finalStolen">0</strong></span>
+        <span>Best score <strong id="bestScore">0</strong></span>
+      </div>
+      <button id="restartBtn" class="play">PLAY AGAIN</button>
+      <a class="secondary" href="/games/">BACK TO GAMES</a>
+    </section>
+  </main>
+  <script src="/games/seagull-simulator/game.js?v=0.1.0"></script>
+</body>
+</html>
