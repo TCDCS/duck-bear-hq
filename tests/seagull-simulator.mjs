@@ -196,3 +196,12 @@ test('Seagull low-power mode only trims ambient work',()=>{
   assert.equal(release.performance.lowPowerNpcRadiusX,1250);
   assert.equal(release.performance.lowPowerNpcRadiusY,900);
 });
+
+test('Seagull clears touch state across pause blur and restart',()=>{
+  assert.match(source,/function resetControls\(\)/);
+  assert.match(source,/controls\.diveHeld=false/);
+  assert.match(source,/controls\.boost=false/);
+  assert.match(source,/window\.addEventListener\('blur'/);
+  assert.match(source,/resetControls\(\);\n    game\.scene\.pause/);
+  assert.match(source,/const restartRun=\(\)=>\{resetControls\(\);location\.href/);
+});
