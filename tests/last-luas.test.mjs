@@ -54,7 +54,7 @@ test('runtime-rendered nameboards and final Luas sequence are present',()=>{
 
 test('Dawson Street geometry follows the south-to-north run and Dublin streetscape cues',()=>{
   const source=read(game);
-  for(const feature of ['St Stephens Green stone gate glimpse','Molesworth Street','South Anne Street','Duke Street','DAWSON STREET · SRÁID DHÁSAIN','St Ann\\'s Church','Trinity College stone boundary glimpse'])assert.match(source,new RegExp(feature));
+  for(const feature of ['St Stephens Green stone gate glimpse','Molesworth Street','South Anne Street','Duke Street','DAWSON STREET · SRÁID DHÁSAIN',"St Ann's Church",'Trinity College stone boundary glimpse'])assert.match(source,new RegExp(feature));
   for(const feature of ['Dublin street bin','Bike stand','Traffic signal','Drain grate','Luas track bed','Catenary contact line'])assert.match(source,new RegExp(feature));
   for(const tramFeature of ['tram yellow waist band','tram purple skirt','BROOMBRIDGE','LUAS front wordmark','pantograph top'])assert.match(source,new RegExp(tramFeature));
 });
