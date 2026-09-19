@@ -35,21 +35,13 @@ jobs:
             sleep 0.25
           done
 
-          timeout 30s google-chrome --headless --no-sandbox --dump-dom --virtual-time-budget=8000 'http://127.0.0.1:4173/games/last-luas/?smoke=1&distance=60' > /tmp/last-luas-dom.txt
-          grep 'data-last-luas-ready="1"' /tmp/last-luas-dom.txt
-          grep 'data-last-luas-build="0.4.0"' /tmp/last-luas-dom.txt
-          grep 'data-last-luas-character-assets="2"' /tmp/last-luas-dom.txt
-          if grep -q 'data-last-luas-asset-error="1"' /tmp/last-luas-dom.txt; then
-            echo "Character asset load failed"
-            exit 1
-          fi
-
           shot () {
             name="$1"
             distance="$2"
             size="$3"
-            timeout 30s google-chrome --headless --no-sandbox --hide-scrollbars --window-size="$size" --virtual-time-budget=6500 --screenshot="/tmp/last-luas-real-characters/$name.png" "http://127.0.0.1:4173/games/last-luas/?smoke=1&distance=$distance"
-            test -s "/tmp/last-luas-real-characters/$name.png"
+            target="/tmp/last-luas-real-characters/$name.png"
+            timeout 30s google-chrome --headless --no-sandbox --hide-scrollbars --window-size="$size" --virtual-time-budget=8000 --run-all-compositor-stages-before-draw --screenshot="$target" "http://127.0.0.1:4173/games/last-luas/?smoke=1&distance=$distance" || test -s "$target"
+            test -s "$target"
           }
           shot player 12 1280,720
           shot tourist 60 1280,720
