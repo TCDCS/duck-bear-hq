@@ -1,7 +1,7 @@
 {
   "game": "Last Luas",
-  "version": "0.2.0",
-  "status": "playable vertical slice — street polish pass",
+  "version": "0.3.0",
+  "status": "playable vertical slice — street identity and finish polish",
   "engine": "PlayCanvas 2.22.2",
   "location": "Dawson Street, Dublin",
   "durationSeconds": 90,
@@ -18,7 +18,8 @@
     "streetTreesAndPlanters": true,
     "raisedLuasPlatforms": true,
     "platformWhiteEdgeLines": true,
-    "glassShelters": true
+    "glassShelters": true,
+    "runtimeNameboards": true
   },
   "landmarks": [
     "ARKET Dawson Street",
@@ -36,7 +37,10 @@
     "umbrella screen obstruction",
     "paired lane closures",
     "last-10-second urgency",
-    "Luas pull-away finish"
+    "Luas pull-away finish",
+    "door-closing warning sequence",
+    "camera FOV sprint effect",
+    "local best catch time"
   ],
-  "notes": "v0.2 improves the procedural street using verified Dawson Street shop and Luas-stop references. It remains a stylised game reconstruction; final Blender/GLB facade meshes can replace the procedural geometry later without changing runner logic."
+  "notes": "v0.3 adds runtime-rendered Dawson Street nameboards, a stronger door-closing/Luas pull-away finale and camera/audio urgency. Street geometry remains stylised and replaceable with final Blender/GLB facades."
 }
