@@ -1,7 +1,7 @@
 {
   "game": "Last Luas",
-  "version": "0.3.0",
-  "status": "playable vertical slice — street identity and finish polish",
+  "version": "0.4.0",
+  "status": "playable vertical slice — Dublin geometry and streetscape rebuild",
   "engine": "PlayCanvas 2.22.2",
   "location": "Dawson Street, Dublin",
   "durationSeconds": 90,
@@ -13,21 +13,41 @@
   "environment": {
     "wetRoad": true,
     "puddleReflections": true,
+    "embeddedLuasTrackBed": true,
     "overheadLuasWires": true,
+    "catenarySupportArms": true,
     "ambientPedestrians": true,
     "streetTreesAndPlanters": true,
+    "sideStreetBreaks": [
+      "Molesworth Street",
+      "South Anne Street",
+      "Duke Street"
+    ],
+    "pedestrianCrossings": true,
+    "tactilePaving": true,
+    "streetBins": true,
+    "bikeStands": true,
+    "trafficSignals": true,
+    "drainageGrates": true,
     "raisedLuasPlatforms": true,
     "platformWhiteEdgeLines": true,
     "glassShelters": true,
+    "realtimeStopDisplays": true,
     "runtimeNameboards": true
   },
   "landmarks": [
-    "ARKET Dawson Street",
-    "Hodges Figgis",
-    "Cafe en Seine",
-    "The Dawson Lounge",
+    "St Stephen's Green end",
     "The Ivy Dawson Street",
-    "Dawson Luas stop"
+    "The Dawson Lounge",
+    "Mansion House",
+    "Royal Irish Academy",
+    "St Ann's Church",
+    "Cafe en Seine",
+    "Hodges Figgis",
+    "ARKET Dawson Street",
+    "Duke Street",
+    "Dawson Luas stop",
+    "Nassau Street / Trinity edge glimpse"
   ],
   "gameplay": [
     "three-lane runner",
@@ -42,5 +62,5 @@
     "camera FOV sprint effect",
     "local best catch time"
   ],
-  "notes": "v0.3 adds runtime-rendered Dawson Street nameboards, a stronger door-closing/Luas pull-away finale and camera/audio urgency. Street geometry remains stylised and replaceable with final Blender/GLB facades."
+  "notes": "v0.4 rebuilds the street from the St Stephen's Green end towards Duke Street/Nassau Street, adds named side-street breaks and Dublin street furniture, improves the Dawson stop with tactile edges and realtime displays, and updates the tram with silver/yellow/purple Luas cues. Gameplay remains the same 90-second three-lane runner."
 }
