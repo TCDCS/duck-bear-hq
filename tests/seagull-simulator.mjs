@@ -44,7 +44,7 @@ test('Duck & Bear surfaces the new game',()=>{
 test('Seagull Simulator has replayable progression systems',()=>{
   assert.match(source,/recycleTarget\(t:Target\)/);
   assert.match(source,/updateHeat\(time:number,dt:number\)/);
-  assert.match(source,/combo=time-this\.lastTheftAt<8000/);
+  assert.match(source,/lastTheftAt>0&&time-this\.lastTheftAt<8000/);
   assert.match(source,/setMission\(index:number\)/);
   assert.match(html,/id="missionBar"/);
   assert.match(html,/id="combo"/);
