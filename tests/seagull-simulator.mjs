@@ -110,3 +110,24 @@ test('Seagull local storage failures do not block startup',()=>{
   assert.doesNotMatch(source,/localStorage\.getItem\('seagull-best'\)/);
   assert.doesNotMatch(source,/localStorage\.setItem\('seagull-muted'/);
 });
+
+test('Seagull trophies and lifetime stats migrate old local saves safely',()=>{
+  assert.match(source,/type AchievementId='mine-now'\|'spice-raider'\|'combo-four'\|'public-menace'\|'ground-job'\|'full-tour'\|'mission-machine'\|'feeding-frenzy'/);
+  assert.match(source,/achievements:\(Array\.isArray\(raw\.achievements\)\?raw\.achievements:\[\]\)/);
+  assert.match(source,/runs:Math\.max\(0,Math\.floor\(Number\(raw\.stats\?\.runs\)\|\|0\)\)/);
+  assert.match(source,/progress\.stats\.totalFood\+=this\.stolen/);
+  assert.match(source,/this\.areasVisited\.size===4/);
+  assert.match(source,/this\.stolen>=25/);
+  assert.match(html,/id="trophiesBtn"/);
+  assert.match(html,/id="trophyGrid"/);
+  assert.match(html,/id="finalBestTheft"/);
+  assert.equal(release.achievements.count,8);
+});
+
+test('Seagull run summary uses active gameplay time and tracked milestones',()=>{
+  assert.match(source,/this\.activeRunMs\+=delta/);
+  assert.match(source,/bestTheft:this\.bestTheftName/);
+  assert.match(source,/highestWanted:this\.highestWanted/);
+  assert.match(source,/runSeconds:Math\.max\(1,Math\.round\(this\.activeRunMs\/1000\)\)/);
+  assert.match(source,/finalRunTime/);
+});
