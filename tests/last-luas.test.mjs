@@ -89,7 +89,14 @@ test('v0.4 real Dawson Street facade pass is present',()=>{
 test('cyclists use an actual riding silhouette and detailed bicycle',()=>{
   const source=read(game);
   for(const part of ['Front bicycle wheel','Rear bicycle wheel','Bike top tube','Bike down tube','Bike seat tube','Bike seat','Bike handlebars','Cyclist rider hip pivot','Delivery rider hip pivot'])assert.match(source,new RegExp(part));
-  assert.match(source,/riderPivot\.setLocalEulerAngles\(32,0,0\)/);
+  assert.match(source,/function poseRiderCharacter/);
+  for(const bone of ['Body','Torso','UpperLeg.L','UpperLeg.R','LowerLeg.L','LowerLeg.R','UpperArm.L','UpperArm.R','LowerArm.L','LowerArm.R'])assert.match(source,new RegExp(bone.replace('.', '\\.')));
+  assert.match(source,/clip:null/);
+});
+
+test('landmark callouts follow the real Dawson Street facades',()=>{
+  const source=read(game);
+  for(const callout of ['ARKET · 60 DAWSON STREET','HODGES FIGGIS · 56–58','CAFÉ EN SEINE · 39/40','THE DAWSON LOUNGE · 25','ROYAL IRISH ACADEMY · 19',"ST ANN'S CHURCH · 18",'THE IVY · 13–17'])assert.match(source,new RegExp(callout));
 });
 
 test('street polish includes distinct hazards and final sprint feedback',()=>{
