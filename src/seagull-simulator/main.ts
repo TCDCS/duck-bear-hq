@@ -450,7 +450,7 @@ class DameStreetScene extends Phaser.Scene{
     const diveHeld=controls.diveHeld||Boolean(this.keys?.SPACE?.isDown);
     if(boost&&this.grounded){this.grounded=false;this.altitudeTarget=.74;this.gull.play('fly');this.toast('BACK IN THE AIR');}
     if(diveHeld&&!boost&&this.altitude<.16){this.grounded=true;this.altitudeTarget=.045;}
-    if(this.grounded&&!diveHeld&&!boost){this.grounded=false;this.altitudeTarget=.62;this.gull.play('fly');}
+    if(this.grounded&&!boost)this.altitudeTarget=.045;
     const speed=this.grounded?115:(boost?430:315);
     this.gull.setVelocity(dx*speed,dy*speed);
     if(Math.abs(dx)>.08)this.gull.setFlipX(dx<0);
@@ -513,7 +513,7 @@ class DameStreetScene extends Phaser.Scene{
     const d=Phaser.Math.Distance.Between(this.gull.x,this.gull.y,t.person.x,t.person.y);
     if(this.altitude>.34||d>92){this.toast(this.altitude>.34?'Dive lower first.':'Too far away.');return;}
     t.stolen=true;t.food.setVisible(false);t.ring.setVisible(false);t.panicUntil=time+3200;
-    this.combo=time-this.lastTheftAt<8000?Math.min(4,this.combo+1):1;
+    this.combo=this.lastTheftAt>0&&time-this.lastTheftAt<8000?Math.min(4,this.combo+1):1;
     this.lastTheftAt=time;
     const earned=Math.round(t.value*this.combo*(1+this.wanted*.12));
     this.score+=earned;this.stolen++;
