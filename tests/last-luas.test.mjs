@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
 
 const read=path=>readFileSync(path,'utf8');
 const index='public/games/last-luas/index.html';
@@ -12,6 +13,10 @@ test('Last Luas static game files exist',()=>{
   for(const path of [index,css,game,release])assert.ok(existsSync(path),path+' must exist');
 });
 
+test('Last Luas source parses as an ES module',()=>{
+  execFileSync(process.execPath,['--check',game],{stdio:'pipe'});
+});
+
 test('Last Luas is a pinned PlayCanvas 90-second runner',()=>{
   const source=read(game);
   assert.match(source,/playcanvas@2\.22\.2\/build\/playcanvas\.mjs/);
@@ -19,6 +24,7 @@ test('Last Luas is a pinned PlayCanvas 90-second runner',()=>{
   assert.match(source,/pullAwayAt:8\.5/);
   assert.match(source,/streetLength:430/);
   for(const name of ['ARKET','HODGES FIGGIS','CAFÉ EN SEINE','THE DAWSON LOUNGE','THE IVY','DAWSON LUAS STOP'])assert.match(source,new RegExp(name));
+  for(const feature of ['buildWetDetails','buildStreetLife','buildLuasStop','Dawson raised platform','Platform white edge','Glass Luas shelter'])assert.match(source,new RegExp(feature));
 });
 
 test('Last Luas is exposed in every Games surface',()=>{
@@ -35,11 +41,23 @@ test('Last Luas CSP permits only the pinned engine CDN in addition to self',()=>
   assert.doesNotMatch(read(index),/<script[^>]+src="https:/);
 });
 
+test('street polish includes distinct hazards and final sprint feedback',()=>{
+  const source=read(game),styles=read(css);
+  assert.match(source,/umbrella-hit/);
+  assert.match(source,/final-sprint/);
+  assert.match(source,/ambientPerson/);
+  assert.match(source,/urgency=/);
+  assert.match(styles,/umbrella-flash/);
+  assert.match(styles,/final-sprint/);
+});
+
 test('release metadata matches the playable slice',()=>{
   const data=JSON.parse(read(release));
   assert.equal(data.game,'Last Luas');
-  assert.equal(data.version,'0.1.0');
+  assert.equal(data.version,'0.2.0');
   assert.equal(data.engine,'PlayCanvas 2.22.2');
   assert.equal(data.durationSeconds,90);
   assert.equal(data.location,'Dawson Street, Dublin');
+  assert.equal(data.environment.raisedLuasPlatforms,true);
+  assert.equal(data.environment.puddleReflections,true);
 });
