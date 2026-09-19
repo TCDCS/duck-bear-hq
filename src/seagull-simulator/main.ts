@@ -120,6 +120,15 @@ class DameStreetScene extends Phaser.Scene{
 
   constructor(){super('DameStreet');}
 
+  preload(){
+    const base='/games/seagull-simulator/art/';
+    this.load.svg('gull-0',base+'gull-up.svg',{width:140,height:100});
+    this.load.svg('gull-1',base+'gull-mid.svg',{width:140,height:100});
+    this.load.svg('gull-2',base+'gull-down.svg',{width:140,height:100});
+    this.load.svg('garda',base+'garda.svg',{width:76,height:112});
+    this.load.svg('bus',base+'dublin-bus.svg',{width:210,height:104});
+  }
+
   create(){
     this.physics.world.setBounds(0,0,WORLD_W,WORLD_H);
     this.cameras.main.setBounds(0,0,WORLD_W,WORLD_H);
@@ -132,7 +141,7 @@ class DameStreetScene extends Phaser.Scene{
     this.spawnGarda(1840,610,false);
 
     this.shadow=this.add.ellipse(520,780,74,24,0x173747,.25).setDepth(39);
-    this.gull=this.physics.add.sprite(520,690,'gull-1').setDepth(60);
+    this.gull=this.physics.add.sprite(520,690,'gull-1').setDepth(60).setDisplaySize(118,84);
     this.gull.setCollideWorldBounds(true);
     this.gull.body!.setCircle(28,14,12);
     this.anims.create({key:'fly',frames:[{key:'gull-0'},{key:'gull-1'},{key:'gull-2'},{key:'gull-1'}],frameRate:8,repeat:-1});
@@ -285,7 +294,7 @@ class DameStreetScene extends Phaser.Scene{
       g.fillStyle(0x1d2c35);g.fillCircle(72,30,3);
       g.generateTexture(key,104,76);g.destroy();
     };
-    gull('gull-0',21);gull('gull-1',7);gull('gull-2',-13);
+    if(!this.textures.exists('gull-0')){gull('gull-0',21);gull('gull-1',7);gull('gull-2',-13);}
 
     const person=(key:string,coat:number,skin:number=0xd99d75,hat:number|null=null,accent:number=0xc99b55)=>{
       const g=this.make.graphics({x:0,y:0},false);
@@ -310,12 +319,14 @@ class DameStreetScene extends Phaser.Scene{
     person('person-tourist',0x4b7ba5,0xe3b58d,0xd9b13d,0xd65b49);
     person('person-builder',0x4f5961,0xc98962,0xf0cc38,0xe8793c);
     person('person-runner',0x7a3d85,0xa96c50,null,0x44c4c9);
-    // Garda - stylised Irish uniform/high-vis
-    const gd=this.make.graphics({x:0,y:0},false);
-    gd.fillStyle(0x000000,.15);gd.fillEllipse(32,79,45,12);gd.fillStyle(0x172a3b);gd.fillRoundedRect(18,51,9,26,3);gd.fillRoundedRect(37,51,9,26,3);
-    gd.fillStyle(0xf2d83a);gd.fillRoundedRect(12,27,40,34,7);gd.lineStyle(4,0xb7c8ce);gd.lineBetween(14,38,50,38);gd.lineBetween(14,49,50,49);
-    gd.fillStyle(0xd79a73);gd.fillCircle(32,19,12);gd.fillStyle(0x1e3650);gd.fillRoundedRect(18,7,28,9,4);gd.fillRect(22,3,20,8);
-    gd.generateTexture('garda',64,88);gd.destroy();
+    // Garda - SVG is preferred; this fallback keeps the game playable if an art file ever fails.
+    if(!this.textures.exists('garda')){
+      const gd=this.make.graphics({x:0,y:0},false);
+      gd.fillStyle(0x000000,.15);gd.fillEllipse(32,79,45,12);gd.fillStyle(0x172a3b);gd.fillRoundedRect(18,51,9,26,3);gd.fillRoundedRect(37,51,9,26,3);
+      gd.fillStyle(0xf2d83a);gd.fillRoundedRect(12,27,40,34,7);gd.lineStyle(4,0xb7c8ce);gd.lineBetween(14,38,50,38);gd.lineBetween(14,49,50,49);
+      gd.fillStyle(0xd79a73);gd.fillCircle(32,19,12);gd.fillStyle(0x1e3650);gd.fillRoundedRect(18,7,28,9,4);gd.fillRect(22,3,20,8);
+      gd.generateTexture('garda',64,88);gd.destroy();
+    }
 
     const michael=this.make.graphics({x:0,y:0},false);
     michael.fillStyle(0x000000,.14);michael.fillEllipse(34,82,46,12);michael.fillStyle(0x243653);michael.fillRoundedRect(16,45,10,32,3);michael.fillRoundedRect(41,45,10,32,3);
@@ -342,19 +353,21 @@ class DameStreetScene extends Phaser.Scene{
     };
     vehicle('taxi',0x24292c,100,58);
     vehicle('van',0xd9d4c8,122,64);
-    const bus=this.make.graphics({x:0,y:0},false);
-    bus.fillStyle(0x000000,.18);bus.fillEllipse(82,67,136,18);
-    bus.fillStyle(0x26313a);bus.fillRoundedRect(10,48,15,21,4);bus.fillRoundedRect(139,48,15,21,4);
-    bus.fillStyle(0x2f80b9);bus.fillRoundedRect(7,8,150,57,10);
-    bus.fillStyle(0xf2c844);bus.fillRect(7,42,150,14);
-    bus.fillStyle(0xbfe0e6);for(let bx=18;bx<142;bx+=31)bus.fillRoundedRect(bx,15,25,20,4);
-    bus.fillStyle(0x172c3a);bus.fillRoundedRect(49,45,67,9,3);
-    bus.generateTexture('bus',164,74);bus.destroy();
+    if(!this.textures.exists('bus')){
+      const bus=this.make.graphics({x:0,y:0},false);
+      bus.fillStyle(0x000000,.18);bus.fillEllipse(82,67,136,18);
+      bus.fillStyle(0x26313a);bus.fillRoundedRect(10,48,15,21,4);bus.fillRoundedRect(139,48,15,21,4);
+      bus.fillStyle(0x2f80b9);bus.fillRoundedRect(7,8,150,57,10);
+      bus.fillStyle(0xf2c844);bus.fillRect(7,42,150,14);
+      bus.fillStyle(0xbfe0e6);for(let bx=18;bx<142;bx+=31)bus.fillRoundedRect(bx,15,25,20,4);
+      bus.fillStyle(0x172c3a);bus.fillRoundedRect(49,45,67,9,3);
+      bus.generateTexture('bus',164,74);bus.destroy();
+    }
   }
 
   spawnTraffic(){
     const add=(key:string,x:number,y:number,speed:number,lane:number)=>{
-      const s=this.physics.add.sprite(x,y,key).setDepth(26);s.body!.setImmovable(true);this.vehicles.push({sprite:s,speed,lane});
+      const s=this.physics.add.sprite(x,y,key).setDepth(26);if(key==='bus')s.setDisplaySize(178,88);s.body!.setImmovable(true);this.vehicles.push({sprite:s,speed,lane});
     };
     for(let i=0;i<5;i++)add(i%3===0?'bus':i%3===1?'taxi':'van',450+i*680,835,100+Math.random()*30,0);
     for(let i=0;i<5;i++){add(i%2?'taxi':'bus',260+i*720,1165,-105-Math.random()*25,1);this.vehicles[this.vehicles.length-1].sprite.setFlipX(true);}
@@ -390,7 +403,7 @@ class DameStreetScene extends Phaser.Scene{
   }
 
   spawnGarda(x:number,y:number,chaser=true){
-    const g=this.physics.add.sprite(x,y,'garda').setDepth(25);g.setData('chaser',chaser);g.setData('homeX',x);g.setData('homeY',y);this.gardai.push(g);
+    const g=this.physics.add.sprite(x,y,'garda').setDepth(25).setDisplaySize(66,98);g.setData('chaser',chaser);g.setData('homeX',x);g.setData('homeY',y);this.gardai.push(g);
   }
 
   select(t:Target){
