@@ -63,7 +63,9 @@ test('Seagull progression is local-only and bounded',()=>{
   assert.match(source,/type BirdId='dublin'\|'big-lad'\|'sneaky'\|'absolute-unit'/);
   assert.match(source,/UPGRADE_COSTS=\[40,70,110,160,230\]/);
   assert.match(source,/Math\.Clamp\(Math\.floor\(Number\(raw\.upgrades\?\.wings\)\|\|0\),0,5\)/);
-  assert.match(source,/progress\.coins\+=coins;saveProgress\(\)/);
+  assert.match(source,/progress\.coins\+=coins;/);
+  assert.match(source,/progress\.stats\.runs\+\+;/);
+  assert.match(source,/saveProgress\(\);/);
   assert.match(html,/id="birdsBtn"/);
   assert.match(html,/id="upgradesBtn"/);
   assert.match(html,/id="coinsEarned"/);
