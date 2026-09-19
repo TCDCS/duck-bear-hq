@@ -218,3 +218,14 @@ test('Seagull landing has a procedural art fallback',()=>{
   assert.match(source,/if\(!this\.textures\.exists\('gull-walk'\)\)/);
   assert.match(source,/gw\.generateTexture\('gull-walk'/);
 });
+
+test('Seagull Build 1.0 is consistent across runtime and public entry points',()=>{
+  assert.match(source,/const VERSION='1\.0'/);
+  assert.equal(release.version,'1.0');
+  assert.equal(release.build,'1.0');
+  assert.equal(release.liveTarget,true);
+  assert.match(html,/BUILD <span id="version">1\.0<\/span>/);
+  assert.doesNotMatch(html,/0\.9\.1-alpha|Alpha <span id="version"/);
+  assert.match(hub,/BUILD 1\.0/);
+  assert.match(home,/BUILD 1\.0/);
+});
