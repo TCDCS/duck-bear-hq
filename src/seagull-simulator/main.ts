@@ -634,6 +634,7 @@ class DameStreetScene extends Phaser.Scene{
     this.invulnerableUntil=time+1300;this.feathers-=hard?2:1;setFeathers(Math.max(0,this.feathers));
     this.cameras.main.shake(160,.008);this.gull.setVelocity((Math.random()-.5)*450,-240);this.altitudeTarget=.75;
     this.toast(message);sfx('hit');haptic(80);
+    if(this.missionIndex===4&&this.missionProgress>0){this.missionProgress=0;setText('missionProgress','0/'+this.missionTarget);this.toast('MISSION STREAK RESET');}
     if(this.feathers<=0)this.gameOver();
   }
 
@@ -671,6 +672,7 @@ function startGame(){
   initAudio();
   $('startScreen')?.classList.add('hidden');
   $('hud')?.classList.remove('hidden');
+  $('missionBar')?.classList.remove('hidden');
   $('controls')?.classList.remove('hidden');
   setupStick();bindButton('diveBtn','dive');bindButton('grabBtn','grab');bindButton('boostBtn','boost');
   const smoke=new URLSearchParams(location.search).has('smoke');
