@@ -232,8 +232,7 @@ class DameStreetScene extends Phaser.Scene{
       g.fillStyle(0x000000,.15);g.fillEllipse(30,72,42,12);
       g.fillStyle(0x2f3f49);g.fillRoundedRect(18,49,8,22,3);g.fillRoundedRect(34,49,8,22,3);
       g.fillStyle(coat);g.fillRoundedRect(13,29,34,29,9);
-      g.fillStyle(skin);g.fillCircle(30,21,12);
-      g.fillStyle(0x453127);g.fillArc(30,18,12,Math.PI,Math.PI*2,false);
+      g.fillStyle(0x453127);g.fillCircle(30,19,12);g.fillStyle(skin);g.fillCircle(30,23,11);g.fillStyle(0x453127);g.fillRoundedRect(18,11,24,7,3);
       if(hat!==null){g.fillStyle(hat);g.fillRect(17,10,26,7);g.fillRoundedRect(21,5,18,8,4);}
       g.generateTexture(key,60,82);g.destroy();
     };
@@ -248,7 +247,7 @@ class DameStreetScene extends Phaser.Scene{
     const michael=this.make.graphics({x:0,y:0},false);
     michael.fillStyle(0x000000,.14);michael.fillEllipse(34,82,46,12);michael.fillStyle(0x243653);michael.fillRoundedRect(16,45,10,32,3);michael.fillRoundedRect(41,45,10,32,3);
     michael.fillStyle(0x293e61);michael.fillRoundedRect(13,28,41,34,8);michael.fillStyle(0xffffff);michael.fillTriangle(28,29,40,29,34,44);michael.fillStyle(0x9b2b35);michael.fillTriangle(32,31,36,31,34,45);
-    michael.fillStyle(0xe3b28a);michael.fillCircle(34,19,13);michael.fillStyle(0xe9e4d9);michael.fillArc(34,17,13,Math.PI,Math.PI*2,false);michael.fillRoundedRect(23,22,22,5,2);
+    michael.fillStyle(0xe9e4d9);michael.fillCircle(34,17,13);michael.fillStyle(0xe3b28a);michael.fillCircle(34,22,11);michael.fillStyle(0xe9e4d9);michael.fillRoundedRect(22,8,24,7,3);michael.fillRoundedRect(23,24,22,4,2);
     michael.generateTexture('michael',68,92);michael.destroy();
 
     const food=(key:string,kind:'chips'|'roll'|'coffee'|'ice'|'spice')=>{
