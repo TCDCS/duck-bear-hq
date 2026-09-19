@@ -959,6 +959,9 @@ $('birdsBtn')?.addEventListener('click',()=>openPanel('birdsPanel'));
 $('upgradesBtn')?.addEventListener('click',()=>openPanel('upgradesPanel'));
 document.querySelectorAll<HTMLElement>('[data-close-panel]').forEach(b=>b.addEventListener('click',()=>closePanel(String(b.dataset.closePanel))));
 renderProgression();
+const previewPanel=new URLSearchParams(location.search).get('panel');
+if(previewPanel==='birds')openPanel('birdsPanel');
+if(previewPanel==='upgrades')openPanel('upgradesPanel');
 
 function startGame(){
   if((window as any).__seagullGame)return;
