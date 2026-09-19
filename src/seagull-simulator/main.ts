@@ -11,7 +11,7 @@ const FOOD_TYPES=[
 ] as const;
 const WORLD_W=8800;
 const WORLD_H=1800;
-const VERSION='0.4.0-alpha';
+const VERSION='0.5.0-alpha';
 
 type BirdId='dublin'|'big-lad'|'sneaky'|'absolute-unit';
 type UpgradeKey='wings'|'beak'|'nerve';
@@ -184,7 +184,10 @@ class DameStreetScene extends Phaser.Scene{
   missionTarget=3;
   missionKind:'any'|'chips'|'roll'|'spice'='any';
   selected:Target|null=null;
+  diveTarget:Target|null=null;
+  diveAssistUntil=0;
   diveUntil=0;
+  wasHeatLevel=0;
   invulnerableUntil=0;
   ended=false;
   lastWanted=0;
@@ -628,7 +631,10 @@ class DameStreetScene extends Phaser.Scene{
   }
 
   spawnGarda(x:number,y:number,chaser=true){
-    const g=this.physics.add.sprite(x,y,'garda').setDepth(25).setDisplaySize(66,98);g.setData('chaser',chaser);g.setData('homeX',x);g.setData('homeY',y);this.gardai.push(g);
+    const g=this.physics.add.sprite(x,y,'garda').setDepth(25).setDisplaySize(66,98);
+    g.setData('chaser',chaser);g.setData('homeX',x);g.setData('homeY',y);
+    g.setData('lostSightSince',0);g.setData('cooldownUntil',0);g.setData('lostEmoted',false);
+    this.gardai.push(g);
   }
 
   select(t:Target){
@@ -656,10 +662,30 @@ class DameStreetScene extends Phaser.Scene{
     if(diveHeld&&!boost&&this.altitude<.16){this.grounded=true;this.altitudeTarget=.045;}
     if(this.grounded&&!boost)this.altitudeTarget=.045;
     const speedBoost=this.bird.speed*(1+progress.upgrades.wings*.025);
-    const speed=(this.grounded?115:(boost?430:315))*speedBoost;
-    this.gull.setVelocity(dx*speed,dy*speed);
-    if(Math.abs(dx)>.08)this.gull.setFlipX(dx<0);
-    this.gull.setAngle(Phaser.Math.Clamp(dy*10,-10,10));
+    const swooping=!this.grounded&&this.altitudeTarget<.22&&time<this.diveUntil;
+    const speed=(this.grounded?115:(boost?430:(swooping?360:315)))*speedBoost;
+    let desiredX=dx*speed,desiredY=dy*speed;
+
+    if(this.diveTarget&&(time>=this.diveAssistUntil||this.diveTarget.stolen))this.diveTarget=null;
+    if(this.diveTarget&&!this.grounded){
+      const a=Phaser.Math.Angle.Between(this.gull.x,this.gull.y,this.diveTarget.person.x,this.diveTarget.person.y);
+      const assist=Math.min(.56,Math.max(.22,(this.diveAssistUntil-time)/900*.56));
+      desiredX=Phaser.Math.Linear(desiredX,Math.cos(a)*speed*1.22,assist);
+      desiredY=Phaser.Math.Linear(desiredY,Math.sin(a)*speed*1.22,assist);
+    }
+
+    const body=this.gull.body as Phaser.Physics.Arcade.Body;
+    const hasInput=Math.abs(dx)+Math.abs(dy)>.08;
+    if(!hasInput&&!this.grounded){
+      desiredX=body.velocity.x*.76;
+      desiredY=body.velocity.y*.76;
+    }
+    const steerRate=this.grounded?12:(swooping?9.5:7.2);
+    const steer=Math.min(1,dt*steerRate);
+    this.gull.setVelocity(Phaser.Math.Linear(body.velocity.x,desiredX,steer),Phaser.Math.Linear(body.velocity.y,desiredY,steer));
+    if(Math.abs(body.velocity.x)>.08)this.gull.setFlipX(body.velocity.x<0);
+    const targetAngle=this.grounded?0:Phaser.Math.Clamp((body.velocity.y/Math.max(1,speed))*9+(body.velocity.x/Math.max(1,speed))*4,-14,14);
+    this.gull.setAngle(Phaser.Math.Linear(this.gull.angle,targetAngle,Math.min(1,dt*8)));
 
     if(controls.consumeDive())this.startDive(time);
     if(controls.consumeGrab())this.tryGrab(time);
@@ -693,7 +719,8 @@ class DameStreetScene extends Phaser.Scene{
 
   startDive(time:number){
     if(this.grounded)return;
-    this.altitudeTarget=.08;this.diveUntil=time+850;sfx('dive');
+    this.altitudeTarget=.08;this.diveUntil=time+900;sfx('dive');
+    this.diveTarget=null;this.diveAssistUntil=0;
     if(this.selected&&!this.selected.stolen){
       const dist=Phaser.Math.Distance.Between(this.gull.x,this.gull.y,this.selected.person.x,this.selected.person.y);
       this.selected.panicUntil=Math.max(this.selected.panicUntil,time+(this.selected.temperament==='oblivious'?350:1200));
@@ -702,13 +729,10 @@ class DameStreetScene extends Phaser.Scene{
         this.hit('Umbrella! Pick a softer target.',time);
         return;
       }
+      if(dist<390){this.diveTarget=this.selected;this.diveAssistUntil=time+760;}
       if(dist<260&&this.selected.temperament!=='oblivious')this.emote(this.selected.person,'!');
     }
-    this.tweens.add({targets:this.cameras.main,zoom:1.08,duration:180,yoyo:true,ease:'Sine.easeOut'});
-    if(this.selected&&!this.selected.stolen){
-      const a=Phaser.Math.Angle.Between(this.gull.x,this.gull.y,this.selected.person.x,this.selected.person.y);
-      this.gull.setVelocity(Math.cos(a)*520,Math.sin(a)*520);
-    }
+    this.tweens.add({targets:this.cameras.main,zoom:1.075,duration:170,yoyo:true,ease:'Sine.easeOut'});
   }
 
   tryGrab(time:number){
@@ -727,7 +751,7 @@ class DameStreetScene extends Phaser.Scene{
     this.lastTheftAt=time;
     const earned=Math.round(t.value*this.combo*(1+this.wanted*.12));
     this.score+=earned;this.stolen++;
-    this.altitudeTarget=.82;this.diveUntil=time;
+    this.altitudeTarget=.82;this.diveUntil=time;this.diveTarget=null;this.diveAssistUntil=0;
     this.carryText.setText(this.combo>1?`${t.name.toUpperCase()} · x${this.combo}`:t.name.toUpperCase()+'!');
     this.time.delayedCall(1150,()=>this.carryText.setText(''));
     setText('score',Math.floor(this.score).toLocaleString());setText('stolen',String(this.stolen));setText('combo','x'+this.combo);
@@ -749,7 +773,7 @@ class DameStreetScene extends Phaser.Scene{
 
   updateHeat(time:number,dt:number){
     if(time-this.lastHeatEvent>2800&&this.heat>0){
-      this.heat=Math.max(0,this.heat-dt*(this.altitude>.55?3.2:1.35));
+      this.heat=Math.max(0,this.heat-dt*(this.altitude>.72?4.4:this.altitude>.55?3.35:1.45));
       this.syncWanted();
     }
     if(time-this.lastTheftAt>8000&&this.combo!==1){this.combo=1;setText('combo','x1');}
@@ -759,7 +783,7 @@ class DameStreetScene extends Phaser.Scene{
   syncWanted(){
     const level=Phaser.Math.Clamp(Math.ceil(this.heat/20),0,5);
     if(level===this.wanted){setWanted(level);return;}
-    const rising=level>this.wanted;
+    const previous=this.wanted,rising=level>previous;
     this.wanted=level;setWanted(level);
     if(rising){
       sfx('wanted');
@@ -769,6 +793,11 @@ class DameStreetScene extends Phaser.Scene{
         this.spawnGarda(Phaser.Math.Clamp(sx,80,WORLD_W-80),Phaser.Math.Clamp(sy,520,1480),true);
       }
       this.lastWanted=Math.max(this.lastWanted,level);
+    }else if(level===0&&previous>0){
+      this.toast('HEAT CLEAR · YOU LOST THEM');
+      tone(410,.08,'triangle',.018,-120);
+    }else if(previous-level>=1){
+      this.toast('HEAT DROPPING');
     }
   }
 
@@ -854,15 +883,29 @@ class DameStreetScene extends Phaser.Scene{
 
   updateGardai(time:number,dt:number){
     for(const g of this.gardai){
-      const chase=g.getData('chaser')&&this.wanted>=2;
-      if(chase){
+      const dist=Phaser.Math.Distance.Between(g.x,g.y,this.gull.x,this.gull.y);
+      const cooldownUntil=Number(g.getData('cooldownUntil')||0);
+      const canSee=this.altitude<.62||dist<190;
+      let lostSince=Number(g.getData('lostSightSince')||0);
+      const chase=Boolean(g.getData('chaser'))&&this.wanted>=2&&time>=cooldownUntil;
+
+      if(chase&&canSee){
+        g.setData('lostSightSince',0);g.setData('lostEmoted',false);
         const a=Phaser.Math.Angle.Between(g.x,g.y,this.gull.x,this.gull.y);
-        const sp=80+this.wanted*22;g.x+=Math.cos(a)*sp*dt;g.y+=Math.sin(a)*sp*dt;
+        let sp=84+this.wanted*13;
+        if(dist<125)sp*=.78;
+        g.x+=Math.cos(a)*sp*dt;g.y+=Math.sin(a)*sp*dt;
         g.setFlipX(Math.cos(a)<0);
-        if(this.altitude<.27&&Phaser.Math.Distance.Between(g.x,g.y,this.gull.x,this.gull.y)<58)this.hit('Caught by Gardaí.',time,true);
+        if(this.altitude<.25&&dist<56)this.hit('Caught by Gardaí.',time,true);
+      }else if(chase&&!canSee){
+        if(!lostSince){lostSince=time;g.setData('lostSightSince',time);}
+        if(time-lostSince>1900){
+          g.setData('cooldownUntil',time+3200);g.setData('lostSightSince',0);
+          if(!g.getData('lostEmoted')){this.emote(g,'?');g.setData('lostEmoted',true);}
+        }
       }else{
         const hx=Number(g.getData('homeX')),hy=Number(g.getData('homeY'));
-        g.x=Phaser.Math.Linear(g.x,hx,.01);g.y=Phaser.Math.Linear(g.y,hy,.01);
+        g.x=Phaser.Math.Linear(g.x,hx,Math.min(1,dt*1.9));g.y=Phaser.Math.Linear(g.y,hy,Math.min(1,dt*1.9));
       }
     }
   }
@@ -870,7 +913,7 @@ class DameStreetScene extends Phaser.Scene{
   hit(message:string,time:number,hard=false){
     if(time<this.invulnerableUntil||this.ended)return;
     this.invulnerableUntil=time+1300;this.feathers-=hard?2:1;setFeathers(Math.max(0,this.feathers),this.maxFeathers);
-    this.cameras.main.shake(160,.008);this.gull.setVelocity((Math.random()-.5)*450,-240);this.altitudeTarget=.75;
+    this.cameras.main.shake(160,.008);this.gull.setVelocity((Math.random()-.5)*450,-240);this.altitudeTarget=.75;this.diveTarget=null;this.diveAssistUntil=0;
     this.toast(message);sfx('hit');haptic(80);
     if(this.missionIndex===4&&this.missionProgress>0){this.missionProgress=0;setText('missionProgress','0/'+this.missionTarget);this.toast('MISSION STREAK RESET');}
     if(this.feathers<=0)this.gameOver();
