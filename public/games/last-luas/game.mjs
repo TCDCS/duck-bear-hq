@@ -1,6 +1,6 @@
 import * as pc from 'https://cdn.jsdelivr.net/npm/playcanvas@2.22.2/build/playcanvas.mjs';
 
-const BUILD='0.3.0';
+const BUILD='0.4.0';
 const GAME={duration:90,streetLength:430,laneX:[-2.45,0,2.45],speed:5.25,hitSpeed:2.8,hitDuration:.66,jumpVelocity:7.1,gravity:18,laneSharpness:13,pullAwayAt:8.5,tramSpeed:3.25,catchGap:6.2,pixelRatio:1.5};
 const $=id=>document.getElementById(id);
 const canvas=$('application');
@@ -8,7 +8,80 @@ const app=new pc.Application(canvas,{graphicsDeviceOptions:{antialias:true,alpha
 app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
 app.setCanvasResolution(pc.RESOLUTION_AUTO);
 app.graphicsDevice.maxPixelRatio=Math.min(window.devicePixelRatio||1,GAME.pixelRatio);
-app.scene.ambientLight=new pc.Color(.30,.34,.46);
+app.scene.ambientLight=new pc.Color(.48,.52,.60);
+
+const CHARACTER_SOURCES={
+  casual:'https://cdn.jsdelivr.net/gh/euuuuuuan/fatal-funnel-public@29a6bdfd01ad175c389cbd0bac80c30f926ff96b/packages/renderer/assets/models/quaternius-men/casual-character.glb',
+  worker:'https://cdn.jsdelivr.net/gh/euuuuuuan/fatal-funnel-public@29a6bdfd01ad175c389cbd0bac80c30f926ff96b/packages/renderer/assets/models/quaternius-men/worker.glb'
+};
+const characterAssets=new Map();
+const CHARACTER_CLIP_INDEX={
+  Death:0,Gun_Shoot:1,HitRecieve:2,HitRecieve_2:3,Idle:4,Idle_Gun:5,
+  Idle_Gun_Pointing:6,Idle_Gun_Shoot:7,Idle_Neutral:8,Idle_Sword:9,
+  Interact:10,Kick_Left:11,Kick_Right:12,Punch_Left:13,Punch_Right:14,
+  Roll:15,Run:16,Run_Back:17,Run_Left:18,Run_Right:19,Run_Shoot:20,
+  Sword_Slash:21,Walk:22,Wave:23
+};
+function loadCharacterAsset(kind){
+  if(characterAssets.has(kind))return Promise.resolve(characterAssets.get(kind));
+  return new Promise((resolve,reject)=>{
+    app.assets.loadFromUrl(CHARACTER_SOURCES[kind],'container',(err,asset)=>{
+      if(err){reject(err);return;}
+      characterAssets.set(kind,asset);resolve(asset);
+    });
+  });
+}
+async function preloadCharacters(){
+  await Promise.all([loadCharacterAsset('casual'),loadCharacterAsset('worker')]);
+}
+function findCharacterClip(asset,wanted){
+  const clips=asset?.resource?.animations||[];
+  const index=CHARACTER_CLIP_INDEX[wanted];
+  if(Number.isInteger(index)&&clips[index])return clips[index];
+  const needle=String(wanted||'').toLowerCase();
+  return clips.find(a=>{
+    const n=String(a.resource?.name||a.name||'').toLowerCase();
+    return n===needle||n.endsWith('|'+needle)||n.endsWith('/'+needle)||n.includes(needle);
+  })||null;
+}
+function playCharacterClip(entity,asset,wanted){
+  if(!wanted)return;
+  const clip=findCharacterClip(asset,wanted);if(!clip)return;
+  entity.addComponent('anim',{activate:true});
+  entity.anim.assignAnimation('clip',clip.resource);
+  entity.anim.baseLayer.transition('clip');
+}
+function spawnCharacter(parent,{kind='casual',clip='Idle_Neutral',scale=.92,pitch=0,yaw=180,name='Quaternius character'}={}){
+  const asset=characterAssets.get(kind);if(!asset)return null;
+  const model=asset.resource.instantiateRenderEntity({castShadows:true});
+  model.name=name;model.setLocalScale(scale,scale,scale);model.setLocalEulerAngles(pitch,yaw,0);
+  parent.addChild(model);
+  for(const render of model.findComponents('render')){render.castShadows=true;render.receiveShadows=true;}
+  playCharacterClip(model,asset,clip);
+  return model;
+}
+
+
+function bendBone(model,name,x=0,y=0,z=0){
+  const bone=model?.findByName?.(name);if(!bone)return false;
+  bone.rotateLocal(x,y,z);return true;
+}
+function poseRiderCharacter(model){
+  if(!model)return false;
+  // Character assets face +Z before the parent yaw. Bend the unanimated skeleton into a bike pose.
+  bendBone(model,'Body',-12,0,0);
+  bendBone(model,'Torso',-10,0,0);
+  bendBone(model,'UpperLeg.L',-68,0,0);
+  bendBone(model,'UpperLeg.R',-68,0,0);
+  bendBone(model,'LowerLeg.L',92,0,0);
+  bendBone(model,'LowerLeg.R',92,0,0);
+  bendBone(model,'UpperArm.L',-54,0,-8);
+  bendBone(model,'UpperArm.R',-54,0,8);
+  bendBone(model,'LowerArm.L',-34,0,0);
+  bendBone(model,'LowerArm.R',-34,0,0);
+  return true;
+}
+
 
 const ui={shell:$('gameShell'),time:$('timeValue'),distance:$('distanceValue'),callout:$('streetCallout'),toast:$('toast'),timerCard:document.querySelector('.timer-card'),start:$('startPanel'),pause:$('pausePanel'),result:$('resultPanel'),resultTitle:$('resultTitle'),resultText:$('resultText'),resultDistance:$('resultDistance'),resultTime:$('resultTime')};
 
@@ -36,11 +109,25 @@ function sphere(name,pos,scale,material,parent=app.root){
   const e=new pc.Entity(name);e.addComponent('render',{type:'sphere'});e.setPosition(pos);e.setLocalScale(scale);e.render.material=material;parent.addChild(e);return e;
 }
 
-const P={road:new pc.Color(.045,.055,.075),pave:new pc.Color(.30,.31,.33),rail:new pc.Color(.62,.65,.70),brick:new pc.Color(.49,.20,.13),cream:new pc.Color(.78,.72,.62),navy:new pc.Color(.025,.13,.20),green:new pc.Color(.03,.24,.12),glass:new pc.Color(.025,.075,.11),black:new pc.Color(.018,.022,.035),white:new pc.Color(.93,.96,1),orange:new pc.Color(.95,.28,.04),yellow:new pc.Color(1,.72,.12),purple:new pc.Color(.37,.17,.62),skin:new pc.Color(.72,.47,.33)};
-const M={road:mat(P.road,{gloss:.88,metal:.08}),pave:mat(P.pave,{gloss:.55}),rail:mat(P.rail,{gloss:.95,metal:.95}),brick:mat(P.brick,{gloss:.26}),cream:mat(P.cream,{gloss:.3}),navy:mat(P.navy,{gloss:.6}),green:mat(P.green,{gloss:.5}),glass:mat(P.glass,{gloss:.98,metal:.08}),black:mat(P.black,{gloss:.4}),white:mat(P.white,{gloss:.55}),orange:mat(P.orange,{gloss:.4}),yellow:mat(P.yellow,{gloss:.55}),purple:mat(P.purple,{gloss:.65}),skin:mat(P.skin,{gloss:.2}),lamp:mat(P.white,{emissive:new pc.Color(1,.56,.18),gloss:.35}),red:mat(new pc.Color(.64,.025,.03),{gloss:.55}),blue:mat(new pc.Color(.07,.30,.58),{gloss:.35}),gold:mat(new pc.Color(.72,.51,.18),{gloss:.72,metal:.28}),leaf:mat(new pc.Color(.05,.34,.15),{gloss:.22}),stone:mat(new pc.Color(.56,.55,.52),{gloss:.35}),pink:mat(new pc.Color(.66,.23,.38),{gloss:.38}),wetGlass:mat(new pc.Color(.08,.15,.22),{gloss:1,metal:.06,opacity:.42})};
+const P={road:new pc.Color(.105,.115,.13),pave:new pc.Color(.30,.31,.33),rail:new pc.Color(.62,.65,.70),brick:new pc.Color(.49,.20,.13),cream:new pc.Color(.78,.72,.62),navy:new pc.Color(.025,.13,.20),green:new pc.Color(.03,.24,.12),glass:new pc.Color(.055,.145,.19),black:new pc.Color(.018,.022,.035),white:new pc.Color(.93,.96,1),orange:new pc.Color(.95,.28,.04),yellow:new pc.Color(1,.72,.12),purple:new pc.Color(.37,.17,.62),skin:new pc.Color(.72,.47,.33)};
+const M={road:mat(P.road,{gloss:.44,metal:.02}),pave:mat(P.pave,{gloss:.55}),rail:mat(P.rail,{gloss:.95,metal:.95}),brick:mat(P.brick,{gloss:.26}),cream:mat(P.cream,{gloss:.3}),navy:mat(P.navy,{gloss:.6}),green:mat(P.green,{gloss:.5}),glass:mat(P.glass,{gloss:.86,metal:.04}),black:mat(P.black,{gloss:.4}),white:mat(P.white,{gloss:.55}),orange:mat(P.orange,{gloss:.4}),yellow:mat(P.yellow,{gloss:.55}),purple:mat(P.purple,{gloss:.65}),skin:mat(P.skin,{gloss:.2}),lamp:mat(P.white,{emissive:new pc.Color(1,.56,.18),gloss:.35}),red:mat(new pc.Color(.64,.025,.03),{gloss:.55}),blue:mat(new pc.Color(.07,.30,.58),{gloss:.35}),gold:mat(new pc.Color(.72,.51,.18),{gloss:.72,metal:.28}),leaf:mat(new pc.Color(.05,.34,.15),{gloss:.22}),stone:mat(new pc.Color(.56,.55,.52),{gloss:.35}),pink:mat(new pc.Color(.66,.23,.38),{gloss:.38}),wetGlass:mat(new pc.Color(.08,.15,.22),{gloss:1,metal:.06,opacity:.42})};
 
-const sun=new pc.Entity('Evening light');sun.addComponent('light',{type:'directional',color:new pc.Color(.74,.79,1),intensity:1.45,castShadows:true,shadowResolution:2048,shadowDistance:55});sun.setEulerAngles(48,32,0);app.root.addChild(sun);
-const fill=new pc.Entity('Warm city fill');fill.addComponent('light',{type:'directional',color:new pc.Color(1,.57,.30),intensity:.35,castShadows:false});fill.setEulerAngles(-25,-145,0);app.root.addChild(fill);
+const F={
+  limestone:mat(new pc.Color(.82,.80,.74),{gloss:.35}),
+  paleStone:mat(new pc.Color(.90,.88,.82),{gloss:.32}),
+  redBrick:mat(new pc.Color(.52,.19,.12),{gloss:.24}),
+  hodgesGreen:mat(new pc.Color(.025,.16,.10),{gloss:.46}),
+  cafeTeal:mat(new pc.Color(.025,.18,.19),{gloss:.48}),
+  ivyGreen:mat(new pc.Color(.025,.23,.12),{gloss:.48}),
+  ivyCream:mat(new pc.Color(.82,.78,.66),{gloss:.34}),
+  brass:mat(new pc.Color(.77,.56,.20),{gloss:.82,metal:.38}),
+  warmGlass:mat(new pc.Color(.09,.19,.22),{gloss:.96,metal:.05}),
+  shopGlow:mat(new pc.Color(.76,.46,.18),{emissive:new pc.Color(.55,.27,.08),gloss:.28}),
+  darkWood:mat(new pc.Color(.17,.075,.045),{gloss:.40})
+};
+
+const sun=new pc.Entity('Evening light');sun.addComponent('light',{type:'directional',color:new pc.Color(1,.91,.76),intensity:1.75,castShadows:true,shadowResolution:2048,shadowDistance:55});sun.setEulerAngles(48,32,0);app.root.addChild(sun);
+const fill=new pc.Entity('Warm city fill');fill.addComponent('light',{type:'directional',color:new pc.Color(.66,.79,1),intensity:.52,castShadows:false});fill.setEulerAngles(-25,-145,0);app.root.addChild(fill);
 
 function buildStreet(){
   box('Wet Dawson Street',new pc.Vec3(0,-.17,-GAME.streetLength/2),new pc.Vec3(8.5,.28,GAME.streetLength+35),M.road);
@@ -50,15 +137,15 @@ function buildStreet(){
   for(let d=7;d<GAME.streetLength;d+=7){box('Paving seam L'+d,new pc.Vec3(-4.35,.155,-d),new pc.Vec3(.055,.018,1.7),M.rail);box('Paving seam R'+d,new pc.Vec3(4.35,.155,-d),new pc.Vec3(.055,.018,1.7),M.rail);}
   for(let d=16,i=0;d<GAME.streetLength;d+=19,i++){
     for(const side of [-1,1]){
-      cyl('Lamp post',new pc.Vec3(side*4.72,2.35,-d),new pc.Vec3(.10,2.35,.10),M.black);
+      cyl('Lamp post',new pc.Vec3(side*4.72,2.35,-d),new pc.Vec3(.065,2.35,.065),M.black);
       box('Lamp',new pc.Vec3(side*4.72,4.82,-d),new pc.Vec3(.34,.44,.34),M.lamp);
       if(i%2===0)cyl('Bollard',new pc.Vec3(side*4.15,.52,-d-4.2),new pc.Vec3(.22,.52,.22),M.black);
     }
   }
   for(let d=28;d<GAME.streetLength;d+=34){
     box('Cross wire',new pc.Vec3(0,5.85,-d),new pc.Vec3(10.0,.025,.025),M.black);
-    cyl('Wire pole L',new pc.Vec3(-4.9,3.0,-d),new pc.Vec3(.07,3.0,.07),M.black);
-    cyl('Wire pole R',new pc.Vec3(4.9,3.0,-d),new pc.Vec3(.07,3.0,.07),M.black);
+    cyl('Wire pole L',new pc.Vec3(-4.9,3.0,-d),new pc.Vec3(.045,3.0,.045),M.black);
+    cyl('Wire pole R',new pc.Vec3(4.9,3.0,-d),new pc.Vec3(.045,3.0,.045),M.black);
   }
   buildGenericBlocks();
   buildLandmarks();
@@ -115,72 +202,184 @@ function signMaterial(text,bg='#102235',fg='#ffffff',accent=null){
 function nameboard(name,z,y,halfLength,side,material){
   return box(name,new pc.Vec3(side*6.30,y,z),new pc.Vec3(.15,.52,halfLength),material);
 }
+function brandMaterial(text,{bg='#ffffff',fg='#111111',font='Arial, sans-serif',weight=700,tracking=0,subline=null,subFg=null}={}){
+  const key=['brand',text,bg,fg,font,weight,tracking,subline||'',subFg||''].join('|');if(signCache.has(key))return signCache.get(key);
+  const c=document.createElement('canvas');c.width=1400;c.height=320;const ctx=c.getContext('2d');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,c.width,c.height);
+  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=fg;
+  let size=subline?128:154;ctx.font=weight+' '+size+'px '+font;
+  const trackedWidth=(value,spacing)=>{
+    const chars=[...value],widths=chars.map(ch=>ctx.measureText(ch).width);
+    return widths.reduce((a,b)=>a+b,0)+spacing*Math.max(0,chars.length-1);
+  };
+  while(trackedWidth(text,tracking)>1240&&size>52){size-=4;ctx.font=weight+' '+size+'px '+font;}
+  const drawTracked=(value,y,spacing)=>{
+    const chars=[...value],widths=chars.map(ch=>ctx.measureText(ch).width);
+    const total=widths.reduce((a,b)=>a+b,0)+spacing*Math.max(0,chars.length-1);
+    let x=(c.width-total)/2;
+    ctx.textAlign='left';
+    chars.forEach((ch,i)=>{ctx.fillText(ch,x,y);x+=widths[i]+spacing;});
+    ctx.textAlign='center';
+  };
+  drawTracked(text,subline?124:160,tracking);
+  if(subline){
+    ctx.fillStyle=subFg||fg;ctx.font='600 48px '+font;drawTracked(subline,244,10);
+  }
+  const texture=new pc.Texture(app.graphicsDevice,{width:c.width,height:c.height,format:pc.PIXELFORMAT_RGBA8,mipmaps:true});
+  texture.minFilter=pc.FILTER_LINEAR_MIPMAP_LINEAR;texture.magFilter=pc.FILTER_LINEAR;texture.addressU=pc.ADDRESS_CLAMP_TO_EDGE;texture.addressV=pc.ADDRESS_CLAMP_TO_EDGE;texture.setSource(c);
+  const m=new pc.StandardMaterial();m.diffuseMap=texture;m.emissiveMap=texture;m.emissive=new pc.Color(.28,.28,.28);m.emissiveIntensity=.22;m.gloss=.4;m.update();signCache.set(key,m);return m;
+}
+function facadeBand(name,z,y,length,side,material,height=.18,depth=.34){
+  return box(name,new pc.Vec3(side*6.43,y,z),new pc.Vec3(depth,height,length),material);
+}
+function facadePier(name,z,y,height,side,material,width=.34,depth=.34){
+  return box(name,new pc.Vec3(side*6.43,y,z),new pc.Vec3(depth,height,width),material);
+}
+function facadePlant(name,z,y,side,scale=.55){
+  sphere(name,new pc.Vec3(side*6.25,y,z),new pc.Vec3(scale,scale*.86,scale),M.leaf);
+}
+function warmShopWindow(name,z,y,height,width,side){
+  box(name+' glass',new pc.Vec3(side*6.31,y,z),new pc.Vec3(.12,height,width),F.warmGlass);
+  box(name+' interior glow',new pc.Vec3(side*6.36,y,z),new pc.Vec3(.04,height*.78,width*.78),F.shopGlow);
+}
+function arketCurvePanel(z,xOffset,y,angle,height,width){
+  const panel=box('ARKET curved glass panel',new pc.Vec3(6.25+xOffset,y,z),new pc.Vec3(.18,height,width),F.warmGlass);
+  panel.setLocalEulerAngles(0,angle,0);
+  const mullion=box('ARKET curved stone mullion',new pc.Vec3(6.15+xOffset,y,z-width-.16),new pc.Vec3(.28,height+.18,.16),F.paleStone);
+  mullion.setLocalEulerAngles(0,angle,0);
+}
+
+function bladeSign(name,z,y,side,material,width=1.25,height=.48){
+  const sign=box(name,new pc.Vec3(side*5.88,y,z),new pc.Vec3(width,height,.12),material);
+  sign.setLocalEulerAngles(0,90,0);return sign;
+}
+function streetNumber(name,z,y,side,value){
+  return box(name,new pc.Vec3(side*6.23,y,z),new pc.Vec3(.11,.30,.48),brandMaterial(String(value),{bg:'#eee9de',fg:'#222222',font:'Georgia, serif',weight:700}),app.root);
+}
+function genericFacadeDetail(z,length,height,side,index){
+  const frontX=side*6.47;
+  const stone=index%3===0?F.limestone:F.paleStone;
+  box('Generic Dublin cornice',new pc.Vec3(frontX,height-.42,z),new pc.Vec3(.28,.22,length*.92),stone);
+  if(height>10)box('Generic Dublin string course',new pc.Vec3(frontX,5.15,z),new pc.Vec3(.22,.12,length*.90),stone);
+  const bays=Math.max(2,Math.min(4,Math.floor(length/3.1)));
+  for(let b=0;b<bays;b++){
+    const bz=z+(b-(bays-1)/2)*(length*.72/Math.max(1,bays-1));
+    box('Generic shop glass',new pc.Vec3(side*6.42,1.45,bz),new pc.Vec3(.16,2.18,Math.min(1.45,length/(bays*2.1))),F.warmGlass);
+    if((b+index)%3===0)box('Generic shop door',new pc.Vec3(side*6.30,1.35,bz),new pc.Vec3(.10,2.36,.72),F.darkWood);
+  }
+  box('Generic shop fascia',new pc.Vec3(side*6.38,3.08,z),new pc.Vec3(.22,.20,length*.82),index%2?M.navy:F.darkWood);
+}
 function buildGenericBlocks(){
   const fills=[M.brick,M.cream,mat(new pc.Color(.35,.28,.24),{gloss:.25}),mat(new pc.Color(.49,.42,.34),{gloss:.3})];
   let z=-11,i=0;
   while(z>-GAME.streetLength-15){
     const len=10+(i%4)*2.1,height=9.5+(i%5)*1.15;
-    for(const side of [-1,1]){building(z,len,height,side,fills[(i+(side>0?1:0))%fills.length]);shopfront(z,len,side,i%3===0?M.navy:M.glass);}
+    for(const side of [-1,1]){building(z,len,height,side,fills[(i+(side>0?1:0))%fills.length]);genericFacadeDetail(z,len,height,side,i+(side>0?1:0));}
     z-=len+1.35;i++;
   }
 }
 function buildLandmarks(){
-  // Modern glazed Grafton Place corner at the Nassau Street end.
-  const arket=box('ARKET Grafton Place',new pc.Vec3(9.72,7.25,-22),new pc.Vec3(6.95,14.5,24),M.stone);
-  windows(arket,1,14.5,24,true);
-  box('ARKET glass ground floor',new pc.Vec3(6.56,1.72,-22),new pc.Vec3(.16,3.15,20.8),M.glass);
-  for(let z=-31;z<=-13;z+=4.4)box('ARKET mullion',new pc.Vec3(6.38,1.75,z),new pc.Vec3(.25,3.25,.11),M.stone);
-  nameboard('ARKET wordmark',-22,3.52,3.7,1,signMaterial('ARKET','#eee9df','#151515'));
+  // ARKET, 60 Dawson Street / Grafton Place: pale curved stone frame and broad glass corner.
+  const arket=box('ARKET Grafton Place mass',new pc.Vec3(10.0,7.1,-22),new pc.Vec3(6.7,14.2,23.5),F.paleStone);
+  for(const [z,x,a] of [[-30.0,.34,-8],[-26.0,.10,-4],[-22,0,0],[-18.0,.10,4],[-14.0,.34,8]]){
+    arketCurvePanel(z,x,2.0,a,3.15,1.72);
+    arketCurvePanel(z,x,6.25,a,2.55,1.72);
+    arketCurvePanel(z,x,10.0,a,2.35,1.72);
+  }
+  for(const y of [3.78,7.78,11.4])facadeBand('ARKET pale stone floor band',-22,y,21.0,1,F.paleStone,.20,.46);
+  nameboard('ARKET real wordmark',-22,3.36,3.85,1,brandMaterial('ARKET',{bg:'#e9e7e1',fg:'#111111',font:'Arial, sans-serif',weight:500,tracking:12}));
+  bladeSign('ARKET projecting sign',-17.2,3.40,1,brandMaterial('ARKET',{bg:'#f4f3ef',fg:'#111111',font:'Arial, sans-serif',weight:500,tracking:10}),1.32,.50);
+  streetNumber('ARKET number 60',-30.6,3.24,1,'60');
 
-  // Hodges Figgis: tall red-brick facade with a deep green, brass-trimmed shopfront.
-  const hf=box('Hodges Figgis',new pc.Vec3(-9.80,7.65,-55),new pc.Vec3(6.85,15.3,19),M.brick);
-  windows(hf,-1,15.3,19,false);
-  box('Hodges green frontage',new pc.Vec3(-6.55,1.62,-55),new pc.Vec3(.22,2.80,16.8),M.green);
-  trim('Hodges brass fascia',-55,3.05,16.6,-1,M.gold,.14);
-  nameboard('Hodges Figgis nameboard',-55,3.24,7.5,-1,signMaterial('HODGES FIGGIS','#143a2b','#e4c477'));
-  for(let z=-61.2;z<=-48.8;z+=3.1)box('Hodges window bay',new pc.Vec3(-6.37,1.52,z),new pc.Vec3(.18,2.05,2.35),M.glass);
+  // Hodges Figgis, 56–58 Dawson Street: Victorian red brick, arched upper windows and curved dark-green shop bays.
+  const hf=box('Hodges Figgis red brick facade',new pc.Vec3(-9.82,7.6,-55),new pc.Vec3(6.9,15.2,19.2),F.redBrick);
+  for(const z of [-61.3,-57.1,-52.9,-48.7]){
+    facadePier('Hodges stone window side',z,8.2,9.3,-1,F.limestone,.40,.46);
+    box('Hodges upper sash',new pc.Vec3(-6.34,8.55,z),new pc.Vec3(.14,3.05,1.42),F.warmGlass);
+    box('Hodges upper stone head',new pc.Vec3(-6.36,11.72,z),new pc.Vec3(.36,.28,1.75),F.limestone);
+  }
+  box('Hodges deep green frontage',new pc.Vec3(-6.52,1.55,-55),new pc.Vec3(.34,2.85,17.4),F.hodgesGreen);
+  for(const z of [-61.2,-58.1,-51.9,-48.8])warmShopWindow('Hodges curved display',z,1.56,2.12,2.35,-1);
+  facadePier('Hodges left shop pillar',-63.0,1.70,3.22,-1,F.hodgesGreen,.52,.46);
+  facadePier('Hodges centre-left pillar',-59.6,1.70,3.22,-1,F.hodgesGreen,.34,.42);
+  facadePier('Hodges centre-right pillar',-50.4,1.70,3.22,-1,F.hodgesGreen,.34,.42);
+  facadePier('Hodges right shop pillar',-47.0,1.70,3.22,-1,F.hodgesGreen,.52,.46);
+  box('Hodges central door',new pc.Vec3(-6.28,1.40,-55),new pc.Vec3(.18,2.55,2.10),F.darkWood);
+  facadeBand('Hodges fascia moulding',-55,3.05,17.25,-1,F.hodgesGreen,.22,.46);
+  nameboard('Hodges Figgis real logo',-55,3.42,7.65,-1,brandMaterial('HODGES FIGGIS',{bg:'#073020',fg:'#d5ae5d',font:'Georgia, serif',weight:500,tracking:17,subline:'THE BOOKSTORE',subFg:'#d8c28c'}));
+  bladeSign('Hodges Figgis projecting sign',-48.1,3.55,-1,brandMaterial('HODGES FIGGIS',{bg:'#073020',fg:'#d5ae5d',font:'Georgia, serif',weight:600,tracking:7}),1.46,.52);
+  streetNumber('Hodges number 56 58',-62.1,3.28,-1,'56–58');
 
-  // Café en Seine: dark blue facade, pale stripes and planted outdoor edge.
-  const cafe=box('Cafe en Seine',new pc.Vec3(9.80,6.15,-185),new pc.Vec3(6.85,12.3,18),M.brick);
-  windows(cafe,1,12.3,18,false);
-  box('Cafe blue frontage',new pc.Vec3(6.54,1.60,-185),new pc.Vec3(.22,2.85,15.5),M.navy);
-  trim('Cafe gold fascia',-185,3.12,15.4,1,M.gold,.10);
-  nameboard('Cafe en Seine nameboard',-185,3.28,6.9,1,signMaterial('CAFÉ en SEINE','#15364b','#e5cf99'));
-  for(let z=-190.5;z<=-179.5;z+=3.6){awning('Cafe striped awning',z,2.7,1,M.navy,3.43);box('Cafe awning stripe',new pc.Vec3(6.13,3.50,z),new pc.Vec3(.85,.07,.18),M.white);}
-  planter(181,1);planter(187,1);planter(193,1);tree(188,1);
+  // Café en Seine, 39/40 Dawson Street: deep teal, brass detailing, awnings and planting.
+  const cafe=box('Cafe en Seine brick upper facade',new pc.Vec3(9.80,6.2,-185),new pc.Vec3(6.85,12.4,18.4),F.redBrick);
+  for(const z of [-190.3,-185,-179.7])box('Cafe upper sash',new pc.Vec3(6.35,7.2,z),new pc.Vec3(.14,3.2,2.2),F.warmGlass);
+  box('Cafe en Seine teal frontage',new pc.Vec3(6.50,1.60,-185),new pc.Vec3(.35,2.95,16.2),F.cafeTeal);
+  for(const z of [-190.0,-186.6,-183.4,-180.0])warmShopWindow('Cafe street window',z,1.55,2.15,2.55,1);
+  for(const z of [-191.6,-188.3,-185,-181.7,-178.4])facadePier('Cafe brass upright',z,1.65,3.0,1,F.brass,.17,.40);
+  facadeBand('Cafe gold fascia',-185,3.12,16.0,1,F.brass,.12,.42);
+  nameboard('Cafe en Seine real logo',-185,3.38,6.55,1,brandMaterial('CAFÉ en SEINE',{bg:'#073234',fg:'#e9d5a0',font:'Georgia, serif',weight:500,tracking:8}));
+  bladeSign('Cafe en Seine projecting sign',-178.8,3.62,1,brandMaterial('CAFÉ en SEINE',{bg:'#073234',fg:'#e9d5a0',font:'Georgia, serif',weight:600,tracking:4}),1.42,.52);
+  streetNumber('Cafe number 39 40',-191.1,3.25,1,'39/40');
+  for(const z of [-189.8,-185,-180.2])awning('Cafe awning',z,3.2,1,F.cafeTeal,3.67);
+  for(const z of [-191.5,-188,-184.5,-181,-178.5])facadePlant('Cafe facade plant',z,4.25,1,.50);
+  planter(181,1);planter(187,1);planter(193,1);
 
-  // Dawson Lounge: darker townhouse treatment and a strong red entrance.
-  const lounge=box('Dawson Lounge',new pc.Vec3(-9.80,5.55,-292),new pc.Vec3(6.85,11.1,12),mat(new pc.Color(.20,.18,.17),{gloss:.25}));
-  windows(lounge,-1,11.1,12,false);
-  box('Dawson dark frontage',new pc.Vec3(-6.56,1.48,-292),new pc.Vec3(.22,2.55,9.8),M.black);
-  box('Dawson red door',new pc.Vec3(-6.35,1.32,-292),new pc.Vec3(.25,2.40,1.28),M.red);
-  trim('Dawson fascia',-292,2.93,9.6,-1,M.gold,.09);
-  nameboard('Dawson Lounge nameboard',-292,3.08,4.1,-1,signMaterial('THE DAWSON LOUNGE','#171717','#d7b56b'));
+  // The Dawson Lounge, 25 Dawson Street: tiny basement pub with the unmistakable red door.
+  const lounge=box('Dawson Lounge townhouse',new pc.Vec3(-9.78,5.45,-292),new pc.Vec3(6.85,10.9,12.4),F.redBrick);
+  for(const z of [-295.1,-288.9])box('Dawson upper sash',new pc.Vec3(-6.34,6.2,z),new pc.Vec3(.14,2.65,1.7),F.warmGlass);
+  box('Dawson Lounge dark base',new pc.Vec3(-6.50,1.38,-292),new pc.Vec3(.34,2.45,10.2),F.darkWood);
+  box('Dawson Lounge iconic red door',new pc.Vec3(-6.26,1.34,-292),new pc.Vec3(.18,2.48,1.30),M.red);
+  for(let i=0;i<4;i++)box('Dawson basement step '+i,new pc.Vec3(-5.92-i*.18,.10+i*.10,-292),new pc.Vec3(.42,.12,1.80),F.limestone);
+  nameboard('Dawson Lounge real sign',-292,3.04,4.20,-1,brandMaterial('THE DAWSON LOUNGE',{bg:'#1a1612',fg:'#d0ac67',font:'Georgia, serif',weight:600,tracking:8}));
+  bladeSign('Dawson Lounge projecting sign',-288.1,3.30,-1,brandMaterial('DAWSON LOUNGE',{bg:'#1a1612',fg:'#d0ac67',font:'Georgia, serif',weight:600,tracking:4}),1.30,.48);
+  streetNumber('Dawson Lounge number 25',-295.2,3.15,-1,'25');
 
-  // Ivy: pale modern facade, deep green entrance canopy and planting.
-  const ivy=box('The Ivy Dawson Street',new pc.Vec3(9.80,6.75,-354),new pc.Vec3(6.85,13.5,23),M.cream);
-  windows(ivy,1,13.5,23,true);
-  box('Ivy glass frontage',new pc.Vec3(6.56,1.60,-354),new pc.Vec3(.20,2.80,19.5),M.glass);
-  awning('Ivy green canopy',-348.5,5.8,1,M.green,3.15);
-  nameboard('Ivy nameboard',-348.5,3.36,2.7,1,signMaterial('THE IVY','#123a2a','#e0bd71'));
+  // Royal Irish Academy, 19 Dawson Street: restrained red brick and pale stone entrance.
+  const ria=box('Royal Irish Academy facade',new pc.Vec3(-9.80,6.35,-319),new pc.Vec3(6.85,12.7,13.5),F.redBrick);
+  for(const z of [-323,-319,-315])box('RIA sash window',new pc.Vec3(-6.35,7.0,z),new pc.Vec3(.14,2.9,1.55),F.warmGlass);
+  box('RIA pale stone entrance',new pc.Vec3(-6.48,1.65,-319),new pc.Vec3(.34,3.05,3.45),F.limestone);
+  box('RIA dark door',new pc.Vec3(-6.25,1.42,-319),new pc.Vec3(.16,2.55,1.55),F.darkWood);
+  facadeBand('RIA stone cornice',-319,4.05,12.0,-1,F.limestone,.18,.40);
+  nameboard('RIA nameboard',-319,3.48,4.35,-1,brandMaterial('ROYAL IRISH ACADEMY',{bg:'#e4dfd3',fg:'#1d1d1b',font:'Georgia, serif',weight:600,tracking:5}));
+  streetNumber('RIA number 19',-323.9,3.10,-1,'19');
+
+  // St Ann's Church beside the Academy: tall pale stone vertical frontage.
+  const stanns=box("St Ann's Church Dawson Street facade",new pc.Vec3(9.82,7.15,-330),new pc.Vec3(6.85,14.3,15.0),F.limestone);
+  for(const z of [-334.4,-330,-325.6])box('St Anns tall window',new pc.Vec3(6.34,6.65,z),new pc.Vec3(.15,5.25,1.52),F.warmGlass);
+  facadePier('St Anns left pier',-336.2,6.75,10.8,1,F.paleStone,.48,.48);
+  facadePier('St Anns right pier',-323.8,6.75,10.8,1,F.paleStone,.48,.48);
+  box('St Anns entrance',new pc.Vec3(6.24,1.70,-330),new pc.Vec3(.18,3.20,2.25),F.darkWood);
+  facadeBand('St Anns parapet',-330,11.55,13.5,1,F.paleStone,.30,.48);
+  nameboard('St Anns small plaque',-330,3.60,2.6,1,brandMaterial("ST ANN'S",{bg:'#e9e3d7',fg:'#222222',font:'Georgia, serif',weight:600,tracking:7}));
+  streetNumber('St Anns number 18',-335.0,3.12,1,'18');
+
+  // The Ivy, 13–17 Dawson Street: pale facade, rich green frontage and abundant planting.
+  const ivy=box('The Ivy Dawson Street facade',new pc.Vec3(9.80,6.75,-354),new pc.Vec3(6.85,13.5,23.4),F.ivyCream);
+  for(const z of [-362,-357,-352,-347]){
+    box('Ivy upper window',new pc.Vec3(6.34,7.25,z),new pc.Vec3(.14,3.25,1.65),F.warmGlass);
+    facadePlant('Ivy trailing plant',z,10.15,1,.58);
+  }
+  box('Ivy deep green frontage',new pc.Vec3(6.50,1.60,-354),new pc.Vec3(.34,2.85,20.0),F.ivyGreen);
+  for(const z of [-361,-357,-352,-348])warmShopWindow('Ivy dining window',z,1.62,2.12,2.45,1);
+  facadeBand('Ivy gold fascia',-354,3.08,19.8,1,F.brass,.11,.40);
+  awning('Ivy green entrance canopy',-350.0,6.0,1,F.ivyGreen,3.45);
+  nameboard('Ivy real wordmark',-350.0,3.62,3.0,1,brandMaterial('THE IVY',{bg:'#0b432d',fg:'#d8b76b',font:'Georgia, serif',weight:600,tracking:14}));
+  bladeSign('Ivy projecting sign',-345.2,3.70,1,brandMaterial('THE IVY',{bg:'#0b432d',fg:'#d8b76b',font:'Georgia, serif',weight:700,tracking:12}),1.22,.52);
+  streetNumber('Ivy number 13 17',-362.0,3.25,1,'13–17');
+  for(const z of [-363,-359,-355,-351,-347,-343])facadePlant('Ivy frontage greenery',z,3.65,1,.50);
   planter(347,1);planter(352,1);planter(357,1);
 }
-
 function buildWetDetails(){
-  // Thin glossy patches sell the rainy street without expensive planar reflections.
-  for(let d=20,i=0;d<GAME.streetLength-30;d+=17,i++){
-    const lane=lanes[i%3];
-    const p=box('Puddle',new pc.Vec3(lane+(i%2?.35:-.25),.018,-d),new pc.Vec3(1.45,.012,2.4+(i%3)*.5),M.wetGlass);
-    p.setLocalEulerAngles(0,(i%5-2)*7,0);
+  // No active rain in v0.4. Keep only subtle street sheen and drains; no puddle carpet.
+  for(let d=28,i=0;d<GAME.streetLength-25;d+=34,i++){
+    box('Road drain '+i,new pc.Vec3((i%2?1:-1)*3.88,.022,-d),new pc.Vec3(.42,.018,1.08),M.rail);
   }
 }
-
 function ambientPerson(z,side,phase){
   const root=new pc.Entity('Pavement pedestrian');
   root.setPosition(side*(4.95+(phase%3)*.35),0,-z);app.root.addChild(root);
-  const coat=[M.blue,M.cream,M.green,M.pink][phase%4];
-  box('body',new pc.Vec3(0,1.0,0),new pc.Vec3(.56,1.2,.42),coat,root);
-  sphere('head',new pc.Vec3(0,1.83,0),new pc.Vec3(.43,.43,.43),M.skin,root);
+  const kind=phase%3===0?'worker':'casual';
+  spawnCharacter(root,{kind,clip:'Walk',scale:1.12+(phase%3)*.025,yaw:phase%2?0:180,name:'Pedestrian model'});
   animated.push({type:'pavement',entity:root,baseX:root.getPosition().x,baseD:z,phase:phase*.7});
 }
 function buildStreetLife(){
@@ -207,39 +406,64 @@ function buildLuasStop(){
 }
 
 const landmarkCallouts=[
-  {d:15,label:'ARKET · 60 DAWSON STREET'},
-  {d:47,label:'HODGES FIGGIS · 56–58'},
-  {d:175,label:'CAFÉ EN SEINE · 39/40'},
-  {d:282,label:'THE DAWSON LOUNGE · 25'},
-  {d:342,label:'THE IVY · 13–17'},
-  {d:395,label:'DAWSON LUAS STOP'}
+  {d:5,label:'ARKET · 60 DAWSON STREET'},
+  {d:38,label:'HODGES FIGGIS · 56–58'},
+  {d:166,label:'CAFÉ EN SEINE · 39/40'},
+  {d:274,label:'THE DAWSON LOUNGE · 25'},
+  {d:303,label:'ROYAL IRISH ACADEMY · 19'},
+  {d:317,label:"ST ANN'S CHURCH · 18"},
+  {d:336,label:'THE IVY · 13–17'},
+  {d:391,label:'DAWSON LUAS STOP'}
 ];
 
 function buildPlayer(){
   const root=new pc.Entity('Runner');app.root.addChild(root);
-  const hoodie=mat(new pc.Color(.035,.55,.24),{gloss:.28}),pants=mat(new pc.Color(.025,.035,.055),{gloss:.18}),bag=mat(new pc.Color(.45,.25,.10),{gloss:.25}),shoe=mat(new pc.Color(.92,.92,.88),{gloss:.22});
-  const body=box('Body',new pc.Vec3(0,.05,0),new pc.Vec3(.92,1.2,.56),hoodie,root);
-  sphere('Head',new pc.Vec3(0,.93,-.01),new pc.Vec3(.58,.58,.58),M.skin,root);
-  const legL=box('Leg L',new pc.Vec3(-.21,-.87,0),new pc.Vec3(.26,.72,.30),pants,root),legR=box('Leg R',new pc.Vec3(.21,-.87,0),new pc.Vec3(.26,.72,.30),pants,root);
-  const armL=box('Arm L',new pc.Vec3(-.57,.02,0),new pc.Vec3(.22,.78,.24),hoodie,root),armR=box('Arm R',new pc.Vec3(.57,.02,0),new pc.Vec3(.22,.78,.24),hoodie,root);
-  box('Shoe L',new pc.Vec3(-.21,-1.28,-.08),new pc.Vec3(.31,.20,.52),shoe,root);box('Shoe R',new pc.Vec3(.21,-1.28,-.08),new pc.Vec3(.31,.20,.52),shoe,root);
-  box('Bag',new pc.Vec3(0,.10,.38),new pc.Vec3(.69,.82,.27),bag,root);
-  root.setPosition(lanes[1],1.02,0);return {entity:root,body,legL,legR,armL,armR,lane:1,distance:0,y:1.02,vy:0,grounded:true,hit:0};
+  const model=spawnCharacter(root,{kind:'casual',clip:'Run',scale:1.26,yaw:180,name:'Runner character model'});
+  const groundY=.04;root.setPosition(lanes[1],groundY,0);
+  return {entity:root,model,lane:1,distance:0,y:groundY,groundY,vy:0,grounded:true,hit:0};
 }
-const player=buildPlayer();
+let player=null;
+
 
 function obstacle(kind,d,lane,{jumpable=false}={}){
   const root=new pc.Entity(kind+' '+d);root.setPosition(lanes[lane],0,-d);app.root.addChild(root);
   if(kind==='bollard'){cyl('bollard',new pc.Vec3(0,.55,0),new pc.Vec3(.38,.55,.38),M.black,root);}
   if(kind==='bin'){box('bin',new pc.Vec3(0,.72,0),new pc.Vec3(.92,1.42,.78),M.green,root);box('lid',new pc.Vec3(0,1.48,-.05),new pc.Vec3(1.0,.15,.86),M.black,root);}
   if(kind==='roadworks'){box('barrier',new pc.Vec3(0,.78,0),new pc.Vec3(1.95,1.12,.24),M.orange,root);box('barrier stripe',new pc.Vec3(0,.80,.14),new pc.Vec3(1.35,.18,.04),M.white,root);}
-  if(kind==='tourist'){box('coat',new pc.Vec3(0,1.02,0),new pc.Vec3(.72,1.30,.48),M.blue,root);sphere('head',new pc.Vec3(0,1.90,0),new pc.Vec3(.48,.48,.48),M.skin,root);box('phone',new pc.Vec3(.34,1.45,-.18),new pc.Vec3(.08,.28,.16),M.black,root);animated.push({type:'tourist',entity:root,baseX:lanes[lane],baseD:d,phase:d*.11});}
-  if(kind==='umbrella'){box('person',new pc.Vec3(0,.95,0),new pc.Vec3(.60,1.2,.45),M.cream,root);sphere('umbrella',new pc.Vec3(0,2.05,0),new pc.Vec3(1.25,.28,1.25),M.purple,root);animated.push({type:'umbrella',entity:root,baseX:lanes[lane],baseD:d,phase:d*.05});}
-  if(kind==='cyclist'||kind==='delivery'){const body=kind==='delivery'?M.green:M.blue;cyl('wheel1',new pc.Vec3(0,.48,-.55),new pc.Vec3(.48,.10,.48),M.black,root,new pc.Vec3(90,0,0));cyl('wheel2',new pc.Vec3(0,.48,.55),new pc.Vec3(.48,.10,.48),M.black,root,new pc.Vec3(90,0,0));box('rider',new pc.Vec3(0,1.30,0),new pc.Vec3(.60,1.05,.55),body,root);if(kind==='delivery')box('delivery box',new pc.Vec3(0,1.42,.48),new pc.Vec3(.75,.62,.58),M.green,root);animated.push({type:kind,entity:root,baseX:lanes[lane],baseD:d,phase:d*.07});}
+  if(kind==='tourist'){
+    spawnCharacter(root,{kind:'casual',clip:'Idle_Neutral',scale:1.18,yaw:180,name:'Tourist character model'});
+    box('phone',new pc.Vec3(.33,1.36,-.18),new pc.Vec3(.07,.24,.14),M.black,root);
+    animated.push({type:'tourist',entity:root,baseX:lanes[lane],baseD:d,phase:d*.11});
+  }
+  if(kind==='umbrella'){
+    spawnCharacter(root,{kind:'worker',clip:'Idle_Neutral',scale:1.15,yaw:180,name:'Umbrella pedestrian model'});
+    box('umbrella handle',new pc.Vec3(.38,1.55,0),new pc.Vec3(.045,1.55,.045),M.black,root);
+    sphere('umbrella canopy',new pc.Vec3(.38,2.43,0),new pc.Vec3(1.18,.24,1.18),M.purple,root);
+    animated.push({type:'umbrella',entity:root,baseX:lanes[lane],baseD:d,phase:d*.05});
+  }
+  if(kind==='cyclist'||kind==='delivery'){
+    cyl('Front bicycle wheel',new pc.Vec3(0,.46,-.76),new pc.Vec3(.50,.06,.50),M.black,root,new pc.Vec3(90,0,0));
+    cyl('Rear bicycle wheel',new pc.Vec3(0,.46,.76),new pc.Vec3(.50,.06,.50),M.black,root,new pc.Vec3(90,0,0));
+    const top=box('Bike top tube',new pc.Vec3(0,.75,-.02),new pc.Vec3(.09,.09,1.15),M.rail,root);
+    const down=box('Bike down tube',new pc.Vec3(0,.62,-.08),new pc.Vec3(.09,.66,.09),M.rail,root);down.setLocalEulerAngles(38,0,0);
+    const seatTube=box('Bike seat tube',new pc.Vec3(0,.67,.28),new pc.Vec3(.09,.58,.09),M.rail,root);seatTube.setLocalEulerAngles(-22,0,0);
+    box('Bike seat',new pc.Vec3(0,.99,.30),new pc.Vec3(.38,.09,.28),M.black,root);
+    box('Bike handlebars',new pc.Vec3(0,1.13,-.65),new pc.Vec3(.86,.07,.09),M.rail,root);
+    box('Bike stem',new pc.Vec3(0,.92,-.59),new pc.Vec3(.08,.48,.08),M.rail,root).setLocalEulerAngles(-17,0,0);
+    const riderPivot=new pc.Entity(kind==='delivery'?'Delivery rider hip pivot':'Cyclist rider hip pivot');
+    riderPivot.setLocalPosition(0,1.03,.24);riderPivot.setLocalEulerAngles(8,0,0);root.addChild(riderPivot);
+    const rider=spawnCharacter(riderPivot,{kind:kind==='delivery'?'worker':'casual',clip:null,scale:.96,yaw:180,name:kind==='delivery'?'Delivery rider model':'Cyclist rider model'});
+    if(rider){rider.setLocalPosition(0,-.96,-.10);poseRiderCharacter(rider);}
+    if(kind==='delivery')box('delivery box',new pc.Vec3(0,.93,.92),new pc.Vec3(.72,.58,.58),M.green,root);
+    const baseYaw=kind==='delivery'?-12:12;root.setLocalEulerAngles(0,baseYaw,0);
+    animated.push({type:kind,entity:root,baseX:lanes[lane],baseD:d,phase:d*.07,baseYaw});
+  }
   obstacleRecords.push({kind,entity:root,d,lane,jumpable,hit:false,cleared:false});
 }
-[[35,0,'bollard',1],[50,2,'bin'],[64,1,'tourist'],[78,0,'cyclist'],[92,2,'roadworks'],[108,1,'umbrella'],[124,0,'bin'],[139,2,'tourist'],[154,1,'delivery'],[170,0,'roadworks'],[186,2,'bollard',1],[202,1,'tourist'],[218,0,'cyclist'],[235,2,'bin'],[251,1,'roadworks'],[267,0,'umbrella'],[283,2,'delivery'],[299,1,'bollard',1],[315,0,'tourist'],[331,2,'bin'],[347,1,'roadworks'],[363,0,'cyclist'],[379,2,'umbrella'],[394,1,'tourist'],[407,0,'bollard',1]].forEach(([d,l,k,j])=>obstacle(k,d,l,{jumpable:Boolean(j)}));
-obstacle('roadworks',146,0);obstacle('roadworks',146,1);obstacle('roadworks',322,1);obstacle('roadworks',322,2);
+function buildObstacles(){
+  [[35,0,'bollard',1],[50,2,'bin'],[64,1,'tourist'],[78,0,'cyclist'],[92,2,'roadworks'],[108,1,'umbrella'],[124,0,'bin'],[139,2,'tourist'],[154,1,'delivery'],[170,0,'roadworks'],[186,2,'bollard',1],[202,1,'tourist'],[218,0,'cyclist'],[235,2,'bin'],[251,1,'roadworks'],[267,0,'umbrella'],[283,2,'delivery'],[299,1,'bollard',1],[315,0,'tourist'],[331,2,'bin'],[347,1,'roadworks'],[363,0,'cyclist'],[379,2,'umbrella'],[394,1,'tourist'],[407,0,'bollard',1]].forEach(([d,l,k,j])=>obstacle(k,d,l,{jumpable:Boolean(j)}));
+  obstacle('roadworks',146,0);obstacle('roadworks',146,1);obstacle('roadworks',322,1);obstacle('roadworks',322,2);
+}
 
 function buildTram(){
   const root=new pc.Entity('Last Luas');app.root.addChild(root);const silver=mat(new pc.Color(.74,.77,.81),{gloss:.84,metal:.18});
@@ -252,16 +476,16 @@ function buildTram(){
   box('roof equipment',new pc.Vec3(0,2.92,-.5),new pc.Vec3(1.15,.18,2.1),M.black,root);
   return {entity:root,distance:GAME.streetLength,pulling:false};
 }
-const tram=buildTram();
-function syncTram(){tram.entity.setPosition(0,.02,-tram.distance);}syncTram();
+let tram=null;
+function syncTram(){if(tram)tram.entity.setPosition(0,.02,-tram.distance);}
 
-const camera=new pc.Entity('Camera');camera.addComponent('camera',{clearColor:new pc.Color(.028,.045,.09),fov:67,nearClip:.1,farClip:720});app.root.addChild(camera);camera.setPosition(0,4.2,7.2);
+const camera=new pc.Entity('Camera');camera.addComponent('camera',{clearColor:new pc.Color(.31,.51,.70),fov:63,nearClip:.1,farClip:720});app.root.addChild(camera);camera.setPosition(0,3.72,5.65);
 
 function updateCamera(dt){
   const p=player.entity.getPosition(),rush=state.started&&!state.finished?Math.max(0,(10-state.timeLeft)/10):0,shake=player.hit>0?Math.sin(state.elapsed*48)*.065:0;
-  const target=new pc.Vec3(p.x*.16+shake,4.25-rush*.30,p.z+7.15-rush*.62),cur=camera.getPosition(),t=1-Math.exp(-8*dt);
+  const target=new pc.Vec3(p.x*.18+shake,3.72-rush*.22,p.z+6.05-rush*.48),cur=camera.getPosition(),t=1-Math.exp(-8*dt);
   camera.setPosition(pc.math.lerp(cur.x,target.x,t),pc.math.lerp(cur.y,target.y,t),pc.math.lerp(cur.z,target.z,t));
-  camera.lookAt(p.x*.18,1.22,p.z-9.2-rush*1.8);camera.camera.fov=pc.math.lerp(camera.camera.fov,67+rush*7,1-Math.exp(-4*dt));
+  camera.lookAt(p.x*.20,1.38,p.z-7.7-rush*1.55);camera.camera.fov=pc.math.lerp(camera.camera.fov,63+rush*6,1-Math.exp(-4*dt));
 }
 
 const input={queue:new Set(),downX:0,downY:0,tracking:false};
@@ -277,14 +501,45 @@ const audio={ctx:null,lastBeep:-1,unlock(){if(!this.ctx)this.ctx=new (window.Aud
 function updatePlayer(dt){
   if(input.queue.has('left'))player.lane=Math.max(0,player.lane-1);if(input.queue.has('right'))player.lane=Math.min(2,player.lane+1);if(input.queue.has('jump')&&player.grounded){player.grounded=false;player.vy=GAME.jumpVelocity;audio.jump();}input.queue.clear();
   const pos=player.entity.getPosition(),tx=lanes[player.lane],x=pc.math.lerp(pos.x,tx,1-Math.exp(-GAME.laneSharpness*dt));
-  if(!player.grounded){player.vy-=GAME.gravity*dt;player.y+=player.vy*dt;if(player.y<=1.02){player.y=1.02;player.vy=0;player.grounded=true;}}
+  if(!player.grounded){player.vy-=GAME.gravity*dt;player.y+=player.vy*dt;if(player.y<=player.groundY){player.y=player.groundY;player.vy=0;player.grounded=true;}}
   player.hit=Math.max(0,player.hit-dt);
   const urgency=1+Math.max(0,(20-state.timeLeft)/20)*.055;
   const speed=(player.hit>0?GAME.hitSpeed:GAME.speed)*urgency;
   player.distance+=speed*dt;player.entity.setPosition(x,player.y,-player.distance);
-  const cycle=player.distance*6.8,swing=player.grounded?Math.sin(cycle)*34:0,bob=player.grounded?Math.abs(Math.sin(cycle))*-.035:0;
-  player.legL.setLocalEulerAngles(swing,0,0);player.legR.setLocalEulerAngles(-swing,0,0);player.armL.setLocalEulerAngles(-swing*.72,0,0);player.armR.setLocalEulerAngles(swing*.72,0,0);player.body.setLocalPosition(0,.05+bob,0);
 }
+function prepareFacadeReview(name){
+  const map={arket:12,hodges:45,cafe:173,'dawson-lounge':280,ria:308,stanns:319,ivy:341};
+  const preview=map[name];if(preview===undefined)return null;
+  for(const o of obstacleRecords)o.entity.enabled=false;
+  for(const a of animated)a.entity.enabled=false;
+  player.distance=preview;player.entity.setPosition(lanes[1],player.y,-preview);
+  document.documentElement.dataset.lastLuasReviewLandmark=name;
+  return preview;
+}
+function prepareVisualReview(focus){
+  const targetMap={tourist:64,cyclist:78,umbrella:108,delivery:154};
+  const targetD=targetMap[focus];
+  if(!targetD)return null;
+  let target=null;
+  for(const o of obstacleRecords){
+    const isTarget=o.kind===focus&&o.d===targetD;
+    o.entity.enabled=isTarget;
+    if(isTarget)target=o;
+  }
+  for(const a of animated){
+    if(a.type==='pavement')a.entity.enabled=false;
+  }
+  const preview=Math.max(0,targetD-5.2);
+  player.distance=preview;
+  player.entity.setPosition(lanes[target?.lane??1],player.y,-preview);
+  if(target){
+    target.entity.setPosition(lanes[target.lane],0,-targetD);
+    const baseYaw=target.kind==='delivery'?-12:target.kind==='cyclist'?12:0;target.entity.setLocalEulerAngles(0,baseYaw,0);
+  }
+  document.documentElement.dataset.lastLuasReviewFocus=focus;
+  return preview;
+}
+
 function updateObstacles(){
   const px=player.entity.getPosition().x;
   for(const o of obstacleRecords){
@@ -314,7 +569,7 @@ function animateWorld(){
     }else{
       const direction=a.type==='delivery'?-1:1;
       a.entity.setPosition(a.baseX+Math.sin(state.elapsed*1.1+a.phase)*.28,0,-a.baseD+Math.sin(state.elapsed*1.45+a.phase)*1.25*direction);
-      a.entity.setLocalEulerAngles(0,Math.sin(state.elapsed*1.1+a.phase)*4,0);
+      a.entity.setLocalEulerAngles(0,(a.baseYaw||0)+Math.sin(state.elapsed*1.1+a.phase)*7,0);
     }
   }
 }
@@ -336,9 +591,38 @@ function finish(won){
 function reset(){location.reload();}
 function togglePause(force){if(!state.started||state.finished)return;state.paused=typeof force==='boolean'?force:!state.paused;ui.pause.hidden=!state.paused;ui.pause.classList.toggle('visible',state.paused);$('pauseBtn').textContent=state.paused?'▶':'Ⅱ';}
 
-$('playBtn').addEventListener('click',()=>{audio.unlock();state.started=true;ui.start.classList.remove('visible');ui.start.hidden=true;showToast('90 SECONDS. GO!');});$('pauseBtn').addEventListener('click',()=>togglePause());$('resumeBtn').addEventListener('click',()=>togglePause(false));$('restartBtn').addEventListener('click',reset);document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.started&&!state.finished)togglePause(true);});window.addEventListener('resize',()=>app.resizeCanvas());
+const playButton=$('playBtn');playButton.disabled=true;playButton.textContent='LOADING CHARACTERS…';
+playButton.addEventListener('click',()=>{audio.unlock();state.started=true;ui.start.classList.remove('visible');ui.start.hidden=true;showToast('90 SECONDS. GO!');});$('pauseBtn').addEventListener('click',()=>togglePause());$('resumeBtn').addEventListener('click',()=>togglePause(false));$('restartBtn').addEventListener('click',reset);document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.started&&!state.finished)togglePause(true);});window.addEventListener('resize',()=>app.resizeCanvas());
 
-buildStreet();updateHud();updateCamera(0);app.start();
+async function boot(){
+  try{
+    await preloadCharacters();
+    player=buildPlayer();tram=buildTram();syncTram();buildStreet();buildObstacles();updateHud();updateCamera(0);app.start();
+    document.documentElement.dataset.lastLuasReady='1';
+    document.documentElement.dataset.lastLuasBuild=BUILD;
+    document.documentElement.dataset.lastLuasCharacterAssets=String(characterAssets.size);document.documentElement.dataset.lastLuasObstacleCount=String(obstacleRecords.length);
+    document.documentElement.dataset.lastLuasCasualClips=(characterAssets.get('casual')?.resource?.animations||[]).map(a=>a.name||a.resource?.name||'').join(',');
+    document.documentElement.dataset.lastLuasWorkerClips=(characterAssets.get('worker')?.resource?.animations||[]).map(a=>a.name||a.resource?.name||'').join(',');
+    const smokeParams=new URLSearchParams(location.search);
+    if(smokeParams.get('smoke')==='1'){
+      const focus=smokeParams.get('focus'),landmark=smokeParams.get('landmark');
+      let preview=landmark?prepareFacadeReview(landmark):(focus?prepareVisualReview(focus):null);
+      if(preview===null){
+        preview=Math.max(0,Math.min(GAME.streetLength-8,Number(smokeParams.get('distance')||18)||18));
+        player.distance=preview;player.entity.setPosition(lanes[1],player.y,-preview);
+      }
+      ui.start.classList.remove('visible');ui.start.hidden=true;updateHud();updateCamera(1);animateWorld();
+      setTimeout(()=>{state.paused=true;document.documentElement.dataset.lastLuasSmokeStopped='1';},1200);
+    }else{
+      playButton.disabled=false;playButton.textContent='RUN FOR IT →';
+    }
+  }catch(err){
+    console.error('Last Luas character load failed',err);
+    playButton.textContent='CHARACTERS FAILED TO LOAD';showToast('CHARACTER ASSETS FAILED TO LOAD');
+    document.documentElement.dataset.lastLuasAssetError='1';
+  }
+}
+boot();
 app.on('update',dt=>{
   dt=Math.min(dt,.05);if(!state.started||state.paused||state.finished)return;
   state.elapsed+=dt;state.timeLeft-=dt;updatePlayer(dt);updateObstacles();animateWorld();updateTram(dt);updateCamera(dt);updateHud();

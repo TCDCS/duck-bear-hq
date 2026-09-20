@@ -1,0 +1,82 @@
+name: Last Luas Real Characters Validate
+
+on:
+  pull_request:
+    paths:
+      - 'public/games/last-luas/**'
+      - 'tests/last-luas.test.mjs'
+      - '.github/workflows/last-luas.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install visual browser
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Capture official Cafe en Seine logo
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/last-luas-real-characters
+          curl -LfsS 'https://www.cafeenseine.ie/wp-content/themes/sitetheme/library/images/logo.svg' -o /tmp/last-luas-real-characters/cafe-en-seine-official-logo.svg
+          test -s /tmp/last-luas-real-characters/cafe-en-seine-official-logo.svg
+          grep -qi '<svg' /tmp/last-luas-real-characters/cafe-en-seine-official-logo.svg
+      - name: Last Luas source tests
+        run: node --test tests/last-luas.test.mjs
+      - name: Inspect pinned character GLBs
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/last-luas-assets
+          curl -LfsS 'https://cdn.jsdelivr.net/gh/euuuuuuan/fatal-funnel-public@29a6bdfd01ad175c389cbd0bac80c30f926ff96b/packages/renderer/assets/models/quaternius-men/casual-character.glb' -o /tmp/last-luas-assets/casual.glb
+          curl -LfsS 'https://cdn.jsdelivr.net/gh/euuuuuuan/fatal-funnel-public@29a6bdfd01ad175c389cbd0bac80c30f926ff96b/packages/renderer/assets/models/quaternius-men/worker.glb' -o /tmp/last-luas-assets/worker.glb
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          for (const name of ['casual','worker']) {
+            const b=readFileSync('/tmp/last-luas-assets/'+name+'.glb');
+            if (b.toString('ascii',0,4)!=='glTF') throw new Error(name+' is not GLB');
+            const jsonLength=b.readUInt32LE(12);
+            const gltf=JSON.parse(b.subarray(20,20+jsonLength).toString('utf8'));
+            const clips=(gltf.animations||[]).map(a=>a.name||'unnamed');
+            console.log(name+' animations:',clips.join(' | '));
+            for (const wanted of ['walk','run','idle']) {
+              if (!clips.some(n=>n.toLowerCase().includes(wanted))) throw new Error(name+' has no '+wanted+' animation');
+            }
+          }
+          NODE
+
+      - name: Render real-character smoke views
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/last-luas-real-characters
+          python3 -m http.server 4173 --directory public >/tmp/last-luas-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid 2>/dev/null || true' EXIT
+          for i in {1..40}; do
+            if curl -fsS http://127.0.0.1:4173/games/last-luas/ >/dev/null; then break; fi
+            sleep 0.25
+          done
+          python scripts/last-luas-visual.py
+
+      - name: Full repository tests
+        run: npm test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: last-luas-real-character-smoke
+          path: /tmp/last-luas-real-characters/
+          if-no-files-found: warn
+          retention-days: 7

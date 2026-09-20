@@ -45,11 +45,58 @@ test('runtime-rendered nameboards and final Luas sequence are present',()=>{
   const source=read(game);
   assert.match(source,/function signMaterial/);
   assert.match(source,/Texture\(app\.graphicsDevice/);
-  for(const sign of ['ARKET wordmark','Hodges Figgis nameboard','Cafe en Seine nameboard','Dawson Lounge nameboard','Ivy nameboard','Dawson stop nameboard'])assert.match(source,new RegExp(sign));
+  for(const sign of ['ARKET real wordmark','Hodges Figgis real logo','Cafe en Seine real logo','Dawson Lounge real sign','Ivy real wordmark','Dawson stop nameboard'])assert.match(source,new RegExp(sign));
   assert.match(source,/DOORS CLOSING!/);
   assert.match(source,/THE LUAS IS MOVING!/);
   assert.match(source,/last-luas-best-v1/);
   assert.match(source,/camera\.camera\.fov/);
+});
+
+test('v0.4 uses real pinned Quaternius character assets rather than primitive people',()=>{
+  const source=read(game);
+  assert.match(source,/fatal-funnel-public@29a6bdfd01ad175c389cbd0bac80c30f926ff96b/);
+  assert.match(source,/casual-character\.glb/);
+  assert.match(source,/worker\.glb/);
+  assert.match(source,/loadFromUrl\(CHARACTER_SOURCES\[kind\],'container'/);
+  assert.match(source,/instantiateRenderEntity/);
+  assert.match(source,/spawnCharacter/);
+  assert.match(source,/Idle_Neutral:8/);
+  assert.match(source,/Run:16/);
+  assert.match(source,/Walk:22/);
+  assert.doesNotMatch(source,/\|\|clips\[0\]/);
+  assert.match(source,/Runner character model/);
+  assert.match(source,/Tourist character model/);
+  assert.match(source,/Umbrella pedestrian model/);
+  assert.match(source,/Cyclist rider model/);
+  assert.match(source,/Delivery rider model/);
+  assert.doesNotMatch(source,/sphere\('head'/i);
+  assert.doesNotMatch(source,/box\('body'/i);
+  assert.match(source,/dataset\.lastLuasCharacterAssets/);
+  assert.match(source,/function buildObstacles/);
+  assert.match(source,/buildStreet\(\);buildObstacles\(\)/);
+  assert.match(source,/dataset\.lastLuasObstacleCount/);
+});
+
+test('v0.4 real Dawson Street facade pass is present',()=>{
+  const source=read(game),html=read(index);
+  for(const facade of ['ARKET curved glass panel','Hodges Figgis red brick facade','Hodges curved display','Cafe en Seine teal frontage','Dawson Lounge iconic red door','Royal Irish Academy facade',"St Ann's Church Dawson Street facade",'The Ivy Dawson Street facade'])assert.match(source,new RegExp(facade));
+  for(const logo of ['ARKET real wordmark','ARKET projecting sign','Hodges Figgis real logo','Hodges Figgis projecting sign','Cafe en Seine real logo','Cafe en Seine projecting sign','Dawson Lounge real sign','Dawson Lounge projecting sign','RIA nameboard','St Anns small plaque','Ivy real wordmark','Ivy projecting sign'])assert.match(source,new RegExp(logo));
+  assert.match(source,/function brandMaterial/);
+  assert.doesNotMatch(html,/class="rain"/);
+  assert.doesNotMatch(source,/Puddle/);
+});
+
+test('cyclists use an actual riding silhouette and detailed bicycle',()=>{
+  const source=read(game);
+  for(const part of ['Front bicycle wheel','Rear bicycle wheel','Bike top tube','Bike down tube','Bike seat tube','Bike seat','Bike handlebars','Cyclist rider hip pivot','Delivery rider hip pivot'])assert.match(source,new RegExp(part));
+  assert.match(source,/function poseRiderCharacter/);
+  for(const bone of ['Body','Torso','UpperLeg.L','UpperLeg.R','LowerLeg.L','LowerLeg.R','UpperArm.L','UpperArm.R','LowerArm.L','LowerArm.R'])assert.match(source,new RegExp(bone.replace('.', '\\.')));
+  assert.match(source,/clip:null/);
+});
+
+test('landmark callouts follow the real Dawson Street facades',()=>{
+  const source=read(game);
+  for(const callout of ['ARKET · 60 DAWSON STREET','HODGES FIGGIS · 56–58','CAFÉ EN SEINE · 39/40','THE DAWSON LOUNGE · 25','ROYAL IRISH ACADEMY · 19',"ST ANN'S CHURCH · 18",'THE IVY · 13–17'])assert.match(source,new RegExp(callout));
 });
 
 test('street polish includes distinct hazards and final sprint feedback',()=>{
@@ -65,11 +112,17 @@ test('street polish includes distinct hazards and final sprint feedback',()=>{
 test('release metadata matches the playable slice',()=>{
   const data=JSON.parse(read(release));
   assert.equal(data.game,'Last Luas');
-  assert.equal(data.version,'0.3.0');
+  assert.equal(data.version,'0.4.0');
   assert.equal(data.engine,'PlayCanvas 2.22.2');
   assert.equal(data.durationSeconds,90);
   assert.equal(data.location,'Dawson Street, Dublin');
   assert.equal(data.environment.raisedLuasPlatforms,true);
-  assert.equal(data.environment.puddleReflections,true);
+  assert.equal(data.environment.puddleReflections,false);
   assert.equal(data.environment.runtimeNameboards,true);
+  assert.equal(data.environment.realAnimatedCharacters,true);
+  assert.equal(data.environment.proceduralPeople,false);
+  assert.equal(data.thirdPartyAssets.license,'CC0 1.0');
+  assert.equal(data.environment.rain,false);
+  assert.equal(data.environment.realFacadeReferences,true);
+  assert.equal(data.environment.realBrandWordmarks,true);
 });
