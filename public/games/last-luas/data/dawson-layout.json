@@ -1,0 +1,372 @@
+{
+  "title": "Dawson Street map-derived route record",
+  "retrieved": "2026-09-19",
+  "source": "https://api.openstreetmap.org/api/0.6/map?bbox=-6.2601,53.3390,-6.2565,53.3432",
+  "licence": "ODbL-1.0",
+  "attribution": "\u00a9 OpenStreetMap contributors",
+  "licenceUrl": "https://www.openstreetmap.org/copyright",
+  "route": {
+    "start": {
+      "lat": 53.33977,
+      "lon": -6.25868
+    },
+    "boarding": {
+      "lat": 53.34226,
+      "lon": -6.258035
+    },
+    "direction": "northbound",
+    "platform": "western",
+    "approximateLengthMetres": 280.15,
+    "geometryNote": "Street is straightened in presentation. Featured business positions and platform derive from this extract. Surrounding facades, widths and furniture are artistic interpretations, not a cadastral or photographic survey."
+  },
+  "features": [
+    {
+      "type": "node",
+      "id": "3452493714",
+      "tags": {
+        "name": "Dawson",
+        "name:ga": "D\u00e1sain",
+        "operator": "Luas - Transdev Dublin Light Rail Limited",
+        "public_transport": "stop_position",
+        "railway": "tram_stop",
+        "ref": "998078",
+        "tram": "yes",
+        "website": "https://www.luas.ie/stops/dawson/",
+        "wheelchair": "yes"
+      },
+      "points": [
+        {
+          "lat": 53.342167,
+          "lon": -6.2579911
+        }
+      ]
+    },
+    {
+      "type": "node",
+      "id": "5892492050",
+      "tags": {
+        "addr:city": "Dublin",
+        "addr:country": "IE",
+        "addr:county": "Dublin",
+        "addr:housenumber": "13-17",
+        "addr:postcode": "D02 TF98",
+        "addr:street": "Dawson Street",
+        "amenity": "restaurant",
+        "brand": "The Ivy Collection",
+        "brand:wikidata": "Q108197462",
+        "contact:instagram": "https://www.instagram.com/theivydublin/",
+        "cuisine": "british",
+        "name": "The Ivy",
+        "opening_hours": "Mo-Th 07:00-00:30, Fr 07:00-00:30, Sa 09:00-00:30, Su,PH 09:00-12:30",
+        "operator": "The Ivy Collection",
+        "outdoor_seating": "no",
+        "phone": "+353 1 695 0744",
+        "smoking": "outside",
+        "toilets:wheelchair": "yes",
+        "website": "https://theivydublin.com/",
+        "website:menu": "https://ivy-menus.theloyaltyco.app/wp-content/uploads/2023/02/TheIVYCollection_ala-carte_Dublin_Spring_020323.pdf",
+        "wheelchair": "yes"
+      },
+      "points": [
+        {
+          "lat": 53.3414179,
+          "lon": -6.258002
+        }
+      ]
+    },
+    {
+      "type": "node",
+      "id": "7176331798",
+      "tags": {
+        "name": "Dawson",
+        "name:ga": "D\u00e1sain",
+        "operator": "Luas - Transdev Dublin Light Rail Limited",
+        "public_transport": "stop_position",
+        "railway": "tram_stop",
+        "ref": "998078",
+        "tram": "yes",
+        "website": "https://www.luas.ie/stops/dawson/",
+        "wheelchair": "yes"
+      },
+      "points": [
+        {
+          "lat": 53.3420749,
+          "lon": -6.2579487
+        }
+      ]
+    },
+    {
+      "type": "node",
+      "id": "10601110758",
+      "tags": {
+        "addr:city": "Dublin",
+        "addr:country": "IE",
+        "addr:county": "Dublin",
+        "addr:housenumber": "39-40",
+        "addr:postcode": "D02 X067",
+        "addr:street": "Dawson Street",
+        "amenity": "bar",
+        "contact:phone": "+35316774567",
+        "diet:vegan": "yes",
+        "food": "yes",
+        "name": "Caf\u00e9 en Seine",
+        "operator": "Mercantile Group",
+        "outdoor_seating": "yes",
+        "toilets:wheelchair": "yes",
+        "website": "https://www.cafeenseine.ie/",
+        "website:menu": "https://www.cafeenseine.ie/menus/",
+        "wheelchair": "yes"
+      },
+      "points": [
+        {
+          "lat": 53.3407232,
+          "lon": -6.2585998
+        }
+      ]
+    },
+    {
+      "type": "way",
+      "id": "268846475",
+      "tags": {
+        "addr:city": "Dublin",
+        "addr:housenumber": "56-58",
+        "addr:postcode": "D02 XE81",
+        "addr:street": "Dawson Street",
+        "brand": "Waterstones",
+        "building": "yes",
+        "building:levels": "4",
+        "check_date": "2026-02-06",
+        "contact:facebook": "https://www.facebook.com/hodges.figgis/",
+        "email": "enquiries@hodgesfiggis.ie",
+        "heritage": "4",
+        "name": "Hodges Figgis",
+        "not:brand:wikidata": "Q151779",
+        "opening_hours": "Mo-We 09:00-19:00; Th 09:00-20:00; Fr 09:00-19:00; Sa 09:00-18:00; Su 12:00-18:00",
+        "operator": "Waterstones",
+        "phone": "+353 1 677 4754",
+        "shop": "books",
+        "website": "https://www.waterstones.com/bookshops/hodges-figgis",
+        "wheelchair": "yes"
+      },
+      "points": [
+        {
+          "lat": 53.3422961,
+          "lon": -6.2581187
+        },
+        {
+          "lat": 53.342283,
+          "lon": -6.2581096
+        },
+        {
+          "lat": 53.3421875,
+          "lon": -6.258138
+        },
+        {
+          "lat": 53.3421788,
+          "lon": -6.2581548
+        },
+        {
+          "lat": 53.3422075,
+          "lon": -6.2584166
+        },
+        {
+          "lat": 53.342242,
+          "lon": -6.2587392
+        },
+        {
+          "lat": 53.3422965,
+          "lon": -6.2587227
+        },
+        {
+          "lat": 53.3423548,
+          "lon": -6.258705
+        },
+        {
+          "lat": 53.3422961,
+          "lon": -6.2581187
+        }
+      ]
+    },
+    {
+      "type": "way",
+      "id": "268846478",
+      "tags": {
+        "addr:city": "Dublin",
+        "addr:housenumber": "54",
+        "addr:street": "Dawson Street",
+        "amenity": "fast_food",
+        "brand": "Pret A Manger",
+        "brand:wikidata": "Q2109109",
+        "building": "yes",
+        "cuisine": "sandwich",
+        "internet_access": "wlan",
+        "level": "0",
+        "name": "Pret A Manger",
+        "opening_hours": "Mo-Su 07:00-18:00",
+        "outdoor_seating": "yes",
+        "phone": "+353 1 517 0157",
+        "short_name": "Pret",
+        "takeaway": "yes",
+        "website": "http://pret.com"
+      },
+      "points": [
+        {
+          "lat": 53.3420518,
+          "lon": -6.2581896
+        },
+        {
+          "lat": 53.3419876,
+          "lon": -6.2582086
+        },
+        {
+          "lat": 53.3420099,
+          "lon": -6.2584202
+        },
+        {
+          "lat": 53.3420405,
+          "lon": -6.2584111
+        },
+        {
+          "lat": 53.3420464,
+          "lon": -6.2584672
+        },
+        {
+          "lat": 53.3420801,
+          "lon": -6.2584572
+        },
+        {
+          "lat": 53.3420518,
+          "lon": -6.2581896
+        }
+      ]
+    },
+    {
+      "type": "way",
+      "id": "269121322",
+      "tags": {
+        "addr:city": "Dublin",
+        "addr:housename": "Academy House",
+        "addr:housenumber": "19",
+        "addr:postal_district": "2",
+        "addr:street": "Dawson Street",
+        "building": "yes",
+        "building:colour": "brown",
+        "building:levels": "4",
+        "building:levels:underground": "1",
+        "heritage": "4",
+        "material": "brick",
+        "name": "Royal Irish Academy",
+        "tourism": "attraction",
+        "website": "https://www.ria.ie/",
+        "wikidata": "Q110587",
+        "wikimedia_commons": "Category:Royal Irish Academy",
+        "wikipedia": "en:Royal Irish Academy"
+      },
+      "points": [
+        {
+          "lat": 53.3408059,
+          "lon": -6.2581991
+        },
+        {
+          "lat": 53.3406767,
+          "lon": -6.2582383
+        },
+        {
+          "lat": 53.3406085,
+          "lon": -6.2576076
+        },
+        {
+          "lat": 53.3405933,
+          "lon": -6.2574664
+        },
+        {
+          "lat": 53.3407156,
+          "lon": -6.2574293
+        },
+        {
+          "lat": 53.3407484,
+          "lon": -6.2577327
+        },
+        {
+          "lat": 53.3407156,
+          "lon": -6.2577426
+        },
+        {
+          "lat": 53.3407359,
+          "lon": -6.2579307
+        },
+        {
+          "lat": 53.3407757,
+          "lon": -6.2579186
+        },
+        {
+          "lat": 53.3407917,
+          "lon": -6.2580672
+        },
+        {
+          "lat": 53.3408059,
+          "lon": -6.2581991
+        }
+      ]
+    },
+    {
+      "type": "way",
+      "id": "525717797",
+      "tags": {
+        "bench": "no",
+        "departures_board": "realtime",
+        "footway": "sidewalk",
+        "highway": "footway",
+        "operator": "Luas - Transdev Dublin Light Rail Limited",
+        "public_transport": "platform",
+        "railway": "platform",
+        "shelter": "no",
+        "surface": "paving_stones",
+        "tactile_paving": "yes",
+        "tram": "yes"
+      },
+      "points": [
+        {
+          "lat": 53.3418732,
+          "lon": -6.2579554
+        },
+        {
+          "lat": 53.3423363,
+          "lon": -6.2578337
+        }
+      ]
+    },
+    {
+      "type": "way",
+      "id": "525717798",
+      "tags": {
+        "bench": "no",
+        "bin": "yes",
+        "departures_board": "realtime",
+        "footway": "sidewalk",
+        "highway": "footway",
+        "operator": "Luas - Transdev Dublin Light Rail Limited",
+        "public_transport": "platform",
+        "railway": "platform",
+        "shelter": "no",
+        "surface": "paved",
+        "tactile_paving": "yes",
+        "tram": "yes"
+      },
+      "points": [
+        {
+          "lat": 53.3419607,
+          "lon": -6.2581247
+        },
+        {
+          "lat": 53.3424548,
+          "lon": -6.2579799
+        }
+      ]
+    }
+  ],
+  "excludedFromRun": {
+    "ARKET": "60 Dawson Street is north of this boarding endpoint. It is not relocated into the course."
+  },
+  "artworkLicence": "Map database licence does not license shop marks or the independently authored game drawings."
+}
