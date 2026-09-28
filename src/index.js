@@ -322,6 +322,7 @@ async function saveMenuSuggestion(request,env,user){
   const title=text(b.title,140),description=text(b.description,1800),notes=text(b.notes,1000),target=text(b.targetWeekStart,10),mealType=text(b.mealType,20).toLowerCase();
   if(!title)return apiJson({error:'Give the menu idea a name.'},400);
   if(!/^\d{4}-\d{2}-\d{2}$/.test(target))return apiJson({error:'Choose a target week.'},400);
+  if(new Date(target+'T00:00:00Z').getUTCDay()!==1)return apiJson({error:'The target week must start on a Monday.'},400);
   if(!['breakfast','lunch','dinner','other'].includes(mealType))return apiJson({error:'Choose breakfast, lunch, dinner or other.'},400);
   const sid=id('menusug'),t=now();
   await env.DB.prepare('INSERT INTO menu_suggestions (id,user_id,target_week_start,meal_type,title,description,notes,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(sid,user.id,target,mealType,title,description,notes,'Suggested',t,t).run();
