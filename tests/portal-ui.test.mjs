@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {navigationHtml,photo} from '../public/portal/ui.mjs';
+test('family contributors see their upload library but not private review or note links',()=>{const session={user:{displayName:'Guest'},permissions:{isCore:false,isOwner:false,sections:{family:2,menus:0,plans:0,images:0}},preferences:{}};const html=navigationHtml(session,'/family-tree/');assert.match(html,/Image Library/);assert.doesNotMatch(html,/href="\/menus\/reviews\/"|href="\/our-space\/notes\/"|href="\/scrapbook\//);});
+test('crop accepts zero as an edge rather than replacing it with the centre',()=>{assert.match(photo('id','name',{x:0,y:100}),/object-position:0% 100%/);});
