@@ -4,11 +4,12 @@ import {readFileSync} from 'node:fs';
 
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 
-test('menu room migration stores suggestions reviews plating and photos',()=>{
-  const sql=read('migrations/0004_menu_room.sql');
-  for(const name of ['menu_meals','menu_suggestions','menu_reviews','menu_review_photos'])assert.match(sql,new RegExp('CREATE TABLE IF NOT EXISTS '+name));
-  assert.match(sql,/plating_rating INTEGER NOT NULL CHECK\(plating_rating BETWEEN 1 AND 5\)/);
-  assert.match(sql,/overall_rating INTEGER NOT NULL CHECK\(overall_rating BETWEEN 1 AND 6\)/);
+test('menu room uses the existing private R2 bucket instead of a new database schema',()=>{
+  const source=read('src/index.js');
+  assert.match(source,/MENU_ROOM_KEY='menu-room\/private-data-v1\.json'/);
+  assert.match(source,/env\.MEDIA\.get\(MENU_ROOM_KEY\)/);
+  assert.match(source,/env\.MEDIA\.put\(MENU_ROOM_KEY/);
+  assert.doesNotMatch(source,/FROM menu_meals|FROM menu_reviews|FROM menu_suggestions/);
 });
 
 test('menu room APIs are authenticated private account routes',()=>{
