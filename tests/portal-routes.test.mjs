@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+let routes;try{routes=await import('../public/portal/routes.mjs');}catch{}
+test('every section and settings item is an addressable page',()=>{assert.ok(routes?.navigation,'Navigation registry required.');for(const g of routes.navigation)for(const [label,path] of g.links){assert.ok(path.startsWith('/'));assert.ok(routes.resolve(path),label+' '+path);}for(const path of ['/family-tree/people/abc/photos/','/scrapbook/albums/abc/settings/','/menus/recipes/abc/edit/','/admin/users/abc/permissions/','/settings/security/'])assert.ok(routes.resolve(path),path);});
+test('existing game URLs and dated archives are not swallowed by portal router',()=>{assert.ok(routes);assert.equal(routes.resolve('/games/wacky-races/'),null);assert.equal(routes.resolve('/menus/archive/2026-09-28/'),null);assert.equal(routes.resolve('/not-a-real-page/'),null);});
+test('search and individual products have bookmarkable routes',()=>{assert.equal(routes.resolve('/our-space/search/').group,'home');assert.equal(routes.resolve('/shop/products/gift/').group,'core');});
