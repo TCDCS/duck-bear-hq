@@ -26,9 +26,8 @@ function buildStars(rootId,count,name){
   }
 }
 function showOverallMeaning(n){
-  const m=$('overallMeaning');
-  if(n===5)m.textContent='5 stars — I want to kiss you';
-  else if(n===6)m.textContent='6 stars — I want to fuck you';
+  const m=$('overallMeaning'),special=state?.ratingLabels?.[n];
+  if(special)m.textContent=n+' stars — '+special;
   else m.textContent=n? n+' star'+(n===1?'':'s') : 'Choose 1–6 stars.';
 }
 function setStars(rootId,name,value){
