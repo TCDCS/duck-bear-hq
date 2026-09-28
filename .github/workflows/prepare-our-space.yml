@@ -1,0 +1,30 @@
+name: Prepare Our Space preview
+on:
+  push:
+    branches: [feature/our-space-7]
+    paths: ['.github/workflows/prepare-our-space.yml', 'scripts/portal-integrate.mjs']
+permissions:
+  contents: write
+jobs:
+  integrate:
+    if: github.ref == 'refs/heads/feature/our-space-7'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/our-space-7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply exact integration changes
+        run: |
+          node scripts/portal-integrate.mjs
+          node --check src/portal/server.mjs
+          node --test tests/portal*.test.mjs
+          git config user.name 'Duck and Bear build'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/worker-games.js src/portal/server.mjs wrangler.jsonc public/portal/friends.svg
+          if ! git diff --cached --quiet; then
+            git commit -m "Apply tested portal route integration"
+            git push origin HEAD:feature/our-space-7
+          fi
