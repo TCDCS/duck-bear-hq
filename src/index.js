@@ -63,6 +63,12 @@ async function routeApi(request, env, url) {
   m = path.match(/^\/api\/badges\/([^/]+)\/unlock$/);
   if (m && request.method === 'POST') return unlockSecretBadge(env, auth.user, decodeURIComponent(m[1]));
 
+  if (path === '/api/menus/dashboard' && request.method === 'GET') return menuDashboard(env, auth.user);
+  if (path === '/api/menus/suggestions' && request.method === 'POST') return saveMenuSuggestion(request, env, auth.user);
+  m = path.match(/^\/api\/menus\/suggestions\/([^/]+)\/status$/);
+  if (m && request.method === 'POST') return updateMenuSuggestionStatus(request, env, auth.user, decodeURIComponent(m[1]));
+  if (path === '/api/menus/reviews' && request.method === 'POST') return saveMenuReview(request, env, auth.user);
+
   if (path === '/api/fun' && request.method === 'GET') return funSnapshot(env, auth.user);
   if (path === '/api/fun/dates' && request.method === 'POST') return saveDate(request, env, auth.user);
   if (path === '/api/fun/room-service' && request.method === 'POST') return roomService(request, env, auth.user);
@@ -285,9 +291,105 @@ async function saveComplaint(request,env,user){ const b=await bodyJson(request);
 async function saveAdventure(request,env,user){ const b=await bodyJson(request); const title=text(b.title,120); if(!title)return apiJson({error:'Adventure title is required.'},400); const aid=id('adv'),t=now(); await env.DB.prepare('INSERT INTO adventures (id,user_id,title,detail,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?)').bind(aid,user.id,title,text(b.detail,1000),'Suggested',t,t).run(); await audit(env,user.id,'adventure.create','adventure',aid,{}); return apiJson({ok:true,fun:await funData(env,user.id)},201); }
 async function updateAdventureStatus(request,env,user,adventureId){ const a=await env.DB.prepare('SELECT * FROM adventures WHERE id=?').bind(adventureId).first(); if(!a)return apiJson({error:'Adventure not found.'},404); if(user.role!=='admin'&&a.user_id!==user.id)return apiJson({error:'Not allowed.'},403); const b=await bodyJson(request); const status=text(b.status,30); if(!['Suggested','Planned','Completed'].includes(status))return apiJson({error:'Invalid status.'},400); const t=now(); if(status==='Completed'&&a.status!=='Completed'){ try{await env.DB.batch([env.DB.prepare('UPDATE adventures SET status=?,completed_at=?,updated_at=? WHERE id=?').bind(status,t,t,adventureId),loyaltyTxStatement(env,{txId:id('tx'),accountUserId:a.user_id,actorUserId:user.id,type:'earn',label:'Adventure completed',delta:50,referenceType:'adventure',referenceId:adventureId,note:a.title,createdAt:t})]);}catch(e){if(!String(e).toLowerCase().includes('unique'))throw e;} await awardBadge(env,a.user_id,'adventurer'); await maybePointBadges(env,a.user_id,await currentBalance(env,a.user_id)); } else { await env.DB.prepare('UPDATE adventures SET status=?,completed_at=?,updated_at=? WHERE id=?').bind(status,status==='Completed'?(a.completed_at||t):null,t,adventureId).run(); } await audit(env,user.id,'adventure.status','adventure',adventureId,{status}); return apiJson({ok:true,fun:await funData(env,a.user_id),loyalty:await loyaltyData(env,a.user_id)}); }
 
-async function uploadMedia(request,env,user){ const form=await request.formData(); const file=form.get('file'); if(!(file instanceof File))return apiJson({error:'Choose a file.'},400); if(file.size<1||file.size>MAX_UPLOAD_BYTES)return apiJson({error:'Files must be 8 MB or smaller.'},400); if(!ALLOWED_UPLOAD_TYPES.has(file.type))return apiJson({error:'Allowed: JPG, PNG, WebP, GIF, MP4, WebM or PDF.'},400); const ext=extensionFor(file.type); const key=`memories/${new Date().toISOString().slice(0,10)}/${user.id}/${crypto.randomUUID()}${ext}`; await env.MEDIA.put(key,file.stream(),{httpMetadata:{contentType:file.type},customMetadata:{originalName:text(file.name,160),uploadedBy:user.id}}); await audit(env,user.id,'media.upload','r2_object',key,{name:text(file.name,160),size:file.size,type:file.type}); return apiJson({ok:true,attachment:{key,name:text(file.name,160),type:file.type,size:file.size,url:`/media/${key}`}},201); }
+function menuRatingLabel(rating){
+  if(rating===6)return 'I want to fuck you';
+  if(rating===5)return 'I want to kiss you';
+  return rating===1?'1 star':`${rating} stars`;
+}
+function strictRating(value,min,max,label){
+  const n=Number(value);
+  if(!Number.isInteger(n)||n<min||n>max)throw new HttpError(400,`${label} must be between ${min} and ${max}.`);
+  return n;
+}
+async function menuDashboard(env,user){
+  const meals=(await env.DB.prepare(`SELECT * FROM menu_meals ORDER BY week_start DESC,meal_date,CASE meal_type WHEN 'breakfast' THEN 1 WHEN 'lunch' THEN 2 WHEN 'dinner' THEN 3 ELSE 4 END,display_name`).all()).results;
+  const reviewRows=(await env.DB.prepare(`SELECT r.*,u.display_name FROM menu_reviews r JOIN users u ON u.id=r.user_id ORDER BY r.updated_at DESC LIMIT 200`).all()).results;
+  const reviews=[];
+  for(const row of reviewRows){
+    const photos=(await env.DB.prepare('SELECT id,r2_key,file_name,mime_type,file_size,created_at FROM menu_review_photos WHERE review_id=? ORDER BY created_at').bind(row.id).all()).results;
+    reviews.push({...row,overall_label:menuRatingLabel(Number(row.overall_rating)),photos:photos.map(p=>({...p,url:`/media/${p.r2_key}`}))});
+  }
+  let suggestions;
+  if(user.role==='admin'){
+    suggestions=(await env.DB.prepare(`SELECT s.*,u.display_name FROM menu_suggestions s JOIN users u ON u.id=s.user_id ORDER BY s.target_week_start DESC,s.created_at DESC LIMIT 200`).all()).results;
+  }else{
+    suggestions=(await env.DB.prepare(`SELECT s.*,u.display_name FROM menu_suggestions s JOIN users u ON u.id=s.user_id WHERE s.user_id=? ORDER BY s.target_week_start DESC,s.created_at DESC LIMIT 100`).bind(user.id).all()).results;
+  }
+  return apiJson({user:safeUser(user),meals,reviews,suggestions,ratingLabels:{5:'I want to kiss you',6:'I want to fuck you'}});
+}
+async function saveMenuSuggestion(request,env,user){
+  const b=await bodyJson(request);
+  const title=text(b.title,140),description=text(b.description,1800),notes=text(b.notes,1000),target=text(b.targetWeekStart,10),mealType=text(b.mealType,20).toLowerCase();
+  if(!title)return apiJson({error:'Give the menu idea a name.'},400);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(target))return apiJson({error:'Choose a target week.'},400);
+  if(!['breakfast','lunch','dinner','other'].includes(mealType))return apiJson({error:'Choose breakfast, lunch, dinner or other.'},400);
+  const sid=id('menusug'),t=now();
+  await env.DB.prepare('INSERT INTO menu_suggestions (id,user_id,target_week_start,meal_type,title,description,notes,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(sid,user.id,target,mealType,title,description,notes,'Suggested',t,t).run();
+  await audit(env,user.id,'menu.suggestion.create','menu_suggestion',sid,{targetWeekStart:target,mealType});
+  return apiJson({ok:true,dashboard:await menuDashboardData(env,user)},201);
+}
+async function updateMenuSuggestionStatus(request,env,user,suggestionId){
+  if(user.role!=='admin')return apiJson({error:'Admin access required.'},403);
+  const b=await bodyJson(request),status=text(b.status,20);
+  if(!['Suggested','Shortlisted','Planned','Skipped'].includes(status))return apiJson({error:'Invalid menu suggestion status.'},400);
+  const existing=await env.DB.prepare('SELECT id FROM menu_suggestions WHERE id=?').bind(suggestionId).first();
+  if(!existing)return apiJson({error:'Menu suggestion not found.'},404);
+  await env.DB.prepare('UPDATE menu_suggestions SET status=?,updated_at=? WHERE id=?').bind(status,now(),suggestionId).run();
+  await audit(env,user.id,'menu.suggestion.status','menu_suggestion',suggestionId,{status});
+  return apiJson({ok:true,dashboard:await menuDashboardData(env,user)});
+}
+async function menuDashboardData(env,user){
+  const meals=(await env.DB.prepare(`SELECT * FROM menu_meals ORDER BY week_start DESC,meal_date,CASE meal_type WHEN 'breakfast' THEN 1 WHEN 'lunch' THEN 2 WHEN 'dinner' THEN 3 ELSE 4 END,display_name`).all()).results;
+  const reviewRows=(await env.DB.prepare(`SELECT r.*,u.display_name FROM menu_reviews r JOIN users u ON u.id=r.user_id ORDER BY r.updated_at DESC LIMIT 200`).all()).results;
+  const reviews=[];
+  for(const row of reviewRows){
+    const photos=(await env.DB.prepare('SELECT id,r2_key,file_name,mime_type,file_size,created_at FROM menu_review_photos WHERE review_id=? ORDER BY created_at').bind(row.id).all()).results;
+    reviews.push({...row,overall_label:menuRatingLabel(Number(row.overall_rating)),photos:photos.map(p=>({...p,url:`/media/${p.r2_key}`}))});
+  }
+  const suggestions=user.role==='admin'
+    ?(await env.DB.prepare(`SELECT s.*,u.display_name FROM menu_suggestions s JOIN users u ON u.id=s.user_id ORDER BY s.target_week_start DESC,s.created_at DESC LIMIT 200`).all()).results
+    :(await env.DB.prepare(`SELECT s.*,u.display_name FROM menu_suggestions s JOIN users u ON u.id=s.user_id WHERE s.user_id=? ORDER BY s.target_week_start DESC,s.created_at DESC LIMIT 100`).bind(user.id).all()).results;
+  return {user:safeUser(user),meals,reviews,suggestions,ratingLabels:{5:'I want to kiss you',6:'I want to fuck you'}};
+}
+async function saveMenuReview(request,env,user){
+  const b=await bodyJson(request),mealId=text(b.mealId,120);
+  const meal=await env.DB.prepare('SELECT * FROM menu_meals WHERE id=?').bind(mealId).first();
+  if(!meal)return apiJson({error:'Choose a meal from the menu.'},404);
+  let overall,taste,plating;
+  try{
+    overall=strictRating(b.overallRating,1,6,'Overall rating');
+    taste=strictRating(b.tasteRating,1,5,'Taste rating');
+    plating=strictRating(b.platingRating,1,5,'Plating rating');
+  }catch(err){if(err instanceof HttpError)return apiJson({error:err.message},err.status);throw err;}
+  const comment=text(b.comment,2500),attachments=Array.isArray(b.attachments)?b.attachments.slice(0,4):[];
+  for(const a of attachments){
+    const key=text(a?.key,500),type=text(a?.type,100),size=Number(a?.size||0);
+    if(!key.startsWith('menu-reviews/')||!key.includes(`/${user.id}/`))return apiJson({error:'Invalid menu review photo.'},400);
+    if(!['image/jpeg','image/png','image/webp','image/gif'].includes(type))return apiJson({error:'Menu reviews accept image files only.'},400);
+    if(!Number.isFinite(size)||size<1||size>MAX_UPLOAD_BYTES)return apiJson({error:'Invalid menu review photo size.'},400);
+  }
+  const existing=await env.DB.prepare('SELECT * FROM menu_reviews WHERE meal_id=? AND user_id=?').bind(mealId,user.id).first();
+  const t=now(),rid=existing?.id||id('menurev');
+  if(existing){
+    await env.DB.prepare('UPDATE menu_reviews SET overall_rating=?,taste_rating=?,plating_rating=?,comment=?,updated_at=? WHERE id=?').bind(overall,taste,plating,comment,t,rid).run();
+  }else{
+    await env.DB.prepare('INSERT INTO menu_reviews (id,meal_id,user_id,overall_rating,taste_rating,plating_rating,comment,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)').bind(rid,mealId,user.id,overall,taste,plating,comment,t,t).run();
+  }
+  const count=await env.DB.prepare('SELECT COUNT(*) AS n FROM menu_review_photos WHERE review_id=?').bind(rid).first();
+  const remaining=Math.max(0,4-Number(count?.n||0));
+  for(const a of attachments.slice(0,remaining)){
+    const key=text(a.key,500);
+    const dup=await env.DB.prepare('SELECT 1 AS x FROM menu_review_photos WHERE r2_key=?').bind(key).first();
+    if(dup)continue;
+    await env.DB.prepare('INSERT INTO menu_review_photos (id,review_id,r2_key,file_name,mime_type,file_size,created_at) VALUES (?,?,?,?,?,?,?)').bind(id('menuphoto'),rid,key,text(a.name,160),text(a.type,100),Number(a.size),t).run();
+  }
+  await audit(env,user.id,'menu.review.save','menu_review',rid,{mealId,overall,taste,plating});
+  return apiJson({ok:true,dashboard:await menuDashboardData(env,user)},existing?200:201);
+}
+
+async function uploadMedia(request,env,user){ const form=await request.formData(); const file=form.get('file'); if(!(file instanceof File))return apiJson({error:'Choose a file.'},400); if(file.size<1||file.size>MAX_UPLOAD_BYTES)return apiJson({error:'Files must be 8 MB or smaller.'},400); if(!ALLOWED_UPLOAD_TYPES.has(file.type))return apiJson({error:'Allowed: JPG, PNG, WebP, GIF, MP4, WebM or PDF.'},400); const purpose=text(form.get('purpose'),40); const menuReview=purpose==='menu-review'; if(menuReview&&!['image/jpeg','image/png','image/webp','image/gif'].includes(file.type))return apiJson({error:'Menu reviews accept JPG, PNG, WebP or GIF images.'},400); const ext=extensionFor(file.type),folder=menuReview?'menu-reviews':'memories'; const key=`${folder}/${new Date().toISOString().slice(0,10)}/${user.id}/${crypto.randomUUID()}${ext}`; await env.MEDIA.put(key,file.stream(),{httpMetadata:{contentType:file.type},customMetadata:{originalName:text(file.name,160),uploadedBy:user.id,purpose:menuReview?'menu-review':'memory'}}); await audit(env,user.id,menuReview?'menu.media.upload':'media.upload','r2_object',key,{name:text(file.name,160),size:file.size,type:file.type}); return apiJson({ok:true,attachment:{key,name:text(file.name,160),type:file.type,size:file.size,url:`/media/${key}`}},201); }
 function extensionFor(type){ return ({'image/jpeg':'.jpg','image/png':'.png','image/webp':'.webp','image/gif':'.gif','video/mp4':'.mp4','video/webm':'.webm','application/pdf':'.pdf'})[type]||''; }
-async function serveMedia(request,env,url){ const auth=await getAuth(request,env); if(!auth)return new Response('Unauthorized',{status:401,headers:{'Cache-Control':'no-store'}}); const key=decodeURIComponent(url.pathname.slice('/media/'.length)); if(!key.startsWith('memories/'))return new Response('Not found',{status:404}); const obj=await env.MEDIA.get(key); if(!obj)return new Response('Not found',{status:404}); const h=new Headers(); obj.writeHttpMetadata(h); h.set('etag',obj.httpEtag); h.set('Cache-Control','private, max-age=300'); h.set('X-Content-Type-Options','nosniff'); h.set('Content-Security-Policy',"default-src 'none'; sandbox"); return new Response(obj.body,{headers:h}); }
+async function serveMedia(request,env,url){ const auth=await getAuth(request,env); if(!auth)return new Response('Unauthorized',{status:401,headers:{'Cache-Control':'no-store'}}); const key=decodeURIComponent(url.pathname.slice('/media/'.length)); if(!key.startsWith('memories/')&&!key.startsWith('menu-reviews/'))return new Response('Not found',{status:404}); const obj=await env.MEDIA.get(key); if(!obj)return new Response('Not found',{status:404}); const h=new Headers(); obj.writeHttpMetadata(h); h.set('etag',obj.httpEtag); h.set('Cache-Control','private, max-age=300'); h.set('X-Content-Type-Options','nosniff'); h.set('Content-Security-Policy',"default-src 'none'; sandbox"); return new Response(obj.body,{headers:h}); }
 async function saveMemory(request,env,user){ const b=await bodyJson(request); const title=text(b.title,120); if(!title)return apiJson({error:'Memory title is required.'},400); let key=null,name=null,type=null,size=null; if(b.attachment?.key){ key=text(b.attachment.key,500); if(!key.includes(`/${user.id}/`) && user.role!=='admin')return apiJson({error:'Invalid attachment.'},400); name=text(b.attachment.name,160);type=text(b.attachment.type,100);size=int(b.attachment.size,0,MAX_UPLOAD_BYTES,0); }
   const mid=id('mem'),t=now(); await env.DB.prepare('INSERT INTO memories (id,user_id,title,body,happened_on,mood,attachment_key,attachment_name,attachment_type,attachment_size,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').bind(mid,user.id,title,text(b.body,3000),text(b.happenedOn,20)||null,text(b.mood,10)||'💚',key,name,type,size,t,t).run(); await audit(env,user.id,'memory.create','memory',mid,{}); return apiJson({ok:true,fun:await funData(env,user.id)},201); }
 async function deleteMemory(env,user,memoryId){ const m=await env.DB.prepare('SELECT * FROM memories WHERE id=?').bind(memoryId).first(); if(!m)return apiJson({error:'Memory not found.'},404); if(user.role!=='admin'&&m.user_id!==user.id)return apiJson({error:'Not allowed.'},403); if(m.attachment_key)await env.MEDIA.delete(m.attachment_key); await env.DB.prepare('DELETE FROM memories WHERE id=?').bind(memoryId).run(); await audit(env,user.id,'memory.delete','memory',memoryId,{}); return apiJson({ok:true,fun:await funData(env,user.id)}); }
