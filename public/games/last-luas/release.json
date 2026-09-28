@@ -1,7 +1,7 @@
 {
   "game": "Last Luas",
-  "version": "0.3.0",
-  "status": "playable vertical slice — street identity and finish polish",
+  "version": "0.4.0",
+  "status": "visual rebuild preview — real characters and real Dawson Street facade pass",
   "engine": "PlayCanvas 2.22.2",
   "location": "Dawson Street, Dublin",
   "durationSeconds": 90,
@@ -9,17 +9,30 @@
     "keyboard",
     "touch"
   ],
-  "artDirection": "high-detail cartoon Dublin, wet evening",
+  "artDirection": "playful 3D cartoon Dublin based on real Dawson Street architecture",
   "environment": {
-    "wetRoad": true,
-    "puddleReflections": true,
+    "wetRoad": false,
+    "puddleReflections": false,
     "overheadLuasWires": true,
     "ambientPedestrians": true,
     "streetTreesAndPlanters": true,
     "raisedLuasPlatforms": true,
     "platformWhiteEdgeLines": true,
     "glassShelters": true,
-    "runtimeNameboards": true
+    "runtimeNameboards": true,
+    "realAnimatedCharacters": true,
+    "characterAssetCount": 2,
+    "proceduralPeople": false,
+    "rain": false,
+    "realFacadeReferences": true,
+    "realBrandWordmarks": true,
+    "brighterStreetLighting": true,
+    "slimmedStreetPoles": true,
+    "dryCartoonAsphalt": true,
+    "realInstitutionalFacades": [
+      "Royal Irish Academy",
+      "St Ann's Church"
+    ]
   },
   "landmarks": [
     "ARKET Dawson Street",
@@ -42,5 +55,11 @@
     "camera FOV sprint effect",
     "local best catch time"
   ],
-  "notes": "v0.3 adds runtime-rendered Dawson Street nameboards, a stronger door-closing/Luas pull-away finale and camera/audio urgency. Street geometry remains stylised and replaceable with final Blender/GLB facades."
+  "notes": "v0.4 keeps the stable runner gameplay, removes the rain and wet-road look, enlarges the real animated Quaternius characters, brightens the street, improves bicycle riding poses, and rebuilds ARKET, Hodges Figgis, Café en Seine, The Dawson Lounge, Royal Irish Academy, St Ann's Church and The Ivy from real Dawson Street frontage references. Signage uses recognisable public-facing wordmarks, colours, projecting signs and street numbers rather than generic labels.",
+  "thirdPartyAssets": {
+    "characters": "Quaternius Ultimate Modular Men",
+    "license": "CC0 1.0",
+    "pinnedSourceCommit": "29a6bdfd01ad175c389cbd0bac80c30f926ff96b",
+    "delivery": "jsDelivr pinned GitHub snapshot"
+  }
 }
