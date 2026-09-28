@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12090b">
+  <meta name="description" content="Private Duck & Bear Menu Room for weekly meal ideas, ratings, photos and reviews.">
+  <title>Menu Room — Duck & Bear</title>
+  <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/home.css?v=4">
+  <link rel="stylesheet" href="/menus/menus.css?v=2">
+  <link rel="stylesheet" href="/menus/member/member.css?v=1">
+  <script defer src="/menus/member/member.js?v=1"></script>
+</head>
+<body class="menu-page">
+<a class="skip-link" href="#main">Skip to Menu Room</a>
+
+<header class="public-header dungeon-header">
+  <a class="public-brand" href="/" aria-label="Duck and Bear home">
+    <span class="mascots" aria-hidden="true">🐤🐻</span>
+    <span>Duck &amp; Bear<small>GOOD TIMES. QUESTIONABLE DRIVING.</small></span>
+  </a>
+  <nav aria-label="Main navigation">
+    <a href="/games/">Games</a>
+    <a href="/menus/" aria-current="page">Menus</a>
+    <a href="/menus/archive/">Archive</a>
+    <a href="/info/">Info</a>
+  </nav>
+  <a class="account-link" href="/account">My account <span aria-hidden="true">↗</span></a>
+</header>
+
+<main id="main" class="menu-main member-main">
+  <section class="member-hero">
+    <p class="menu-kicker">SIGNED-IN ONLY</p>
+    <h1>The Menu <em>Room</em></h1>
+    <p>Suggest next week’s food, rate what was served, upload photos and leave the verdict.</p>
+    <div class="privacy-chip">🔒 Reviews and photos stay inside the signed-in area.</div>
+  </section>
+
+  <section id="loginGate" class="member-panel login-gate" hidden>
+    <p class="menu-kicker">PRIVATE ROOM</p>
+    <h2>Sign in first</h2>
+    <p>Use the existing Duck &amp; Bear member or admin account. No separate Menu Room login is needed.</p>
+    <a class="dungeon-button" href="/account">Sign in to Duck &amp; Bear →</a>
+  </section>
+
+  <div id="memberApp" hidden>
+    <section class="member-welcome">
+      <div>
+        <p class="menu-kicker">WELCOME IN</p>
+        <h2 id="welcomeName">Menu Room</h2>
+      </div>
+      <span id="roleChip" class="role-chip"></span>
+    </section>
+
+    <div class="member-grid">
+      <section class="member-panel suggestion-panel" aria-labelledby="suggestionTitle">
+        <p class="menu-kicker">NEXT WEEK’S OPTIONS</p>
+        <h2 id="suggestionTitle">Add a menu idea</h2>
+        <p class="panel-copy">Suggestions go into the planning pool. They do not automatically publish on the public menu.</p>
+        <form id="suggestionForm">
+          <label>Meal name
+            <input name="title" maxlength="140" required placeholder="e.g. Sichuan chicken noodles">
+          </label>
+          <div class="form-row">
+            <label>Meal
+              <select name="mealType" required>
+                <option value="breakfast">Breakfast</option>
+                <option value="lunch">Lunch</option>
+                <option value="dinner" selected>Dinner</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+            <label>Week starting (Monday)
+              <input type="date" name="targetWeekStart" required>
+            </label>
+          </div>
+          <label>What is it?
+            <textarea name="description" maxlength="1800" rows="4" placeholder="Main ingredients, style, sides or anything you want included."></textarea>
+          </label>
+          <label>Extra notes
+            <textarea name="notes" maxlength="1000" rows="3" placeholder="Optional: spice level, things to avoid, where the idea came from…"></textarea>
+          </label>
+          <button class="dungeon-button" type="submit">Add to next week’s options</button>
+          <p class="form-status" id="suggestionStatus" role="status"></p>
+        </form>
+      </section>
+
+      <section class="member-panel review-panel" aria-labelledby="reviewTitle">
+        <p class="menu-kicker">THE VERDICT</p>
+        <h2 id="reviewTitle">Rate a meal</h2>
+        <p class="panel-copy">You can update a review later. New photos are added to the existing review, up to four per meal.</p>
+        <form id="reviewForm">
+          <label>Meal
+            <select name="mealId" id="mealSelect" required></select>
+          </label>
+
+          <fieldset class="rating-fieldset">
+            <legend>Overall</legend>
+            <div class="star-choice six-stars" id="overallStars" data-rating-name="overallRating"></div>
+            <p id="overallMeaning" class="rating-meaning">Choose 1–6 stars.</p>
+          </fieldset>
+
+          <div class="rating-pair">
+            <fieldset class="rating-fieldset">
+              <legend>Taste</legend>
+              <div class="star-choice" id="tasteStars" data-rating-name="tasteRating"></div>
+            </fieldset>
+            <fieldset class="rating-fieldset">
+              <legend>Plating</legend>
+              <div class="star-choice" id="platingStars" data-rating-name="platingRating"></div>
+            </fieldset>
+          </div>
+
+          <label>Review comments
+            <textarea name="comment" maxlength="2500" rows="5" placeholder="What worked, what didn’t, what should change next time…"></textarea>
+          </label>
+
+          <label class="photo-picker">Food photos
+            <input id="reviewPhotos" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple>
+            <span>Up to 4 photos · 8 MB each</span>
+          </label>
+          <div id="photoPreview" class="photo-preview"></div>
+
+          <button class="dungeon-button" type="submit">Save review</button>
+          <p class="form-status" id="reviewStatus" role="status"></p>
+        </form>
+      </section>
+    </div>
+
+    <section class="member-panel option-list-panel" aria-labelledby="optionsTitle">
+      <div class="panel-heading">
+        <div>
+          <p class="menu-kicker">PLANNING POOL</p>
+          <h2 id="optionsTitle">Next week’s options</h2>
+        </div>
+        <span class="small-note">Admin can shortlist or mark ideas as planned.</span>
+      </div>
+      <div id="suggestionList" class="suggestion-list"></div>
+    </section>
+
+    <section class="member-panel review-list-panel" aria-labelledby="reviewsTitle">
+      <div class="panel-heading">
+        <div>
+          <p class="menu-kicker">REVIEW BOOK</p>
+          <h2 id="reviewsTitle">Meal reviews</h2>
+        </div>
+        <span class="small-note">Private to signed-in Duck &amp; Bear users.</span>
+      </div>
+      <div id="reviewList" class="review-list"></div>
+    </section>
+  </div>
+</main>
+
+<footer class="public-footer dungeon-footer">
+  <a class="public-brand" href="/">🐤🐻 <span>Duck &amp; Bear</span></a>
+  <p>Suggestions in. Verdicts out.</p>
+  <span class="footer-links"><a href="/menus/">Current Menu</a> · <a href="/menus/archive/">Archive</a> · <a href="/account">Account</a></span>
+</footer>
+</body>
+</html>

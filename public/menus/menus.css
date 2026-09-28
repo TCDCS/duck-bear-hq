@@ -449,3 +449,7 @@
   .current-archive::before{right:18px;margin-top:-45px}
   .archive-copy-banner{align-items:flex-start;flex-direction:column}
 }
+
+
+.archive-actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:650px){.archive-actions{width:100%;justify-content:stretch}.archive-actions .dungeon-button{width:100%}}
