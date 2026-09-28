@@ -8,9 +8,10 @@
   <title>The Dungeon Menu — Duck & Bear</title>
   <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/home.css?v=4">
-  <link rel="stylesheet" href="/menus/menus.css?v=1">
+  <link rel="stylesheet" href="/menus/menus.css?v=2">
 </head>
 <body class="menu-page">
+<!-- Weekly rollover rule: archive the existing current menu at /menus/archive/YYYY-MM-DD/ before replacing this page. -->
 <a class="skip-link" href="#main">Skip to this week's menu</a>
 
 <header class="public-header dungeon-header">
@@ -37,6 +38,11 @@
     <p class="menu-intro">Sweet. Salty. Spicy. Behave accordingly.</p>
     <div class="hero-rule" aria-hidden="true"><span></span><b>◆</b><span></span></div>
   </section>
+
+  <aside class="archive-callout" aria-label="Menu archive">
+    <div><p class="menu-kicker">PREVIOUS ORDERS</p><h2>Nothing gets overwritten.</h2><p>Each weekly menu is kept in the archive under its own dated page.</p></div>
+    <a class="dungeon-button secondary-dungeon" href="/menus/archive/">Open menu archive →</a>
+  </aside>
 
   <section class="menu-board" aria-label="Weekly meals">
     <article class="day-card served">
@@ -167,7 +173,7 @@
 <footer class="public-footer dungeon-footer">
   <a class="public-brand" href="/">🐤🐻 <span>Duck &amp; Bear</span></a>
   <p>Good food. Questionable discipline.</p>
-  <span class="footer-links"><a href="/">Home</a> · <a href="/menus/">Menus</a> · <a href="/info/">Info</a></span>
+  <span class="footer-links"><a href="/">Home</a> · <a href="/menus/">Current Menu</a> · <a href="/menus/archive/">Archive</a> · <a href="/info/">Info</a></span>
 </footer>
 </body>
 </html>
