@@ -3,37 +3,138 @@
   "name": "duck-bear-hq",
   "main": "./src/worker-games.js",
   "compatibility_date": "2026-09-10",
-  "observability": { "enabled": true },
+  "observability": {
+    "enabled": true
+  },
   "keep_vars": true,
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
     "run_worker_first": [
-      "/api/*", "/media/*", "/games/wacky-races", "/games/wacky-races/*", "/games/proper-karted", "/games/proper-karted/*",
-      "/", "/account", "/account/*", "/our-space", "/our-space/*", "/settings", "/settings/*", "/admin", "/admin/*",
-      "/family-tree", "/family-tree/*", "/scrapbook", "/scrapbook/*", "/plans", "/plans/*", "/image-library", "/image-library/*",
-      "/shop", "/shop/*", "/basket", "/basket/*", "/orders", "/orders/*", "/points", "/points/*", "/rewards", "/rewards/*",
-      "/menus", "/menus/*", "/games", "/games/", "/games/favourites/*", "/games/together/*", "/games/updates/*"
+      "/api/*",
+      "/media/*",
+      "/games/wacky-races",
+      "/games/wacky-races/*",
+      "/games/proper-karted",
+      "/games/proper-karted/*",
+      "/",
+      "/account",
+      "/account/*",
+      "/our-space",
+      "/our-space/*",
+      "/settings",
+      "/settings/*",
+      "/admin",
+      "/admin/*",
+      "/family-tree",
+      "/family-tree/*",
+      "/scrapbook",
+      "/scrapbook/*",
+      "/plans",
+      "/plans/*",
+      "/image-library",
+      "/image-library/*",
+      "/shop",
+      "/shop/*",
+      "/basket",
+      "/basket/*",
+      "/orders",
+      "/orders/*",
+      "/points",
+      "/points/*",
+      "/rewards",
+      "/rewards/*",
+      "/menus",
+      "/menus/*",
+      "/games",
+      "/games/",
+      "/games/favourites/*",
+      "/games/together/*",
+      "/games/updates/*"
     ]
   },
-  "rules": [{ "type": "Text", "globs": ["**/kart-assets/*.txt"], "fallthrough": true }],
-  "d1_databases": [{ "binding": "DB", "database_name": "duck-bear-hq-db", "database_id": "05f3e993-e41a-4d0e-8166-bcd04ae235f9", "migrations_dir": "migrations" }],
-  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "duck-bear-hq-media" }],
+  "rules": [
+    {
+      "type": "Text",
+      "globs": [
+        "**/kart-assets/*.txt"
+      ],
+      "fallthrough": true
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "duck-bear-hq-db",
+      "database_id": "05f3e993-e41a-4d0e-8166-bcd04ae235f9",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "duck-bear-hq-media"
+    }
+  ],
   "durable_objects": {
     "bindings": [
-      { "name": "WACKY_DIRECTORY", "class_name": "WackyDirectory" },
-      { "name": "WACKY_ROOMS", "class_name": "WackyRoom" },
-      { "name": "MEOW_DIRECTORY", "class_name": "MeowWarsDirectory" },
-      { "name": "MEOW_ROOMS", "class_name": "MeowWarsRoom" },
-      { "name": "PORTAL", "class_name": "PortalStore" }
+      {
+        "name": "WACKY_DIRECTORY",
+        "class_name": "WackyDirectory"
+      },
+      {
+        "name": "WACKY_ROOMS",
+        "class_name": "WackyRoom"
+      },
+      {
+        "name": "MEOW_DIRECTORY",
+        "class_name": "MeowWarsDirectory"
+      },
+      {
+        "name": "MEOW_ROOMS",
+        "class_name": "MeowWarsRoom"
+      },
+      {
+        "name": "PORTAL",
+        "class_name": "PortalStore"
+      }
     ]
   },
   "migrations": [
-    { "tag": "wacky-v4-sqlite", "new_sqlite_classes": ["WackyDirectory", "WackyRoom"] },
-    { "tag": "danao-v1-sqlite", "new_sqlite_classes": ["DanaoDirectory", "DanaoRoom"] },
-    { "tag": "meow-v1-sqlite", "new_sqlite_classes": ["MeowWarsDirectory", "MeowWarsRoom"] },
-    { "tag": "danao-retired-2026-09-18", "deleted_classes": ["DanaoDirectory", "DanaoRoom"] },
-    { "tag": "our-space-v7-sqlite", "new_sqlite_classes": ["PortalStore"] }
+    {
+      "tag": "wacky-v4-sqlite",
+      "new_sqlite_classes": [
+        "WackyDirectory",
+        "WackyRoom"
+      ]
+    },
+    {
+      "tag": "danao-v1-sqlite",
+      "new_sqlite_classes": [
+        "DanaoDirectory",
+        "DanaoRoom"
+      ]
+    },
+    {
+      "tag": "meow-v1-sqlite",
+      "new_sqlite_classes": [
+        "MeowWarsDirectory",
+        "MeowWarsRoom"
+      ]
+    },
+    {
+      "tag": "danao-retired-2026-09-18",
+      "deleted_classes": [
+        "DanaoDirectory",
+        "DanaoRoom"
+      ]
+    },
+    {
+      "tag": "our-space-v7-sqlite",
+      "new_sqlite_classes": [
+        "PortalStore"
+      ]
+    }
   ]
 }
