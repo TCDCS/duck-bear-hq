@@ -31,6 +31,8 @@ async function routeApi(request, env, url) {
   if (path === '/api/setup/status' && request.method === 'GET') return setupStatus(env);
   if (path === '/api/setup' && request.method === 'POST') return setupAccounts(request, env);
   if (path === '/api/auth/login' && request.method === 'POST') return login(request, env);
+  if (path === '/api/auth/recovery/request' && request.method === 'POST') return requestPasswordRecovery(request, env, url);
+  if (path === '/api/auth/recovery/reset' && request.method === 'POST') return resetPasswordWithToken(request, env);
 
   const auth = await getAuth(request, env);
   if (!auth) return apiJson({ error: 'Please sign in.' }, 401);
@@ -40,6 +42,7 @@ async function routeApi(request, env, url) {
 
   if (path === '/api/auth/logout' && request.method === 'POST') return logout(request, env, auth);
   if (path === '/api/account/password' && request.method === 'POST') return changePassword(request, env, auth);
+  if (path === '/api/account/email' && request.method === 'POST') return saveAccountEmail(request, env, auth);
   if (path === '/api/bootstrap' && request.method === 'GET') return bootstrap(env, auth.user);
   if (path === '/api/cart' && request.method === 'POST') return mutateCart(request, env, auth.user);
 
@@ -186,24 +189,150 @@ function validateSetupUser(input, role) {
   return { username, displayName, password };
 }
 
+const ACCOUNT_SECURITY_KEY='account-security/private-v1.json';
+function emptyAccountSecurity(){return {version:1,profiles:[],recoveryRequests:[],resetTokens:[]};}
+async function readAccountSecurity(env){
+  const obj=await env.MEDIA.get(ACCOUNT_SECURITY_KEY);
+  if(!obj)return emptyAccountSecurity();
+  try{
+    const raw=JSON.parse(await obj.text());
+    return {
+      version:1,
+      profiles:Array.isArray(raw?.profiles)?raw.profiles.slice(-50):[],
+      recoveryRequests:Array.isArray(raw?.recoveryRequests)?raw.recoveryRequests.slice(-200):[],
+      resetTokens:Array.isArray(raw?.resetTokens)?raw.resetTokens.slice(-200):[]
+    };
+  }catch(err){
+    console.warn('Account security data could not be read',err);
+    return emptyAccountSecurity();
+  }
+}
+async function writeAccountSecurity(env,data){
+  const cutoff=Date.now()-30*86400000;
+  const payload={
+    version:1,
+    updatedAt:now(),
+    profiles:Array.isArray(data.profiles)?data.profiles.slice(-50):[],
+    recoveryRequests:(Array.isArray(data.recoveryRequests)?data.recoveryRequests:[]).filter(x=>Date.parse(x.requested_at||0)>=cutoff).slice(-200),
+    resetTokens:(Array.isArray(data.resetTokens)?data.resetTokens:[]).filter(x=>Date.parse(x.created_at||0)>=cutoff).slice(-200)
+  };
+  await env.MEDIA.put(ACCOUNT_SECURITY_KEY,JSON.stringify(payload),{httpMetadata:{contentType:'application/json'},customMetadata:{private:'true',purpose:'account-security'}});
+  return payload;
+}
+function normalizeEmail(value){return String(value||'').trim().toLowerCase().slice(0,254);}
+function validEmail(value){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)&&value.length<=254;}
+function maskEmail(value){
+  const [local,domain]=String(value||'').split('@');
+  if(!local||!domain)return '';
+  const head=local.slice(0,1),tail=local.length>2?local.slice(-1):'';
+  return `${head}***${tail}@${domain}`;
+}
+async function accountSecurityForUser(env,user){
+  const data=await readAccountSecurity(env),profile=data.profiles.find(x=>x.user_id===user.id);
+  return {email:profile?.email||'',emailRegistered:Boolean(profile?.email),updatedAt:profile?.updated_at||null};
+}
+async function saveAccountEmail(request,env,auth){
+  const b=await bodyJson(request),email=String(b.email||'').trim().slice(0,254),normalized=normalizeEmail(email),current=String(b.currentPassword||'');
+  if(!validEmail(normalized))return apiJson({error:'Enter a valid email address.'},400);
+  const check=await hashPassword(current,auth.user.password_salt,auth.user.password_iterations);
+  if(!constantTimeEqual(check.hash,auth.user.password_hash))return apiJson({error:'Current password is incorrect.'},403);
+  const data=await readAccountSecurity(env);
+  const duplicate=data.profiles.find(x=>x.user_id!==auth.user.id&&x.email_normalized===normalized);
+  if(duplicate)return apiJson({error:'That email address is already registered to another account.'},409);
+  const t=now();let profile=data.profiles.find(x=>x.user_id===auth.user.id);
+  if(profile){profile.email=email;profile.email_normalized=normalized;profile.updated_at=t;}
+  else{profile={user_id:auth.user.id,email,email_normalized:normalized,created_at:t,updated_at:t};data.profiles.push(profile);}
+  for(const r of data.recoveryRequests)if(r.user_id===auth.user.id&&['Pending','Emailed'].includes(r.status)){r.status='Cancelled';r.updated_at=t;}
+  for(const token of data.resetTokens)if(token.user_id===auth.user.id&&token.status==='Pending'){token.status='Revoked';token.updated_at=t;}
+  await writeAccountSecurity(env,data);
+  await audit(env,auth.user.id,'account.email_update','user',auth.user.id,{emailMasked:maskEmail(email)});
+  return apiJson({ok:true,accountSecurity:{email,emailRegistered:true,updatedAt:t}});
+}
+async function sendRecoveryEmailIfAvailable(env,email,token,url){
+  if(!env.EMAIL||!env.PASSWORD_RESET_FROM)return false;
+  const resetUrl=`${url.origin}/account?reset=${encodeURIComponent(token)}`;
+  try{
+    await env.EMAIL.send({
+      from:String(env.PASSWORD_RESET_FROM),
+      to:email,
+      subject:'Duck & Bear password reset',
+      text:`A password reset was requested for Duck & Bear HQ. Use this link within 60 minutes: ${resetUrl}\n\nIf you did not request this, ignore this message.`,
+      html:`<p>A password reset was requested for Duck &amp; Bear HQ.</p><p><a href="${resetUrl}">Reset your password</a></p><p>This link expires in 60 minutes. If you did not request this, ignore this message.</p>`
+    });
+    return true;
+  }catch(err){
+    console.warn('Password reset email could not be sent',err);
+    return false;
+  }
+}
+async function requestPasswordRecovery(request,env,url){
+  const b=await bodyJson(request),email=normalizeEmail(b.email);
+  if(!validEmail(email))return apiJson({error:'Enter a valid email address.'},400);
+  const data=await readAccountSecurity(env),profile=data.profiles.find(x=>x.email_normalized===email);
+  const generic={ok:true,message:'If that email is registered, recovery instructions are now available.'};
+  if(!profile)return apiJson(generic);
+  const user=await env.DB.prepare('SELECT id,active FROM users WHERE id=? LIMIT 1').bind(profile.user_id).first();
+  if(!user?.active)return apiJson(generic);
+  const t=now(),recentCutoff=Date.now()-10*60*1000;
+  const recent=data.recoveryRequests.some(x=>x.user_id===profile.user_id&&['Pending','Emailed'].includes(x.status)&&Date.parse(x.requested_at||0)>=recentCutoff);
+  if(recent)return apiJson(generic);
+  const requestId=id('recovery'),expiresAt=new Date(Date.now()+24*60*60*1000).toISOString();
+  const rawToken=bytesToB64(crypto.getRandomValues(new Uint8Array(32))),tokenHash=await sha256(rawToken),tokenId=id('reset');
+  const resetToken={id:tokenId,user_id:profile.user_id,token_hash:tokenHash,status:'Pending',created_at:t,expires_at:new Date(Date.now()+60*60*1000).toISOString()};
+  data.resetTokens.push(resetToken);
+  const recovery={id:requestId,user_id:profile.user_id,email_masked:maskEmail(profile.email),status:'Pending',delivery:'admin',requested_at:t,expires_at:expiresAt,ip_hash:await ipHash(request)};
+  data.recoveryRequests.push(recovery);
+  await writeAccountSecurity(env,data);
+  const sent=await sendRecoveryEmailIfAvailable(env,profile.email,rawToken,url);
+  if(sent){
+    recovery.status='Emailed';recovery.delivery='email';recovery.updated_at=now();
+    await writeAccountSecurity(env,data);
+  }
+  await audit(env,null,'auth.recovery_request','user',profile.user_id,{delivery:sent?'email':'admin'});
+  return apiJson(generic);
+}
+async function resetPasswordWithToken(request,env){
+  const b=await bodyJson(request),token=String(b.token||''),next=String(b.newPassword||'');
+  if(token.length<20||token.length>300)return apiJson({error:'This password reset link is invalid or expired.'},400);
+  if(next.length<8||next.length>128)return apiJson({error:'New password must be 8–128 characters.'},400);
+  const tokenHash=await sha256(token),data=await readAccountSecurity(env),record=data.resetTokens.find(x=>x.token_hash===tokenHash&&x.status==='Pending');
+  if(!record||Date.parse(record.expires_at||0)<=Date.now())return apiJson({error:'This password reset link is invalid or expired.'},400);
+  const user=await env.DB.prepare('SELECT * FROM users WHERE id=? AND active=1 LIMIT 1').bind(record.user_id).first();
+  if(!user)return apiJson({error:'This password reset link is invalid or expired.'},400);
+  const h=await hashPassword(next),t=now();
+  await env.DB.batch([
+    env.DB.prepare('UPDATE users SET password_hash=?,password_salt=?,password_iterations=?,updated_at=? WHERE id=?').bind(h.hash,h.salt,h.iterations,t,user.id),
+    env.DB.prepare('DELETE FROM sessions WHERE user_id=?').bind(user.id)
+  ]);
+  record.status='Used';record.updated_at=t;
+  for(const r of data.recoveryRequests)if(r.user_id===user.id&&['Pending','Emailed'].includes(r.status)){r.status='Resolved';r.updated_at=t;}
+  await writeAccountSecurity(env,data);
+  await audit(env,user.id,'auth.recovery_reset','user',user.id,{});
+  return apiJson({ok:true,message:'Password reset. You can sign in with the new password.'});
+}
+
 async function login(request, env) {
   try {
-    const b=await bodyJson(request); const username=text(b.username,30); const password=String(b.password||''); const ip=await ipHash(request); const cutoff=new Date(Date.now()-10*60*1000).toISOString();
-    const attempts=await env.DB.prepare('SELECT COUNT(*) AS n FROM login_attempts WHERE lower(username)=lower(?) AND success=0 AND created_at>=?').bind(username,cutoff).first();
-    if (Number(attempts?.n||0)>=5) return apiJson({ error:'Too many failed attempts. Try again later.' },429);
-    const user=await env.DB.prepare('SELECT * FROM users WHERE lower(username)=lower(?) AND active=1').bind(username).first();
+    const b=await bodyJson(request),identifier=text(b.username||b.identifier,254),password=String(b.password||''),ip=await ipHash(request),cutoff=new Date(Date.now()-10*60*1000).toISOString();
+    const attempts=await env.DB.prepare('SELECT COUNT(*) AS n FROM login_attempts WHERE lower(username)=lower(?) AND success=0 AND created_at>=?').bind(identifier,cutoff).first();
+    if(Number(attempts?.n||0)>=5)return apiJson({error:'Too many failed attempts. Try again later.'},429);
+    let user=await env.DB.prepare('SELECT * FROM users WHERE lower(username)=lower(?) AND active=1').bind(identifier).first();
+    if(!user&&identifier.includes('@')){
+      const security=await readAccountSecurity(env),profile=security.profiles.find(x=>x.email_normalized===normalizeEmail(identifier));
+      if(profile)user=await env.DB.prepare('SELECT * FROM users WHERE id=? AND active=1').bind(profile.user_id).first();
+    }
     let ok=false;
-    if (user) { const h=await hashPassword(password,user.password_salt,user.password_iterations); ok=constantTimeEqual(h.hash,user.password_hash); }
-    await env.DB.prepare('INSERT INTO login_attempts (id,username,ip_hash,success,created_at) VALUES (?,?,?,?,?)').bind(id('try'),username,ip,ok?1:0,now()).run();
-    if (!ok) return apiJson({ error:'Invalid username or password.' },401);
-    const token=bytesToB64(crypto.getRandomValues(new Uint8Array(32))); const tokenHash=await sha256(token); const t=now(); const expires=new Date(Date.now()+SESSION_DAYS*86400000).toISOString();
+    if(user){const h=await hashPassword(password,user.password_salt,user.password_iterations);ok=constantTimeEqual(h.hash,user.password_hash);}
+    await env.DB.prepare('INSERT INTO login_attempts (id,username,ip_hash,success,created_at) VALUES (?,?,?,?,?)').bind(id('try'),identifier,ip,ok?1:0,now()).run();
+    if(!ok)return apiJson({error:'Invalid username/email or password.'},401);
+    const token=bytesToB64(crypto.getRandomValues(new Uint8Array(32))),tokenHash=await sha256(token),t=now(),expires=new Date(Date.now()+SESSION_DAYS*86400000).toISOString();
     await env.DB.batch([
       env.DB.prepare('DELETE FROM sessions WHERE expires_at < ?').bind(t),
       env.DB.prepare('INSERT INTO sessions (id,user_id,token_hash,expires_at,created_at,last_seen_at,user_agent,ip_hash) VALUES (?,?,?,?,?,?,?,?)').bind(id('ses'),user.id,tokenHash,expires,t,t,text(request.headers.get('User-Agent'),250),ip)
     ]);
     await audit(env,user.id,'auth.login','user',user.id,{});
-    return apiJson({ ok:true, user:safeUser(user) },200,{ 'Set-Cookie':sessionCookie(token) });
-  } catch(err) { if(err instanceof HttpError) return apiJson({error:err.message},err.status); throw err; }
+    return apiJson({ok:true,user:safeUser(user)},200,{'Set-Cookie':sessionCookie(token)});
+  }catch(err){if(err instanceof HttpError)return apiJson({error:err.message},err.status);throw err;}
 }
 async function getAuth(request, env) {
   const token=cookieValue(request,'db_session'); if(!token) return null; const tokenHash=await sha256(token); const t=now();
@@ -211,7 +340,7 @@ async function getAuth(request, env) {
   return row ? { sessionId:row.session_id, tokenHash, user:row } : null;
 }
 async function logout(request, env, auth) { await env.DB.prepare('DELETE FROM sessions WHERE id=?').bind(auth.sessionId).run(); await audit(env,auth.user.id,'auth.logout','user',auth.user.id,{}); return apiJson({ok:true},200,{'Set-Cookie':sessionCookie('',0)}); }
-async function changePassword(request,env,auth){ const b=await bodyJson(request); const current=String(b.currentPassword||''), next=String(b.newPassword||''); if(next.length<8||next.length>128)return apiJson({error:'New password must be 8–128 characters.'},400); const check=await hashPassword(current,auth.user.password_salt,auth.user.password_iterations); if(!constantTimeEqual(check.hash,auth.user.password_hash))return apiJson({error:'Current password is incorrect.'},403); const h=await hashPassword(next); const t=now(); await env.DB.batch([env.DB.prepare('UPDATE users SET password_hash=?,password_salt=?,password_iterations=?,updated_at=? WHERE id=?').bind(h.hash,h.salt,h.iterations,t,auth.user.id),env.DB.prepare('DELETE FROM sessions WHERE user_id=? AND id<>?').bind(auth.user.id,auth.sessionId)]); await audit(env,auth.user.id,'auth.password_change','user',auth.user.id,{}); return apiJson({ok:true}); }
+async function changePassword(request,env,auth){ const b=await bodyJson(request); const current=String(b.currentPassword||''), next=String(b.newPassword||''); if(next.length<8||next.length>128)return apiJson({error:'New password must be 8–128 characters.'},400); const check=await hashPassword(current,auth.user.password_salt,auth.user.password_iterations); if(!constantTimeEqual(check.hash,auth.user.password_hash))return apiJson({error:'Current password is incorrect.'},403); const h=await hashPassword(next); const t=now(); await env.DB.batch([env.DB.prepare('UPDATE users SET password_hash=?,password_salt=?,password_iterations=?,updated_at=? WHERE id=?').bind(h.hash,h.salt,h.iterations,t,auth.user.id),env.DB.prepare('DELETE FROM sessions WHERE user_id=? AND id<>?').bind(auth.user.id,auth.sessionId)]); try{const security=await readAccountSecurity(env);for(const r of security.recoveryRequests)if(r.user_id===auth.user.id&&['Pending','Emailed'].includes(r.status)){r.status='Cancelled';r.updated_at=t;}for(const token of security.resetTokens)if(token.user_id===auth.user.id&&token.status==='Pending'){token.status='Revoked';token.updated_at=t;}await writeAccountSecurity(env,security);}catch(err){console.warn('Recovery cleanup after password change failed',err);} await audit(env,auth.user.id,'auth.password_change','user',auth.user.id,{}); return apiJson({ok:true}); }
 function safeUser(u){ return { id:u.id, username:u.username, displayName:u.display_name, role:u.role, active:Boolean(u.active) }; }
 
 async function bootstrap(env, user) {
@@ -221,9 +350,10 @@ async function bootstrap(env, user) {
   const loyalty=await loyaltyData(env,user.id);
   const orders=await ordersWithItems(env,user,user.role==='admin'?null:user.id,8);
   const fun=await funData(env,user.id);
+  const accountSecurity=await accountSecurityForUser(env,user);
   let admin=null;
   if(user.role==='admin') admin=await adminData(env);
-  return apiJson({ user:safeUser(user), products, favourites:fav, cart, loyalty, orders, fun, admin, dateIdeas:DATE_IDEAS, roomServiceMenu:ROOM_SERVICE_MENU, tiers:TIERS });
+  return apiJson({ user:safeUser(user), accountSecurity, products, favourites:fav, cart, loyalty, orders, fun, admin, dateIdeas:DATE_IDEAS, roomServiceMenu:ROOM_SERVICE_MENU, tiers:TIERS });
 }
 
 async function getCart(env,userId){ return (await env.DB.prepare(`SELECT c.product_id AS id,c.quantity AS qty,p.name,p.emoji,p.category,p.stock_label FROM cart_items c JOIN products p ON p.id=c.product_id WHERE c.user_id=? AND p.active=1 ORDER BY c.updated_at DESC`).bind(userId).all()).results; }
@@ -419,7 +549,20 @@ async function saveMemory(request,env,user){ const b=await bodyJson(request); co
   const mid=id('mem'),t=now(); await env.DB.prepare('INSERT INTO memories (id,user_id,title,body,happened_on,mood,attachment_key,attachment_name,attachment_type,attachment_size,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').bind(mid,user.id,title,text(b.body,3000),text(b.happenedOn,20)||null,text(b.mood,10)||'💚',key,name,type,size,t,t).run(); await audit(env,user.id,'memory.create','memory',mid,{}); return apiJson({ok:true,fun:await funData(env,user.id)},201); }
 async function deleteMemory(env,user,memoryId){ const m=await env.DB.prepare('SELECT * FROM memories WHERE id=?').bind(memoryId).first(); if(!m)return apiJson({error:'Memory not found.'},404); if(user.role!=='admin'&&m.user_id!==user.id)return apiJson({error:'Not allowed.'},403); if(m.attachment_key)await env.MEDIA.delete(m.attachment_key); await env.DB.prepare('DELETE FROM memories WHERE id=?').bind(memoryId).run(); await audit(env,user.id,'memory.delete','memory',memoryId,{}); return apiJson({ok:true,fun:await funData(env,user.id)}); }
 
-async function adminData(env){ const users=(await env.DB.prepare("SELECT id,username,display_name,role,active,created_at FROM users ORDER BY role,display_name").all()).results; const openOrders=(await env.DB.prepare("SELECT o.*,u.display_name FROM orders o JOIN users u ON u.id=o.user_id WHERE o.status NOT IN ('Delivered','Cancelled') ORDER BY o.created_at DESC LIMIT 30").all()).results; const complaints=(await env.DB.prepare("SELECT c.*,u.display_name FROM complaints c JOIN users u ON u.id=c.user_id ORDER BY c.created_at DESC LIMIT 30").all()).results; const products=(await env.DB.prepare('SELECT * FROM products ORDER BY sort_order,name').all()).results; const rewards=(await env.DB.prepare('SELECT * FROM rewards ORDER BY sort_order,name').all()).results; const earnRules=(await env.DB.prepare('SELECT * FROM earn_rules ORDER BY sort_order,name').all()).results; const memberBalances=[]; for(const u of users.filter(x=>x.role==='member'))memberBalances.push({userId:u.id,displayName:u.display_name,balance:await currentBalance(env,u.id)}); return {users,openOrders,complaints,products,rewards,earnRules,memberBalances}; }
+async function adminData(env){
+  const users=(await env.DB.prepare("SELECT id,username,display_name,role,active,created_at FROM users ORDER BY role,display_name").all()).results;
+  const openOrders=(await env.DB.prepare("SELECT o.*,u.display_name FROM orders o JOIN users u ON u.id=o.user_id WHERE o.status NOT IN ('Delivered','Cancelled') ORDER BY o.created_at DESC LIMIT 30").all()).results;
+  const complaints=(await env.DB.prepare("SELECT c.*,u.display_name FROM complaints c JOIN users u ON u.id=c.user_id ORDER BY c.created_at DESC LIMIT 30").all()).results;
+  const products=(await env.DB.prepare('SELECT * FROM products ORDER BY sort_order,name').all()).results;
+  const rewards=(await env.DB.prepare('SELECT * FROM rewards ORDER BY sort_order,name').all()).results;
+  const earnRules=(await env.DB.prepare('SELECT * FROM earn_rules ORDER BY sort_order,name').all()).results;
+  const security=await readAccountSecurity(env),profiles=new Map(security.profiles.map(x=>[x.user_id,x]));
+  const memberBalances=[];
+  for(const u of users.filter(x=>x.role==='member'))memberBalances.push({userId:u.id,displayName:u.display_name,balance:await currentBalance(env,u.id),emailMasked:profiles.get(u.id)?.email?maskEmail(profiles.get(u.id).email):''});
+  const userNames=new Map(users.map(u=>[u.id,u.display_name]));
+  const recoveryRequests=security.recoveryRequests.filter(x=>['Pending','Emailed'].includes(x.status)&&Date.parse(x.expires_at||0)>Date.now()).sort((a,b)=>String(b.requested_at||'').localeCompare(String(a.requested_at||''))).map(x=>({...x,displayName:userNames.get(x.user_id)||'Member'}));
+  return {users,openOrders,complaints,products,rewards,earnRules,memberBalances,recoveryRequests};
+}
 async function adminDashboard(env,user){ return apiJson({admin:await adminData(env),audit:(await env.DB.prepare('SELECT a.*,u.display_name AS actor_name FROM audit_log a LEFT JOIN users u ON u.id=a.actor_user_id ORDER BY a.created_at DESC LIMIT 100').all()).results}); }
 async function adminAdjustPoints(request,env,admin){ const b=await bodyJson(request); const userId=text(b.userId,100),delta=int(b.delta,-100000,100000,0),note=text(b.note,500); if(!delta)return apiJson({error:'Adjustment cannot be zero.'},400); if(!note)return apiJson({error:'Give a reason for the adjustment.'},400); const target=await env.DB.prepare("SELECT * FROM users WHERE id=? AND active=1").bind(userId).first(); if(!target)return apiJson({error:'User not found.'},404); const bal=await currentBalance(env,userId); if(bal+delta<0)return apiJson({error:'Adjustment would make the balance negative.'},400); const t=now(); try{await loyaltyTxStatement(env,{txId:id('tx'),accountUserId:userId,actorUserId:admin.id,type:'adjustment',label:delta>0?'Admin points credit':'Admin points debit',delta,referenceType:'admin_adjustment',referenceId:id('adj'),note,createdAt:t}).run();}catch(e){if(String(e).toLowerCase().includes('balance_after'))return apiJson({error:'Adjustment would make the balance negative.'},409);throw e;} await maybePointBadges(env,userId,await currentBalance(env,userId)); await audit(env,admin.id,'loyalty.adjust','user',userId,{delta,note}); return apiJson({ok:true,loyalty:await loyaltyData(env,userId),admin:await adminData(env)}); }
 function slugId(input,prefix){ const s=text(input,70).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); return s||`${prefix}-${crypto.randomUUID().slice(0,8)}`; }
@@ -429,7 +572,25 @@ async function adminCreateReward(request,env,admin){ const b=await bodyJson(requ
 async function adminUpdateReward(request,env,admin,rid){ const b=await bodyJson(request); const r=await env.DB.prepare('SELECT * FROM rewards WHERE id=?').bind(rid).first(); if(!r)return apiJson({error:'Reward not found.'},404); await env.DB.prepare('UPDATE rewards SET name=?,emoji=?,cost=?,description=?,active=?,sort_order=?,updated_at=? WHERE id=?').bind(text(b.name,120)||r.name,text(b.emoji,10)||r.emoji,int(b.cost,1,100000,r.cost),text(b.description,1000),b.active===undefined?r.active:(b.active?1:0),int(b.sortOrder,0,9999,r.sort_order),now(),rid).run(); await audit(env,admin.id,'reward.update','reward',rid,{}); return apiJson({ok:true,admin:await adminData(env)}); }
 async function adminUpdateEarnRule(request,env,admin,rid){ const b=await bodyJson(request); const r=await env.DB.prepare('SELECT * FROM earn_rules WHERE id=?').bind(rid).first(); if(!r)return apiJson({error:'Earn rule not found.'},404); const freq=['daily','weekly','once','unlimited'].includes(b.frequency)?b.frequency:r.frequency; await env.DB.prepare('UPDATE earn_rules SET name=?,emoji=?,points=?,frequency=?,description=?,active=?,sort_order=? WHERE id=?').bind(text(b.name,120)||r.name,text(b.emoji,10)||r.emoji,int(b.points,1,100000,r.points),freq,text(b.description,1000),b.active===undefined?r.active:(b.active?1:0),int(b.sortOrder,0,9999,r.sort_order),rid).run(); await audit(env,admin.id,'earn_rule.update','earn_rule',rid,{}); return apiJson({ok:true,admin:await adminData(env)}); }
 async function adminUpdateComplaint(request,env,admin,cid){ const b=await bodyJson(request); const c=await env.DB.prepare('SELECT * FROM complaints WHERE id=?').bind(cid).first(); if(!c)return apiJson({error:'Complaint not found.'},404); await env.DB.prepare('UPDATE complaints SET status=?,resolution=?,updated_at=? WHERE id=?').bind(text(b.status,80)||c.status,text(b.resolution,2000),now(),cid).run(); await audit(env,admin.id,'complaint.update','complaint',cid,{status:text(b.status,80)}); return apiJson({ok:true,admin:await adminData(env)}); }
-async function adminResetPassword(request,env,admin,userId){ const b=await bodyJson(request); const next=String(b.newPassword||''); if(next.length<8||next.length>128)return apiJson({error:'New password must be 8–128 characters.'},400); const target=await env.DB.prepare("SELECT * FROM users WHERE id=? AND role='member'").bind(userId).first(); if(!target)return apiJson({error:'Member account not found.'},404); const h=await hashPassword(next); const t=now(); await env.DB.batch([env.DB.prepare('UPDATE users SET password_hash=?,password_salt=?,password_iterations=?,updated_at=? WHERE id=?').bind(h.hash,h.salt,h.iterations,t,userId),env.DB.prepare('DELETE FROM sessions WHERE user_id=?').bind(userId)]); await audit(env,admin.id,'admin.password_reset','user',userId,{}); return apiJson({ok:true}); }
+async function adminResetPassword(request,env,admin,userId){
+  const b=await bodyJson(request),next=String(b.newPassword||'');
+  if(next.length<8||next.length>128)return apiJson({error:'New password must be 8–128 characters.'},400);
+  const target=await env.DB.prepare("SELECT * FROM users WHERE id=? AND role='member'").bind(userId).first();
+  if(!target)return apiJson({error:'Member account not found.'},404);
+  const h=await hashPassword(next),t=now();
+  await env.DB.batch([
+    env.DB.prepare('UPDATE users SET password_hash=?,password_salt=?,password_iterations=?,updated_at=? WHERE id=?').bind(h.hash,h.salt,h.iterations,t,userId),
+    env.DB.prepare('DELETE FROM sessions WHERE user_id=?').bind(userId)
+  ]);
+  try{
+    const security=await readAccountSecurity(env);
+    for(const r of security.recoveryRequests)if(r.user_id===userId&&['Pending','Emailed'].includes(r.status)){r.status='Resolved';r.updated_at=t;}
+    for(const token of security.resetTokens)if(token.user_id===userId&&token.status==='Pending'){token.status='Revoked';token.updated_at=t;}
+    await writeAccountSecurity(env,security);
+  }catch(err){console.warn('Recovery request cleanup failed',err);}
+  await audit(env,admin.id,'admin.password_reset','user',userId,{});
+  return apiJson({ok:true});
+}
 async function adminAudit(env){ return apiJson({audit:(await env.DB.prepare('SELECT a.*,u.display_name AS actor_name FROM audit_log a LEFT JOIN users u ON u.id=a.actor_user_id ORDER BY a.created_at DESC LIMIT 300').all()).results}); }
 async function audit(env,actor,action,entityType,entityId,detail){ try{await env.DB.prepare('INSERT INTO audit_log (id,actor_user_id,action,entity_type,entity_id,detail_json,created_at) VALUES (?,?,?,?,?,?,?)').bind(id('aud'),actor||null,action,entityType,entityId||null,JSON.stringify(detail||{}).slice(0,4000),now()).run();}catch(e){console.warn('Audit write failed',e);} }
 
@@ -466,6 +627,10 @@ async function exportBackup(env,user){
     data={version:4,exportedAt:now(),scope:'member-backup',user:safeUser(user),orders,loyalty:await loyaltyData(env,uid),fun:await funData(env,uid),favourites:(await env.DB.prepare('SELECT product_id,created_at FROM favourites WHERE user_id=?').bind(uid).all()).results,cart:(await env.DB.prepare('SELECT product_id,quantity,updated_at FROM cart_items WHERE user_id=?').bind(uid).all()).results};
   }
   data.menuRoom=await menuDashboardData(env,user);
+  const security=await readAccountSecurity(env),profile=security.profiles.find(x=>x.user_id===user.id);
+  data.accountSecurity=user.role==='admin'
+    ?{profiles:security.profiles.map(x=>({userId:x.user_id,email:x.email,updatedAt:x.updated_at})),recoveryRequests:security.recoveryRequests.map(x=>({id:x.id,userId:x.user_id,emailMasked:x.email_masked,status:x.status,delivery:x.delivery,requestedAt:x.requested_at,expiresAt:x.expires_at}))}
+    :{email:profile?.email||'',updatedAt:profile?.updated_at||null};
   return new Response(JSON.stringify(data,null,2),{headers:apiHeaders({'Content-Type':'application/json; charset=utf-8','Content-Disposition':'attachment; filename="duck-bear-backup.json"'})});
 }
 

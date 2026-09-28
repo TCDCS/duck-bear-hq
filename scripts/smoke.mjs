@@ -22,6 +22,7 @@ class D1Mock {
 class R2ObjectMock {
   constructor(value,meta={}) { this.value=value; this.httpEtag='"mock"'; this.meta=meta; this.body=value; }
   writeHttpMetadata(headers){ if(this.meta.contentType) headers.set('content-type',this.meta.contentType); }
+  async text(){ if(typeof this.value==='string')return this.value; if(this.value instanceof Uint8Array)return new TextDecoder().decode(this.value); return String(this.value??''); }
 }
 class R2Mock {
   constructor(){this.map=new Map();}
@@ -49,7 +50,9 @@ function cookieFrom(res){return (res.headers.get('set-cookie')||'').split(';')[0
 let r=await call('/api/setup/status');expect(r.data.setupRequired===true,'setup should initially be required');
 r=await call('/api/setup',{method:'POST',body:{setupSecret:'smoke-setup-secret',admin:{username:'bear',displayName:'Zach',password:'test-pass-123'},member:{username:'duck',displayName:'Guannan',password:'test-pass-456'}}});expect(r.res.status===201,`setup failed ${r.res.status} ${JSON.stringify(r.data)}`);
 r=await call('/api/auth/login',{method:'POST',body:{username:'duck',password:'test-pass-456'}});expect(r.res.ok,'member login failed');const duckCookie=cookieFrom(r.res);expect(duckCookie.startsWith('db_session='),'missing member session cookie');
-r=await call('/api/bootstrap',{cookie:duckCookie});expect(r.res.ok && r.data.products.length>=10,'bootstrap/products failed');const duckId=r.data.user.id;
+r=await call('/api/bootstrap',{cookie:duckCookie});expect(r.res.ok && r.data.products.length>=10,'bootstrap/products failed');const duckId=r.data.user.id;expect(r.data.accountSecurity?.emailRegistered===false,'email should start unregistered');
+r=await call('/api/account/email',{method:'POST',cookie:duckCookie,body:{email:'guannan@example.com',currentPassword:'test-pass-456'}});expect(r.res.ok&&r.data.accountSecurity?.email==='guannan@example.com','email registration failed');
+r=await call('/api/auth/login',{method:'POST',body:{username:'guannan@example.com',password:'test-pass-456'}});expect(r.res.ok,'registered email login failed');
 r=await call('/api/cart',{method:'POST',cookie:duckCookie,body:{productId:'cuddle',action:'add',quantity:2}});expect(r.data.cart[0].qty===2,'cart add failed');
 r=await call('/api/orders/checkout',{method:'POST',cookie:duckCookie,body:{customerName:'Guannan',deliveryMethod:'Emergency Bear Delivery',deliveryNotes:'Test order'}});expect(r.res.status===201 && r.data.order.total_pence===0,'checkout failed');const orderId=r.data.order.id;expect(r.data.loyalty.balance===5,'checkout points failed');
 r=await call('/api/loyalty/claim',{method:'POST',cookie:duckCookie,body:{ruleId:'laugh'}});expect(r.res.ok && r.data.loyalty.balance===15,'loyalty claim failed');
@@ -68,15 +71,18 @@ r=await call('/api/memories',{method:'POST',cookie:duckCookie,body:{title:'Smoke
 r=await call('/api/account/password',{method:'POST',cookie:duckCookie,body:{currentPassword:'test-pass-456',newPassword:'test-pass-789'}});expect(r.res.ok,'member password change failed');
 r=await call('/api/auth/login',{method:'POST',body:{username:'duck',password:'test-pass-456'}});expect(r.res.status===401,'old member password should no longer work');
 r=await call('/api/auth/login',{method:'POST',body:{username:'duck',password:'test-pass-789'}});expect(r.res.ok,'new member password login failed');
+r=await call('/api/auth/recovery/request',{method:'POST',body:{email:'guannan@example.com'}});expect(r.res.ok&&/registered/i.test(r.data.message),'password recovery request failed');
+r=await call('/api/auth/recovery/request',{method:'POST',body:{email:'nobody@example.com'}});expect(r.res.ok&&/registered/i.test(r.data.message),'unknown recovery email should get generic success');
 
 r=await call('/api/auth/login',{method:'POST',body:{username:'bear',password:'test-pass-123'}});expect(r.res.ok,'admin login failed');const bearCookie=cookieFrom(r.res);
 r=await call('/api/admin/loyalty/adjust',{method:'POST',cookie:bearCookie,body:{userId:duckId,delta:100,note:'Opening test credit'}});expect(r.res.ok && r.data.loyalty.balance===100,'admin adjustment failed');
 r=await call(`/api/orders/${orderId}/status`,{method:'POST',cookie:bearCookie,body:{status:'Delivered',note:'Delivered by smoke-test Bear'}});expect(r.res.ok && r.data.order.status==='Delivered','order status failed');
-r=await call('/api/admin/dashboard',{cookie:bearCookie});expect(r.res.ok && Array.isArray(r.data.audit) && r.data.audit.length>0,'admin dashboard failed');
+r=await call('/api/admin/dashboard',{cookie:bearCookie});expect(r.res.ok && Array.isArray(r.data.audit) && r.data.audit.length>0,'admin dashboard failed');expect(r.data.admin.recoveryRequests?.some(x=>x.user_id===duckId),'admin should see member recovery request');
 r=await call('/api/export/orders.csv',{cookie:bearCookie});expect(r.res.ok && (r.res.headers.get('content-type')||'').includes('text/csv'),'order export failed');
 r=await call('/api/export/backup.json',{cookie:bearCookie});expect(r.res.ok,'backup failed');
 r=await call(`/api/admin/users/${duckId}/password`,{method:'POST',cookie:bearCookie,body:{newPassword:'test-pass-reset'}});expect(r.res.ok,'admin member password reset failed');
+r=await call('/api/admin/dashboard',{cookie:bearCookie});expect(!r.data.admin.recoveryRequests?.some(x=>x.user_id===duckId),'resolved recovery request should disappear');
 r=await call('/api/bootstrap',{cookie:duckCookie});expect(r.res.status===401,'admin password reset should invalidate member sessions');
 r=await call('/api/auth/login',{method:'POST',body:{username:'duck',password:'test-pass-reset'}});expect(r.res.ok,'reset member password login failed');
 
-console.log('Smoke test passed: setup, auth/password management, shared shop, £0 checkout, orders, transaction-safe loyalty/rewards, private media/memories, fun modules, admin tracking and exports.');
+console.log('Smoke test passed: setup, username/email auth, password recovery requests, password management, shared shop, £0 checkout, orders, transaction-safe loyalty/rewards, private media/memories, fun modules, admin tracking and exports.');
