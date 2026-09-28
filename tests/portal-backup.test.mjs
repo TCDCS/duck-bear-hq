@@ -1,0 +1,5 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as backups from '../public/portal/backup.mjs';
+test('private backup archive preserves binary originals and named JSON',async()=>{assert.equal(typeof backups.createZip,'function');const entries=[{name:'manifest.json',data:new TextEncoder().encode('{"version":7}')},{name:'photos/abc.jpg',data:new Uint8Array([255,216,1,2,3,0])}];const blob=backups.createZip(entries);const out=backups.readZip(new Uint8Array(await blob.arrayBuffer()));assert.equal(new TextDecoder().decode(out.get('manifest.json')),'{"version":7}');assert.deepEqual(out.get('photos/abc.jpg'),entries[1].data);});
+test('backup rejects corruption and unsafe paths',async()=>{assert.throws(()=>backups.createZip([{name:'../escape',data:new Uint8Array()}]),/path/i);const bytes=new Uint8Array(await backups.createZip([{name:'manifest.json',data:new Uint8Array([1,2,3])}]).arrayBuffer());bytes[44]^=32;assert.throws(()=>backups.readZip(bytes),/corrupt|checksum/i);});
