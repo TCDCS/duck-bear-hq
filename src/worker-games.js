@@ -1,3 +1,5 @@
+import {createPortalHandler} from './portal/server.mjs';
+export {PortalStore} from './portal/store.mjs';
 import original from "./index.js";
 import {createMangoHandler} from "./mango/static.mjs";
 import {createGameHandler} from "./game-routes.js";
@@ -37,4 +39,4 @@ const assets=new Map([
   ['game.js',{body:asset11,type:'text/javascript; charset=utf-8'}],
   ['host.js',{body:asset12,type:'text/javascript; charset=utf-8'}],
 ]);
-export default createGameHandler({assets,fallback:createMangoHandler(original)});
+export default createPortalHandler(createGameHandler({assets,fallback:createMangoHandler(original)}));
