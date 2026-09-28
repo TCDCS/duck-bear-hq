@@ -291,6 +291,19 @@ async function saveComplaint(request,env,user){ const b=await bodyJson(request);
 async function saveAdventure(request,env,user){ const b=await bodyJson(request); const title=text(b.title,120); if(!title)return apiJson({error:'Adventure title is required.'},400); const aid=id('adv'),t=now(); await env.DB.prepare('INSERT INTO adventures (id,user_id,title,detail,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?)').bind(aid,user.id,title,text(b.detail,1000),'Suggested',t,t).run(); await audit(env,user.id,'adventure.create','adventure',aid,{}); return apiJson({ok:true,fun:await funData(env,user.id)},201); }
 async function updateAdventureStatus(request,env,user,adventureId){ const a=await env.DB.prepare('SELECT * FROM adventures WHERE id=?').bind(adventureId).first(); if(!a)return apiJson({error:'Adventure not found.'},404); if(user.role!=='admin'&&a.user_id!==user.id)return apiJson({error:'Not allowed.'},403); const b=await bodyJson(request); const status=text(b.status,30); if(!['Suggested','Planned','Completed'].includes(status))return apiJson({error:'Invalid status.'},400); const t=now(); if(status==='Completed'&&a.status!=='Completed'){ try{await env.DB.batch([env.DB.prepare('UPDATE adventures SET status=?,completed_at=?,updated_at=? WHERE id=?').bind(status,t,t,adventureId),loyaltyTxStatement(env,{txId:id('tx'),accountUserId:a.user_id,actorUserId:user.id,type:'earn',label:'Adventure completed',delta:50,referenceType:'adventure',referenceId:adventureId,note:a.title,createdAt:t})]);}catch(e){if(!String(e).toLowerCase().includes('unique'))throw e;} await awardBadge(env,a.user_id,'adventurer'); await maybePointBadges(env,a.user_id,await currentBalance(env,a.user_id)); } else { await env.DB.prepare('UPDATE adventures SET status=?,completed_at=?,updated_at=? WHERE id=?').bind(status,status==='Completed'?(a.completed_at||t):null,t,adventureId).run(); } await audit(env,user.id,'adventure.status','adventure',adventureId,{status}); return apiJson({ok:true,fun:await funData(env,a.user_id),loyalty:await loyaltyData(env,a.user_id)}); }
 
+const MENU_ROOM_KEY='menu-room/private-data-v1.json';
+const MENU_MEALS=[
+  {id:'menu-2026-09-28-mon-dinner',week_start:'2026-09-28',meal_date:'2026-09-28',meal_type:'dinner',display_name:'The Mongolian Submission',description:'Slow-cooked Mongolian-style lamb with jasmine rice, pak choi, courgette, carrots, spring onion and sesame, with soy, hoisin, garlic and ginger flavours.',served:1},
+  {id:'menu-2026-09-28-tue-breakfast',week_start:'2026-09-28',meal_date:'2026-09-29',meal_type:'breakfast',display_name:'Tropical Tease',description:'Greek yoghurt with pineapple, banana, coconut and granola.',served:0},
+  {id:'menu-2026-09-28-tue-lunch',week_start:'2026-09-28',meal_date:'2026-09-29',meal_type:'lunch',display_name:'The Dagwood Dom',description:'A fully loaded Dagwood Bumstead-style baguette.',served:0},
+  {id:'menu-2026-09-28-tue-dinner',week_start:'2026-09-28',meal_date:'2026-09-29',meal_type:'dinner',display_name:'Moroccan Restraint',description:'Chicken with Moroccan-style spiced vegetables, cumin, paprika and harissa, with a cooling lemon and garlic yoghurt sauce.',served:0},
+  {id:'menu-2026-09-28-wed-breakfast',week_start:'2026-09-28',meal_date:'2026-09-30',meal_type:'breakfast',display_name:'Morning Mischief',description:'Mexican-style scrambled egg tortilla with salsa, cheese and avocado.',served:0},
+  {id:'menu-2026-09-28-wed-dinner',week_start:'2026-09-28',meal_date:'2026-09-30',meal_type:'dinner',display_name:'Thai Tied Salmon',description:'Thai-style salmon with rice and vegetables.',served:0},
+  {id:'menu-2026-09-28-thu-breakfast',week_start:'2026-09-28',meal_date:'2026-10-01',meal_type:'breakfast',display_name:'The Korean Wake-Up Call',description:'Korean-style egg and rice with kimchi and gochujang.',served:0},
+  {id:'menu-2026-09-28-thu-dinner',week_start:'2026-09-28',meal_date:'2026-10-01',meal_type:'dinner',display_name:'Red Room Chilli',description:'Rich chilli con carne.',served:0},
+  {id:'menu-2026-09-28-fri-breakfast',week_start:'2026-09-28',meal_date:'2026-10-02',meal_type:'breakfast',display_name:'Greek Temptation',description:'Warm Greek-style pita with feta, tomato, cucumber, olive oil and oregano.',served:0},
+  {id:'menu-2026-09-28-fri-dinner',week_start:'2026-09-28',meal_date:'2026-10-02',meal_type:'dinner',display_name:'Korean Punishment Fish & Chips',description:'Frozen fish and chips upgraded Korean-style with gochujang, honey, soy, lime, sesame, spring onion and spicy sriracha mayo.',served:0}
+];
 function menuRatingLabel(rating){
   if(rating===6)return 'I want to fuck you';
   if(rating===5)return 'I want to kiss you';
@@ -301,22 +314,42 @@ function strictRating(value,min,max,label){
   if(!Number.isInteger(n)||n<min||n>max)throw new HttpError(400,`${label} must be between ${min} and ${max}.`);
   return n;
 }
-async function menuDashboard(env,user){
-  const meals=(await env.DB.prepare(`SELECT * FROM menu_meals ORDER BY week_start DESC,meal_date,CASE meal_type WHEN 'breakfast' THEN 1 WHEN 'lunch' THEN 2 WHEN 'dinner' THEN 3 ELSE 4 END,display_name`).all()).results;
-  const reviewRows=(await env.DB.prepare(`SELECT r.*,u.display_name FROM menu_reviews r JOIN users u ON u.id=r.user_id ORDER BY r.updated_at DESC LIMIT 200`).all()).results;
-  const reviews=[];
-  for(const row of reviewRows){
-    const photos=(await env.DB.prepare('SELECT id,r2_key,file_name,mime_type,file_size,created_at FROM menu_review_photos WHERE review_id=? ORDER BY created_at').bind(row.id).all()).results;
-    reviews.push({...row,overall_label:menuRatingLabel(Number(row.overall_rating)),photos:photos.map(p=>({...p,url:`/media/${p.r2_key}`}))});
+function emptyMenuRoomData(){return {version:1,suggestions:[],reviews:[]};}
+async function readMenuRoomData(env){
+  const obj=await env.MEDIA.get(MENU_ROOM_KEY);
+  if(!obj)return emptyMenuRoomData();
+  try{
+    const raw=JSON.parse(await obj.text());
+    return {version:1,suggestions:Array.isArray(raw?.suggestions)?raw.suggestions.slice(-500):[],reviews:Array.isArray(raw?.reviews)?raw.reviews.slice(-500):[],updatedAt:raw?.updatedAt||null};
+  }catch(err){
+    console.warn('Menu Room data could not be read',err);
+    return emptyMenuRoomData();
   }
-  let suggestions;
-  if(user.role==='admin'){
-    suggestions=(await env.DB.prepare(`SELECT s.*,u.display_name FROM menu_suggestions s JOIN users u ON u.id=s.user_id ORDER BY s.target_week_start DESC,s.created_at DESC LIMIT 200`).all()).results;
-  }else{
-    suggestions=(await env.DB.prepare(`SELECT s.*,u.display_name FROM menu_suggestions s JOIN users u ON u.id=s.user_id WHERE s.user_id=? ORDER BY s.target_week_start DESC,s.created_at DESC LIMIT 100`).bind(user.id).all()).results;
-  }
-  return apiJson({user:safeUser(user),meals,reviews,suggestions,ratingLabels:{5:'I want to kiss you',6:'I want to fuck you'}});
 }
+async function writeMenuRoomData(env,data){
+  const payload={version:1,updatedAt:now(),suggestions:Array.isArray(data.suggestions)?data.suggestions.slice(-500):[],reviews:Array.isArray(data.reviews)?data.reviews.slice(-500):[]};
+  await env.MEDIA.put(MENU_ROOM_KEY,JSON.stringify(payload),{httpMetadata:{contentType:'application/json'},customMetadata:{private:'true',purpose:'menu-room'}});
+  return payload;
+}
+function sortMenuMeals(a,b){
+  if(a.week_start!==b.week_start)return String(b.week_start).localeCompare(String(a.week_start));
+  if(a.meal_date!==b.meal_date)return String(a.meal_date).localeCompare(String(b.meal_date));
+  const order={breakfast:1,lunch:2,dinner:3,other:4};
+  return (order[a.meal_type]||9)-(order[b.meal_type]||9)||String(a.display_name).localeCompare(String(b.display_name));
+}
+async function menuDashboardData(env,user,data=null){
+  const store=data||await readMenuRoomData(env);
+  const users=(await env.DB.prepare('SELECT id,display_name FROM users WHERE active=1').all()).results;
+  const names=new Map(users.map(u=>[u.id,u.display_name]));
+  const mealMap=new Map(MENU_MEALS.map(m=>[m.id,{...m}]));
+  for(const r of store.reviews||[])if(r.meal_snapshot?.id&&!mealMap.has(r.meal_snapshot.id))mealMap.set(r.meal_snapshot.id,{...r.meal_snapshot});
+  const meals=[...mealMap.values()].sort(sortMenuMeals);
+  const reviews=[...(store.reviews||[])].sort((x,y)=>String(y.updated_at||'').localeCompare(String(x.updated_at||''))).map(r=>({...r,display_name:names.get(r.user_id)||'Duck & Bear',overall_label:menuRatingLabel(Number(r.overall_rating)),photos:(Array.isArray(r.photos)?r.photos:[]).map(p=>({...p,url:`/media/${p.r2_key}`}))}));
+  const rawSuggestions=user.role==='admin'?[...(store.suggestions||[])]:[...(store.suggestions||[])].filter(x=>x.user_id===user.id);
+  const suggestions=rawSuggestions.sort((x,y)=>String(y.target_week_start||'').localeCompare(String(x.target_week_start||''))||String(y.created_at||'').localeCompare(String(x.created_at||''))).map(x=>({...x,display_name:names.get(x.user_id)||'Duck & Bear'}));
+  return {user:safeUser(user),meals,reviews,suggestions,ratingLabels:{5:'I want to kiss you',6:'I want to fuck you'}};
+}
+async function menuDashboard(env,user){return apiJson(await menuDashboardData(env,user));}
 async function saveMenuSuggestion(request,env,user){
   const b=await bodyJson(request);
   const title=text(b.title,140),description=text(b.description,1800),notes=text(b.notes,1000),target=text(b.targetWeekStart,10),mealType=text(b.mealType,20).toLowerCase();
@@ -324,37 +357,25 @@ async function saveMenuSuggestion(request,env,user){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(target))return apiJson({error:'Choose a target week.'},400);
   if(new Date(target+'T00:00:00Z').getUTCDay()!==1)return apiJson({error:'The target week must start on a Monday.'},400);
   if(!['breakfast','lunch','dinner','other'].includes(mealType))return apiJson({error:'Choose breakfast, lunch, dinner or other.'},400);
-  const sid=id('menusug'),t=now();
-  await env.DB.prepare('INSERT INTO menu_suggestions (id,user_id,target_week_start,meal_type,title,description,notes,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(sid,user.id,target,mealType,title,description,notes,'Suggested',t,t).run();
+  const data=await readMenuRoomData(env),sid=id('menusug'),t=now();
+  data.suggestions.push({id:sid,user_id:user.id,target_week_start:target,meal_type:mealType,title,description,notes,status:'Suggested',created_at:t,updated_at:t});
+  const saved=await writeMenuRoomData(env,data);
   await audit(env,user.id,'menu.suggestion.create','menu_suggestion',sid,{targetWeekStart:target,mealType});
-  return apiJson({ok:true,dashboard:await menuDashboardData(env,user)},201);
+  return apiJson({ok:true,dashboard:await menuDashboardData(env,user,saved)},201);
 }
 async function updateMenuSuggestionStatus(request,env,user,suggestionId){
   if(user.role!=='admin')return apiJson({error:'Admin access required.'},403);
   const b=await bodyJson(request),status=text(b.status,20);
   if(!['Suggested','Shortlisted','Planned','Skipped'].includes(status))return apiJson({error:'Invalid menu suggestion status.'},400);
-  const existing=await env.DB.prepare('SELECT id FROM menu_suggestions WHERE id=?').bind(suggestionId).first();
-  if(!existing)return apiJson({error:'Menu suggestion not found.'},404);
-  await env.DB.prepare('UPDATE menu_suggestions SET status=?,updated_at=? WHERE id=?').bind(status,now(),suggestionId).run();
+  const data=await readMenuRoomData(env),item=data.suggestions.find(x=>x.id===suggestionId);
+  if(!item)return apiJson({error:'Menu suggestion not found.'},404);
+  item.status=status;item.updated_at=now();
+  const saved=await writeMenuRoomData(env,data);
   await audit(env,user.id,'menu.suggestion.status','menu_suggestion',suggestionId,{status});
-  return apiJson({ok:true,dashboard:await menuDashboardData(env,user)});
-}
-async function menuDashboardData(env,user){
-  const meals=(await env.DB.prepare(`SELECT * FROM menu_meals ORDER BY week_start DESC,meal_date,CASE meal_type WHEN 'breakfast' THEN 1 WHEN 'lunch' THEN 2 WHEN 'dinner' THEN 3 ELSE 4 END,display_name`).all()).results;
-  const reviewRows=(await env.DB.prepare(`SELECT r.*,u.display_name FROM menu_reviews r JOIN users u ON u.id=r.user_id ORDER BY r.updated_at DESC LIMIT 200`).all()).results;
-  const reviews=[];
-  for(const row of reviewRows){
-    const photos=(await env.DB.prepare('SELECT id,r2_key,file_name,mime_type,file_size,created_at FROM menu_review_photos WHERE review_id=? ORDER BY created_at').bind(row.id).all()).results;
-    reviews.push({...row,overall_label:menuRatingLabel(Number(row.overall_rating)),photos:photos.map(p=>({...p,url:`/media/${p.r2_key}`}))});
-  }
-  const suggestions=user.role==='admin'
-    ?(await env.DB.prepare(`SELECT s.*,u.display_name FROM menu_suggestions s JOIN users u ON u.id=s.user_id ORDER BY s.target_week_start DESC,s.created_at DESC LIMIT 200`).all()).results
-    :(await env.DB.prepare(`SELECT s.*,u.display_name FROM menu_suggestions s JOIN users u ON u.id=s.user_id WHERE s.user_id=? ORDER BY s.target_week_start DESC,s.created_at DESC LIMIT 100`).bind(user.id).all()).results;
-  return {user:safeUser(user),meals,reviews,suggestions,ratingLabels:{5:'I want to kiss you',6:'I want to fuck you'}};
+  return apiJson({ok:true,dashboard:await menuDashboardData(env,user,saved)});
 }
 async function saveMenuReview(request,env,user){
-  const b=await bodyJson(request),mealId=text(b.mealId,120);
-  const meal=await env.DB.prepare('SELECT * FROM menu_meals WHERE id=?').bind(mealId).first();
+  const b=await bodyJson(request),mealId=text(b.mealId,120),meal=MENU_MEALS.find(x=>x.id===mealId);
   if(!meal)return apiJson({error:'Choose a meal from the menu.'},404);
   let overall,taste,plating;
   try{
@@ -369,23 +390,25 @@ async function saveMenuReview(request,env,user){
     if(!['image/jpeg','image/png','image/webp','image/gif'].includes(type))return apiJson({error:'Menu reviews accept image files only.'},400);
     if(!Number.isFinite(size)||size<1||size>MAX_UPLOAD_BYTES)return apiJson({error:'Invalid menu review photo size.'},400);
   }
-  const existing=await env.DB.prepare('SELECT * FROM menu_reviews WHERE meal_id=? AND user_id=?').bind(mealId,user.id).first();
-  const t=now(),rid=existing?.id||id('menurev');
-  if(existing){
-    await env.DB.prepare('UPDATE menu_reviews SET overall_rating=?,taste_rating=?,plating_rating=?,comment=?,updated_at=? WHERE id=?').bind(overall,taste,plating,comment,t,rid).run();
+  const data=await readMenuRoomData(env),t=now();
+  let review=data.reviews.find(x=>x.meal_id===mealId&&x.user_id===user.id),created=false;
+  if(!review){
+    review={id:id('menurev'),meal_id:mealId,meal_snapshot:{...meal},user_id:user.id,overall_rating:overall,taste_rating:taste,plating_rating:plating,comment,photos:[],created_at:t,updated_at:t};
+    data.reviews.push(review);created=true;
   }else{
-    await env.DB.prepare('INSERT INTO menu_reviews (id,meal_id,user_id,overall_rating,taste_rating,plating_rating,comment,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)').bind(rid,mealId,user.id,overall,taste,plating,comment,t,t).run();
+    review.meal_snapshot=review.meal_snapshot||{...meal};
+    review.overall_rating=overall;review.taste_rating=taste;review.plating_rating=plating;review.comment=comment;review.updated_at=t;
+    if(!Array.isArray(review.photos))review.photos=[];
   }
-  const count=await env.DB.prepare('SELECT COUNT(*) AS n FROM menu_review_photos WHERE review_id=?').bind(rid).first();
-  const remaining=Math.max(0,4-Number(count?.n||0));
+  const usedKeys=new Set((data.reviews||[]).flatMap(r=>(Array.isArray(r.photos)?r.photos:[]).map(p=>p.r2_key)));
+  const remaining=Math.max(0,4-review.photos.length);
   for(const a of attachments.slice(0,remaining)){
-    const key=text(a.key,500);
-    const dup=await env.DB.prepare('SELECT 1 AS x FROM menu_review_photos WHERE r2_key=?').bind(key).first();
-    if(dup)continue;
-    await env.DB.prepare('INSERT INTO menu_review_photos (id,review_id,r2_key,file_name,mime_type,file_size,created_at) VALUES (?,?,?,?,?,?,?)').bind(id('menuphoto'),rid,key,text(a.name,160),text(a.type,100),Number(a.size),t).run();
+    const key=text(a.key,500);if(usedKeys.has(key))continue;
+    review.photos.push({id:id('menuphoto'),r2_key:key,file_name:text(a.name,160),mime_type:text(a.type,100),file_size:Number(a.size),created_at:t});usedKeys.add(key);
   }
-  await audit(env,user.id,'menu.review.save','menu_review',rid,{mealId,overall,taste,plating});
-  return apiJson({ok:true,dashboard:await menuDashboardData(env,user)},existing?200:201);
+  const saved=await writeMenuRoomData(env,data);
+  await audit(env,user.id,'menu.review.save','menu_review',review.id,{mealId,overall,taste,plating});
+  return apiJson({ok:true,dashboard:await menuDashboardData(env,user,saved)},created?201:200);
 }
 
 async function uploadMedia(request,env,user){ const form=await request.formData(); const file=form.get('file'); if(!(file instanceof File))return apiJson({error:'Choose a file.'},400); if(file.size<1||file.size>MAX_UPLOAD_BYTES)return apiJson({error:'Files must be 8 MB or smaller.'},400); if(!ALLOWED_UPLOAD_TYPES.has(file.type))return apiJson({error:'Allowed: JPG, PNG, WebP, GIF, MP4, WebM or PDF.'},400); const purpose=text(form.get('purpose'),40); const menuReview=purpose==='menu-review'; if(menuReview&&!['image/jpeg','image/png','image/webp','image/gif'].includes(file.type))return apiJson({error:'Menu reviews accept JPG, PNG, WebP or GIF images.'},400); const ext=extensionFor(file.type),folder=menuReview?'menu-reviews':'memories'; const key=`${folder}/${new Date().toISOString().slice(0,10)}/${user.id}/${crypto.randomUUID()}${ext}`; await env.MEDIA.put(key,file.stream(),{httpMetadata:{contentType:file.type},customMetadata:{originalName:text(file.name,160),uploadedBy:user.id,purpose:menuReview?'menu-review':'memory'}}); await audit(env,user.id,menuReview?'menu.media.upload':'media.upload','r2_object',key,{name:text(file.name,160),size:file.size,type:file.type}); return apiJson({ok:true,attachment:{key,name:text(file.name,160),type:file.type,size:file.size,url:`/media/${key}`}},201); }
