@@ -292,6 +292,7 @@ async function saveAdventure(request,env,user){ const b=await bodyJson(request);
 async function updateAdventureStatus(request,env,user,adventureId){ const a=await env.DB.prepare('SELECT * FROM adventures WHERE id=?').bind(adventureId).first(); if(!a)return apiJson({error:'Adventure not found.'},404); if(user.role!=='admin'&&a.user_id!==user.id)return apiJson({error:'Not allowed.'},403); const b=await bodyJson(request); const status=text(b.status,30); if(!['Suggested','Planned','Completed'].includes(status))return apiJson({error:'Invalid status.'},400); const t=now(); if(status==='Completed'&&a.status!=='Completed'){ try{await env.DB.batch([env.DB.prepare('UPDATE adventures SET status=?,completed_at=?,updated_at=? WHERE id=?').bind(status,t,t,adventureId),loyaltyTxStatement(env,{txId:id('tx'),accountUserId:a.user_id,actorUserId:user.id,type:'earn',label:'Adventure completed',delta:50,referenceType:'adventure',referenceId:adventureId,note:a.title,createdAt:t})]);}catch(e){if(!String(e).toLowerCase().includes('unique'))throw e;} await awardBadge(env,a.user_id,'adventurer'); await maybePointBadges(env,a.user_id,await currentBalance(env,a.user_id)); } else { await env.DB.prepare('UPDATE adventures SET status=?,completed_at=?,updated_at=? WHERE id=?').bind(status,status==='Completed'?(a.completed_at||t):null,t,adventureId).run(); } await audit(env,user.id,'adventure.status','adventure',adventureId,{status}); return apiJson({ok:true,fun:await funData(env,a.user_id),loyalty:await loyaltyData(env,a.user_id)}); }
 
 const MENU_ROOM_KEY='menu-room/private-data-v1.json';
+// Append future weekly meals here; keep old entries so archived meals remain reviewable.
 const MENU_MEALS=[
   {id:'menu-2026-09-28-mon-dinner',week_start:'2026-09-28',meal_date:'2026-09-28',meal_type:'dinner',display_name:'The Mongolian Submission',description:'Slow-cooked Mongolian-style lamb with jasmine rice, pak choi, courgette, carrots, spring onion and sesame, with soy, hoisin, garlic and ginger flavours.',served:1},
   {id:'menu-2026-09-28-tue-breakfast',week_start:'2026-09-28',meal_date:'2026-09-29',meal_type:'breakfast',display_name:'Tropical Tease',description:'Greek yoghurt with pineapple, banana, coconut and granola.',served:0},
@@ -464,6 +465,7 @@ async function exportBackup(env,user){
   }else{
     data={version:4,exportedAt:now(),scope:'member-backup',user:safeUser(user),orders,loyalty:await loyaltyData(env,uid),fun:await funData(env,uid),favourites:(await env.DB.prepare('SELECT product_id,created_at FROM favourites WHERE user_id=?').bind(uid).all()).results,cart:(await env.DB.prepare('SELECT product_id,quantity,updated_at FROM cart_items WHERE user_id=?').bind(uid).all()).results};
   }
+  data.menuRoom=await menuDashboardData(env,user);
   return new Response(JSON.stringify(data,null,2),{headers:apiHeaders({'Content-Type':'application/json; charset=utf-8','Content-Disposition':'attachment; filename="duck-bear-backup.json"'})});
 }
 
