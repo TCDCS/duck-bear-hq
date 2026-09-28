@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 440" role="img" aria-labelledby="title desc">
+<title id="title">Duck and Bear, making a little home together</title><desc id="desc">An ink-outlined rubber duck and a friendly bear beside a colourful scrapbook, leaves and little stars.</desc>
+<defs><pattern id="pencil" width="13" height="13" patternUnits="userSpaceOnUse" patternTransform="rotate(-22)"><path d="M0 2h8M4 8h5" fill="none" stroke="#6b4624" stroke-opacity=".1" stroke-width="1"/></pattern></defs>
+<g stroke="#263b43" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+<path d="M59 351c29-23 349-35 401 1-18 33-352 43-401-1Z" fill="#8bc8ac" stroke-width="3"/>
+<path d="M78 326c-32-38-41-74-19-99 30 12 49 46 32 83m-9 19c-4-59 16-92 42-100 20 30 6 69-29 99" fill="#5d9e7c" stroke-width="3"/>
+<path d="m84 339-16-75m19 58 25-67" fill="none" stroke-width="2"/>
+<path d="M427 327c38-30 47-70 27-91-33 18-41 52-32-9 78m7 24c-3-47-32-81-52-71-9 37 13 60 40 70" fill="#80b896" stroke-width="3"/>
+<path d="m424 345 20-80m-19 69-33-48" fill="none" stroke-width="2"/>
+<!-- Bear: slightly irregular ink shapes and soft pencil hatching. -->
+<path d="M253 228c-30 39-51 99-35 130 10 22 173 27 187-1 14-35-14-104-42-128Z" fill="#b78055"/>
+<path d="M263 246c-25 30-30 89-14 109 23 14 89 13 107-6 12-39-9-85-30-102Z" fill="#e4ba88" stroke-width="3"/>
+<path d="M249 289c-31-8-40 4-36 27 10 17 33 18 49 7m106-37c33-4 45 5 39 28-10 19-31 20-45 5" fill="#b78055"/>
+<path d="M223 341c-28 10-24 38 4 43 31 3 44-10 40-27m95-5c-3 23 19 36 44 27 21-17 5-38-20-37" fill="#aa7251"/>
+<ellipse cx="245" cy="145" rx="34" ry="38" fill="#b78055" transform="rotate(-17 245 145)"/>
+<ellipse cx="360" cy="137" rx="34" ry="36" fill="#b78055" transform="rotate(19 360 137)"/>
+<path d="M227 146c-3-24 23-29 32-9l-6 24-23 2Z" fill="#e6b995" stroke-width="2.5"/>
+<path d="M344 138c9-25 34-20 34 2l-17 23-20-10Z" fill="#e6b995" stroke-width="2.5"/>
+<path d="M227 166c22-29 103-39 142-14 30 25 38 66 19 97-24 32-104 49-145 19-30-24-43-69-16-102Z" fill="#b78055"/>
+<path d="M233 166c28-25 92-33 130-9 25 20 40 63 21 87-24 32-97 49-133 22-31-24-44-70-18-100Z" fill="url(#pencil)" stroke="none"/>
+<path d="m279 146 6-13 9 11 10-18 9 17 11-12" fill="#b78055" stroke-width="3"/>
+<ellipse cx="274" cy="205" rx="10" ry="15" fill="#263b43" stroke="none"/>
+<ellipse cx="344" cy="194" rx="10" ry="15" fill="#263b43" stroke="none"/>
+<circle cx="276" cy="200" r="3.8" fill="#fffef3" stroke="none"/><circle cx="346" cy="189" r="3.8" fill="#fffef3" stroke="none"/>
+<path d="m259 181 15-5m64-10 17 4" fill="none" stroke-width="3"/>
+<path d="M283 230c-1-16 42-25 52-9 14 24-36 45-49 26Z" fill="#efca9b" stroke-width="2.5"/>
+<path d="M297 222q16-8 23-1c0 12-17 17-23 1Z" fill="#263b43" stroke-width="2"/>
+<path d="m309 230 1 9q-8 11-15 4m15-4q11 7 17-5" fill="none" stroke-width="2.5"/>
+<ellipse cx="257" cy="228" rx="13" ry="7" fill="#edb0a2" stroke="none"/><ellipse cx="363" cy="214" rx="13" ry="7" fill="#edb0a2" stroke="none"/>
+<path d="M252 268q49 28 109-14l8 17c-39 29-87 33-117 12Z" fill="#e57c90" stroke-width="3"/>
+<path d="m341 278 14 34-25-6-4-23" fill="#e57c90" stroke-width="3"/>
+<!-- A yellow rubber duck, with a rounded floating body and orange beak. -->
+<path d="M102 246c-16-28-4-60 25-68 38-11 67 20 57 49-7 21-4 22 17 24 34 0 43-26 50-24 18 32 11 76-23 101-34 25-91 20-119-5-20-19-28-48-7-77Z" fill="#ffd44c"/>
+<path d="M122 330c-26-20-42-52-22-75 13 41 60 56 102 43 28-9 42-24 48-43 4 32-18 68-52 79-25 8-55 8-76-4Z" fill="#f3bd2f" stroke="none"/>
+<path d="M112 219c-18-8-25-9-33-1-6 7 5 16 24 17l14-5Z" fill="#fa9b40" stroke-width="3"/>
+<path d="m83 224 20 2" fill="none" stroke-width="2"/>
+<ellipse cx="141" cy="214" rx="7.5" ry="11" fill="#263b43" stroke="none"/><circle cx="143" cy="210" r="3" fill="#fffaf0" stroke="none"/>
+<ellipse cx="151" cy="237" rx="11" ry="6" fill="#f6a45c" stroke="none"/>
+<path d="M136 269c20-6 41-2 52 11-3 25-27 36-46 20" fill="#ffdc67" stroke="#c9952b" stroke-width="3"/>
+<path d="M114 196q15-16 31-9" fill="none" stroke="#fff0a8" stroke-width="6"/>
+<!-- A paper scrapbook, no personal imagery. -->
+<path d="m147 357 49-19 119 21-39 44-125-18Z" fill="#cca8ee" stroke-width="3"/>
+<path d="m165 350 49-15 110 19-50 35-115-17Z" fill="#fffaf0" stroke-width="3"/>
+<path d="m214 335-5 30 65 24 10-26" fill="none" stroke-width="2"/>
+<path d="m177 355 20-6m-25 13 22-6m41-4 40 8m-39 1 31 9" fill="none" stroke="#8aab9e" stroke-width="3"/>
+<path d="m217 360 11 17 6-9 10 1-17-16" fill="#ef8793" stroke-width="2"/>
+<path d="M180 151c-26-13-34-31-20-41 11-9 24 1 24 9 6-15 26-11 26 3-1 14-16 24-30 29Z" fill="#f6a2b1" stroke-width="3"/>
+<path d="m407 166 7-15 10 11 17 2-12 11 1 16-14-8-16 4 6-16Z" fill="#fff3ac" stroke-width="3"/>
+<path d="m98 144 10-12m-1 28 15-1m282 80 15 4m-24 9 10 12" fill="none" stroke="#397d78" stroke-width="3"/>
+</g></svg>
