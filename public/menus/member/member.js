@@ -49,13 +49,19 @@ function fillMeals(){
   select.dispatchEvent(new Event('change'));
 }
 function currentUserReview(mealId){return state.reviews.find(r=>r.meal_id===mealId&&r.user_id===state.user.id);}
+function renderPhotoPreview(files=[]){
+  const root=$('photoPreview');root.replaceChildren();
+  const existing=currentUserReview($('mealSelect').value)?.photos||[];
+  for(const p of existing){const img=document.createElement('img');img.src=p.url;img.alt='Existing food photo';root.append(img);}
+  for(const file of files){const img=document.createElement('img');img.src=URL.createObjectURL(file);img.alt='Selected food photo';root.append(img);}
+}
 function loadReviewForMeal(){
   const r=currentUserReview($('mealSelect').value);
   setStars('overallStars','overallRating',r?.overall_rating||0);
   setStars('tasteStars','tasteRating',r?.taste_rating||0);
   setStars('platingStars','platingRating',r?.plating_rating||0);
   $('reviewForm').elements.comment.value=r?.comment||'';
-  $('photoPreview').replaceChildren();
+  renderPhotoPreview();
 }
 function renderSuggestions(){
   const root=$('suggestionList');root.replaceChildren();
@@ -125,14 +131,11 @@ $('suggestionForm').addEventListener('submit',async e=>{
     applyDashboard(d);form.elements.title.value='';form.elements.description.value='';form.elements.notes.value='';status($('suggestionStatus'),'Added to the planning pool.','success');
   }catch(err){status($('suggestionStatus'),err.message,'error');}
 });
-$('reviewPhotos').addEventListener('change',()=>{
-  const root=$('photoPreview');root.replaceChildren();const files=[...$('reviewPhotos').files].slice(0,4);
-  for(const file of files){const img=document.createElement('img');img.src=URL.createObjectURL(file);img.alt='Selected food photo';root.append(img);}
-});
+$('reviewPhotos').addEventListener('change',()=>renderPhotoPreview([...$('reviewPhotos').files]));
 $('reviewForm').addEventListener('submit',async e=>{
   e.preventDefault();if(!ratings.overallRating||!ratings.tasteRating||!ratings.platingRating){status($('reviewStatus'),'Choose overall, taste and plating ratings.','error');return;}
-  const form=e.currentTarget,files=[...$('reviewPhotos').files];
-  if(files.length>4){status($('reviewStatus'),'Choose no more than four photos.','error');return;}
+  const form=e.currentTarget,files=[...$('reviewPhotos').files],existingCount=(currentUserReview(form.elements.mealId.value)?.photos||[]).length,remaining=4-existingCount;
+  if(files.length>remaining){status($('reviewStatus'),remaining>0?'You can add '+remaining+' more photo'+(remaining===1?'':'s')+' to this review.':'This review already has four photos.','error');return;}
   status($('reviewStatus'),files.length?'Uploading photos…':'Saving review…');
   try{
     const attachments=[];for(const file of files)attachments.push(await uploadPhoto(file));
@@ -140,7 +143,7 @@ $('reviewForm').addEventListener('submit',async e=>{
       mealId:form.elements.mealId.value,overallRating:ratings.overallRating,tasteRating:ratings.tasteRating,platingRating:ratings.platingRating,
       comment:form.elements.comment.value,attachments
     })});
-    applyDashboard(d);$('reviewPhotos').value='';$('photoPreview').replaceChildren();status($('reviewStatus'),'Review saved.','success');
+    applyDashboard(d);$('reviewPhotos').value='';renderPhotoPreview();status($('reviewStatus'),'Review saved.','success');
   }catch(err){status($('reviewStatus'),err.message,'error');}
 });
 boot();
