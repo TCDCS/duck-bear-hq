@@ -1,46 +1,18 @@
 {
   "game": "Last Luas",
-  "version": "0.3.0",
-  "status": "playable vertical slice — street identity and finish polish",
-  "engine": "PlayCanvas 2.22.2",
-  "location": "Dawson Street, Dublin",
+  "version": "1.0.0",
+  "edition": "Hand-drawn inked",
+  "engine": "Canvas 2D",
+  "access": "owner-only",
   "durationSeconds": 90,
-  "controls": [
-    "keyboard",
-    "touch"
+  "assetSet": "inked-20260919-a",
+  "route": "Northbound Dawson Street to the western Dawson platform",
+  "art": "Original editable Canvas illustrations. Genuine official website logo artwork for Hodges Figgis, Caf\u00e9 en Seine, The Ivy and Pret. Not a measured architectural replica.",
+  "logos": [
+    "hodges",
+    "cafe",
+    "ivy",
+    "pret"
   ],
-  "artDirection": "high-detail cartoon Dublin, wet evening",
-  "environment": {
-    "wetRoad": true,
-    "puddleReflections": true,
-    "overheadLuasWires": true,
-    "ambientPedestrians": true,
-    "streetTreesAndPlanters": true,
-    "raisedLuasPlatforms": true,
-    "platformWhiteEdgeLines": true,
-    "glassShelters": true,
-    "runtimeNameboards": true
-  },
-  "landmarks": [
-    "ARKET Dawson Street",
-    "Hodges Figgis",
-    "Cafe en Seine",
-    "The Dawson Lounge",
-    "The Ivy Dawson Street",
-    "Dawson Luas stop"
-  ],
-  "gameplay": [
-    "three-lane runner",
-    "jumping",
-    "moving pedestrians",
-    "cyclists and delivery riders",
-    "umbrella screen obstruction",
-    "paired lane closures",
-    "last-10-second urgency",
-    "Luas pull-away finish",
-    "door-closing warning sequence",
-    "camera FOV sprint effect",
-    "local best catch time"
-  ],
-  "notes": "v0.3 adds runtime-rendered Dawson Street nameboards, a stronger door-closing/Luas pull-away finale and camera/audio urgency. Street geometry remains stylised and replaceable with final Blender/GLB facades."
+  "retired": "PlayCanvas 0.3 is retained in Git history only."
 }

@@ -1,4 +1,5 @@
-import original from "./index.js";
+import original, {getAuth} from "./index.js";
+import {createLastLuasHandler} from "./last-luas/routes.mjs";
 import {createMangoHandler} from "./mango/static.mjs";
 import {createGameHandler} from "./game-routes.js";
 import asset0 from "./kart-assets/index.html.txt";
@@ -37,4 +38,4 @@ const assets=new Map([
   ['game.js',{body:asset11,type:'text/javascript; charset=utf-8'}],
   ['host.js',{body:asset12,type:'text/javascript; charset=utf-8'}],
 ]);
-export default createGameHandler({assets,fallback:createMangoHandler(original)});
+export default createLastLuasHandler(createGameHandler({assets,fallback:createMangoHandler(original)}),getAuth);

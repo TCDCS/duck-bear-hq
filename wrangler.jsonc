@@ -11,14 +11,7 @@
     "directory": "./public",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": [
-      "/api/*",
-      "/media/*",
-      "/games/wacky-races",
-      "/games/wacky-races/*",
-      "/games/proper-karted",
-      "/games/proper-karted/*"
-    ]
+    "run_worker_first": true
   },
   "rules": [
     {
