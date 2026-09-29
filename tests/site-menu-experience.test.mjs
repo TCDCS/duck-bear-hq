@@ -2,6 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {mealStatus,SERVING_TIMES} from '../public/menus/menus.js';
+import {publicMealStatus} from '../src/hq/extras.mjs';
+import {createHqHandler} from '../src/hq/handler.mjs';
+import {fixture,call} from './helpers/hq-fixture.mjs';
+const handler=createHqHandler({fetch:async()=>new Response('fallback',{status:404})});
 
 test('meal status flips at the requested Dublin serving times',()=>{
   assert.deepEqual(SERVING_TIMES,{breakfast:'06:45',lunch:'12:00',dinner:'18:00'});
@@ -21,7 +25,7 @@ test('every current public meal card links to the real serving review route',asy
  for(const id of ids)assert.match(html,new RegExp('href="/menus/meals/'+id+'/reviews/"'),id);
  assert.equal((html.match(/class="meal(?: featured-meal)? meal-review-card"/g)||[]).length,10);
  assert.match(html,/data-date="2026-09-29"/);
- assert.match(html,/\/menus\/menus\.js\?v=7\.4\.0/);
+ assert.match(html,/\/menus\/menus\.js\?v=7\.4\.1/);
 });
 
 test('homepage hero is fixed to the Causeway artwork and below-fold catalogue is deferred',async()=>{
@@ -31,11 +35,12 @@ test('homepage hero is fixed to the Causeway artwork and below-fold catalogue is
    readFile(new URL('../public/hq/sketch-world.svg',import.meta.url),'utf8')
  ]);
  assert.match(html,/friendly brown grizzly bear posing on the Giant’s Causeway/);
- assert.match(html,/rel="preload" as="image" href="\/hq\/sketch-world\.svg\?v=7\.4\.0"/);
+ assert.match(html,/rel="preload" as="image" href="\/hq\/sketch-world\.svg\?v=7\.4\.1"/);
  assert.doesNotMatch(js,/heroUrl/);
  assert.match(js,/IntersectionObserver/);
  assert.match(art,/Giant's Causeway/);
  assert.match(art,/friendly shaggy brown grizzly bear/);
+ assert.match(js,/setInterval/);
 });
 
 test('Our Space no longer fetches every private record before rendering',async()=>{
@@ -46,4 +51,25 @@ test('Our Space no longer fetches every private record before rendering',async()
  assert.doesNotMatch(home,/const all=await allRecords\(\)/);
  for(const kind of ['plan','serving','memory','note'])assert.match(home,new RegExp("allRecords\\('"+kind+"'\\)"));
  assert.match(home,/Promise\.all/);
+});
+
+
+test('Worker-rendered live menu uses Dublin-time status and real serving review routes',async()=>{
+ assert.equal(publicMealStatus('2026-09-29','breakfast',new Date('2026-09-29T05:44:00Z')),'upcoming');
+ assert.equal(publicMealStatus('2026-09-29','breakfast',new Date('2026-09-29T05:45:00Z')),'served');
+ assert.equal(publicMealStatus('2026-09-29','lunch',new Date('2026-09-29T11:00:00Z')),'served');
+ assert.equal(publicMealStatus('2026-09-29','dinner',new Date('2026-09-29T17:00:00Z')),'served');
+ const f=await fixture();try{
+  await call(handler,f.env,'/api/hq/me');
+  const r=await call(handler,f.env,'/menus/',{user:null});
+  assert.equal(r.status,200);
+  const html=await r.response.text();
+  const ids=['menu-2026-09-28-mon-dinner','menu-2026-09-28-tue-breakfast','menu-2026-09-28-tue-lunch','menu-2026-09-28-tue-dinner','menu-2026-09-28-wed-breakfast','menu-2026-09-28-wed-dinner','menu-2026-09-28-thu-breakfast','menu-2026-09-28-thu-dinner','menu-2026-09-28-fri-breakfast','menu-2026-09-28-fri-dinner'];
+  for(const id of ids)assert.match(html,new RegExp('href="/menus/meals/'+id+'/reviews/"'),id);
+  assert.equal((html.match(/meal-review-card/g)||[]).length,10);
+  assert.match(html,/class="meal-status (?:served|upcoming)"/);
+  assert.match(html,/data-day-status>(?:Served|Upcoming)</);
+  assert.match(html,/\/menus\/menus\.css\?v=8/);
+  assert.match(html,/Website 7\.4\.1/);
+ }finally{f.close();}
 });
