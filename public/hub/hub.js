@@ -1,14 +1,16 @@
 (()=>{
 'use strict';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const state={dashboard:null,family:null,scrapbook:null,menus:null,users:null,security:null};
+const state={dashboard:null,family:null,scrapbook:null,menus:null,users:null,security:null,info:null,board:null};
 const routeTitles={
-  home:['PRIVATE HOME','Duck & Bear Home'],
+  home:['PRIVATE HOME','Duck & Bear Home'],'home/today':['OUR SPACE','Today'],'home/quick-add':['OUR SPACE','Quick add'],
   'menus/library':['OUR MENUS','Menu library'],'menus/week':['OUR MENUS','This week'],'menus/history':['OUR MENUS','Past weeks'],
   'scrapbook/timeline':['SCRAPBOOK','Our timeline'],'scrapbook/add':['SCRAPBOOK','Add a memory'],
   'family/tree':['FAMILY TREE','Our family tree'],'family/people':['FAMILY TREE','People'],'family/relationships':['FAMILY TREE','Relationships'],
-  apps:['DUCK & BEAR APPS','Apps & games'],
-  'settings/profile':['SETTINGS','Profile'],'settings/security':['SETTINGS','Security'],'settings/appearance':['SETTINGS','Appearance'],'settings/privacy':['SETTINGS','Privacy'],
+  'plans/board':['PLANS & NOTES','Shared board'],'plans/bucket':['PLANS & NOTES','Bucket list'],'plans/decisions':['PLANS & NOTES','Decisions'],'plans/notes':['PLANS & NOTES','Little notes'],
+  'info/library':['INFO LIBRARY','Useful information'],'info/new':['INFO LIBRARY','New info page'],
+  apps:['DUCK & BEAR APPS','Apps & games'],about:['DUCK & BEAR','About us'],
+  'settings/profile':['SETTINGS','Profile'],'settings/email':['SETTINGS','Email'],'settings/password':['SETTINGS','Password'],'settings/appearance':['SETTINGS','Appearance'],'settings/privacy':['SETTINGS','Privacy'],'settings/data':['SETTINGS','Data & exports'],
   'admin/users':['ADMIN','Users'],'admin/permissions':['ADMIN','Permissions']
 };
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -23,36 +25,96 @@ async function api(path,opts={}){
   return data;
 }
 function level(area,needed){const order=['none','read','contribute','admin'];return order.indexOf(state.dashboard?.permissions?.[area]||'none')>=order.indexOf(needed);}
-function currentRoute(){return (location.hash.slice(1)||'home').replace(/^\/+/,'');}
-function tabs(group,items){return '<nav class="tabs">'+items.map(x=>'<a class="'+(currentRoute()===x[0]?'active':'')+'" href="#'+x[0]+'">'+x[1]+'</a>').join('')+'</nav>';}
-function pageTitle(route){const t=routeTitles[route]||routeTitles.home;$('#crumb').textContent=t[0];$('#topTitle').textContent=t[1];}
+function routeHref(route){return '/hub/'+(route==='home'?'home':route).replace(/^\/+|\/+$/g,'')+'/';}
+function currentRoute(){
+  const legacy=(location.hash.slice(1)||'').replace(/^\/+|\/+$/g,'');
+  if(legacy)return legacy;
+  const path=location.pathname.replace(/^\/hub\/?/,'').replace(/\/+$/,'');
+  return path||'home';
+}
+function navigate(route,replace=false){
+  const href=routeHref(route);
+  history[replace?'replaceState':'pushState']({},'',href);
+  closeNav();
+  render();
+}
+function tabs(group,items){return '<nav class="tabs">'+items.map(x=>'<a data-hub-route="'+x[0]+'" class="'+(currentRoute()===x[0]?'active':'')+'" href="'+routeHref(x[0])+'">'+x[1]+'</a>').join('')+'</nav>';}
+function pageTitle(route){const t=routeTitles[route]||(route.startsWith('info/')?['INFO LIBRARY','Info page']:routeTitles.home);$('#crumb').textContent=t[0];$('#topTitle').textContent=t[1];}
 function updateNav(route){
   $$('[data-route]').forEach(a=>a.classList.toggle('active',a.dataset.route===route));
   ['menus','scrapbook','familyTree'].forEach(area=>{const el=document.querySelector('[data-area="'+area+'"]');if(el)el.hidden=!level(area,'read');});
-  $('#adminLinks').hidden=state.dashboard?.user?.role!=='admin';
+  $('#adminLinks').hidden=state.dashboard?.user?.role!=='admin';const infoNew=$('#infoNewLink');if(infoNew)infoNew.hidden=state.dashboard?.user?.role!=='admin';
 }
 function setPage(html){const p=$('#page');p.innerHTML=html;p.focus({preventScroll:true});window.scrollTo({top:0,behavior:'smooth'});}
+function closeNav(){$('#sidebar').classList.remove('open');$('#scrim').classList.remove('show');$('#scrim').hidden=true;}
 function summaryCards(){
   const c=state.dashboard.counts;
   return '<div class="grid stats">'+
-    stat('🌳','Family people',c.family)+stat('📸','Scrapbook',c.scrapbook)+stat('🍜','Menu ideas',c.menuLibrary)+stat('🗓️','Saved weeks',c.weeks)+
+    stat('📸','Scrapbook',c.scrapbook)+stat('🍜','Menu ideas',c.menuLibrary)+stat('📚','Info pages',c.info)+stat('🗳️','Open decisions',c.decisions)+
   '</div>';
 }
 function stat(icon,label,value){return '<article class="stat"><small>'+icon+' '+esc(label)+'</small><strong>'+esc(value)+'</strong></article>';}
-function renderHome(){
-  const u=state.dashboard.user;
-  setPage('<section class="hero"><div><span class="sticker">just us 💚</span><h2>Hi '+esc(u.displayName)+'!</h2><p>This is our private bit of Duck & Bear — menus, memories, family things and the useful stuff, without mixing everything into one giant page.</p><div class="actions"><a class="ink-button" href="#scrapbook/add">Add a memory</a><a class="pink-button" href="#menus/week">Plan this week</a></div></div><div class="hero-art"><div class="mascot-stage"><span class="duck">🦆</span><span class="heart">💛</span><span class="bear">🐻</span></div></div></section>'+
-  summaryCards()+
-  '<section class="section"><div class="section-head"><div><h2>Pick a room</h2><p>Each area has its own pages and settings.</p></div></div><div class="grid card-grid">'+
-  quick('🍜','Our menus','Add dishes, plating photos and build a week.','#menus/library','tint-yellow',level('menus','read'))+
-  quick('📸','Scrapbook','Keep photos, little stories and dates together.','#scrapbook/timeline','tint-pink',level('scrapbook','read'))+
-  quick('🌳','Family tree','Add people, notes, photos and relationships.','#family/tree','tint-green',level('familyTree','read'))+
-  quick('🎮','Apps & games','Jump back into everything already on Duck & Bear.','#apps','tint-blue',true)+
-  quick('🔐','Security','Email recovery and password controls.','#settings/security','tint-violet',true)+
-  quick('🎨','Appearance','Paper, ink or night. Keep it how you like it.','#settings/appearance','tint-orange',true)+
-  '</div></section>');
+function heroArtwork(){
+  const p=readPrefs(),choice=p.artwork||'collage';
+  if(choice==='yaya-dog')return '<div class="art-frame solo"><img src="/assets/art/yaya-dog.webp" alt="Hand-drawn illustration of a happy hug with a dog"></div>';
+  if(choice==='bear-goats')return '<div class="art-frame solo"><img src="/assets/art/bear-goats.webp" alt="Hand-drawn illustration of feeding goats"></div>';
+  if(choice==='mascots')return '<div class="mascot-stage"><span class="duck">🦆</span><span class="heart">💛</span><span class="bear">🐻</span></div>';
+  return '<div class="art-collage"><figure><img src="/assets/art/yaya-dog.webp" alt=""></figure><figure><img src="/assets/art/bear-goats.webp" alt=""></figure><span class="doodle-heart">♡</span></div>';
 }
-function quick(icon,title,copy,href,tint,show){return show?'<a class="card quick-card '+tint+'" href="'+href+'"><div><span class="icon">'+icon+'</span><h3>'+esc(title)+'</h3><p>'+esc(copy)+'</p></div><span class="arrow">Open →</span></a>':'';}
+function onThisDay(items){
+  const d=new Date(),md=String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  return (items||[]).filter(x=>String(x.happenedOn||'').slice(5)===md).slice(0,3);
+}
+async function renderHome(route='home'){
+  const u=state.dashboard.user;
+  let scrapbook={items:[]},board={items:[]},menus={library:[],weeks:[],items:[]};
+  if(level('scrapbook','read'))try{scrapbook=await ensureScrap();}catch{}
+  try{board=await ensureBoard();}catch{}
+  if(level('menus','read'))try{menus=await ensureMenus();}catch{}
+  const memories=onThisDay(scrapbook.items),openDecisions=board.items.filter(x=>x.kind==='decision'&&x.status==='open').slice(0,3),bucket=board.items.filter(x=>x.kind==='bucket'&&x.status!=='done').slice(0,3);
+  if(route==='home/quick-add')return renderQuickAdd();
+  if(route==='home/today'){
+    const week=latestWeek(menus),weekItems=week?menus.items.filter(x=>x.week_id===week.id):[];
+    const byId=Object.fromEntries(menus.library.map(x=>[x.id,x.title]));
+    return setPage('<section class="hero mini-hero"><div><span class="sticker">today ☀️</span><h2>What’s happening?</h2><p>A quick view of this week, open decisions and memories from this date.</p></div><div class="hero-art">'+heroArtwork()+'</div></section>'+
+      '<section class="section"><div class="section-head"><div><h2>This week’s menu</h2><p>Open the planner to change anything.</p></div><a data-hub-route="menus/week" class="soft-button" href="'+routeHref('menus/week')+'">Open week →</a></div>'+(weekItems.length?'<div class="meal-line">'+weekItems.map(x=>'<span class="meal-chip">'+esc(x.day_key)+': '+esc(byId[x.menu_item_id]||x.custom_title||'—')+'</span>').join('')+'</div>':empty('🍽️','No private weekly plan saved yet.'))+'</section>'+
+      decisionsSection(openDecisions)+onThisDaySection(memories));
+  }
+  setPage('<section class="hero anime-hero"><div><span class="sticker">just us 💚</span><h2>Hi '+esc(u.displayName)+'!</h2><p>This is our colourful private bit of Duck & Bear — menus, memories, family things, plans and useful information, all split into proper pages.</p><div class="actions"><a data-hub-route="home/quick-add" class="ink-button" href="'+routeHref('home/quick-add')+'">＋ Quick add</a><a data-hub-route="home/today" class="pink-button" href="'+routeHref('home/today')+'">Today →</a></div></div><div class="hero-art">'+heroArtwork()+'</div></section>'+
+  summaryCards()+
+  '<section class="section"><div class="section-head"><div><h2>Pick a room</h2><p>Everything has its own sublinks now.</p></div></div><div class="grid card-grid">'+
+  quick('🍜','Our menus','Add dishes, photos and build a week.','menus/library','tint-yellow',level('menus','read'))+
+  quick('📸','Scrapbook','Keep photos, stories and dates together.','scrapbook/timeline','tint-pink',level('scrapbook','read'))+
+  quick('🌳','Family tree','People, notes, photos and relationships.','family/tree','tint-green',level('familyTree','read'))+
+  quick('🧷','Plans & notes','Bucket list, decisions and little messages.','plans/board','tint-violet',true)+
+  quick('📚','Info library','Useful notes we can add and keep.','info/library','tint-blue',true)+
+  quick('🎮','Apps & games','Everything already on Duck & Bear.','apps','tint-orange',true)+
+  '</div></section>'+decisionsSection(openDecisions)+onThisDaySection(memories)+bucketSection(bucket));
+}
+function quick(icon,title,copy,route,tint,show){return show?'<a data-hub-route="'+route+'" class="card quick-card '+tint+'" href="'+routeHref(route)+'"><div><span class="icon">'+icon+'</span><h3>'+esc(title)+'</h3><p>'+esc(copy)+'</p></div><span class="arrow">Open →</span></a>':'';}
+function renderQuickAdd(){
+  const cards=[
+    ['📸','Memory','Add a photo or story to the scrapbook','scrapbook/add',level('scrapbook','contribute'),'tint-pink'],
+    ['🍜','Menu idea','Add a dish for a future week','menus/library',level('menus','contribute'),'tint-yellow'],
+    ['🌳','Family person','Add somebody to the tree','family/people',level('familyTree','contribute'),'tint-green'],
+    ['💌','Little note','Leave a shared note','plans/notes',true,'tint-violet'],
+    ['🗳️','Decision','Put something to a vote','plans/decisions',true,'tint-blue'],
+    ['📚','Info page','Create a useful library page','info/new',state.dashboard.user.role==='admin','tint-orange']
+  ];
+  setPage('<section class="section"><div class="section-head"><div><h2>Quick add</h2><p>Choose what you want to add. Each opens its proper page.</p></div></div><div class="grid card-grid">'+cards.filter(x=>x[4]).map(x=>quick(x[0],x[1],x[2],x[3],x[5],true)).join('')+'</div></section>');
+}
+function decisionsSection(items){
+  if(!items?.length)return '';
+  return '<section class="section"><div class="section-head"><div><h2>Waiting on a decision</h2><p>Vote once; change your vote any time while it is open.</p></div><a data-hub-route="plans/decisions" href="'+routeHref('plans/decisions')+'">All decisions →</a></div><div class="grid card-grid">'+items.map(decisionCard).join('')+'</div></section>';
+}
+function onThisDaySection(items){
+  if(!items?.length)return '';
+  return '<section class="section"><div class="section-head"><div><h2>On this day</h2><p>A memory from the same date in another year.</p></div></div><div class="media-grid">'+items.map(scrapCard).join('')+'</div></section>';
+}
+function bucketSection(items){
+  if(!items?.length)return '';
+  return '<section class="section"><div class="section-head"><div><h2>Still on the bucket list</h2><p>Things we said we would do.</p></div><a data-hub-route="plans/bucket" href="'+routeHref('plans/bucket')+'">Bucket list →</a></div><div class="grid card-grid">'+items.map(boardCard).join('')+'</div></section>';
+}
 
 async function ensureMenus(){if(!state.menus)state.menus=await api('/api/hub/menus');return state.menus;}
 async function renderMenus(route){
