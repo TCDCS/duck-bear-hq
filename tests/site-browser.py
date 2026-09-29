@@ -7,7 +7,7 @@ with sync_playwright() as p:
  browser=p.chromium.launch(headless=True,**({'executable_path':os.environ['CHROMIUM']} if os.environ.get('CHROMIUM') else {}),args=['--no-sandbox'])
  ctx=browser.new_context(viewport={'width':1440,'height':1000});page=ctx.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
  try:
-  page.goto(BASE+'/');page.locator('#publicProducts .public-product').first.wait_for()
+  page.goto(BASE+'/');page.locator('#shop').scroll_into_view_if_needed();page.locator('#publicProducts .public-product').first.wait_for()
   assert not page.locator('[data-signed-in]:visible').count()
   page.screenshot(path=str(OUT/'homepage-desktop.png'),full_page=True)
   for path in ['/info/','/info/index.html','/about/','/about/index.html']:
@@ -30,7 +30,7 @@ with sync_playwright() as p:
   page.goto(BASE+'/info/');page.get_by_label('Search',exact=True).fill('Updated useful note');page.get_by_role('button',name='Search',exact=True).click();page.get_by_role('heading',name='Updated useful note',exact=True).wait_for()
   page.goto(BASE+'/info/allergies/');page.get_by_role('heading',name='Hand wash & allergies',exact=True).wait_for();page.screenshot(path=str(OUT/'info-desktop.png'),full_page=True)
   page.goto(BASE+'/about/');page.get_by_role('heading',name='Our little corner',exact=True).wait_for()
-  page.goto(BASE+'/settings/updates/');page.get_by_role('heading',name='Website 7.3.0',exact=True).wait_for()
+  page.goto(BASE+'/settings/updates/');page.get_by_role('heading',name='Website 7.4.0',exact=True).wait_for()
   page.goto(BASE+'/hub/#family');page.wait_for_url('**/family-tree/');page.get_by_role('heading').first.wait_for()
   for width in [390,768]:
    page.set_viewport_size({'width':width,'height':844})
