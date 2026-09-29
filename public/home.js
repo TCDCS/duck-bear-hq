@@ -4,7 +4,7 @@
 const $=id=>document.getElementById(id);
 const cast=globalThis.KartPortraits,art=$('gameCover');
 if(Array.isArray(cast)&&cast.length>=5){const names=['Zachary','Guannan','Sara','Samy','Mulan'];for(let i=0;i<5;i++){const img=new Image();img.src=cast[i];img.alt=names[i]+' cartoon driver';img.style.left=[12.7,30,48.7,68,86.5][i]+'%';img.style.top=[63,51,63,51,63][i]+'%';art.append(img);}art.hidden=false;$('coverFallback').hidden=true;}
-fetch('/api/public/session',{credentials:'same-origin',cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s?.signedIn){$('publicSignIn').textContent='My account ↗';$('publicSignIn').href='/account#home';}}).catch(()=>{});
+fetch('/api/public/session',{credentials:'same-origin',cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s?.signedIn){$('publicSignIn').textContent='Our Home ↗';$('publicSignIn').href='/hub/home/';}}).catch(()=>{});
 fetch('/api/public/catalogue').then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{
   const root=$('publicProducts');root.replaceChildren();
   if(!Array.isArray(data.products)||!data.products.length){const p=document.createElement('p');p.className='catalogue-status';p.textContent='The gift shop is having a breather. Games are open as usual.';root.append(p);return;}
