@@ -42,6 +42,11 @@
     }
   }
 
+  function requestedPrivateDestination(){
+    const raw=new URLSearchParams(location.search).get('next')||'';
+    if(!raw.startsWith('/')||raw.startsWith('//'))return '';
+    try{const u=new URL(raw,location.origin);return u.origin===location.origin?u.pathname+u.search+u.hash:'';}catch{return '';}
+  }
   async function reloadAll() {
     const data = await api('/api/bootstrap');
     Object.assign(state, data);
@@ -52,6 +57,8 @@
     } else if (state.user) ui.loyaltyTarget = state.user.id;
     setBusy(false);
     updateShell();
+    const next=requestedPrivateDestination();
+    if(next){location.replace(next);return;}
     render();
   }
 
