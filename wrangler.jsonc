@@ -17,7 +17,14 @@
       "/games/wacky-races",
       "/games/wacky-races/*",
       "/games/proper-karted",
-      "/games/proper-karted/*"
+      "/games/proper-karted/*",
+      "/games",
+      "/games/",
+      "/games/index.html",
+      "/games/games.css",
+      "/games/hub.mjs",
+      "/games/mango-mayhem",
+      "/games/mango-mayhem/*"
     ]
   },
   "rules": [

@@ -1,4 +1,5 @@
 import {routeMangoApi} from './mango/api.mjs';
+import {routeHubApi} from './hub.js';
 
 const ORDER_STATUSES = ['Received','Bear notified','Preparing','Out for Bear Delivery','Delivered','Cancelled'];
 const SESSION_DAYS = 30;
@@ -37,6 +38,8 @@ async function routeApi(request, env, url) {
   const auth = await getAuth(request, env);
   if (!auth) return apiJson({ error: 'Please sign in.' }, 401);
   if (!auth.user.active) return apiJson({ error: 'This account is disabled.' }, 403);
+
+  if (path === '/api/hub' || path.startsWith('/api/hub/')) return routeHubApi(request, env, url, auth.user);
 
   if (path === '/api/mango/profiles' || path.startsWith('/api/mango/profiles/')) return routeMangoApi(request, env, auth.user);
 
