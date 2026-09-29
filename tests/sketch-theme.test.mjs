@@ -22,5 +22,5 @@ test('the shared skin has reduced motion, dark mode, narrow screen and visible f
 test('website version bump does not rewrite dependency releases or integrity metadata',()=>{
  const lock=JSON.parse(read('package-lock.json')),dep=lock.packages['node_modules/@sindresorhus/is'];
  assert.equal(dep.version,'7.2.0');assert.equal(dep.resolved,'https://registry.npmjs.org/@sindresorhus/is/-/is-7.2.0.tgz');
- assert.equal(lock.version,'7.4.0');assert.equal(lock.packages[''].version,'7.4.0');
+ assert.equal(lock.version,'7.4.1');assert.equal(lock.packages[''].version,'7.4.1');
 });
