@@ -1,0 +1,28 @@
+name: Site reconciliation
+on:
+  push:
+    branches: [fix/site-1-2-reconciled]
+    paths: [.github/workflows/site-reconcile.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Archive reviewed source versions (no production data)
+        run: |
+          mkdir -p snapshots
+          git archive --format=tar.gz --prefix=main/ 4df31885f973ff270ffb885532a297d097059108 > snapshots/main.tar.gz
+          git archive --format=tar.gz --prefix=hq/ 850f3a25dc38dbac835d5a3924d5700622ac3797 > snapshots/hq.tar.gz
+          git archive --format=tar.gz --prefix=storybook/ 91dc9f930eb078acfd212501d27aa2da751aac20 > snapshots/storybook.tar.gz
+          git archive --format=tar.gz --prefix=our-space/ 6edb9773701aa8140e7f4df0259e09001361fad2 > snapshots/our-space.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site-reconciliation-sources
+          path: snapshots/*.tar.gz
+          retention-days: 2
