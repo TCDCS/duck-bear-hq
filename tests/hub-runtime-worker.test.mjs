@@ -58,9 +58,9 @@ test('private Home bootstraps its schema when migration 0004 is not yet applied'
   assert.equal(env.DB.db.prepare("SELECT COUNT(*) n FROM sqlite_master WHERE type='table' AND name='hub_permissions'").get().n,0);
   x=await call(env,'/api/hub',{cookie:adminCookie});
   assert.equal(x.res.status,200);
-  assert.equal(x.data.build,'6.1.0');
+  assert.equal(x.data.build,'6.2.0');
 
-  for(const table of ['hub_permissions','family_people','family_relations','scrapbook_items','menu_library','weekly_menus','weekly_menu_items']){
+  for(const table of ['hub_permissions','family_people','family_relations','scrapbook_items','menu_library','weekly_menus','weekly_menu_items','hub_info_pages','hub_board_items','hub_board_votes']){
     assert.equal(env.DB.db.prepare("SELECT COUNT(*) n FROM sqlite_master WHERE type='table' AND name=?").get(table).n,1,table);
   }
 
@@ -94,4 +94,15 @@ test('new members start private and demoted admins lose private admin level',asy
   const helper=x.data.users.find(u=>u.id===helperId);
   assert.equal(helper.role,'member');
   assert.deepEqual(helper.permissions,{familyTree:'contribute',scrapbook:'contribute',menus:'contribute'});
+});
+
+
+test('private Info and shared board work after runtime schema bootstrap',async()=>{
+  const env={DB:new D1(),MEDIA:new R2(),SETUP_SECRET:'setup-secret',ASSETS:{fetch:()=>new Response('asset')}};
+  await call(env,'/api/setup',{method:'POST',body:{setupSecret:'setup-secret',admin:{username:'bear',displayName:'Zach',password:'bear-pass-123'},member:{username:'duck',displayName:'Guannan',password:'duck-pass-123'}}});
+  let x=await call(env,'/api/auth/login',{method:'POST',body:{username:'bear',password:'bear-pass-123'}});const adminCookie=cookie(x.res);
+  x=await call(env,'/api/hub/info',{cookie:adminCookie});assert.equal(x.res.status,200);assert.ok(x.data.pages.some(p=>p.slug==='allergies-hand-wash'));
+  x=await call(env,'/api/hub/info',{method:'POST',cookie:adminCookie,body:{title:'Packing list',category:'Travel',summary:'Things to remember',body:'Passport\nChargers'}});assert.equal(x.res.status,200);assert.ok(x.data.pages.some(p=>p.title==='Packing list'));
+  x=await call(env,'/api/hub/board',{method:'POST',cookie:adminCookie,body:{kind:'decision',title:'Weekend',body:'Which day?',options:'Saturday\nSunday'}});assert.equal(x.res.status,200);const id=x.data.items.find(i=>i.title==='Weekend').id;
+  x=await call(env,'/api/hub/board/'+encodeURIComponent(id)+'/vote',{method:'POST',cookie:adminCookie,body:{choice:'Saturday'}});assert.equal(x.res.status,200);assert.equal(x.data.items.find(i=>i.id===id).myVote,'Saturday');
 });
