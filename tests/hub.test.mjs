@@ -34,6 +34,8 @@ test('worker routes private home only after authentication',()=>{
   assert.match(hub,/scrapbook_level/);
   assert.match(hub,/menus_level/);
   assert.match(hub,/private, no-store/);
+  assert.match(hub,/async function ensureHubSchema/);
+  assert.match(hub,/CREATE TABLE IF NOT EXISTS hub_permissions/);
 });
 
 test('master prompt documents private permissions and separate settings',()=>{
