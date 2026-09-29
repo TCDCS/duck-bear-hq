@@ -357,46 +357,62 @@ async function refresh(area){
 document.addEventListener('submit',async e=>{
   const f=e.target;if(!(f instanceof HTMLFormElement))return;e.preventDefault();const button=f.querySelector('[type="submit"]');if(button)button.disabled=true;
   try{
-    if(f.id==='menuForm'){const id=f.dataset.id,url=id?'/api/hub/menus/library/'+encodeURIComponent(id):'/api/hub/menus/library';state.menus=await api(url,{method:id?'PUT':'POST',body:new FormData(f)});toast(id?'Menu updated.':'Added to the menu library.');location.hash='menus/library';return render();}
+    if(f.id==='menuForm'){const id=f.dataset.id,url=id?'/api/hub/menus/library/'+encodeURIComponent(id):'/api/hub/menus/library';state.menus=await api(url,{method:id?'PUT':'POST',body:new FormData(f)});toast(id?'Menu updated.':'Added to the menu library.');return navigate('menus/library');}
     if(f.id==='weekForm'){const fd=new FormData(f),items=$$('.day-card').map(card=>({day:card.dataset.day,mealSlot:'Dinner',menuItemId:card.querySelector('[name=menuItemId]').value,customTitle:card.querySelector('[name=customTitle]').value,notes:card.querySelector('[name=notes]').value})).filter(x=>x.menuItemId||x.customTitle);state.menus=await api('/api/hub/menus/weeks',{method:'POST',body:{weekStart:fd.get('weekStart'),title:fd.get('title'),notes:fd.get('notes'),items}});toast('Week saved.');return render();}
-    if(f.id==='scrapForm'){const id=f.dataset.id,url=id?'/api/hub/scrapbook/'+encodeURIComponent(id):'/api/hub/scrapbook';state.scrapbook=await api(url,{method:id?'PUT':'POST',body:new FormData(f)});toast(id?'Memory updated.':'Added to the scrapbook.');location.hash='scrapbook/timeline';return render();}
-    if(f.id==='familyForm'){const id=f.dataset.id,url=id?'/api/hub/family/'+encodeURIComponent(id):'/api/hub/family';state.family=await api(url,{method:id?'PUT':'POST',body:new FormData(f)});toast(id?'Person updated.':'Person added.');location.hash='family/people';return render();}
+    if(f.id==='scrapForm'){const id=f.dataset.id,url=id?'/api/hub/scrapbook/'+encodeURIComponent(id):'/api/hub/scrapbook';state.scrapbook=await api(url,{method:id?'PUT':'POST',body:new FormData(f)});toast(id?'Memory updated.':'Added to the scrapbook.');return navigate('scrapbook/timeline');}
+    if(f.id==='familyForm'){const id=f.dataset.id,url=id?'/api/hub/family/'+encodeURIComponent(id):'/api/hub/family';state.family=await api(url,{method:id?'PUT':'POST',body:new FormData(f)});toast(id?'Person updated.':'Person added.');return navigate('family/people');}
     if(f.id==='relationForm'){const fd=new FormData(f);state.family=await api('/api/hub/family/relations',{method:'POST',body:{personA:fd.get('personA'),personB:fd.get('personB'),relationType:fd.get('relationType'),label:fd.get('label')}});toast('Relationship added.');return render();}
+    if(f.id==='boardForm'){const fd=new FormData(f),kind=f.dataset.kind;state.board=await api('/api/hub/board',{method:'POST',body:{kind,title:fd.get('title'),body:fd.get('body'),options:fd.get('options')}});toast(kind==='decision'?'Decision added.':kind==='bucket'?'Added to the bucket list.':'Note added.');f.reset();return render();}
+    if(f.id==='infoForm'){const fd=new FormData(f),id=f.dataset.id,url=id?'/api/hub/info/'+encodeURIComponent(id):'/api/hub/info';state.info=await api(url,{method:id?'PUT':'POST',body:{title:fd.get('title'),category:fd.get('category'),slug:fd.get('slug'),summary:fd.get('summary'),body:fd.get('body')}});const page=state.info.pages.find(x=>x.id===(id||state.info.pages[0]?.id))||state.info.pages.find(x=>x.title===fd.get('title'));toast(id?'Info page updated.':'Info page created.');return navigate('info/'+(page?.slug||'library'));}
     if(f.id==='emailForm'){const fd=new FormData(f),d=await api('/api/account/email',{method:'POST',body:{email:fd.get('email'),currentPassword:fd.get('currentPassword')}});state.security=d.accountSecurity;toast('Recovery email saved.');return render();}
     if(f.id==='passwordForm'){const fd=new FormData(f);await api('/api/account/password',{method:'POST',body:{currentPassword:fd.get('currentPassword'),newPassword:fd.get('newPassword')}});toast('Password changed. Please sign in again.');setTimeout(()=>location.replace('/account'),800);return;}
-    if(f.id==='appearanceForm'){const fd=new FormData(f),p={theme:fd.get('theme'),reduce:fd.get('motion')==='reduced',compact:fd.get('nav')==='compact'};localStorage.setItem('db-home-prefs',JSON.stringify(p));applyPrefs(p);toast('Appearance saved.');return;}
+    if(f.id==='appearanceForm'){const fd=new FormData(f),p={theme:fd.get('theme'),artwork:fd.get('artwork')||'collage',reduce:fd.get('motion')==='reduced',compact:fd.get('nav')==='compact'};localStorage.setItem('db-home-prefs',JSON.stringify(p));applyPrefs(p);toast('Appearance saved.');return render();}
     if(f.id==='newUserForm'){const fd=new FormData(f);await api('/api/hub/users',{method:'POST',body:Object.fromEntries(fd)});toast('User created.');return refresh('users');}
     if(f.dataset.userForm){const fd=new FormData(f);await api('/api/hub/users/'+encodeURIComponent(f.dataset.userForm),{method:'PUT',body:{displayName:fd.get('displayName'),username:fd.get('username'),role:fd.get('role'),active:fd.get('active')==='true'}});toast('User updated.');return refresh('users');}
     if(f.dataset.permForm){const fd=new FormData(f);await api('/api/hub/users/'+encodeURIComponent(f.dataset.permForm)+'/permissions',{method:'PUT',body:Object.fromEntries(fd)});toast('Permissions updated.');return refresh('users');}
   }catch(err){toast(err.message);}finally{if(button?.isConnected)button.disabled=false;}
 });
 document.addEventListener('click',async e=>{
+  const routeLink=e.target.closest('a[data-route],a[data-hub-route]');
+  if(routeLink){
+    const route=routeLink.dataset.route||routeLink.dataset.hubRoute;
+    if(route){e.preventDefault();return navigate(route);}
+  }
   const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action,id=b.dataset.id;
   try{
     if(a==='retry')return render();
-    if(a==='edit-menu'){const item=state.menus.library.find(x=>x.id===id);$('#menuEditor')?.remove();$('#page').insertAdjacentHTML('afterbegin',menuForm(item));location.hash='menus/library';return;}
+    if(a==='edit-menu'){const item=state.menus.library.find(x=>x.id===id);$('#menuEditor')?.remove();$('#page').insertAdjacentHTML('afterbegin',menuForm(item));return;}
     if(a==='cancel-menu-edit')return refresh('menus');
     if(a==='delete-menu'){if(!confirm('Remove this menu idea?'))return;state.menus=await api('/api/hub/menus/library/'+encodeURIComponent(id),{method:'DELETE'});toast('Menu removed.');return render();}
-    if(a==='edit-scrap'){const item=state.scrapbook.items.find(x=>x.id===id);location.hash='scrapbook/add';await render();$('#scrapEditor')?.remove();$('#page').insertAdjacentHTML('afterbegin',scrapForm(item));return;}
-    if(a==='cancel-scrap-edit'){location.hash='scrapbook/timeline';return;}
+    if(a==='edit-scrap'){const item=state.scrapbook.items.find(x=>x.id===id);navigate('scrapbook/add');await new Promise(r=>setTimeout(r,0));$('#scrapEditor')?.remove();$('#page').insertAdjacentHTML('afterbegin',scrapForm(item));return;}
+    if(a==='cancel-scrap-edit')return navigate('scrapbook/timeline');
     if(a==='delete-scrap'){if(!confirm('Delete this scrapbook item?'))return;state.scrapbook=await api('/api/hub/scrapbook/'+encodeURIComponent(id),{method:'DELETE'});toast('Memory deleted.');return render();}
     if(a==='edit-person'){const item=state.family.people.find(x=>x.id===id);$('#familyEditor')?.remove();$('#page').insertAdjacentHTML('afterbegin',familyForm(item));$('#familyEditor')?.scrollIntoView({behavior:'smooth'});return;}
     if(a==='cancel-family-edit')return refresh('family');
     if(a==='delete-person'){if(!confirm('Delete this person from the family tree?'))return;state.family=await api('/api/hub/family/'+encodeURIComponent(id),{method:'DELETE'});toast('Person deleted.');return render();}
     if(a==='delete-relation'){state.family=await api('/api/hub/family/relations/'+encodeURIComponent(id),{method:'DELETE'});toast('Relationship removed.');return render();}
+    if(a==='board-status'){state.board=await api('/api/hub/board/'+encodeURIComponent(id),{method:'PUT',body:{status:b.dataset.status}});toast('Updated.');return render();}
+    if(a==='board-vote'){state.board=await api('/api/hub/board/'+encodeURIComponent(id)+'/vote',{method:'POST',body:{choice:b.dataset.choice}});toast('Vote saved.');return render();}
+    if(a==='delete-board'){if(!confirm('Delete this shared-board item?'))return;state.board=await api('/api/hub/board/'+encodeURIComponent(id),{method:'DELETE'});toast('Deleted.');return render();}
+    if(a==='surprise-bucket'){const open=state.board.items.filter(x=>x.kind==='bucket'&&x.status!=='done');if(!open.length)return toast('The bucket list is empty.');const pick=open[Math.floor(Math.random()*open.length)];return toast('🎲 '+pick.title);}
+    if(a==='delete-info'){if(!confirm('Remove this info page from the library?'))return;state.info=await api('/api/hub/info/'+encodeURIComponent(id),{method:'DELETE'});toast('Info page removed.');return navigate('info/library');}
     if(a==='delete-user'){if(!confirm('Delete this user? If they have history, Duck & Bear will refuse and you can disable them instead.'))return;await api('/api/hub/users/'+encodeURIComponent(id),{method:'DELETE'});toast('User deleted.');return refresh('users');}
     if(a==='reset-password'){const next=prompt('New password (8–128 characters)');if(!next)return;await api('/api/admin/users/'+encodeURIComponent(id)+'/password',{method:'POST',body:{newPassword:next}});toast('Password reset. Their existing sessions were signed out.');}
   }catch(err){toast(err.message);}
 });
 $('#logoutButton').addEventListener('click',async()=>{try{await api('/api/auth/logout',{method:'POST'});}catch{}location.replace('/account');});
+$('#quickAddButton')?.addEventListener('click',()=>navigate('home/quick-add'));
 $('#menuButton').addEventListener('click',()=>{$('#sidebar').classList.add('open');$('#scrim').hidden=false;$('#scrim').classList.add('show');});
-$('#scrim').addEventListener('click',()=>{$('#sidebar').classList.remove('open');$('#scrim').classList.remove('show');$('#scrim').hidden=true;});
-window.addEventListener('hashchange',()=>{$('#sidebar').classList.remove('open');$('#scrim').classList.remove('show');$('#scrim').hidden=true;render();});
+$('#scrim').addEventListener('click',closeNav);
+window.addEventListener('popstate',()=>{closeNav();render();});
 (async()=>{
   applyPrefs();
   try{
     state.dashboard=await api('/api/hub');
     $('#userPill').textContent=(state.dashboard.user.role==='admin'?'🐻 ':'🦆 ')+state.dashboard.user.displayName;
+    const legacy=(location.hash.slice(1)||'').replace(/^\/+|\/+$/g,'');
+    if(legacy){history.replaceState({},'',routeHref(legacy));}
+    else if(location.pathname==='/hub/'||location.pathname==='/hub'){history.replaceState({},'',routeHref('home'));}
     updateNav(currentRoute());
     await render();
   }catch(err){setPage('<div class="empty"><span>🔐</span><strong>Private home could not open.</strong><p>'+esc(err.message)+'</p><a class="soft-button" href="/account">Go to sign in</a></div>');}
