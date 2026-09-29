@@ -1,26 +1,8 @@
-/* Public landing page. No account bootstrap, photos, points or orders are fetched. */
-(() => {
-'use strict';
-const $=id=>document.getElementById(id);
-const cast=globalThis.KartPortraits,art=$('gameCover');
-if(Array.isArray(cast)&&cast.length>=5){const names=['Zachary','Guannan','Sara','Samy','Mulan'];for(let i=0;i<5;i++){const img=new Image();img.src=cast[i];img.alt=names[i]+' cartoon driver';img.style.left=[12.7,30,48.7,68,86.5][i]+'%';img.style.top=[63,51,63,51,63][i]+'%';art.append(img);}art.hidden=false;$('coverFallback').hidden=true;}
-fetch('/api/public/session',{credentials:'same-origin',cache:'no-store'}).then(r=>r.ok?r.json():null).then(s=>{if(s?.signedIn){$('publicSignIn').textContent='My account ↗';$('publicSignIn').href='/account#home';}}).catch(()=>{});
-fetch('/api/public/catalogue').then(r=>{if(!r.ok)throw Error();return r.json();}).then(data=>{
-  const root=$('publicProducts');root.replaceChildren();
-  if(!Array.isArray(data.products)||!data.products.length){const p=document.createElement('p');p.className='catalogue-status';p.textContent='The gift shop is having a breather. Games are open as usual.';root.append(p);return;}
-  for(const product of data.products){
-    const card=document.createElement('article');card.className='public-product';
-    const icon=document.createElement('span');icon.className='product-emoji';icon.textContent=product.emoji;
-    const category=document.createElement('small');category.textContent=product.category;
-    const title=document.createElement('h3');title.textContent=product.name;
-    const copy=document.createElement('p');copy.textContent=product.blurb;
-    const bottom=document.createElement('div');bottom.className='product-bottom';
-    const price=document.createElement('strong');price.textContent='£0.00';
-    const order=document.createElement('a');order.href='/account#shop';order.textContent='Sign in to order →';
-    bottom.append(price,order);card.append(icon,category,title,copy,bottom);root.append(card);
-  }
-}).catch(()=>{$('publicProducts').replaceChildren();const p=document.createElement('p');p.className='catalogue-status';p.textContent='The gift-shop catalogue is temporarily unavailable. You can still play every game above.';$('publicProducts').append(p);});
-function legacyLink(){const hash=location.hash;if(hash==='#fun?games'||hash==='#fun'){location.hash='games';return;}if(/^#(orders|loyalty|admin|rewards)(\?|$)/.test(hash))location.replace('/account'+hash);}
-legacyLink();window.addEventListener('hashchange',legacyLink);
-if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+/* Public page: no private account bootstrap, family records or private photographs. */
+(()=>{'use strict';const $=id=>document.getElementById(id);
+fetch('/api/public/session',{credentials:'same-origin',cache:'no-store'}).then(r=>r.ok?r.json():null).then(d=>{if(d?.signedIn){$('publicSignIn').textContent='Our Space ♡';$('publicSignIn').href='/our-space/';document.querySelectorAll('[data-signed-in]').forEach(a=>a.hidden=false);}}).catch(()=>{});
+fetch('/api/public/hq/site',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(d=>{if(d?.intro)$('public-intro').textContent=d.intro;if(d?.heroUrl&&d.heroUrl.startsWith('/api/public/hq/assets/')){$('public-hero').src=d.heroUrl;$('public-hero').alt='Duck & Bear homepage illustration';}}).catch(()=>{});
+fetch('/api/public/catalogue').then(r=>{if(!r.ok)throw Error();return r.json();}).then(d=>{const root=$('publicProducts');root.replaceChildren();for(const p of (d.products||[]).slice(0,6)){const card=document.createElement('article');card.className='public-product';const icon=document.createElement('span');icon.className='product-emoji';icon.textContent=p.emoji;const cat=document.createElement('small');cat.textContent=p.category;const title=document.createElement('h3');title.textContent=p.name;const text=document.createElement('p');text.textContent=p.blurb;const bottom=document.createElement('div');bottom.className='product-bottom';const price=document.createElement('strong');price.textContent='£0.00';const a=document.createElement('a');a.href='/shop/products/'+encodeURIComponent(p.id)+'/';a.textContent='Open gift →';bottom.append(price,a);card.append(icon,cat,title,text,bottom);root.append(card);}if(!root.children.length)root.textContent='No gifts listed yet.';}).catch(()=>{$('publicProducts').textContent='The gift shop is temporarily unavailable. All the games above are still open.';});
+function oldLink(){const paths={about:'/about/',info:'/info/',orders:'/orders/',loyalty:'/points/',admin:'/admin/',rewards:'/points/rewards/'};const key=location.hash.slice(1).split('?')[0];if(paths[key])location.replace(paths[key]);}oldLink();window.addEventListener('hashchange',oldLink);
+if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
 })();
