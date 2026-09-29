@@ -138,5 +138,9 @@
         "DanaoRoom"
       ]
     }
-  ]
+  ],
+  "vars": {
+    "SITE_ORIGIN": "https://guannan.party",
+    "PASSKEY_LEGACY_ORIGIN": "https://duck-bear-hq.zachary-chambers2.workers.dev"
+  }
 }

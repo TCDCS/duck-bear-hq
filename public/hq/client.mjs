@@ -1,3 +1,4 @@
+import {chapterFor} from './sketch.mjs';
 export const $=(s,r=document)=>r.querySelector(s);
 export const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 export const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -18,6 +19,6 @@ export function select(name,label,values,current=''){return `<label class="field
 export function check(name,label,value=false){return `<label class="check"><input name="${esc(name)}" type="checkbox" ${value?'checked':''}>${esc(label)}</label>`;}
 export function textarea(name,label,value='',attrs=''){return `<label class="field">${esc(label)}<textarea name="${esc(name)}" rows="5" ${attrs}>${esc(value)}</textarea></label>`;}
 export function download(blob,name){const a=document.createElement('a'),u=URL.createObjectURL(blob);a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),30000);}
-export function pageHead(kicker,title,description='',actions=''){return `<header class="page-head"><div><p class="eyebrow">${esc(kicker)}</p><h1>${esc(title)}</h1>${description?`<p class="lead">${esc(description)}</p>`:''}</div>${actions?`<div class="actions">${actions}</div>`:''}</header>`;}
+export function pageHead(kicker,title,description='',actions=''){return `<header class="page-head"><div><p class="eyebrow">${esc(kicker)}</p><h1>${esc(title)}</h1>${description?`<p class="lead">${esc(description)}</p>`:''}</div><img class="chapter-drawing" src="/hq/art-${chapterFor(globalThis.location?.pathname).art}.svg" alt="" aria-hidden="true" width="170" height="115">${actions?`<div class="actions">${actions}</div>`:''}</header>`;}
 export const empty=(title,message,link='',label='Add something')=>`<section class="empty"><span aria-hidden="true">✦</span><h2>${esc(title)}</h2><p>${esc(message)}</p>${link?`<a class="button" href="${esc(link)}">${esc(label)} →</a>`:''}</section>`;
 export const linkButton=(url,label,secondary=false)=>`<a class="button ${secondary?'secondary':''}" href="${esc(url)}">${esc(label)}</a>`;

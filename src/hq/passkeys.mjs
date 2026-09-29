@@ -5,12 +5,19 @@ import {schemaReady} from './schema.mjs';
 import {ensureAccountSchema} from './account-schema.mjs';
 import {reauthenticate} from './auth.mjs';
 const BASE='/api/hq/passkeys',COOKIE='__Host-db_passkey',TTL=300000;
-const DEFAULT_ORIGIN='https://duck-bear-hq.zachary-chambers2.workers.dev';
+const DEFAULT_ORIGIN='https://guannan.party';
 function relyingParty(env,request){
- let u;try{u=new URL(env.SITE_ORIGIN||DEFAULT_ORIGIN);}catch{fail(503,'Passkey origin needs configuration.');}
- if(u.protocol!=='https:'&&!(u.protocol==='http:'&&u.hostname==='localhost'))fail(503,'Use HTTPS for passkeys.');
- if(u.username||u.password||u.origin!==new URL(request.url).origin)fail(403,'Open the main Duck & Bear address to use this passkey.');
- return {rpID:u.hostname,origin:u.origin};
+ // Only these operator-configured origins may run a ceremony. Never trust an arbitrary Host.
+ const origins=[env.SITE_ORIGIN||DEFAULT_ORIGIN,env.PASSKEY_LEGACY_ORIGIN].filter(Boolean);
+ const requested=new URL(request.url).origin;
+ for(const value of origins){
+  let u;try{u=new URL(value);}catch{fail(503,'Passkey origin needs configuration.');}
+  if(u.username||u.password||u.pathname!=='/'||u.search||u.hash||
+     (u.protocol!=='https:'&&!(u.protocol==='http:'&&u.hostname==='localhost')))
+    fail(503,'Passkey origin needs a secure website address.');
+  if(u.origin===requested)return {rpID:u.hostname,origin:u.origin};
+ }
+ fail(403,'Open guannan.party to register or use your passkey.');
 }
 const keyList=(env,uid)=>queryAll(env.DB,'SELECT credential_id AS id,name,created_at AS createdAt,last_used_at AS lastUsedAt,device_type AS deviceType,backed_up AS backedUp FROM hq_passkeys WHERE user_id=? ORDER BY created_at',uid);
 function browserCookie(request){const parts=(request.headers.get('cookie')||'').split(';').map(s=>s.trim());const v=parts.find(x=>x.startsWith(COOKIE+'='))?.slice(COOKIE.length+1)||'';return /^[A-Za-z0-9_-]{43}$/.test(v)?v:'';}
