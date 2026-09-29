@@ -1,0 +1,30 @@
+name: Site 1 validation
+on:
+  push:
+    branches: [site-1-storybook-20260929]
+    paths: ['.github/workflows/site-1-validate.yml', 'docs/site-1-run-validation.txt']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Export source for local verification
+        run: |
+          mkdir -p /tmp/site-1-source
+          git archive --format=tar HEAD | gzip > /tmp/site-1-source/source.tar.gz
+          git rev-parse HEAD > /tmp/site-1-source/commit.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site-1-source
+          path: /tmp/site-1-source/
+          retention-days: 2
+      - run: npm ci
+      - run: npm test
+      - run: npm run check
