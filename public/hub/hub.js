@@ -232,10 +232,10 @@ document.addEventListener('click',async e=>{
     if(a==='edit-menu'){const item=state.menus.library.find(x=>x.id===id);$('#menuEditor')?.remove();$('#page').insertAdjacentHTML('afterbegin',menuForm(item));location.hash='menus/library';return;}
     if(a==='cancel-menu-edit')return refresh('menus');
     if(a==='delete-menu'){if(!confirm('Remove this menu idea?'))return;state.menus=await api('/api/hub/menus/library/'+encodeURIComponent(id),{method:'DELETE'});toast('Menu removed.');return render();}
-    if(a==='edit-scrap'){const item=state.scrapbook.items.find(x=>x.id===id);location.hash='scrapbook/add';await render();$('#page').insertAdjacentHTML('afterbegin',scrapForm(item));return;}
+    if(a==='edit-scrap'){const item=state.scrapbook.items.find(x=>x.id===id);location.hash='scrapbook/add';await render();$('#scrapEditor')?.remove();$('#page').insertAdjacentHTML('afterbegin',scrapForm(item));return;}
     if(a==='cancel-scrap-edit'){location.hash='scrapbook/timeline';return;}
     if(a==='delete-scrap'){if(!confirm('Delete this scrapbook item?'))return;state.scrapbook=await api('/api/hub/scrapbook/'+encodeURIComponent(id),{method:'DELETE'});toast('Memory deleted.');return render();}
-    if(a==='edit-person'){const item=state.family.people.find(x=>x.id===id);$('#familyEditor')?.remove();$('#page').insertAdjacentHTML('afterbegin',familyForm(item));return;}
+    if(a==='edit-person'){const item=state.family.people.find(x=>x.id===id);$('#familyEditor')?.remove();$('#page').insertAdjacentHTML('afterbegin',familyForm(item));$('#familyEditor')?.scrollIntoView({behavior:'smooth'});return;}
     if(a==='cancel-family-edit')return refresh('family');
     if(a==='delete-person'){if(!confirm('Delete this person from the family tree?'))return;state.family=await api('/api/hub/family/'+encodeURIComponent(id),{method:'DELETE'});toast('Person deleted.');return render();}
     if(a==='delete-relation'){state.family=await api('/api/hub/family/relations/'+encodeURIComponent(id),{method:'DELETE'});toast('Relationship removed.');return render();}
