@@ -14,6 +14,7 @@ export default {
     try {
       if (url.pathname.startsWith('/api/')) return await routeApi(request, env, url);
       if (url.pathname.startsWith('/media/')) return await serveMedia(request, env, url);
+      if (isPrivatePagePath(url.pathname)) return await servePrivatePage(request, env, url);
       return env.ASSETS.fetch(request);
     } catch (err) {
       if (err instanceof HttpError) return apiJson({ error: err.message }, err.status);
@@ -22,6 +23,30 @@ export default {
     }
   }
 };
+
+function isPrivatePagePath(path){
+  if(path==='/info'||path.startsWith('/info/'))return true;
+  if(path==='/about'||path.startsWith('/about/'))return true;
+  if(path==='/hub'||path==='/hub/')return true;
+  return /^\/hub\/(?:home|menus|scrapbook|family|plans|info|apps|settings|admin|about)(?:\/|$)/.test(path);
+}
+async function servePrivatePage(request,env,url){
+  if(!['GET','HEAD'].includes(request.method))return new Response('Method not allowed',{status:405});
+  const auth=await getAuth(request,env);
+  if(!auth?.user?.active){
+    const next=url.pathname+url.search;
+    const login=new URL('/account',url);login.searchParams.set('next',next);
+    return Response.redirect(login.toString(),302);
+  }
+  if(url.pathname==='/info'||url.pathname.startsWith('/info/')){
+    const oldSlug=url.pathname.replace(/^\/info\/?/,'').replace(/\/$/,'');
+    const dest=new URL(oldSlug&&oldSlug!=='index.html'?'/hub/info/'+encodeURIComponent(oldSlug)+'/':'/hub/info/library/',url);
+    return Response.redirect(dest.toString(),302);
+  }
+  if(url.pathname==='/about'||url.pathname.startsWith('/about/'))return Response.redirect(new URL('/hub/about/',url).toString(),302);
+  const shell=new URL('/hub/index.html',url);
+  return env.ASSETS.fetch(new Request(shell.toString(),request));
+}
 
 async function routeApi(request, env, url) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: apiHeaders() });
