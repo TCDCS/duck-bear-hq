@@ -1,147 +1,205 @@
 # Duck & Bear Home — master build prompt
 
 ## 1. Product
-Build Duck & Bear Home as the private, personal layer of the existing Duck & Bear website. It is for Zach and Guannan first, with optional invited users later. Keep the existing public homepage, games, shop, orders, Yaya Points, Cloudflare Worker, D1, R2, login/session system, registered email login and password recovery working.
+Duck & Bear is a colourful public games/menu site with a private shared Home behind the existing account system. Zach and Guannan are the primary owners. Invited users may be added later and receive only the private permissions explicitly granted to them.
 
-Do not rebuild working systems for the sake of it. Add the private home as an isolated layer with its own routes, database tables and permission checks.
+Keep the working games, £0 Gift Shop, Orders, Yaya Points, Menu Room, Cloudflare Worker, D1, R2, registered-email login and password recovery.
 
-## 2. Design
-The private home should look like a colourful hand-drawn anime scrapbook rather than a corporate dashboard. Use warm paper backgrounds, imperfect ink-style borders, sticker-like cards, doodles, tape, stamps, expressive headings, soft animation and strong colour. It must still be readable, responsive and usable on a phone.
+Current private-home release: 6.2.0.
 
-Avoid a single giant page. Use clear pages and sub-links throughout. Desktop uses a left navigation rail; mobile uses a compact bottom navigation and page tabs.
+## 2. Visual design
+Use the supplied hand-drawn illustrations as the visual direction across both the public website and private Home: vibrant colour, warm paper, visible ink-style outlines, imperfect card borders, doodles, stickers, tape-like details and expressive anime/scrapbook energy.
 
-## 3. Main navigation
+The two approved illustrations at `/assets/art/yaya-dog.webp` and `/assets/art/bear-goats.webp` are public design assets in GitHub. They can be selected from Appearance as Home artwork. Other personal photographs remain private unless explicitly published.
+
+The design must remain readable and responsive. Decorative animation respects reduced-motion preferences.
+
+## 3. Public website
+Public:
+- Games
+- Current Menu and Menu Archive
+- £0 Gift Shop catalogue
+- Sign in
+
+Private after sign-in:
+- About
+- Info Library
+- Our Home
+- Family Tree
+- Scrapbook
+- private menu planning and reviews
+- Plans, notes and decisions
+- settings/admin
+
+Do not expose About or Info in the public navigation. Direct `/about/*`, `/info/*` and private `/hub/*` page requests must run through Worker authentication.
+
+## 4. Real sublinks
+Use proper URLs rather than one giant dashboard or hash-only UI. Direct links must survive refresh and work with browser Back/Forward.
+
 Private Home:
-- Home
-- Our Menus
+- `/hub/home/`
+  - Today
+  - Quick Add
+- `/hub/menus/`
   - Menu Library
   - This Week
   - Past Weeks
-- Scrapbook
+  - Meal Reviews
+- `/hub/scrapbook/`
   - Timeline
   - Add Memory
-- Family Tree
+- `/hub/family/`
   - Tree
   - People
   - Relationships
-- Apps
-  - Games
-  - Gift Shop
-  - Yaya Points
-  - Orders
-  - Legacy Menu Room
+- `/hub/plans/`
+  - Shared Board
+  - Bucket List
+  - Decisions
+  - Little Notes
+- `/hub/info/`
+  - Library
+  - individual page slugs
+  - New Info Page for admin
+- Apps & Games
+- private About
 - Settings
   - Profile
-  - Security
+  - Email
+  - Password
   - Appearance
   - Privacy
-- Admin (admin only)
+  - Data & Exports
+- Admin
   - Users
   - Permissions
 
-Every settings area must be a separate link/state, not one long mixed settings page.
+Use dialogs only for short confirmation/action flows.
 
-## 4. Accounts
-Use the existing Duck & Bear login. Guannan must be able to register an email address, sign in using that email and use the existing lost-password flow. Do not expose whether an email exists during password recovery.
+## 5. Accounts and recovery
+Use existing login/session management. A registered email:
+- requires current-password confirmation to add/change
+- is unique
+- can be used to sign in
+- supports lost-password recovery without revealing whether an email exists
 
-Admin can add users, edit username/display name/role/status, disable accounts, delete accounts when safe, reset passwords using the existing admin endpoint, and grant private-home permissions.
+Admin can create, edit, disable and safely delete users, reset member passwords and manage permissions. Never remove the last active admin or the current signed-in account. If historical data prevents safe deletion, disable the account instead.
 
-A user with historical records that prevent safe deletion should be disabled rather than having records silently destroyed.
+## 6. Permission model
+Permissions are enforced by Worker/API, not by hidden navigation.
 
-## 5. Permission model
-Permissions must be enforced in the Worker/API, not only hidden in the browser.
-
-For Family Tree, Scrapbook and Menus use:
+For Family Tree, Scrapbook and Menus:
 - none
 - read
 - contribute
 - admin
 
-The two accounts already present when the private-home migration is installed receive access. New non-admin accounts receive no private-home access until granted. Admin accounts keep full access.
+The initial Zach/Guannan accounts receive access. New members receive none until granted. Admin accounts retain full private-home access.
 
-Family Tree and Scrapbook are private. Do not expose their data through public routes, service-worker caches or public catalogue APIs.
+The legacy private Menu Room and its review media must also respect Menus permissions. Legacy shared memory media must respect Scrapbook permissions.
 
-## 6. Family Tree
-Zach and Guannan can add family members. Store:
-- name
+## 7. Family Tree
+Private Family Tree supports:
+- person name
 - relation label
 - branch
-- date of birth if wanted
+- optional birth date
 - notes
-- optional photo
-- who created the entry
-- timestamps
+- photo
+- relationships: parent, partner, sibling, relative, other
+- creator and timestamps
 
-Allow relationships between entries, including parent, partner, sibling, relative and other.
+Read access may view. Contributors add/edit permitted records. Admin-level users manage the entire tree and relationships. Family Tree access never grants Scrapbook or intimate Menu Review access.
 
-Users with read permission can view. Contributors can add and edit their own entries. Admin-level users can manage all entries and relationships.
-
-## 7. Scrapbook
-Create a private shared scrapbook for Zach and Guannan. A scrapbook item can contain:
+## 8. Scrapbook
+Private shared Scrapbook:
 - title
-- note/story
+- story/note
 - date
-- mood/emoji
-- optional photo or short video
-- created by
-- timestamps
+- mood
+- photo or short video
+- creator/timestamps
+- timeline view
+- Quick Add
+- On This Day surfaced in Our Home
 
-The view should feel like a scrapbook wall/timeline, not a file list. Media is private and served through authenticated permission-checked routes.
+Private media is never placed in the public GitHub repository.
 
-## 8. Menus
-Guannan must be able to add her own menu ideas and plating/reference photos.
+## 9. Menus
+Private planning layer:
+- reusable Menu Library
+- cuisine, tags, description, plating/reference photo
+- weekly menus with day and meal slot
+- Guannan can contribute ideas
+- historical weeks retained
+- legacy Menu Room remains available for per-serving reviews
 
-Create:
-- a reusable menu library
-- cuisine
-- tags
-- description
-- optional photo
-- weekly menus
-- day
-- meal slot
-- menu library item or custom title
-- week notes
+Menu reviews:
+- overall 1–6
+- taste 1–5
+- plating 1–5
+- comments and private photos
+- special 5/6 meanings remain visible only to permitted signed-in users
 
-A library item should be reusable in future weeks. Both Zach and Guannan can build and change weekly menus when they have contribute access.
+## 10. Info Library
+Info is signed-in only and works as a useful private library rather than one hard-coded page.
 
-Keep the existing public/legacy menu area working. The new private menu home is the editable planning layer.
+Admin can create, edit and remove pages with:
+- title
+- category
+- page slug
+- summary
+- body
 
-## 9. Settings
-Profile:
-- current account details
+Seed the previous washing-up-liquid/hand-wash irritation guide as:
+`/hub/info/allergies-hand-wash/`
 
-Security:
-- register/change recovery email using current password
-- change password
-- link to recovery where appropriate
+The library groups pages by category and each page has its own direct sublink.
+
+## 11. Plans and interaction
+Shared planning board supports:
+- Little Notes
+- Bucket List
+- Decisions with voting
+- completed/reopened bucket items
+- Surprise Me from open bucket-list items
+- Quick Add from Home
+- Today view
+- On This Day from Scrapbook
+
+Keep these lightweight and connected rather than introducing a separate chat system.
+
+## 12. Settings
+Every setting is its own sublink:
+- Profile
+- Email
+- Password
+- Appearance
+- Privacy
+- Data & Exports
 
 Appearance:
-- light/ink/night themes
-- reduce motion
-- compact navigation
-- save preferences locally
+- colourful anime paper
+- ink sketch
+- night
+- reduced motion
+- normal/compact navigation
+- select Home artwork from the supplied public illustrations or Duck & Bear mascots
 
-Privacy:
-- explain who can see Family Tree, Scrapbook and Menus
-- show the user's current permission levels
-- state that private media is not public
-
-## 10. Existing apps
-Do not remove Games, Gift Shop, Yaya Points, Orders or the existing Menu Room. The new Home should act as the personal front door and link to those systems.
-
-## 11. Safety and data handling
+## 13. Privacy and data handling
 - same-origin writes only
 - authenticated private routes
-- R2 media kept private
-- no private API response in public homepage code
-- no service-worker caching of private API/media
-- validate file type and size
-- keep audit entries for admin/user/permission changes and private-home mutations
-- prevent deletion/demotion of the last active admin
-- prevent deleting the account currently in use
+- section permissions checked by API
+- R2 private media
+- no private API response on public homepage
+- private Hub/Info/About pages excluded from service-worker caches
+- private page routes run Worker-first in Cloudflare static assets
+- validate file size/type
+- audit account, permission and private-home changes
+- do not treat hiding UI as security
+- public GitHub assets contain only material explicitly approved for public use
 
-## 12. Release
-Use additive D1 migrations. Do not edit old migrations that may already be applied in production. Update the build/version marker on release. Run existing tests/checks and add regression coverage for the private home. Deploy through the existing GitHub main → Cloudflare workflow after checks pass.
+## 14. Release
+Use runtime/additive schema bootstrap for new private-home tables so deployment does not depend on the repository token having D1 migration permissions. Do not edit old applied migrations.
 
-Current private-home release: 6.1.0.
+Run source syntax, tests, repository checks and live route verification before release. Keep existing game regressions separate from the Home changes where possible.
