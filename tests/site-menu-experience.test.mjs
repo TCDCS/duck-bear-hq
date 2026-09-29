@@ -36,7 +36,7 @@ test('homepage hero is fixed to the Causeway artwork and below-fold catalogue is
    readFile(new URL('../public/menus/menus.js',import.meta.url),'utf8')
  ]);
  assert.match(html,/friendly brown bear with a map posing on the Giant’s Causeway/);
- assert.match(html,/rel="preload" as="image" href="\/hq\/sketch-world\.svg\?v=7\.4\.2"/);
+ assert.match(html,/rel="preload" as="image" href="\/hq\/duck-bear-causeway\.webp\?v=7\.4\.2"/);
  assert.doesNotMatch(js,/heroUrl/);
  assert.match(js,/IntersectionObserver/);
  assert.match(art,/Giant's Causeway/);
