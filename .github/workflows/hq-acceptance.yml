@@ -1,0 +1,33 @@
+name: Illustrated HQ acceptance
+on:
+  push:
+    branches: [feature/illustrated-private-hq]
+  pull_request:
+    paths: ['src/hq/**', 'public/hq/**', 'tests/hq-*', '.github/workflows/hq-acceptance.yml']
+permissions:
+  contents: read
+concurrency:
+  group: hq-acceptance-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Capture source snapshot (no credentials or runtime data)
+        run: git archive --format=zip -o hq-source.zip HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hq-source
+          path: hq-source.zip
+          retention-days: 2
+      - run: npm ci
+      - run: npm test
+      - run: npm run check
+      - name: Worker bundle dry run
+        run: npx wrangler deploy --dry-run --outdir /tmp/hq-worker
