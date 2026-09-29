@@ -23,4 +23,4 @@ export function applyMealStatuses(root=document,now=new Date()){
     const badge=card.querySelector('[data-day-status]');if(badge)badge.textContent=dayState==='served'?'Served':'Upcoming';
   }
 }
-if(typeof document!=='undefined')applyMealStatuses(document);
+if(typeof document!=='undefined'){applyMealStatuses(document);setInterval(()=>applyMealStatuses(document),30000);}
