@@ -9,7 +9,7 @@
   <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/home.css?v=4">
   <link rel="stylesheet" href="/menus/menus.css?v=2">
-<link rel="stylesheet" href="/hq/lettering.css?v=7.3.0"><link rel="stylesheet" href="/hq/sketch.css?v=7.3.0"><script type="module" src="/hq/sketch.mjs?v=7.3.0"></script></head>
+<link rel="stylesheet" href="/hq/lettering.css?v=7.4.0"><link rel="stylesheet" href="/hq/sketch.css?v=7.4.0"><script type="module" src="/hq/sketch.mjs?v=7.4.0"></script><script type="module" src="/menus/menus.js?v=7.4.0"></script></head>
 <body data-chapter="menus" class="menu-page">
 <!-- Weekly rollover rule: archive the existing current menu at /menus/archive/YYYY-MM-DD/ before replacing this page. -->
 <a class="skip-link" href="#main">Skip to this week's menu</a>
@@ -45,118 +45,128 @@
   </aside>
 
   <section class="menu-board" aria-label="Weekly meals">
-    <article class="day-card served">
+    <article class="day-card" data-date="2026-09-28">
       <header class="day-heading">
         <div>
           <p class="day-number">01</p>
           <h2>Monday</h2>
           <p class="day-date">28 September</p>
         </div>
-        <span class="status-stamp">SERVED</span>
+        <span class="day-tag" data-day-status>Upcoming</span>
       </header>
       <div class="meal-list">
-        <section class="meal">
-          <p class="meal-course">Main punishment</p>
+        <a class="meal meal-review-card" data-course="dinner" href="/menus/meals/menu-2026-09-28-mon-dinner/reviews/" aria-label="The Mongolian Submission — open review page">
+          <div class="meal-topline"><p class="meal-course">Main punishment</p><span class="meal-status" data-status>Upcoming</span></div>
           <h3>The Mongolian Submission</h3>
           <p>Slow-cooked Mongolian-style lamb with jasmine rice, pak choi, courgette, carrots, spring onion and sesame, with soy, hoisin, garlic and ginger flavours.</p>
-        </section>
+          <span class="meal-review-cta">Open review page →</span>
+        </a>
       </div>
     </article>
 
-    <article class="day-card">
+    <article class="day-card" data-date="2026-09-29">
       <header class="day-heading">
         <div>
           <p class="day-number">02</p>
           <h2>Tuesday</h2>
           <p class="day-date">29 September</p>
         </div>
-        <span class="day-tag">Tonight's orders</span>
+        <span class="day-tag" data-day-status>Upcoming</span>
       </header>
       <div class="meal-list">
-        <section class="meal">
-          <p class="meal-course">Morning tease</p>
+        <a class="meal meal-review-card" data-course="breakfast" href="/menus/meals/menu-2026-09-28-tue-breakfast/reviews/" aria-label="Tropical Tease — open review page">
+          <div class="meal-topline"><p class="meal-course">Morning tease</p><span class="meal-status" data-status>Upcoming</span></div>
           <h3>Tropical Tease</h3>
           <p>Greek yoghurt with pineapple, banana, coconut and granola.</p>
-        </section>
-        <section class="meal">
-          <p class="meal-course">Midday mischief</p>
+          <span class="meal-review-cta">Open review page →</span>
+        </a>
+        <a class="meal meal-review-card" data-course="lunch" href="/menus/meals/menu-2026-09-28-tue-lunch/reviews/" aria-label="The Dagwood Dom — open review page">
+          <div class="meal-topline"><p class="meal-course">Midday mischief</p><span class="meal-status" data-status>Upcoming</span></div>
           <h3>The Dagwood Dom</h3>
           <p>A fully loaded Dagwood Bumstead-style baguette.</p>
-        </section>
-        <section class="meal featured-meal">
-          <p class="meal-course">Main event</p>
+          <span class="meal-review-cta">Open review page →</span>
+        </a>
+        <a class="meal featured-meal meal-review-card" data-course="dinner" href="/menus/meals/menu-2026-09-28-tue-dinner/reviews/" aria-label="Moroccan Restraint — open review page">
+          <div class="meal-topline"><p class="meal-course">Main event</p><span class="meal-status" data-status>Upcoming</span></div>
           <h3>Moroccan Restraint</h3>
           <p>Chicken with Moroccan-style spiced vegetables, using cumin, paprika and harissa, with a cooling lemon and garlic yoghurt sauce.</p>
-        </section>
+          <span class="meal-review-cta">Open review page →</span>
+        </a>
       </div>
     </article>
 
-    <article class="day-card">
+    <article class="day-card" data-date="2026-09-30">
       <header class="day-heading">
         <div>
           <p class="day-number">03</p>
           <h2>Wednesday</h2>
           <p class="day-date">30 September</p>
         </div>
-        <span class="day-tag">Tied &amp; ready</span>
+        <span class="day-tag" data-day-status>Upcoming</span>
       </header>
       <div class="meal-list">
-        <section class="meal">
-          <p class="meal-course">Morning orders</p>
+        <a class="meal meal-review-card" data-course="breakfast" href="/menus/meals/menu-2026-09-28-wed-breakfast/reviews/" aria-label="Morning Mischief — open review page">
+          <div class="meal-topline"><p class="meal-course">Morning orders</p><span class="meal-status" data-status>Upcoming</span></div>
           <h3>Morning Mischief</h3>
           <p>Mexican-style scrambled egg tortilla with salsa, cheese and avocado.</p>
-        </section>
-        <section class="meal featured-meal">
-          <p class="meal-course">Main event</p>
+          <span class="meal-review-cta">Open review page →</span>
+        </a>
+        <a class="meal featured-meal meal-review-card" data-course="dinner" href="/menus/meals/menu-2026-09-28-wed-dinner/reviews/" aria-label="Thai Tied Salmon — open review page">
+          <div class="meal-topline"><p class="meal-course">Main event</p><span class="meal-status" data-status>Upcoming</span></div>
           <h3>Thai Tied Salmon</h3>
           <p>Thai-style salmon with rice and vegetables — fragrant, bright and with enough heat to keep things interesting.</p>
-        </section>
+          <span class="meal-review-cta">Open review page →</span>
+        </a>
       </div>
     </article>
 
-    <article class="day-card">
+    <article class="day-card" data-date="2026-10-01">
       <header class="day-heading">
         <div>
           <p class="day-number">04</p>
           <h2>Thursday</h2>
           <p class="day-date">1 October</p>
         </div>
-        <span class="day-tag">Heat required</span>
+        <span class="day-tag" data-day-status>Upcoming</span>
       </header>
       <div class="meal-list">
-        <section class="meal">
-          <p class="meal-course">Morning orders</p>
+        <a class="meal meal-review-card" data-course="breakfast" href="/menus/meals/menu-2026-09-28-thu-breakfast/reviews/" aria-label="The Korean Wake-Up Call — open review page">
+          <div class="meal-topline"><p class="meal-course">Morning orders</p><span class="meal-status" data-status>Upcoming</span></div>
           <h3>The Korean Wake-Up Call</h3>
           <p>Korean-style egg and rice with kimchi and gochujang.</p>
-        </section>
-        <section class="meal featured-meal">
-          <p class="meal-course">Main punishment</p>
+          <span class="meal-review-cta">Open review page →</span>
+        </a>
+        <a class="meal featured-meal meal-review-card" data-course="dinner" href="/menus/meals/menu-2026-09-28-thu-dinner/reviews/" aria-label="Red Room Chilli — open review page">
+          <div class="meal-topline"><p class="meal-course">Main punishment</p><span class="meal-status" data-status>Upcoming</span></div>
           <h3>Red Room Chilli</h3>
           <p>Rich chilli con carne. Hot, comforting and unapologetically messy.</p>
-        </section>
+          <span class="meal-review-cta">Open review page →</span>
+        </a>
       </div>
     </article>
 
-    <article class="day-card friday">
+    <article class="day-card friday" data-date="2026-10-02">
       <header class="day-heading">
         <div>
           <p class="day-number">05</p>
           <h2>Friday</h2>
           <p class="day-date">2 October</p>
         </div>
-        <span class="day-tag">Friday punishment</span>
+        <span class="day-tag" data-day-status>Upcoming</span>
       </header>
       <div class="meal-list">
-        <section class="meal">
-          <p class="meal-course">Morning tease</p>
+        <a class="meal meal-review-card" data-course="breakfast" href="/menus/meals/menu-2026-09-28-fri-breakfast/reviews/" aria-label="Greek Temptation — open review page">
+          <div class="meal-topline"><p class="meal-course">Morning tease</p><span class="meal-status" data-status>Upcoming</span></div>
           <h3>Greek Temptation</h3>
           <p>Warm Greek-style pita with feta, tomato, cucumber, olive oil and oregano.</p>
-        </section>
-        <section class="meal featured-meal">
-          <p class="meal-course">Main punishment</p>
+          <span class="meal-review-cta">Open review page →</span>
+        </a>
+        <a class="meal featured-meal meal-review-card" data-course="dinner" href="/menus/meals/menu-2026-09-28-fri-dinner/reviews/" aria-label="Korean Punishment Fish & Chips — open review page">
+          <div class="meal-topline"><p class="meal-course">Main punishment</p><span class="meal-status" data-status>Upcoming</span></div>
           <h3>Korean Punishment Fish &amp; Chips</h3>
           <p>Frozen fish and chips upgraded Korean-style: gochujang, honey, soy and lime on the fish, finished with sesame and spring onion, with spicy sriracha mayo for the chips.</p>
-        </section>
+          <span class="meal-review-cta">Open review page →</span>
+        </a>
       </div>
     </article>
   </section>
