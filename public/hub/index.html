@@ -7,61 +7,91 @@
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Duck & Bear Home</title>
   <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/hub/hub.css?v=6.1.0">
+  <link rel="stylesheet" href="/hub/hub.css?v=6.2.0">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
+  <div class="manga-doodles" aria-hidden="true"><span>♡</span><span>✦</span><span>☼</span><span>〰</span></div>
   <div class="shell">
     <aside class="sidebar" id="sidebar">
-      <a class="logo" href="#home" aria-label="Duck and Bear Home">
+      <a class="logo" href="/hub/home/" data-route="home" aria-label="Duck and Bear Home">
         <span class="logo-sticker">🦆</span>
-        <span><strong>Duck & Bear</strong><small>our little home</small></span>
+        <span><strong>Duck &amp; Bear</strong><small>our little home</small></span>
         <span class="logo-sticker bear">🐻</span>
       </a>
 
       <nav class="nav-groups" aria-label="Private home navigation">
         <section>
-          <p>Home</p>
-          <a href="#home" data-route="home">🏠 <span>Home</span></a>
+          <p>Our space</p>
+          <a href="/hub/home/" data-route="home">🏠 <span>Home</span></a>
+          <a href="/hub/home/today/" data-route="home/today">☀️ <span>Today</span></a>
+          <a href="/hub/home/quick-add/" data-route="home/quick-add">➕ <span>Quick add</span></a>
         </section>
+
         <section data-area="menus">
           <p>Our menus</p>
-          <a href="#menus/library" data-route="menus/library">🍜 <span>Menu library</span></a>
-          <a href="#menus/week" data-route="menus/week">🗓️ <span>This week</span></a>
-          <a href="#menus/history" data-route="menus/history">📚 <span>Past weeks</span></a>
+          <a href="/hub/menus/library/" data-route="menus/library">🍜 <span>Menu library</span></a>
+          <a href="/hub/menus/week/" data-route="menus/week">🗓️ <span>This week</span></a>
+          <a href="/hub/menus/history/" data-route="menus/history">📚 <span>Past weeks</span></a>
+          <a href="/menus/member/">⭐ <span>Meal reviews</span></a>
         </section>
+
         <section data-area="scrapbook">
           <p>Scrapbook</p>
-          <a href="#scrapbook/timeline" data-route="scrapbook/timeline">📸 <span>Timeline</span></a>
-          <a href="#scrapbook/add" data-route="scrapbook/add">✏️ <span>Add memory</span></a>
+          <a href="/hub/scrapbook/timeline/" data-route="scrapbook/timeline">📸 <span>Timeline</span></a>
+          <a href="/hub/scrapbook/add/" data-route="scrapbook/add">✏️ <span>Add memory</span></a>
         </section>
+
         <section data-area="familyTree">
           <p>Family tree</p>
-          <a href="#family/tree" data-route="family/tree">🌳 <span>Tree</span></a>
-          <a href="#family/people" data-route="family/people">👨‍👩‍👧‍👦 <span>People</span></a>
-          <a href="#family/relationships" data-route="family/relationships">🧵 <span>Relationships</span></a>
+          <a href="/hub/family/tree/" data-route="family/tree">🌳 <span>Tree</span></a>
+          <a href="/hub/family/people/" data-route="family/people">👨‍👩‍👧‍👦 <span>People</span></a>
+          <a href="/hub/family/relationships/" data-route="family/relationships">🧵 <span>Relationships</span></a>
         </section>
+
         <section>
-          <p>Duck & Bear apps</p>
-          <a href="#apps" data-route="apps">🎮 <span>Apps & games</span></a>
+          <p>Plans & notes</p>
+          <a href="/hub/plans/board/" data-route="plans/board">🧷 <span>Shared board</span></a>
+          <a href="/hub/plans/bucket/" data-route="plans/bucket">🪣 <span>Bucket list</span></a>
+          <a href="/hub/plans/decisions/" data-route="plans/decisions">🗳️ <span>Decisions</span></a>
+          <a href="/hub/plans/notes/" data-route="plans/notes">💌 <span>Little notes</span></a>
         </section>
+
+        <section>
+          <p>Info library</p>
+          <a href="/hub/info/library/" data-route="info/library">📚 <span>All info</span></a>
+          <a href="/hub/info/allergies-hand-wash/" data-route="info/allergies-hand-wash">🧴 <span>Skin & detergents</span></a>
+          <a href="/hub/info/new/" data-route="info/new" id="infoNewLink" hidden>✍️ <span>New info page</span></a>
+        </section>
+
+        <section>
+          <p>Duck & Bear</p>
+          <a href="/hub/apps/" data-route="apps">🎮 <span>Apps & games</span></a>
+          <a href="/hub/about/" data-route="about">💛 <span>About us</span></a>
+        </section>
+
         <section>
           <p>Settings</p>
-          <a href="#settings/profile" data-route="settings/profile">👤 <span>Profile</span></a>
-          <a href="#settings/security" data-route="settings/security">🔐 <span>Security</span></a>
-          <a href="#settings/appearance" data-route="settings/appearance">🎨 <span>Appearance</span></a>
-          <a href="#settings/privacy" data-route="settings/privacy">🫶 <span>Privacy</span></a>
+          <a href="/hub/settings/profile/" data-route="settings/profile">👤 <span>Profile</span></a>
+          <a href="/hub/settings/email/" data-route="settings/email">📧 <span>Email</span></a>
+          <a href="/hub/settings/password/" data-route="settings/password">🔐 <span>Password</span></a>
+          <a href="/hub/settings/appearance/" data-route="settings/appearance">🎨 <span>Appearance</span></a>
+          <a href="/hub/settings/privacy/" data-route="settings/privacy">🫶 <span>Privacy</span></a>
+          <a href="/hub/settings/data/" data-route="settings/data">💾 <span>Data & exports</span></a>
         </section>
+
         <section id="adminLinks" hidden>
           <p>Admin</p>
-          <a href="#admin/users" data-route="admin/users">🧑‍🤝‍🧑 <span>Users</span></a>
-          <a href="#admin/permissions" data-route="admin/permissions">🗝️ <span>Permissions</span></a>
+          <a href="/hub/admin/users/" data-route="admin/users">🧑‍🤝‍🧑 <span>Users</span></a>
+          <a href="/hub/admin/permissions/" data-route="admin/permissions">🗝️ <span>Permissions</span></a>
+          <a href="/account#admin">🧾 <span>Audit & operations</span></a>
         </section>
       </nav>
 
       <div class="sidebar-foot">
-        <span class="build">Home 6.1.0</span>
-        <a href="/account#home">Old account area ↗</a>
+        <span class="build">Home 6.2.0</span>
+        <a href="/">Public website ↗</a>
+        <a href="/account#home">Account & shop ↗</a>
       </div>
     </aside>
 
@@ -73,6 +103,7 @@
           <h1 id="topTitle">Duck & Bear Home</h1>
         </div>
         <div class="top-actions">
+          <button class="soft-button quick-add-button" id="quickAddButton" type="button">＋ Quick add</button>
           <span class="user-pill" id="userPill">🦆🐻</span>
           <button class="soft-button" id="logoutButton" type="button">Sign out</button>
         </div>
@@ -88,15 +119,16 @@
   </div>
 
   <nav class="mobile-nav" aria-label="Quick navigation">
-    <a href="#home" data-route="home">🏠<span>Home</span></a>
-    <a href="#menus/week" data-route="menus/week">🍜<span>Menus</span></a>
-    <a href="#scrapbook/timeline" data-route="scrapbook/timeline">📸<span>Book</span></a>
-    <a href="#family/tree" data-route="family/tree">🌳<span>Family</span></a>
-    <a href="#settings/profile" data-route="settings/profile">⚙️<span>Settings</span></a>
+    <a href="/hub/home/" data-route="home">🏠<span>Home</span></a>
+    <a href="/hub/menus/week/" data-route="menus/week">🍜<span>Menus</span></a>
+    <a href="/hub/scrapbook/timeline/" data-route="scrapbook/timeline">📸<span>Book</span></a>
+    <a href="/hub/family/tree/" data-route="family/tree">🌳<span>Family</span></a>
+    <a href="/hub/plans/board/" data-route="plans/board">🧷<span>Plans</span></a>
+    <a href="/hub/settings/profile/" data-route="settings/profile">⚙️<span>Settings</span></a>
   </nav>
 
   <div class="scrim" id="scrim" hidden></div>
   <div class="toast" id="toast" role="status"></div>
-  <script src="/hub/hub.js?v=6.1.0" defer></script>
+  <script src="/hub/hub.js?v=6.2.0" defer></script>
 </body>
 </html>
