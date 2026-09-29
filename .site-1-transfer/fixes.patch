@@ -1,0 +1,7 @@
+diff --git a/tests/site-browser.py b/tests/site-browser.py
+index 03c17da..5b46058 100644
+--- a/tests/site-browser.py
++++ b/tests/site-browser.py
+@@ -100 +100 @@ with sync_playwright() as p:
+-    card.get_by_label('Family tree',exact=True).select_option('1');card.get_by_role('button',name='Save permissions').click()
++    card.locator('select[name="family"]').select_option('1');card.get_by_role('button',name='Save permissions').click()
