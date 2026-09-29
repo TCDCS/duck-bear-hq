@@ -35,21 +35,23 @@ jobs:
           assert manifest['base_sha']=='4df31885f973ff270ffb885532a297d097059108'
           assert manifest['source_sha']=='850f3a25dc38dbac835d5a3924d5700622ac3797'
           subprocess.run(['git','checkout',manifest['source_sha'],'--',*manifest['checkout']],check=True)
-          for name,change in manifest['files'].items():
-              path=root/name
-              assert path.resolve().is_relative_to(root)
-              old=path.read_bytes() if path.exists() else b''
-              assert hashlib.sha256(old).hexdigest()==change['old_sha256'],f'Unexpected baseline: {name}'
-              text=old.decode('utf-8')
-              for start,end,replacement in reversed(change['edits']):
-                  text=text[:start]+replacement+text[end:]
-              result=text.encode('utf-8')
-              assert hashlib.sha256(result).hexdigest()==change['new_sha256'],f'Unexpected output: {name}'
-              path.parent.mkdir(parents=True,exist_ok=True)
-              path.write_bytes(result)
+          review=json.loads((root/'.github/site-transfer/final-review.json').read_text())
+          for changes in [manifest['files'],review['files']]:
+              for name,change in changes.items():
+                  path=root/name
+                  assert path.resolve().is_relative_to(root)
+                  old=path.read_bytes() if path.exists() else b''
+                  assert hashlib.sha256(old).hexdigest()==change['old_sha256'],f'Unexpected baseline: {name}'
+                  text=old.decode('utf-8')
+                  for start,end,replacement in reversed(change['edits']):
+                      text=text[:start]+replacement+text[end:]
+                  result=text.encode('utf-8')
+                  assert hashlib.sha256(result).hexdigest()==change['new_sha256'],f'Unexpected output: {name}'
+                  path.parent.mkdir(parents=True,exist_ok=True)
+                  path.write_bytes(result)
           shutil.rmtree(root/'.github/site-transfer')
           (root/'.github/workflows/site-reconcile.yml').unlink()
-          print('Verified and assembled all',len(manifest['files']),'reconciled files; no production data accessed.')
+          print('Verified and assembled reconciled files and final-review fixes; no production data accessed.')
           PY
       - run: npm ci
       - run: npm test
