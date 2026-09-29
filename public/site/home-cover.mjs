@@ -1,0 +1,2 @@
+// This public request returns only explicit public artwork and the website build.
+fetch('/api/site/public',{credentials:'omit',cache:'no-store'}).then(r=>r.ok?r.json():null).then(data=>{if(!data?.cover?.url?.startsWith('/media/site/'))return;const img=document.getElementById('site-home-cover');if(!img)return;img.alt=data.cover.alt;img.src=data.cover.url;img.addEventListener('load',()=>{img.hidden=false;const parent=img.closest('[role=img]');parent?.removeAttribute('role');parent?.removeAttribute('aria-label');},{once:true});}).catch(()=>{});

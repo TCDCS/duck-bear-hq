@@ -17,7 +17,23 @@
       "/games/wacky-races",
       "/games/wacky-races/*",
       "/games/proper-karted",
-      "/games/proper-karted/*"
+      "/games/proper-karted/*",
+      "/our-space",
+      "/our-space/*",
+      "/menus/planner",
+      "/menus/planner/*",
+      "/menus/library",
+      "/menus/library/*",
+      "/family",
+      "/family/*",
+      "/scrapbook",
+      "/scrapbook/*",
+      "/settings",
+      "/settings/*",
+      "/signin",
+      "/signin/*",
+      "/forgot-password",
+      "/forgot-password/*"
     ]
   },
   "rules": [

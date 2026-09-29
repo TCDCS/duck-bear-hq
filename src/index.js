@@ -1,3 +1,6 @@
+import {sitePage} from './site/pages.mjs';
+import {routeSiteApi,siteMedia,seedInitialPair} from './site/api.mjs';
+import {legacyAllowed} from './site/core.mjs';
 import {routeMangoApi} from './mango/api.mjs';
 
 const ORDER_STATUSES = ['Received','Bear notified','Preparing','Out for Bear Delivery','Delivered','Cancelled'];
@@ -13,7 +16,8 @@ export default {
     try {
       if (url.pathname.startsWith('/api/')) return await routeApi(request, env, url);
       if (url.pathname.startsWith('/media/')) return await serveMedia(request, env, url);
-      return env.ASSETS.fetch(request);
+      const page=await sitePage(request,env);
+      return page || env.ASSETS.fetch(request);
     } catch (err) {
       if (err instanceof HttpError) return apiJson({ error: err.message }, err.status);
       console.error('Duck & Bear worker error', err);
@@ -27,6 +31,7 @@ async function routeApi(request, env, url) {
   if (!['GET','HEAD'].includes(request.method) && !sameOrigin(request, url)) return apiJson({ error: 'Cross-site request blocked.' }, 403);
 
   const path = url.pathname;
+  if ((path === '/api/site/health' || path === '/api/site/public') && request.method === 'GET') return routeSiteApi(request,env,null);
   if (path === '/api/health' && request.method === 'GET') return apiJson({ ok: true, service: 'Duck & Bear HQ', version: 4 });
   if (path === '/api/setup/status' && request.method === 'GET') return setupStatus(env);
   if (path === '/api/setup' && request.method === 'POST') return setupAccounts(request, env);
@@ -37,6 +42,9 @@ async function routeApi(request, env, url) {
   const auth = await getAuth(request, env);
   if (!auth) return apiJson({ error: 'Please sign in.' }, 401);
   if (!auth.user.active) return apiJson({ error: 'This account is disabled.' }, 403);
+
+  if (path.startsWith('/api/site/')) return routeSiteApi(request,env,auth.user,{safeUser,hashPassword,audit,readAccountSecurity,writeAccountSecurity,accountSecurityForUser});
+  if (!['/api/auth/logout','/api/account/password','/api/account/email'].includes(path) && !path.startsWith('/api/mango/profiles') && !await legacyAllowed(env,auth.user)) return apiJson({error:'You do not have access to this private area.'},403);
 
   if (path === '/api/mango/profiles' || path.startsWith('/api/mango/profiles/')) return routeMangoApi(request, env, auth.user);
 
@@ -178,6 +186,7 @@ async function setupAccounts(request, env) {
     env.DB.prepare('INSERT INTO users (id,username,display_name,role,password_hash,password_salt,password_iterations,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)').bind(aid,admin.username,admin.displayName,'admin',ah.hash,ah.salt,ah.iterations,t,t),
     env.DB.prepare('INSERT INTO users (id,username,display_name,role,password_hash,password_salt,password_iterations,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)').bind(mid,member.username,member.displayName,'member',mh.hash,mh.salt,mh.iterations,t,t)
   ]);
+  await seedInitialPair(env,aid,mid);
   await audit(env, aid, 'setup.complete', 'system', null, { memberUserId:mid });
   return apiJson({ ok:true, message:'Duck & Bear HQ accounts created.' }, 201);
 }
@@ -544,7 +553,7 @@ async function saveMenuReview(request,env,user){
 
 async function uploadMedia(request,env,user){ const form=await request.formData(); const file=form.get('file'); if(!(file instanceof File))return apiJson({error:'Choose a file.'},400); if(file.size<1||file.size>MAX_UPLOAD_BYTES)return apiJson({error:'Files must be 8 MB or smaller.'},400); if(!ALLOWED_UPLOAD_TYPES.has(file.type))return apiJson({error:'Allowed: JPG, PNG, WebP, GIF, MP4, WebM or PDF.'},400); const purpose=text(form.get('purpose'),40); const menuReview=purpose==='menu-review'; if(menuReview&&!['image/jpeg','image/png','image/webp','image/gif'].includes(file.type))return apiJson({error:'Menu reviews accept JPG, PNG, WebP or GIF images.'},400); const ext=extensionFor(file.type),folder=menuReview?'menu-reviews':'memories'; const key=`${folder}/${new Date().toISOString().slice(0,10)}/${user.id}/${crypto.randomUUID()}${ext}`; await env.MEDIA.put(key,file.stream(),{httpMetadata:{contentType:file.type},customMetadata:{originalName:text(file.name,160),uploadedBy:user.id,purpose:menuReview?'menu-review':'memory'}}); await audit(env,user.id,menuReview?'menu.media.upload':'media.upload','r2_object',key,{name:text(file.name,160),size:file.size,type:file.type}); return apiJson({ok:true,attachment:{key,name:text(file.name,160),type:file.type,size:file.size,url:`/media/${key}`}},201); }
 function extensionFor(type){ return ({'image/jpeg':'.jpg','image/png':'.png','image/webp':'.webp','image/gif':'.gif','video/mp4':'.mp4','video/webm':'.webm','application/pdf':'.pdf'})[type]||''; }
-async function serveMedia(request,env,url){ const auth=await getAuth(request,env); if(!auth)return new Response('Unauthorized',{status:401,headers:{'Cache-Control':'no-store'}}); const key=decodeURIComponent(url.pathname.slice('/media/'.length)); if(!key.startsWith('memories/')&&!key.startsWith('menu-reviews/'))return new Response('Not found',{status:404}); const obj=await env.MEDIA.get(key); if(!obj)return new Response('Not found',{status:404}); const h=new Headers(); obj.writeHttpMetadata(h); h.set('etag',obj.httpEtag); h.set('Cache-Control','private, max-age=300'); h.set('X-Content-Type-Options','nosniff'); h.set('Content-Security-Policy',"default-src 'none'; sandbox"); return new Response(obj.body,{headers:h}); }
+async function serveMedia(request,env,url){ const auth=await getAuth(request,env); if(url.pathname.startsWith('/media/site/'))return siteMedia(request,env,auth?.user,url.pathname.slice('/media/site/'.length)); if(auth?.user?.active && !await legacyAllowed(env,auth.user))return new Response('Forbidden',{status:403,headers:{'Cache-Control':'no-store'}}); if(!auth?.user?.active)return new Response('Unauthorized',{status:401,headers:{'Cache-Control':'no-store'}}); const key=decodeURIComponent(url.pathname.slice('/media/'.length)); if(!key.startsWith('memories/')&&!key.startsWith('menu-reviews/'))return new Response('Not found',{status:404}); const obj=await env.MEDIA.get(key); if(!obj)return new Response('Not found',{status:404}); const h=new Headers(); obj.writeHttpMetadata(h); h.set('etag',obj.httpEtag); h.set('Cache-Control','private, no-store'); h.set('X-Content-Type-Options','nosniff'); h.set('Content-Security-Policy',"default-src 'none'; sandbox"); return new Response(obj.body,{headers:h}); }
 async function saveMemory(request,env,user){ const b=await bodyJson(request); const title=text(b.title,120); if(!title)return apiJson({error:'Memory title is required.'},400); let key=null,name=null,type=null,size=null; if(b.attachment?.key){ key=text(b.attachment.key,500); if(!key.includes(`/${user.id}/`) && user.role!=='admin')return apiJson({error:'Invalid attachment.'},400); name=text(b.attachment.name,160);type=text(b.attachment.type,100);size=int(b.attachment.size,0,MAX_UPLOAD_BYTES,0); }
   const mid=id('mem'),t=now(); await env.DB.prepare('INSERT INTO memories (id,user_id,title,body,happened_on,mood,attachment_key,attachment_name,attachment_type,attachment_size,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').bind(mid,user.id,title,text(b.body,3000),text(b.happenedOn,20)||null,text(b.mood,10)||'💚',key,name,type,size,t,t).run(); await audit(env,user.id,'memory.create','memory',mid,{}); return apiJson({ok:true,fun:await funData(env,user.id)},201); }
 async function deleteMemory(env,user,memoryId){ const m=await env.DB.prepare('SELECT * FROM memories WHERE id=?').bind(memoryId).first(); if(!m)return apiJson({error:'Memory not found.'},404); if(user.role!=='admin'&&m.user_id!==user.id)return apiJson({error:'Not allowed.'},403); if(m.attachment_key)await env.MEDIA.delete(m.attachment_key); await env.DB.prepare('DELETE FROM memories WHERE id=?').bind(memoryId).run(); await audit(env,user.id,'memory.delete','memory',memoryId,{}); return apiJson({ok:true,fun:await funData(env,user.id)}); }
