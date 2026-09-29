@@ -230,6 +230,7 @@ async function updateUser(request,env,user,targetId){return withErrors(async()=>
   }
   try{await env.DB.prepare('UPDATE users SET username=?,display_name=?,role=?,active=?,updated_at=? WHERE id=?').bind(username,displayName,role,active,stamp(),targetId).run();}catch(err){if(String(err).toLowerCase().includes('unique'))return j({error:'That username is already in use.'},409);throw err;}
   if(role==='admin')await env.DB.prepare("INSERT INTO hub_permissions (user_id,family_tree_level,scrapbook_level,menus_level,updated_at) VALUES (?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET family_tree_level='admin',scrapbook_level='admin',menus_level='admin',updated_at=excluded.updated_at").bind(targetId,'admin','admin','admin',stamp()).run();
+  else if(target.role==='admin')await env.DB.prepare("UPDATE hub_permissions SET family_tree_level=CASE WHEN family_tree_level='admin' THEN 'contribute' ELSE family_tree_level END,scrapbook_level=CASE WHEN scrapbook_level='admin' THEN 'contribute' ELSE scrapbook_level END,menus_level=CASE WHEN menus_level='admin' THEN 'contribute' ELSE menus_level END,updated_at=? WHERE user_id=?").bind(stamp(),targetId).run();
   await audit(env,user.id,'hub.user_update','user',targetId,{username,role,active:Boolean(active)});
   return j({ok:true});
 });}
