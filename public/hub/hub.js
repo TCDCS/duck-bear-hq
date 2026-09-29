@@ -161,7 +161,7 @@ async function renderScrapbook(route){
   if(route==='scrapbook/add'){
     setPage(tab+(level('scrapbook','contribute')?scrapForm():'<div class="note">You have read-only access.</div>'));
   }else{
-    setPage(tab+'<section><div class="section-head"><div><h2>Our scrapbook</h2><p>Photos and little bits we want to keep.</p></div><a class="pink-button" href="#scrapbook/add">Add memory</a></div>'+(data.items.length?'<div class="media-grid">'+data.items.map(scrapCard).join('')+'</div>':empty('📸','Nothing in the scrapbook yet.'))+'</section>');
+    setPage(tab+'<section><div class="section-head"><div><h2>Our scrapbook</h2><p>Photos and little bits we want to keep.</p></div><a data-hub-route="scrapbook/add" class="pink-button" href="'+routeHref('scrapbook/add')+'">Add memory</a></div>'+(data.items.length?'<div class="media-grid">'+data.items.map(scrapCard).join('')+'</div>':empty('📸','Nothing in the scrapbook yet.'))+'</section>');
   }
 }
 function scrapForm(item=null){
@@ -203,6 +203,80 @@ function relationsList(data){
   return '<div class="thread-list">'+data.relations.map(r=>'<article class="thread"><strong>'+esc(names[r.person_a_id]||'Unknown')+'</strong><span>'+esc(r.relation_type)+(r.label?' · '+esc(r.label):'')+'</span><strong>'+esc(names[r.person_b_id]||'Unknown')+'</strong>'+(level('familyTree','contribute')?'<button class="danger-button" data-action="delete-relation" data-id="'+r.id+'">Remove</button>':'')+'</article>').join('')+'</div>';
 }
 
+async function ensureBoard(){if(!state.board)state.board=await api('/api/hub/board');return state.board;}
+function boardForm(kind){
+  const meta={
+    note:['Little note','Leave something on the shared board.','Message / note'],
+    bucket:['Bucket-list idea','Something we should actually do.','Why / details'],
+    decision:['New decision','Give us a few choices and vote.','Context / details']
+  }[kind]||['New item','','Details'];
+  return '<section class="panel form-card"><div class="section-head"><div><h2>'+meta[0]+'</h2><p>'+meta[1]+'</p></div></div><form id="boardForm" data-kind="'+kind+'"><div class="form-grid"><label>Title<input name="title" required maxlength="160"></label><label class="wide">'+meta[2]+'<textarea name="body" maxlength="3000"></textarea></label>'+(kind==='decision'?'<label class="wide">Choices — one per line<textarea name="options" required placeholder="Saturday\nSunday"></textarea></label>':'')+'</div><div class="actions"><button class="ink-button" type="submit">Add '+(kind==='note'?'note':kind==='bucket'?'idea':'decision')+'</button></div></form></section>';
+}
+function canManageBoard(x){return x.createdBy===state.dashboard.user.id||state.dashboard.user.role==='admin';}
+function boardCard(x){
+  const status=x.status==='done'?'✓ done':x.status;
+  return '<article class="card board-card '+(x.status==='done'?'done':'')+'"><div class="user-head"><div><span class="tag">'+esc(x.kind)+'</span><h3>'+esc(x.title)+'</h3></div><span class="sticker">'+esc(status)+'</span></div><p>'+esc(x.body||'')+'</p>'+(canManageBoard(x)?'<div class="actions">'+(x.kind==='bucket'&&x.status!=='done'?'<button class="soft-button" data-action="board-status" data-status="done" data-id="'+x.id+'">Mark done</button>':'')+(x.status==='done'?'<button class="soft-button" data-action="board-status" data-status="open" data-id="'+x.id+'">Reopen</button>':'')+'<button class="danger-button" data-action="delete-board" data-id="'+x.id+'">Delete</button></div>':'')+'</article>';
+}
+function decisionCard(x){
+  const options=x.options||[];
+  return '<article class="card decision-card"><div class="user-head"><div><span class="tag">decision</span><h3>'+esc(x.title)+'</h3></div><span class="sticker">'+esc(x.status)+'</span></div><p>'+esc(x.body||'')+'</p><div class="decision-options">'+options.map(o=>'<button class="decision-option '+(x.myVote===o?'chosen':'')+'" data-action="board-vote" data-id="'+x.id+'" data-choice="'+esc(o)+'" '+(x.status!=='open'?'disabled':'')+'><span>'+esc(o)+'</span><b>'+Number(x.votes?.[o]||0)+'</b></button>').join('')+'</div>'+(canManageBoard(x)?'<div class="actions">'+(x.status==='open'?'<button class="soft-button" data-action="board-status" data-status="closed" data-id="'+x.id+'">Close vote</button>':'<button class="soft-button" data-action="board-status" data-status="open" data-id="'+x.id+'">Reopen</button>')+'<button class="danger-button" data-action="delete-board" data-id="'+x.id+'">Delete</button></div>':'')+'</article>';
+}
+async function renderPlans(route){
+  const data=await ensureBoard(),tab=tabs('plans',[['plans/board','Shared board'],['plans/bucket','Bucket list'],['plans/decisions','Decisions'],['plans/notes','Little notes']]);
+  if(route==='plans/bucket'){
+    const items=data.items.filter(x=>x.kind==='bucket'),open=items.filter(x=>x.status!=='done'),done=items.filter(x=>x.status==='done');
+    return setPage(tab+boardForm('bucket')+'<section class="section"><div class="section-head"><div><h2>Still to do</h2><p>'+open.length+' idea'+(open.length===1?'':'s')+' waiting for us.</p></div><button class="pink-button" data-action="surprise-bucket">Surprise me</button></div>'+(open.length?'<div class="grid card-grid">'+open.map(boardCard).join('')+'</div>':empty('🪣','Bucket list is empty.'))+'</section>'+(done.length?'<section class="section"><div class="section-head"><h2>Done ✓</h2></div><div class="grid card-grid">'+done.map(boardCard).join('')+'</div></section>':''));
+  }
+  if(route==='plans/decisions'){
+    const items=data.items.filter(x=>x.kind==='decision');
+    return setPage(tab+boardForm('decision')+'<section class="section"><div class="section-head"><div><h2>Decisions</h2><p>Vote, change your mind, then close it when decided.</p></div></div>'+(items.length?'<div class="grid card-grid">'+items.map(decisionCard).join('')+'</div>':empty('🗳️','Nothing to decide yet.'))+'</section>');
+  }
+  if(route==='plans/notes'){
+    const items=data.items.filter(x=>x.kind==='note');
+    return setPage(tab+boardForm('note')+'<section class="section"><div class="section-head"><div><h2>Little notes</h2><p>Private messages on our shared board.</p></div></div>'+(items.length?'<div class="grid card-grid">'+items.map(boardCard).join('')+'</div>':empty('💌','No notes yet.'))+'</section>');
+  }
+  const items=data.items;
+  setPage(tab+'<section class="hero mini-hero"><div><span class="sticker">shared board</span><h2>Plans, ideas & little notes</h2><p>A place for things that do not belong in a menu, family tree or scrapbook yet.</p></div><div class="hero-art"><div class="pinboard-art">📌💌🗳️🪣</div></div></section><section class="section"><div class="section-head"><div><h2>Recent</h2><p>Latest activity from the board.</p></div></div>'+(items.length?'<div class="grid card-grid">'+items.slice(0,12).map(x=>x.kind==='decision'?decisionCard(x):boardCard(x)).join('')+'</div>':empty('🧷','The board is clear.'))+'</section>');
+}
+
+async function ensureInfo(){if(!state.info)state.info=await api('/api/hub/info');return state.info;}
+function infoBody(body){
+  const lines=String(body||'').split(/\n/),parts=[];let list=[];
+  const flush=()=>{if(list.length){parts.push('<ul>'+list.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>');list=[];}};
+  for(const raw of lines){const line=raw.trim();if(!line){flush();continue;}if(/^[-•]\s*/.test(line)){list.push(line.replace(/^[-•]\s*/,''));continue;}flush();if(line.length<80&&!/[.!?]$/.test(line))parts.push('<h3>'+esc(line)+'</h3>');else parts.push('<p>'+esc(line)+'</p>');}
+  flush();return parts.join('');
+}
+function infoForm(page=null){
+  const edit=Boolean(page);
+  return '<section class="panel form-card"><div class="section-head"><div><h2>'+(edit?'Edit info page':'Create info page')+'</h2><p>Useful notes only available after sign-in.</p></div></div><form id="infoForm" data-id="'+esc(page?.id||'')+'"><div class="form-grid"><label>Title<input name="title" required maxlength="160" value="'+esc(page?.title||'')+'"></label><label>Category<input name="category" maxlength="80" value="'+esc(page?.category||'General')+'"></label><label>Page address<input name="slug" maxlength="80" placeholder="leave blank to make it from the title" value="'+esc(page?.slug||'')+'"></label><label class="wide">Short summary<textarea name="summary" maxlength="500">'+esc(page?.summary||'')+'</textarea></label><label class="wide">Page content<textarea name="body" maxlength="12000" rows="16" placeholder="Use blank lines between paragraphs. Start simple lists with •">'+esc(page?.body||'')+'</textarea></label></div><div class="actions"><button class="ink-button" type="submit">'+(edit?'Save page':'Create page')+'</button>'+(edit?'<a data-hub-route="info/'+esc(page.slug)+'" class="soft-button" href="'+routeHref('info/'+page.slug)+'">Cancel</a>':'')+'</div></form></section>';
+}
+function infoCard(p){
+  return '<a data-hub-route="info/'+esc(p.slug)+'" class="card info-card" href="'+routeHref('info/'+p.slug)+'"><span class="info-icon">'+(p.category.toLowerCase().includes('health')?'🧴':'📌')+'</span><div><span class="tag">'+esc(p.category)+'</span><h3>'+esc(p.title)+'</h3><p>'+esc(p.summary||'')+'</p><strong>Open page →</strong></div></a>';
+}
+async function renderInfo(route){
+  const data=await ensureInfo(),admin=state.dashboard.user.role==='admin';
+  if(route==='info/new'){
+    if(!admin)return forbidden('New Info Page');
+    return setPage(tabs('info',[['info/library','Library'],['info/new','New page']])+infoForm());
+  }
+  if(route.startsWith('info/edit/')){
+    if(!admin)return forbidden('Edit Info Page');
+    const slug=decodeURIComponent(route.slice('info/edit/'.length)),page=data.pages.find(x=>x.slug===slug);if(!page)return setPage(empty('📚','Info page not found.'));
+    return setPage(tabs('info',[['info/library','Library'],['info/new','New page']])+infoForm(page));
+  }
+  if(route==='info/library'){
+    const cats={};for(const p of data.pages)(cats[p.category]??=[]).push(p);
+    return setPage(tabs('info',[['info/library','Library'],...(admin?[['info/new','New page']]:[])])+'<section class="hero mini-hero info-hero"><div><span class="sticker">useful stuff 📚</span><h2>Info library</h2><p>Things worth keeping somewhere sensible instead of trying to remember them later.</p></div><div class="hero-art"><div class="library-art">📚🖍️💡</div></div></section>'+Object.entries(cats).map(([cat,pages])=>'<section class="section"><div class="section-head"><h2>'+esc(cat)+'</h2></div><div class="info-grid">'+pages.map(infoCard).join('')+'</div></section>').join(''));
+  }
+  const slug=decodeURIComponent(route.slice('info/'.length)),page=data.pages.find(x=>x.slug===slug);if(!page)return setPage(empty('📚','Info page not found.'));
+  pageTitle(route);$('#topTitle').textContent=page.title;
+  setPage('<nav class="tabs"><a data-hub-route="info/library" href="'+routeHref('info/library')+'">← Info library</a></nav><article class="panel info-article"><div class="info-article-head"><div><span class="tag">'+esc(page.category)+'</span><h2>'+esc(page.title)+'</h2><p>'+esc(page.summary||'')+'</p></div>'+(admin?'<div class="actions"><a data-hub-route="info/edit/'+esc(page.slug)+'" class="soft-button" href="'+routeHref('info/edit/'+page.slug)+'">Edit</a><button class="danger-button" data-action="delete-info" data-id="'+page.id+'">Delete</button></div>':'')+'</div><div class="info-prose">'+infoBody(page.body)+'</div></article>');
+}
+
+function renderAbout(){
+  setPage('<section class="hero anime-hero"><div><span class="sticker">private about page 💛</span><h2>Duck & Bear</h2><p>This is our shared corner of the internet: games, food plans, memories, family things, useful notes and a completely unnecessary amount of nonsense.</p><div class="actions"><a data-hub-route="home" class="ink-button" href="'+routeHref('home')+'">Our Home</a><a data-hub-route="scrapbook/timeline" class="pink-button" href="'+routeHref('scrapbook/timeline')+'">Scrapbook</a></div></div><div class="hero-art">'+heroArtwork()+'</div></section><section class="section"><div class="grid card-grid"><article class="card tint-yellow"><span class="icon">🦆</span><h3>Duck</h3><p>Colour, food, photos and the important opinions.</p></article><article class="card tint-orange"><span class="icon">🐻</span><h3>Bear</h3><p>Games, over-engineering and keeping the whole thing running.</p></article><article class="card tint-pink"><span class="icon">💛</span><h3>Us</h3><p>A private home first. Invited accounts only see the sections they have permission to use.</p></article></div></section>');
+}
+
 function renderApps(){
   const apps=[
     ['🎮','Games','Wacky Races, Meow Wars, Mango Mayhem, Seagull and the rest.','/#games','tint-blue'],
@@ -217,19 +291,25 @@ function renderApps(){
 
 async function ensureSecurity(){if(!state.security){const b=await api('/api/bootstrap');state.security=b.accountSecurity||{};}return state.security;}
 async function renderSettings(route){
-  const t=tabs('settings',[['settings/profile','Profile'],['settings/security','Security'],['settings/appearance','Appearance'],['settings/privacy','Privacy']]);
+  const t=tabs('settings',[['settings/profile','Profile'],['settings/email','Email'],['settings/password','Password'],['settings/appearance','Appearance'],['settings/privacy','Privacy'],['settings/data','Data & exports']]);
   if(route==='settings/profile'){
-    const u=state.dashboard.user;setPage(t+'<section class="panel"><div class="section-head"><div><h2>Your profile</h2><p>The account currently signed in.</p></div></div><div class="grid stats">'+stat('👤','Name',u.displayName)+stat('🔑','Username',u.username)+stat('🧭','Role',u.role)+stat('✅','Status',u.active?'Active':'Disabled')+'</div><div class="note">Profile name and username can be changed by an admin in Users. Security details are kept on the separate Security page.</div></section>');
-  }else if(route==='settings/security'){
-    const s=await ensureSecurity();
-    setPage(t+'<div class="grid card-grid"><section class="panel form-card"><h2>Recovery email</h2><p class="muted tiny">Register an email so you can sign in with it and use lost password.</p><form id="emailForm"><label>Email<input type="email" name="email" required value="'+esc(s.email||'')+'"></label><label>Current password<input type="password" name="currentPassword" required autocomplete="current-password"></label><div class="actions"><button class="ink-button" type="submit">Save email</button></div></form></section><section class="panel form-card"><h2>Change password</h2><form id="passwordForm"><label>Current password<input type="password" name="currentPassword" required autocomplete="current-password"></label><label>New password<input type="password" name="newPassword" required minlength="8" maxlength="128" autocomplete="new-password"></label><div class="actions"><button class="ink-button" type="submit">Change password</button></div></form></section><section class="panel tint-blue"><h2>Lost password</h2><p class="muted tiny">The sign-in page has the recovery link. It never confirms whether an email exists.</p><a class="soft-button" href="/account">Open sign in →</a></section></div>');
-  }else if(route==='settings/appearance'){
-    const pref=readPrefs();
-    setPage(t+'<section class="panel form-card"><div class="section-head"><div><h2>Appearance</h2><p>Saved on this device.</p></div></div><form id="appearanceForm"><div class="form-grid"><label>Theme<select name="theme"><option value="paper" '+(pref.theme==='paper'?'selected':'')+'>Colourful paper</option><option value="ink" '+(pref.theme==='ink'?'selected':'')+'>Ink sketch</option><option value="night" '+(pref.theme==='night'?'selected':'')+'>Night</option></select></label><label>Motion<select name="motion"><option value="full" '+(!pref.reduce?'selected':'')+'>Playful movement</option><option value="reduced" '+(pref.reduce?'selected':'')+'>Reduced motion</option></select></label><label>Navigation<select name="nav"><option value="normal" '+(!pref.compact?'selected':'')+'>Normal</option><option value="compact" '+(pref.compact?'selected':'')+'>Compact</option></select></label></div><div class="actions"><button class="ink-button" type="submit">Save appearance</button></div></form></section>');
-  }else{
-    const p=state.dashboard.permissions;
-    setPage(t+'<section class="panel"><div class="section-head"><div><h2>Privacy</h2><p>The private Home uses server-side permission checks.</p></div></div><div class="grid stats">'+stat('🌳','Family Tree',p.familyTree)+stat('📸','Scrapbook',p.scrapbook)+stat('🍜','Menus',p.menus)+stat('🔒','Media','Private')+'</div><div class="note">Family Tree, Scrapbook and their media are not exposed through the public homepage. A hidden button is not treated as security — the Worker checks your permission again on every private request.</div></section>');
+    const u=state.dashboard.user;return setPage(t+'<section class="panel"><div class="section-head"><div><h2>Your profile</h2><p>The account currently signed in.</p></div></div><div class="grid stats">'+stat('👤','Name',u.displayName)+stat('🔑','Username',u.username)+stat('🧭','Role',u.role)+stat('✅','Status',u.active?'Active':'Disabled')+'</div><div class="note">Name, username and role are managed separately in Admin → Users. Security has its own Email and Password pages.</div></section>');
   }
+  if(route==='settings/email'){
+    const sec=await ensureSecurity();return setPage(t+'<section class="panel form-card settings-narrow"><div class="section-head"><div><h2>Registered email</h2><p>Used for email sign-in and lost-password recovery.</p></div></div><form id="emailForm"><label>Email<input type="email" name="email" required value="'+esc(sec.email||'')+'"></label><label>Current password<input type="password" name="currentPassword" required autocomplete="current-password"></label><div class="actions"><button class="ink-button" type="submit">Save email</button></div></form></section>');
+  }
+  if(route==='settings/password'){
+    return setPage(t+'<section class="panel form-card settings-narrow"><div class="section-head"><div><h2>Change password</h2><p>Changing it signs out your other sessions.</p></div></div><form id="passwordForm"><label>Current password<input type="password" name="currentPassword" required autocomplete="current-password"></label><label>New password<input type="password" name="newPassword" required minlength="8" maxlength="128" autocomplete="new-password"></label><div class="actions"><button class="ink-button" type="submit">Change password</button><a class="soft-button" href="/account">Lost password?</a></div></form></section>');
+  }
+  if(route==='settings/appearance'){
+    const pref=readPrefs();
+    return setPage(t+'<section class="panel form-card"><div class="section-head"><div><h2>Appearance</h2><p>Colourful hand-drawn style, with a few choices saved on this device.</p></div></div><form id="appearanceForm"><div class="form-grid"><label>Theme<select name="theme"><option value="paper" '+(pref.theme==='paper'||!pref.theme?'selected':'')+'>Colourful anime paper</option><option value="ink" '+(pref.theme==='ink'?'selected':'')+'>Ink sketch</option><option value="night" '+(pref.theme==='night'?'selected':'')+'>Night</option></select></label><label>Home artwork<select name="artwork"><option value="collage" '+((pref.artwork||'collage')==='collage'?'selected':'')+'>Both illustrations</option><option value="yaya-dog" '+(pref.artwork==='yaya-dog'?'selected':'')+'>Dog hug</option><option value="bear-goats" '+(pref.artwork==='bear-goats'?'selected':'')+'>Goat day</option><option value="mascots" '+(pref.artwork==='mascots'?'selected':'')+'>Duck & Bear mascots</option></select></label><label>Motion<select name="motion"><option value="full" '+(!pref.reduce?'selected':'')+'>Playful movement</option><option value="reduced" '+(pref.reduce?'selected':'')+'>Reduced motion</option></select></label><label>Navigation<select name="nav"><option value="normal" '+(!pref.compact?'selected':'')+'>Normal</option><option value="compact" '+(pref.compact?'selected':'')+'>Compact</option></select></label></div><div class="art-choice-preview">'+heroArtwork()+'</div><div class="actions"><button class="ink-button" type="submit">Save appearance</button></div></form></section>');
+  }
+  if(route==='settings/privacy'){
+    const p=state.dashboard.permissions;
+    return setPage(t+'<section class="panel"><div class="section-head"><div><h2>Privacy</h2><p>Private access is checked by the Worker on every request.</p></div></div><div class="grid stats">'+stat('🌳','Family Tree',p.familyTree)+stat('📸','Scrapbook',p.scrapbook)+stat('🍜','Menus',p.menus)+stat('🔒','Media','Private')+'</div><div class="note">Info and About require sign-in. Family Tree, Scrapbook and their media also require the relevant permission. Private content is never made public just because a link is known.</div></section>');
+  }
+  return setPage(t+'<section class="panel"><div class="section-head"><div><h2>Data & exports</h2><p>Download a copy of the existing account data.</p></div></div><div class="grid card-grid"><a class="card quick-card tint-blue" href="/api/export/backup.json" download><div><span class="icon">💾</span><h3>Full JSON backup</h3><p>Account history plus private Menu Room data.</p></div><span class="arrow">Download →</span></a><a class="card quick-card tint-yellow" href="/api/export/orders.csv" download><div><span class="icon">📦</span><h3>Orders CSV</h3><p>Your order history in a spreadsheet-friendly format.</p></div><span class="arrow">Download →</span></a><a class="card quick-card tint-green" href="/api/export/loyalty.csv" download><div><span class="icon">⭐</span><h3>Yaya Points CSV</h3><p>Loyalty transactions and balances.</p></div><span class="arrow">Download →</span></a></div><div class="note">Family Tree, Scrapbook, Info Library and planning-board export will be included in the dedicated Home backup as that grows.</div></section>');
 }
 function readPrefs(){try{return JSON.parse(localStorage.getItem('db-home-prefs'))||{};}catch{return {};}}
 function applyPrefs(p=readPrefs()){document.documentElement.dataset.theme=p.theme||'paper';document.body.classList.toggle('reduce-motion',Boolean(p.reduce));document.body.classList.toggle('compact',Boolean(p.compact));}
@@ -257,18 +337,21 @@ function empty(icon,text){return '<div class="empty"><span>'+icon+'</span><stron
 async function render(){
   const route=currentRoute();pageTitle(route);updateNav(route);
   try{
-    if(route==='home')return renderHome();
+    if(route==='home'||route.startsWith('home/'))return await renderHome(route);
     if(route.startsWith('menus/'))return await renderMenus(route);
     if(route.startsWith('scrapbook/'))return await renderScrapbook(route);
     if(route.startsWith('family/'))return await renderFamily(route);
+    if(route.startsWith('plans/'))return await renderPlans(route);
+    if(route.startsWith('info/'))return await renderInfo(route);
     if(route==='apps')return renderApps();
+    if(route==='about')return renderAbout();
     if(route.startsWith('settings/'))return await renderSettings(route);
     if(route.startsWith('admin/'))return await renderAdmin(route);
-    location.hash='home';
+    return navigate('home',true);
   }catch(err){setPage('<div class="empty"><span>🧯</span><strong>That page did not load.</strong><p>'+esc(err.message)+'</p><button class="soft-button" data-action="retry">Try again</button></div>');}
 }
 async function refresh(area){
-  if(area==='menus')state.menus=null;if(area==='scrapbook')state.scrapbook=null;if(area==='family')state.family=null;if(area==='users')state.users=null;
+  if(area==='menus')state.menus=null;if(area==='scrapbook')state.scrapbook=null;if(area==='family')state.family=null;if(area==='users')state.users=null;if(area==='info')state.info=null;if(area==='board')state.board=null;
   await render();
 }
 document.addEventListener('submit',async e=>{
