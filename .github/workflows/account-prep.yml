@@ -2,7 +2,7 @@ name: Account implementation acceptance
 on:
   push:
     branches: [feature/account-controls-passkeys]
-    paths: [.github/workflows/account-prep.yml]
+    paths: [.github/workflows/account-prep.yml, .github/account-transfer/review.json]
 permissions:
   contents: write
 concurrency:
@@ -10,6 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   acceptance:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
