@@ -1,4 +1,5 @@
 import {fail,queryAll,now} from './core.mjs';
+import {ensureAccountSchema} from './account-schema.mjs';
 
 // Additive schema only. Existing tables, accounts and R2 objects are never dropped.
 export const SCHEMA=[
@@ -49,12 +50,13 @@ export async function legacyPair(env){
 }
 export async function schemaReady(env){try{return Boolean(await env.DB.prepare("SELECT 1 AS ok FROM hq_meta WHERE key='schema' AND value='1'").first());}catch(e){if(/no such table/i.test(String(e)))return false;throw e;}}
 export async function initialise(env,user){
- if(await schemaReady(env))return;
+ if(await schemaReady(env)){await ensureAccountSchema(env);return;}
  const pair=await legacyPair(env);
  if(!pair||![pair.owner,pair.partner].includes(user.id))fail(503,'The original owner must initialise Our Space first.','owner_setup');
  const statements=SCHEMA.map(sql=>env.DB.prepare(sql));
  statements.push(env.DB.prepare('INSERT OR IGNORE INTO hq_pair VALUES(?,?)').bind(pair.owner,'owner'),env.DB.prepare('INSERT OR IGNORE INTO hq_pair VALUES(?,?)').bind(pair.partner,'partner'));
  await env.DB.batch(statements);
+ await ensureAccountSchema(env);
 }
 export async function permission(env,user,section){
  const pair=await env.DB.prepare('SELECT role FROM hq_pair WHERE user_id=?').bind(user.id).first();

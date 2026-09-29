@@ -7,8 +7,8 @@ export const NAV=[
  {title:'Image Library',icon:'▧',base:'/image-library/',section:null,items:[['All images','/image-library/'],['Upload','/image-library/upload/'],['Recycle bin','/image-library/recycle/']]},
  {title:'Shop & Points',icon:'🎁',base:'/shop/',pair:true,items:[['Gift shop','/shop/'],['Basket','/shop/basket/'],['Orders','/orders/'],['Yaya Points','/points/'],['Rewards','/points/rewards/']]},
  {title:'Info Library',icon:'📚',base:'/info/',section:'library',items:[['All pages','/info/'],['Hand wash & allergies','/info/allergies/'],['About Duck & Bear','/about/']]},
- {title:'Settings',icon:'⚙',base:'/settings/',section:null,items:[['All settings','/settings/'],['Profile','/settings/profile/'],['Email','/settings/email/'],['Security','/settings/security/'],['Devices','/settings/devices/'],['Notifications','/settings/notifications/'],['Appearance','/settings/appearance/'],['Language','/settings/language/'],['Images & covers','/settings/images/'],['My data','/settings/data/'],['Updates','/settings/updates/']]},
- {title:'Admin',icon:'✦',base:'/admin/',owner:true,items:[['Overview','/admin/'],['Users','/admin/users/'],['Invitations','/admin/invitations/'],['Permissions','/admin/permissions/'],['Site appearance','/admin/appearance/'],['Recovery requests','/admin/recovery/'],['Backups & restore','/admin/backups/'],['Change history','/admin/history/']]}
+ {title:'Settings',icon:'⚙',base:'/settings/',section:null,items:[['All settings','/settings/'],['Profile','/settings/profile/'],['Email','/settings/email/'],['Security','/settings/security/'],['Passkeys','/settings/passkeys/'],['Devices','/settings/devices/'],['Notifications','/settings/notifications/'],['Appearance','/settings/appearance/'],['Language','/settings/language/'],['Images & covers','/settings/images/'],['My data','/settings/data/'],['Updates','/settings/updates/']]},
+ {title:'Admin',icon:'✦',base:'/admin/',owner:true,items:[['Overview','/admin/'],['Users','/admin/users/'],['Invitations','/admin/invitations/'],['Permissions','/admin/permissions/'],['Site appearance','/admin/appearance/'],['Recovery requests','/admin/recovery/'],['Email delivery','/admin/email/'],['Backups & restore','/admin/backups/'],['Change history','/admin/history/']]}
 ];
 export const COLLECTIONS={
  '/info/pages/':{kind:'info',section:'library',title:'Info Library',singular:'page'},
@@ -48,9 +48,12 @@ export function resolveRoute(raw,hash=''){const path=normalize(raw);if(aliases[p
  if(['/image-library/','/image-library/upload/','/image-library/recycle/'].includes(path))return {view:'images',tab:path.split('/')[2]||'all'};
  const image=path.match(/^\/image-library\/([\w-]+)\/$/);if(image)return {view:'image',id:image[1]};
  if(path==='/settings/')return {view:'setting',tab:'index'};
- if(/^\/settings\/(profile|email|security|devices|notifications|appearance|language|images|data|updates)\/$/.test(path))return {view:'setting',tab:path.split('/')[2]};
+ if(/^\/settings\/(profile|email|security|passkeys|devices|notifications|appearance|language|images|data|updates)\/$/.test(path))return {view:'setting',tab:path.split('/')[2]};
  if(path==='/admin/')return {view:'admin',tab:'index',owner:true};
  if(/^\/admin\/(users|invitations|permissions|appearance|recovery|backups|history)\/$/.test(path))return {view:'admin',tab:path.split('/')[2],owner:true};
+ if(path==='/admin/email/')return {view:'admin',tab:'email-delivery',owner:true};
+ if(path==='/admin/users/create/')return {view:'admin',tab:'user-create',owner:true};
+ const accountTab=path.match(/^\/admin\/users\/([\w-]+)\/(email|security|settings)\/$/);if(accountTab)return {view:'admin',tab:'user-'+accountTab[2],id:accountTab[1],owner:true};
  if(path==='/admin/users/new/')return {view:'admin',tab:'user-new',owner:true};
  const user=path.match(/^\/admin\/users\/([\w-]+)\/(permissions\/)?$/);if(user)return {view:'admin',tab:user[2]?'user-permissions':'user',id:user[1],owner:true};
  if(['/shop/','/shop/basket/','/orders/','/points/','/points/rewards/'].includes(path))return {view:'shop',tab:path.slice(1,-1),pair:true};
