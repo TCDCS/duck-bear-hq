@@ -1,4 +1,6 @@
 Integrate the verified seven-part Site 1 implementation on the isolated development branch.
 Source patch SHA256: aa421f6e3ed699fa14671d91077d6ce731970ddb0399eaa2a1367d2c9fec0d94
 Base commit: 0c5b878d10f26098e4a81f6333f41a915c45bf6a
+Apply fixes.patch: target the actual family select in the browser acceptance test; all permission assertions stay in place.
 Do not merge or deploy in this workflow.
+Attempt 2.
