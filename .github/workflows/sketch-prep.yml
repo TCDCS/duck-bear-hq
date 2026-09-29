@@ -1,4 +1,4 @@
-name: Domain email readiness
+name: Website lettering preparation
 on:
   push:
     branches: [site/guannan-sketch-theme]
@@ -6,26 +6,35 @@ on:
 permissions:
   contents: read
 jobs:
-  inspect:
+  lettering:
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
-      - name: Read only email sending status
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      - name: Embed licensed web lettering without runtime third-party requests
         run: |
-          mkdir -p report
+          mkdir -p result
           node --input-type=module <<'JS'
           import {writeFile} from 'node:fs/promises';
-          const token=process.env.CLOUDFLARE_API_TOKEN;
-          const get=async path=>{const r=await fetch('https://api.cloudflare.com/client/v4'+path,{headers:{Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(15000)});let j={};try{j=await r.json()}catch{}return {status:r.status,j};};
-          const z=await get('/zones?name=guannan.party');const zone=z.j.result?.find(x=>x.name==='guannan.party');
-          const report={checkedAt:new Date().toISOString(),domain:'guannan.party',zoneReadable:!!zone};
-          if(zone){for(const [name,path] of [['sending','/email/sending/subdomains'],['routing','/email/routing']]){const {status,j}=await get(`/zones/${zone.id}`+path);report[name]={status,success:!!j.success,errorCodes:(j.errors||[]).map(e=>e.code),...(name==='sending'?{domains:(Array.isArray(j.result)?j.result:[]).map(d=>({name:d.name,enabled:d.enabled,previewEnabled:d.preview_enabled}))}:{enabled:j.result?.enabled})};}}
-          await writeFile('report/email-domain-status.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
+          import {createHash} from 'node:crypto';
+          const endpoint='https://fonts.googleapis.com/css2?family=Kalam:wght@700&display=swap';
+          const headers={'User-Agent':'Mozilla/5.0 AppleWebKit/537.36 Chrome/130.0.0.0 Safari/537.36'};
+          const res=await fetch(endpoint,{headers});if(!res.ok)throw Error('Lettering source unavailable');
+          let css=await res.text();const sources=[];
+          for(const url of [...new Set([...css.matchAll(/url\((https:\/\/fonts\.gstatic\.com\/[^)]+)\)/g)].map(m=>m[1]))]){
+            const r=await fetch(url);if(!r.ok)throw Error('Lettering download failed');const b=Buffer.from(await r.arrayBuffer());if(b.length>300000)throw Error('Unexpected lettering size');
+            sources.push({url,sha256:createHash('sha256').update(b).digest('hex'),bytes:b.length});
+            css=css.replaceAll(url,'data:font/woff2;base64,'+b.toString('base64'));
+          }
+          if(!sources.length||css.includes('url(https:'))throw Error('Lettering source was not embedded');
+          const licence=await (await fetch('https://raw.githubusercontent.com/google/fonts/main/ofl/kalam/OFL.txt')).text();
+          if(!licence.includes('SIL OPEN FONT LICENSE'))throw Error('License missing');
+          await writeFile('result/lettering.css','/* Kalam, Copyright 2014 Indian Type Foundry. SIL OFL 1.1. Full license: LETTERING-LICENSE.txt. Embedded website lettering; no third-party browser requests. */\n'+css);
+          await writeFile('result/LETTERING-LICENSE.txt',licence);
+          await writeFile('result/lettering-provenance.json',JSON.stringify({source:endpoint,retrievedAt:new Date().toISOString(),sources},null,2));
+          console.log('Embedded licensed lettering in website stylesheet; no separate font files exported.');
           JS
       - uses: actions/upload-artifact@v4
         with:
-          name: email-domain-status
-          path: report/
+          name: website-lettering
+          path: result/
           retention-days: 2
