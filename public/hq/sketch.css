@@ -157,3 +157,12 @@ body[data-chapter=shop]{--chapter:#f6b69f;--chapter-wash:#fff0dd;--chapter-art:u
 .sketch-theme :is(h1,h2,.wordmark){font-weight:700;letter-spacing:-.025em;line-height:1.2}.sketch-theme .public-intro h1{line-height:1.13}.sketch-theme .page-head h1{line-height:1.18}.sketch-theme .menu-hero h1{font-weight:700;line-height:1.12}.sketch-theme .wordmark{line-height:1.1}.sketch-theme .menu-hero h1 em{font-style:normal}
 
 .sketch-theme [hidden]{display:none!important}.sketch-theme .user-name{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+
+/* Website 7.4 link affordances */
+.sketch-theme .section-title a,.sketch-theme .corner-links a,.sketch-theme .footer-links a,.sketch-theme .record-tabs a,.sketch-theme .subnav a,.sketch-theme .menu-subnav a,.sketch-theme .library-article a,.sketch-theme .timeline-item a{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:2px solid var(--line);border-radius:999px;background:#fff4d4;color:var(--ink);font-weight:800;text-decoration:none;box-shadow:2px 3px 0 #d8b98a;margin:4px 6px 4px 0;transition:transform .12s,background .12s,box-shadow .12s}
+.sketch-theme .record-tabs a,.sketch-theme .subnav a,.sketch-theme .menu-subnav a{background:#fffaf0}
+.sketch-theme .section-title a:hover,.sketch-theme .corner-links a:hover,.sketch-theme .footer-links a:hover,.sketch-theme .record-tabs a:hover,.sketch-theme .subnav a:hover,.sketch-theme .menu-subnav a:hover,.sketch-theme .library-article a:hover,.sketch-theme .timeline-item a:hover{transform:translateY(-1px);background:#ffe39a;box-shadow:3px 4px 0 var(--line)}
+.sketch-theme .record-tabs a[aria-current="page"],.sketch-theme .subnav a[aria-current="page"],.sketch-theme .menu-subnav a[aria-current="page"]{background:var(--yellow);border-color:var(--line);box-shadow:3px 4px 0 var(--line)}
+.sketch-theme p a:not(.button):not(.meal-link):not(.meal-review-button),.sketch-theme li a:not(.button){font-weight:800;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
+.sketch-theme.night .section-title a,.sketch-theme.night .corner-links a,.sketch-theme.night .footer-links a,.sketch-theme.night .record-tabs a,.sketch-theme.night .subnav a,.sketch-theme.night .menu-subnav a,.sketch-theme.night .library-article a,.sketch-theme.night .timeline-item a{background:#3b3d50;color:var(--ink);box-shadow:2px 3px 0 #161724}
