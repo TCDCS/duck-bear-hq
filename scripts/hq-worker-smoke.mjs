@@ -12,7 +12,9 @@ check(await call('/api/setup',{method:'POST',body:{setupSecret:'hq-fixture-setup
 const owner=check(await call('/api/auth/login',{method:'POST',body:{username:'hqowner',password:'hq-test-password-123'}}),200,'owner login initializes actual D1 schema').cookie;
 const me=check(await call('/api/hq/me',{cookie:owner}),200,'legacy data import and permissions');assert.equal(me.data.owner,true);assert.equal(me.data.access.family.manage,true);
 const person=check(await call('/api/hq/records',{method:'POST',cookie:owner,body:{kind:'person',data:{name:'Local runtime person'}}}),201,'family record and history triggers').data.record;
-check(await call('/api/hq/records/'+person.id,{method:'PUT',cookie:owner,body:{revision:0,data:{name:'Stale change'}}}),409,'stale revision rejected by actual D1');
+check(await call('/api/hq/records/'+person.id,{method:'PUT',cookie:owner,body:{revision:0,data:{name:'Invalid revision'}}}),400,'invalid revision rejected before write');
+check(await call('/api/hq/records/'+person.id,{method:'PUT',cookie:owner,body:{revision:person.revision,data:{name:'Saved update'}}}),200,'versioned record update');
+check(await call('/api/hq/records/'+person.id,{method:'PUT',cookie:owner,body:{revision:person.revision,data:{name:'Stale change'}}}),409,'stale revision rejected by actual D1');
 const invited=check(await call('/api/hq/admin/users',{method:'POST',cookie:owner,body:{username:'hqguest',displayName:'Guest fixture',email:'hqguest@example.com'}}),201,'owner invitation with no private grants').data;
 const token=new URLSearchParams(new URL(invited.invitation.url).hash.slice(1)).get('token');
 check(await call('/api/hq/auth/accept',{method:'POST',body:{token,newPassword:'hq-guest-password-123'}}),200,'single-use invitation activation');
