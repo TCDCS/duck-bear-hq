@@ -29,6 +29,7 @@ with sync_playwright() as p:
         checks.append({'path':path,'width':page.viewport_size['width'],'chapter':chapter})
     try:
         opened('/','home')
+        page.locator('#shop').scroll_into_view_if_needed()
         page.locator('#publicProducts .public-product').first.wait_for()
         assert not page.locator('[data-signed-in]:visible').count()
         page.screenshot(path=str(OUT/'sketch-home-desktop.png'),full_page=True)
