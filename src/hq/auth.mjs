@@ -4,7 +4,7 @@ import {fail,json,body,text,integer,choice,token,sha,b64,unb64,now,id,queryAll,a
 import {initialise,schemaReady,requireOwner,permission,legacyPair} from './schema.mjs';
 import {mailReady,sendMail} from './email.mjs';
 export {mailReady} from './email.mjs';
-const DEFAULT_ORIGIN='https://duck-bear-hq.zachary-chambers2.workers.dev';
+const DEFAULT_ORIGIN='https://guannan.party';
 export function normalizeEmail(value){const e=text(value,254).toLowerCase();if(!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(e)||/[\r\n]/.test(e))fail(400,'Enter a valid email address.');return e;}
 export function maskEmail(value){if(!value)return '';const [a,b]=value.split('@');return a.slice(0,1)+'***@'+b;}
 function origin(env){try{const u=new URL(env.SITE_ORIGIN||DEFAULT_ORIGIN);if(!['https:','http:'].includes(u.protocol)||u.username||u.password)throw Error();return u.origin;}catch{return DEFAULT_ORIGIN;}}

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en-GB">
+<html class="sketch-theme" lang="en-GB">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -9,8 +9,8 @@
   <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/home.css?v=4">
   <link rel="stylesheet" href="/menus/menus.css?v=2">
-</head>
-<body class="menu-page">
+<link rel="stylesheet" href="/hq/lettering.css?v=7.3.0"><link rel="stylesheet" href="/hq/sketch.css?v=7.3.0"><script type="module" src="/hq/sketch.mjs?v=7.3.0"></script></head>
+<body data-chapter="menus" class="menu-page">
 <!-- Weekly rollover rule: archive the existing current menu at /menus/archive/YYYY-MM-DD/ before replacing this page. -->
 <a class="skip-link" href="#main">Skip to this week's menu</a>
 
@@ -24,7 +24,7 @@
     <a href="/#shop">Gift Shop</a>
     <a href="/menus/" aria-current="page">Menus</a>
     <a href="/#about">About</a>
-    <a href="/info/">Info</a>
+    <a hidden data-signed-in href="/info/">Info</a>
   </nav>
   <a class="account-link" href="/account">Sign in <span aria-hidden="true">↗</span></a>
 </header>
@@ -173,7 +173,7 @@
 <footer class="public-footer dungeon-footer">
   <a class="public-brand" href="/">🐤🐻 <span>Duck &amp; Bear</span></a>
   <p>Good food. Questionable discipline.</p>
-  <span class="footer-links"><a href="/">Home</a> · <a href="/menus/">Current Menu</a> · <a href="/menus/archive/">Archive</a> · <a href="/info/">Info</a></span>
+  <span class="footer-links"><a href="/">Home</a> · <a href="/menus/">Current Menu</a> · <a href="/menus/archive/">Archive</a> · <a hidden data-signed-in href="/info/">Info</a></span>
 </footer>
 </body>
 </html>

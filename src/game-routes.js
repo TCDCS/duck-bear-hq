@@ -7,7 +7,7 @@ const ROOTS=['/games/wacky-races','/games/proper-karted'];
 function headers(url,type='text/plain; charset=utf-8') {
   const socket=(url.protocol==='https:'?'wss://':'ws://')+url.host;
   return {'Content-Type':type,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'no-referrer',
-    'Content-Security-Policy':`default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob: https://incompetech.com https://www.incompetech.com; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' ${socket}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'`,
+    'Content-Security-Policy':`default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob: https://incompetech.com https://www.incompetech.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; connect-src 'self' ${socket}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'`,
     'Permissions-Policy':'accelerometer=(self), gyroscope=(self), magnetometer=(), camera=(), microphone=(), geolocation=(), payment=(), usb=()'};
 }
 

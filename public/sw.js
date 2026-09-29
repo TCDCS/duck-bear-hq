@@ -1,5 +1,5 @@
 const CACHE = 'duck-bear-hq-v7-2-accounts-passkeys';
-const CORE=['/','/index.html','/home.css?v=4','/home.js?v=7.2.0','/hq/style.css?v=7.2.0','/hq/public.css?v=7.2.0','/hq/duck-bear.svg','/assets/icon.svg'];
+const CORE=['/','/index.html','/home.css?v=4','/home.js?v=7.3.0','/hq/style.css?v=7.3.0','/hq/public.css?v=7.3.0','/hq/duck-bear.svg','/assets/icon.svg'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{

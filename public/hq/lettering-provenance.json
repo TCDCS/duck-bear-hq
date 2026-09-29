@@ -1,0 +1,17 @@
+{
+  "source": "https://fonts.googleapis.com/css2?family=Kalam:wght@700&display=swap",
+  "retrievedAt": "2026-09-29T16:32:38.076Z",
+  "sources": [
+    {
+      "url": "https://fonts.gstatic.com/s/kalam/v18/YA9Qr0Wd4kDdMtDqHTLCkiQ4tg.woff2",
+      "sha256": "1fc176f6b1fbc091d4321ef2c9b683a6f512f645b9f22c460c2e2f3d298fcf74",
+      "bytes": 12152
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/kalam/v18/YA9Qr0Wd4kDdMtDqHTLMkiQ.woff2",
+      "sha256": "252063af6ade8b9a744cde4ddad0fc21ea53b8ba711eed121a0c2e8610ea9c93",
+      "bytes": 22144
+    }
+  ],
+  "usage": "Latin and Latin-ext subsets embedded in lettering.css; body and non-Latin content use the system font."
+}
