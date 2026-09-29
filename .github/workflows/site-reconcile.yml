@@ -50,7 +50,6 @@ jobs:
                   path.parent.mkdir(parents=True,exist_ok=True)
                   path.write_bytes(result)
           shutil.rmtree(root/'.github/site-transfer')
-          (root/'.github/workflows/site-reconcile.yml').unlink()
           print('Verified and assembled reconciled files and final-review fixes; no production data accessed.')
           PY
       - run: npm ci
@@ -84,13 +83,16 @@ jobs:
           for attempt in $(seq 1 30); do curl -fsS "$BASE_URL/api/hq/auth/status" >/dev/null && break; sleep 1; done
           python tests/hq-browser.py
           python tests/site-browser.py
-      - name: Commit only the tested candidate to its isolated branch
+      - name: Commit only the tested source to its isolated branch
         run: |
           set -euo pipefail
-          test -z "$(git diff --name-only 4df31885f973ff270ffb885532a297d097059108 -- public/games)"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src public tests scripts docs .github package.json package-lock.json wrangler.jsonc
+          git add src public tests scripts docs package.json package-lock.json wrangler.jsonc
+          git reset -- public/games/seagull-simulator/game.js
+          git add -u .github/site-transfer
+          git diff --cached --exit-code -- .github/workflows
+          test -z "$(git diff --cached --name-only -- public/games)"
           git commit -m 'Reconcile Site 1 and Site 2 into private illustrated HQ 7.1.0'
           git push origin HEAD:fix/site-1-2-reconciled
       - name: Save actual screenshots and reports
