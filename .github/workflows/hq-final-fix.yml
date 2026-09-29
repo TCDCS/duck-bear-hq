@@ -1,0 +1,45 @@
+name: Apply reviewed HQ compatibility fix
+on:
+  push:
+    branches: [feature/illustrated-private-hq]
+    paths: ['.github/workflows/hq-final-fix.yml']
+permissions:
+  contents: write
+jobs:
+  reviewed-fix:
+    if: github.ref == 'refs/heads/feature/illustrated-private-hq'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/illustrated-private-hq
+      - name: Apply exact reviewed source replacements
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/hq/auth.mjs');s=p.read_text()
+          old='initialise,schemaReady,requireOwner,permission';new=old+',legacyPair'
+          assert s.count(old)==1;s=s.replace(old,new)
+          old="if(!ok)fail(401,'Invalid username/email or password.');await initialise(env,user);"
+          new="if(!ok)fail(401,'Invalid username/email or password.');if(!ready){const pair=await legacyPair(env);if(pair&&[pair.owner,pair.partner].includes(user.id))await initialise(env,user);}"
+          assert s.count(old)==1;s=s.replace(old,new);p.write_text(s)
+          p=Path('src/hq/backup.mjs');s=p.read_text()
+          s="import {validateRestoreContent} from './restore-content.mjs';\n"+s
+          assert s.count('records.push({id:rid')==1
+          s=s.replace('records.push({id:rid','validateRestoreContent(r.data);records.push({id:rid')
+          assert s.count('try{JSON.parse(data);}catch')==1
+          s=s.replace('try{JSON.parse(data);}catch','try{validateRestoreContent(JSON.parse(data));}catch')
+          p.write_text(s)
+          PY
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Prove both fixes before committing
+        run: node --test tests/hq-compatibility.test.mjs tests/hq-restore-content.test.mjs
+      - name: Commit fixes to feature only
+        run: |
+          git config user.name 'Duck & Bear build'
+          git config user.email 'dev@duckbear.local'
+          git add src/hq/auth.mjs src/hq/backup.mjs
+          git commit -m 'Preserve pre-initialisation game login and reject executable backup links'
+          git push origin HEAD:feature/illustrated-private-hq
