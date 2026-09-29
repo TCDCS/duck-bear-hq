@@ -3,7 +3,6 @@ const HUB_PASSWORD_ITERATIONS=100000;
 const HUB_MAX_UPLOAD_BYTES=8*1024*1024;
 const HUB_UPLOAD_TYPES=new Set(['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm']);
 
-let hubSchemaReady=false;
 const HUB_SCHEMA_STATEMENTS=[
   `CREATE TABLE IF NOT EXISTS hub_permissions (
     user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -91,11 +90,10 @@ const HUB_SCHEMA_STATEMENTS=[
   `CREATE INDEX IF NOT EXISTS idx_weekly_menu_items_week ON weekly_menu_items(week_id,day_key,sort_order)`
 ];
 async function ensureHubSchema(env){
-  if(hubSchemaReady)return;
   const names="'hub_permissions','family_people','family_relations','scrapbook_items','menu_library','weekly_menus','weekly_menu_items'";
   try{
     const row=await env.DB.prepare(`SELECT COUNT(*) n FROM sqlite_master WHERE type='table' AND name IN (${names})`).first();
-    if(Number(row?.n||0)===7){hubSchemaReady=true;return;}
+    if(Number(row?.n||0)===7)return;
   }catch{}
   for(const sql of HUB_SCHEMA_STATEMENTS)await env.DB.prepare(sql).run();
   await env.DB.prepare(`INSERT OR IGNORE INTO hub_permissions (user_id,family_tree_level,scrapbook_level,menus_level,updated_at)
@@ -103,7 +101,7 @@ async function ensureHubSchema(env){
       CASE WHEN role='admin' THEN 'admin' ELSE 'contribute' END,
       CASE WHEN role='admin' THEN 'admin' ELSE 'contribute' END,?
     FROM users`).bind(stamp()).run();
-  hubSchemaReady=true;
+
 }
 
 export async function routeHubApi(request,env,url,user){
