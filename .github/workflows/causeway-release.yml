@@ -30,8 +30,8 @@ jobs:
           assert parts, 'No Causeway transfer parts found'
           encoded=''.join(p.read_text().strip() for p in parts)
           data=base64.b64decode(encoded,validate=True)
-          expected='ea49eb87ae9b3cceed16013191152f1d1dad761fee6e86e54a2257d3ab98ebb9'
-          assert len(data)==67838, (len(data),'Unexpected Causeway image size')
+          expected='ea49af491ceb81f7c90c87b447a84dc1ceecc628401ff86d672e803700fa06a0'
+          assert len(data)==67842, (len(data),'Unexpected Causeway image size')
           assert hashlib.sha256(data).hexdigest()==expected, 'Causeway image checksum mismatch'
           hero=root/'public/hq/duck-bear-causeway.webp'
           hero.write_bytes(data)
@@ -97,7 +97,7 @@ jobs:
           text=text.replace(r'assert.match(html,/rel="preload" as="image" href="\/hq\/sketch-world\.svg\?v=7\.4\.2"/);',
                             r'assert.match(html,/rel="preload" as="image" href="\/hq\/duck-bear-causeway\.webp\?v=7\.4\.2"/);')
           old=" assert.match(art,/Giant's Causeway/);\n assert.match(art,/friendly shaggy brown grizzly bear/);"
-          new=" assert.equal(art.byteLength,67838);\n const {createHash}=await import('node:crypto');\n assert.equal(createHash('sha256').update(art).digest('hex'),'ea49eb87ae9b3cceed16013191152f1d1dad761fee6e86e54a2257d3ab98ebb9');"
+          new=" assert.equal(art.byteLength,67842);\n const {createHash}=await import('node:crypto');\n assert.equal(createHash('sha256').update(art).digest('hex'),'ea49af491ceb81f7c90c87b447a84dc1ceecc628401ff86d672e803700fa06a0');"
           assert old in text
           text=text.replace(old,new,1)
           write('tests/site-menu-experience.test.mjs',text)
