@@ -453,3 +453,18 @@
 
 .archive-actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}
 @media(max-width:650px){.archive-actions{width:100%;justify-content:stretch}.archive-actions .dungeon-button{width:100%}}
+
+
+/* Website 7.4 meal interaction */
+.meal-review-card{display:block;color:inherit;text-decoration:none;margin:0 -10px;padding:21px 10px 20px;border-radius:12px;transition:background .12s,transform .12s,box-shadow .12s}
+.meal-review-card:hover{background:#ffffff08;transform:translateY(-1px);box-shadow:0 3px 0 #0002}
+.meal-review-card:focus-visible{outline:3px solid var(--dungeon-gold);outline-offset:4px}
+.meal-topline{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:7px}
+.meal-topline .meal-course{margin:0}
+.meal-status{flex:none;padding:5px 9px;border:1px solid #70525a;border-radius:999px;font-size:9px;font-weight:900;letter-spacing:1px;text-transform:uppercase}
+.meal-status.upcoming{background:#2b171c;color:#ffd8d9;border-color:#a34e59}
+.meal-status.served{background:#1e251a;color:#dcecc6;border-color:#728a5b}
+.meal-review-cta{display:inline-flex;margin-top:12px;padding:8px 11px;border:1px solid #6d434a;border-radius:999px;background:#25171a;color:#f4dfc8;font-size:10px;font-weight:900;letter-spacing:.45px;text-transform:uppercase;box-shadow:0 3px 0 #0d0709}
+.day-card.day-served::before{background:linear-gradient(90deg,#6d8b56,#354224)}
+.day-card.day-upcoming::before{background:linear-gradient(90deg,var(--dungeon-red),#3b161d)}
+@media(prefers-reduced-motion:reduce){.meal-review-card{transition:none}.meal-review-card:hover{transform:none}}
