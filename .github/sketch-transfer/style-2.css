@@ -1,0 +1,50 @@
+/* Private chapters use the same illustration language, with simpler working areas. */
+.sketch-theme .workspace{max-width:1560px;grid-template-columns:245px minmax(0,1fr)}
+.sketch-theme .sidebar{background:var(--surface);border-right:2px solid var(--line);padding:25px 16px}
+.sketch-theme .sidebar details{border:1.5px solid transparent;margin-bottom:11px;border-radius:10px 15px 12px 16px}
+.sketch-theme .sidebar details[open]{border-color:var(--line);background:#d9efeb;box-shadow:2px 3px 0 #a7c4b5}
+.sketch-theme .sidebar details[open]:nth-child(2n){background:#fff0bc;box-shadow:2px 3px 0 #d0b783}
+.sketch-theme .sidebar details[open]:nth-child(3n){background:#eadff7;box-shadow:2px 3px 0 #b9a2d6}
+.sketch-theme .sidebar summary{font-size:13px;padding:12px 10px;letter-spacing:.1px}.sketch-theme .sidebar .subitems{padding-left:16px}.sketch-theme .sidebar a{font-size:12px;min-height:39px}
+.sketch-theme .sidebar a[aria-current=page]{background:var(--surface);border:1px solid var(--line);box-shadow:2px 2px 0 var(--line);border-radius:6px 10px 5px 9px}
+.sketch-theme .workspace main{padding-top:22px;padding-inline:clamp(20px,3vw,45px)}
+.sketch-theme .breadcrumbs{font-size:11px;letter-spacing:.15px;margin-bottom:16px}
+.sketch-theme .subnav,.sketch-theme .record-tabs{border-bottom:2px dashed var(--softline);gap:9px;padding-bottom:19px}
+.sketch-theme .subnav a,.sketch-theme .record-tabs a{background:var(--surface);border:1px solid var(--softline);border-radius:8px 12px 8px 13px;font-size:12px;padding:8px 12px}
+.sketch-theme .subnav a[aria-current],.sketch-theme .record-tabs a[aria-current]{background:var(--chapter);border:1.5px solid var(--line);box-shadow:2px 3px 0 var(--line)}
+.sketch-theme .page-head{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:13px 20px;align-items:center;background:var(--chapter-wash);border:2px solid var(--line);border-radius:18px 28px 20px 25px;box-shadow:4px 5px 0 var(--chapter);padding:27px 30px;margin:24px 0 31px;isolation:isolate;overflow:visible}
+.sketch-theme .page-head::before{content:'';position:absolute;inset:6px;border:1px dashed #30334525;border-radius:14px 22px 16px 20px;z-index:-1;pointer-events:none}
+.sketch-theme .chapter-drawing{display:block;width:170px;height:115px;object-fit:contain;grid-column:2;grid-row:1;align-self:center;pointer-events:none}
+.sketch-theme .page-head .lead{font-size:14px;line-height:1.6;max-width:650px;margin:10px 0 0}
+.sketch-theme .page-head h1{font-size:clamp(2rem,3.2vw,3.2rem);margin-bottom:9px}.sketch-theme .page-head>.actions{grid-column:1/-1;padding-top:5px}
+.sketch-theme .panel{border:1.5px solid var(--line);border-radius:13px 20px 16px 22px;box-shadow:3px 4px 0 #c6bda32e;padding:26px;background:var(--surface)}
+.sketch-theme .panel>h2:first-child,.sketch-theme .form-panel>h2{font-size:23px;border-bottom:2px solid var(--chapter);padding-bottom:12px;margin-bottom:22px}
+.sketch-theme .panel.tinted{background:var(--chapter-wash)}.sketch-theme .cards{gap:23px}
+.sketch-theme .card{border:1.5px solid var(--line);border-radius:13px 20px 14px 22px;box-shadow:3px 4px 0 #bfae9280;background:var(--surface);padding:23px}
+.sketch-theme .card::after{content:'';position:absolute;top:-6px;left:20px;width:48px;height:10px;border-radius:2px;background:var(--chapter);border-block:1px dashed #30334550;pointer-events:none;transform:rotate(-3deg)}
+.sketch-theme .card:hover{border-color:#69778a}.sketch-theme .card .card-icon{font-size:27px}.sketch-theme .card h2{font-size:25px}.sketch-theme .card h3{font-size:19px}.sketch-theme .card p{font-size:14px}.sketch-theme .card .card-foot{font-size:11px}
+.sketch-theme .label{border:1px solid #30334555;border-radius:4px 7px 4px 8px;font-size:10px;letter-spacing:.8px}
+.sketch-theme .field{font-size:13px;line-height:1.55}.sketch-theme .field :is(input,select,textarea){background:var(--surface);border:1.5px solid #8f8b84;border-radius:7px 11px 8px 12px;min-height:47px;color:var(--ink);font-size:16px;box-shadow:inset 0 -3px 0 #fff1cf70}
+.sketch-theme .field :is(input,textarea)::placeholder{color:#817b85;opacity:1}.sketch-theme .field :is(input,select,textarea):focus{border-color:#497c91;outline-color:#497c91;background:#fffef8}
+.sketch-theme input[type=checkbox]{accent-color:#6b609c}.sketch-theme .form-status.error{color:#9c2943}
+.sketch-theme .notice{background:var(--chapter-wash);border:1.5px dashed var(--line);border-left:5px solid var(--chapter);border-radius:9px 14px 10px 16px;font-size:13px}
+.sketch-theme .notice.error{background:#ffe5e5;border-left-color:#df647b}
+.sketch-theme .empty{background:var(--surface);border:2px dashed #b3a58e;border-radius:17px 23px 18px 25px;padding:35px 22px}.sketch-theme .empty>span{color:#aa788c}
+.sketch-theme .photo{border:1.5px solid var(--line);box-shadow:3px 4px 0 #b9a9927a;border-radius:4px 8px 5px 7px;padding:10px 10px 18px;background:var(--surface)}
+.sketch-theme .photo-window{border:1px solid #30334535}.sketch-theme .photo figcaption{font-size:13px}
+.sketch-theme .key-row{border-color:var(--softline)}.sketch-theme .facts{font-size:14px}.sketch-theme .toolbar :is(input,select){min-height:46px}
+.sketch-theme .picker{border:2px solid var(--line);border-radius:18px 24px 20px 28px;background:var(--surface);box-shadow:8px 10px 0 #30334555;color:var(--ink)}
+.sketch-theme dialog::backdrop{background:#29283d99;backdrop-filter:blur(2px)}
+.sketch-theme .home-hero{background:var(--chapter-wash);border:2px solid var(--line);border-radius:21px 30px 18px 27px;box-shadow:5px 6px 0 #a0d6d9;overflow:hidden}
+.sketch-theme .home-hero .hero-art{border:1.5px solid var(--line);border-radius:14px;object-fit:cover;aspect-ratio:4/3;height:auto;max-height:320px;box-shadow:4px 5px 0 #edac88}
+.sketch-theme .home-hero h1{line-height:1.1}.sketch-theme .about-card img{border-radius:18px;border:2px solid var(--line)}
+/* Authentication screens: a small illustrated book, not a separate product. */
+.sketch-theme .auth-wrap{max-width:1140px;margin:42px auto 70px;gap:0;padding:0 25px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch}
+.sketch-theme .auth-art{position:relative;background:#ccebed;border:2px solid var(--line);border-right:0;border-radius:25px 0 0 19px;padding:38px 32px;box-shadow:0 6px 0 #edb87e;overflow:hidden}
+.sketch-theme .auth-art .auth-mascots{font-size:0;height:24px;margin-bottom:10px;background:repeating-linear-gradient(90deg,#f58b88 0 18px,#ffdc62 18px 36px,#9da6df 36px 54px);border:1.5px solid var(--line);border-radius:3px;max-width:108px;transform:rotate(-3deg)}
+.sketch-theme .auth-art h2{font-size:clamp(2rem,3vw,3rem);line-height:1.13;margin:21px 0}.sketch-theme .auth-art p{font-size:14px;max-width:320px}
+.sketch-theme .auth-art img{max-height:none!important;aspect-ratio:4/3;border:1.5px solid var(--line);padding:5px;background:#fff8e6;border-radius:15px 22px 16px 23px;transform:rotate(-2deg);margin-top:16px}
+.sketch-theme .auth-card{border:2px solid var(--line);border-left:2px dashed #988d82;background:var(--surface);border-radius:0 21px 24px 0;padding:42px 36px;box-shadow:5px 6px 0 #edb87e}
+.sketch-theme .auth-card h1{font-size:40px;margin:18px 0 28px}.sketch-theme .auth-card .eyebrow{display:inline-block;background:var(--lilac);border:1px solid var(--line);padding:5px 10px;transform:rotate(1deg);font-size:9px}
+.sketch-theme #passkey-login{width:100%;background:#f0e6fd}.sketch-theme .auth-card form .button{width:100%}
+/* Existing public menu documents retain every meal and date; only their presentation changes. */
