@@ -1,0 +1,47 @@
+name: Import reviewed illustrated HQ source
+on:
+  push:
+    branches: [feature/illustrated-private-hq]
+    paths: ['.github/workflows/hq-import.yml']
+permissions:
+  contents: write
+jobs:
+  import-source:
+    if: github.ref == 'refs/heads/feature/illustrated-private-hq'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/illustrated-private-hq
+      - name: Verify and expand reviewed source
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, lzma
+          from pathlib import Path, PurePosixPath
+          root=Path.cwd().resolve()
+          parts=sorted(Path('.hq-transfer').glob('*.b64'))
+          assert len(parts)==14, 'Incomplete source transfer'
+          body=lzma.decompress(base64.b64decode(''.join(p.read_text() for p in parts),validate=True))
+          assert hashlib.sha256(body).hexdigest()=='add9f62e38ff3ac250211b4570e0d7cda133ee694e04b1d5deff057667278f42', 'Source checksum mismatch'
+          source=json.loads(body)
+          assert isinstance(source,dict) and len(source)==43
+          for name,text in source.items():
+            path=PurePosixPath(name)
+            assert not path.is_absolute() and '..' not in path.parts and '.git' not in path.parts
+            assert path.parts[0] in ('docs','public','src','tests') or name=='wrangler.jsonc'
+            assert isinstance(text,str)
+            target=root.joinpath(*path.parts)
+            assert target.resolve().is_relative_to(root)
+            assert not target.is_symlink()
+            target.parent.mkdir(parents=True,exist_ok=True)
+            target.write_text(text,encoding='utf-8')
+          print('Verified and expanded',len(source),'source files; no private photos or credentials included.')
+          PY
+      - name: Commit readable sources to isolated feature branch
+        run: |
+          git config user.name 'Duck & Bear build'
+          git config user.email 'dev@duckbear.local'
+          git add docs public src tests wrangler.jsonc
+          git rm -r .hq-transfer
+          git commit -m 'Build illustrated HQ with section permissions, permanent records and linked pages'
+          git push origin HEAD:feature/illustrated-private-hq
