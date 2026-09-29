@@ -166,3 +166,13 @@ body[data-chapter=shop]{--chapter:#f6b69f;--chapter-wash:#fff0dd;--chapter-art:u
 .sketch-theme .record-tabs a[aria-current="page"],.sketch-theme .subnav a[aria-current="page"],.sketch-theme .menu-subnav a[aria-current="page"]{background:var(--yellow);border-color:var(--line);box-shadow:3px 4px 0 var(--line)}
 .sketch-theme p a:not(.button):not(.meal-link):not(.meal-review-button),.sketch-theme li a:not(.button){font-weight:800;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
 .sketch-theme.night .section-title a,.sketch-theme.night .corner-links a,.sketch-theme.night .footer-links a,.sketch-theme.night .record-tabs a,.sketch-theme.night .subnav a,.sketch-theme.night .menu-subnav a,.sketch-theme.night .library-article a,.sketch-theme.night .timeline-item a{background:#3b3d50;color:var(--ink);box-shadow:2px 3px 0 #161724}
+
+
+/* Website 7.4 light-menu review cards */
+.sketch-theme .meal-review-card{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--softline)}
+.sketch-theme .meal-review-card:hover{background:#fff3d1;box-shadow:2px 3px 0 #d4b88b}
+.sketch-theme .meal-review-card h3{color:var(--ink);text-decoration:underline;text-decoration-color:#c06d59;text-decoration-thickness:2px;text-underline-offset:5px}
+.sketch-theme .meal-status.upcoming{background:#ffe0e4;color:#713b45;border-color:#b96a74}
+.sketch-theme .meal-status.served{background:#e0eed0;color:#40542f;border-color:#79965e}
+.sketch-theme .meal-review-cta{background:var(--yellow);color:#303345;border:2px solid var(--line);box-shadow:2px 3px 0 var(--line)}
+.sketch-theme.night .meal-review-card:hover{background:#3d394a}.sketch-theme.night .meal-review-card h3{color:var(--ink)}
