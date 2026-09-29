@@ -29,10 +29,11 @@ test('every current public meal card links to the real serving review route',asy
 });
 
 test('homepage hero is fixed to the Causeway artwork and below-fold catalogue is deferred',async()=>{
- const [html,js,art]=await Promise.all([
+ const [html,js,art,menuJs]=await Promise.all([
    readFile(new URL('../public/index.html',import.meta.url),'utf8'),
    readFile(new URL('../public/home.js',import.meta.url),'utf8'),
-   readFile(new URL('../public/hq/sketch-world.svg',import.meta.url),'utf8')
+   readFile(new URL('../public/hq/sketch-world.svg',import.meta.url),'utf8'),
+   readFile(new URL('../public/menus/menus.js',import.meta.url),'utf8')
  ]);
  assert.match(html,/friendly brown grizzly bear posing on the Giant’s Causeway/);
  assert.match(html,/rel="preload" as="image" href="\/hq\/sketch-world\.svg\?v=7\.4\.1"/);
@@ -40,7 +41,7 @@ test('homepage hero is fixed to the Causeway artwork and below-fold catalogue is
  assert.match(js,/IntersectionObserver/);
  assert.match(art,/Giant's Causeway/);
  assert.match(art,/friendly shaggy brown grizzly bear/);
- assert.match(js,/setInterval/);
+ assert.match(menuJs,/setInterval/);
 });
 
 test('Our Space no longer fetches every private record before rendering',async()=>{
