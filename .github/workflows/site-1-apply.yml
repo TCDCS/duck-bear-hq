@@ -23,7 +23,7 @@ jobs:
         run: |
           set -euo pipefail
           git merge-base --is-ancestor 0c5b878d10f26098e4a81f6333f41a915c45bf6a HEAD
-          git diff --exit-code 0c5b878d10f26098e4a81f6333f41a915c45bf6a HEAD -- . ':!.site-1-transfer/**' ':!.github/workflows/site-1-apply.yml'
+          git diff --exit-code 0c5b878d10f26098e4a81f6333f41a915c45bf6a HEAD -- . ':!.site-1-transfer/**' ':!.github/workflows/site-1-apply.yml' ':!.github/workflows/site-1-validate.yml' ':!.github/workflows/site-deploy.yml'
           python3 - <<'PY'
           import base64, hashlib, lzma
           from pathlib import Path
@@ -35,8 +35,8 @@ jobs:
           assert hashlib.sha256(patch).hexdigest() == 'aa421f6e3ed699fa14671d91077d6ce731970ddb0399eaa2a1367d2c9fec0d94'
           Path('/tmp/site-1.patch').write_bytes(patch)
           PY
-          git apply --check --unidiff-zero /tmp/site-1.patch
-          git apply --index --unidiff-zero /tmp/site-1.patch
+          git apply --check --unidiff-zero --exclude=.github/workflows/site-1-validate.yml --exclude=.github/workflows/site-deploy.yml /tmp/site-1.patch
+          git apply --index --unidiff-zero --exclude=.github/workflows/site-1-validate.yml --exclude=.github/workflows/site-deploy.yml /tmp/site-1.patch
           python3 - <<'PY'
           from pathlib import Path
           p = Path('wrangler.jsonc')
@@ -50,6 +50,8 @@ jobs:
           git add wrangler.jsonc
           git apply --check --unidiff-zero .site-1-transfer/fixes.patch
           git apply --index --unidiff-zero .site-1-transfer/fixes.patch
+          test "$(git hash-object .github/workflows/site-1-validate.yml)" = 26e4ac5f5fbbfa5cc26e4db334351e8655408ddc
+          test "$(git hash-object .github/workflows/site-deploy.yml)" = 3c63f80b0efff5d9fa03be750c26c110d5a917f9
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -87,7 +89,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git rm -r .site-1-transfer .github/workflows/site-1-apply.yml
+          git rm -r .site-1-transfer
+          git diff --cached --exit-code -- .github/workflows/
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'feat: implement Duck & Bear Site 1 storybook spaces v7.0.0'
