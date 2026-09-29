@@ -32,10 +32,10 @@ test('homepage hero is fixed to the Causeway artwork and below-fold catalogue is
  const [html,js,art,menuJs]=await Promise.all([
    readFile(new URL('../public/index.html',import.meta.url),'utf8'),
    readFile(new URL('../public/home.js',import.meta.url),'utf8'),
-   readFile(new URL('../public/hq/sketch-world.svg',import.meta.url),'utf8'),
+   readFile(new URL('../public/hq/duck-bear-causeway.webp',import.meta.url)),
    readFile(new URL('../public/menus/menus.js',import.meta.url),'utf8')
  ]);
- assert.match(html,/friendly brown grizzly bear posing on the Giant’s Causeway/);
+ assert.match(html,/friendly brown bear with a map posing on the Giant’s Causeway/);
  assert.match(html,/rel="preload" as="image" href="\/hq\/sketch-world\.svg\?v=7\.4\.1"/);
  assert.doesNotMatch(js,/heroUrl/);
  assert.match(js,/IntersectionObserver/);
