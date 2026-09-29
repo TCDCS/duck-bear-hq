@@ -39,8 +39,10 @@ test('homepage hero is fixed to the Causeway artwork and below-fold catalogue is
  assert.match(html,/rel="preload" as="image" href="\/hq\/duck-bear-causeway\.webp\?v=7\.4\.2"/);
  assert.doesNotMatch(js,/heroUrl/);
  assert.match(js,/IntersectionObserver/);
- assert.match(art,/Giant's Causeway/);
- assert.match(art,/friendly shaggy brown grizzly bear/);
+ assert.ok(art.byteLength>100000,'Causeway artwork should be a real supplied image');
+ const {createHash}=await import('node:crypto');
+ assert.equal(createHash('sha256').update(art).digest('hex'),'652f0f8a3964e59e9b5c495992319839f31eaf3a021f87c40f578cd104100eaf');
+
  assert.match(menuJs,/setInterval/);
 });
 
