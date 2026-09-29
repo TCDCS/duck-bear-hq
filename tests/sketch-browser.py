@@ -93,7 +93,7 @@ with sync_playwright() as p:
                 checks.append({'test':'mobile menu opens and navigates','width':width})
             page.screenshot(path=str(OUT/f'sketch-info-{width}.png'),full_page=True)
         page.set_viewport_size({'width':390,'height':844})
-        opened('/','home'); page.locator('#publicProducts .public-product').first.wait_for()
+        opened('/','home'); page.locator('#shop').scroll_into_view_if_needed(); page.locator('#publicProducts .public-product').first.wait_for()
         page.screenshot(path=str(OUT/'sketch-home-mobile.png'),full_page=True)
         page.emulate_media(reduced_motion='reduce')
         assert page.locator('body').evaluate('e=>getComputedStyle(e).animationName')=='none'
