@@ -1,0 +1,33 @@
+name: Account development preparation
+on:
+  push:
+    branches: [feature/account-controls-passkeys]
+    paths: [.github/workflows/account-prep.yml]
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Archive source and isolated passkey dependencies
+        run: |
+          mkdir -p /tmp/account-prep/deps
+          git archive --format=tar.gz HEAD > /tmp/account-prep/source.tar.gz
+          npm install --prefix /tmp/account-prep/deps --save-exact @simplewebauthn/server@13 @simplewebauthn/browser@13
+          tar -czf /tmp/account-prep/passkey-deps.tar.gz -C /tmp/account-prep/deps .
+          node -e "fetch('https://duck-bear-hq.zachary-chambers2.workers.dev/api/hq/auth/status').then(r=>r.json()).then(x=>require('fs').writeFileSync('/tmp/account-prep/live-auth-status.json',JSON.stringify(x)))"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: account-development-sources
+          path: |
+            /tmp/account-prep/source.tar.gz
+            /tmp/account-prep/passkey-deps.tar.gz
+            /tmp/account-prep/live-auth-status.json
+          retention-days: 2
