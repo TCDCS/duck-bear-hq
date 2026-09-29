@@ -1,4 +1,4 @@
-const CACHE = 'duck-bear-hq-v7-4-1-menu-live';
+const CACHE = 'duck-bear-hq-v7-4-2-causeway-photo';
 const CORE=['/','/index.html','/home.css?v=4','/home.js?v=7.4.2','/hq/style.css?v=7.4.2','/hq/public.css?v=7.4.2','/hq/duck-bear.svg','/assets/icon.svg'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
