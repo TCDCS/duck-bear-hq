@@ -1,6 +1,6 @@
 /** Shared, dependency-free primitives for the private household application. */
-export const VERSION='7.1.0';
-export const BUILD='2026.09.29-reconciled.1';
+export const VERSION='7.2.0';
+export const BUILD='2026.09.29-accounts.1';
 export const SECTIONS=['family','scrapbook','menus','plans','intimate','library'];
 export class HttpError extends Error{constructor(status,message,code=''){super(message);this.status=status;this.code=code;}}
 export const fail=(status,message,code)=>{throw new HttpError(status,message,code);};

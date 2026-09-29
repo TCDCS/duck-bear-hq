@@ -1,0 +1,73 @@
+name: Account and passkey acceptance
+on:
+  pull_request:
+    paths:
+      - 'src/hq/**'
+      - 'src/browser/**'
+      - 'src/worker-games.js'
+      - 'public/hq/**'
+      - 'tests/**'
+      - 'scripts/*worker-smoke.mjs'
+      - 'package*.json'
+      - 'wrangler.jsonc'
+      - '.github/workflows/account-acceptance.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/hq/**'
+      - 'src/browser/**'
+      - 'public/hq/**'
+      - 'tests/account*'
+      - 'tests/passkeys*'
+      - 'package*.json'
+      - '.github/workflows/account-acceptance.yml'
+permissions:
+  contents: read
+jobs:
+  passkeys:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - name: Unit and regression tests
+        run: |
+          set -euo pipefail
+          mkdir -p account-browser-report
+          npm test | tee account-browser-report/unit-tests.txt
+      - run: npm run check
+      - run: npx wrangler deploy --dry-run --outdir /tmp/account-worker
+      - name: Install native browser
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Actual Workers and browser passkeys
+        env:
+          ACCOUNT_BASE: http://localhost:8790
+          HQ_REPORT: account-browser-report
+        run: |
+          set -euo pipefail
+          npx wrangler d1 migrations apply DB --local
+          npx wrangler dev --ip 127.0.0.1 --port 8790 --var SETUP_SECRET:hq-fixture-setup --var SITE_ORIGIN:http://localhost:8790 >/tmp/account-worker.log 2>&1 &
+          worker=$!
+          trap 'kill "$worker" || true; cp /tmp/account-worker.log account-browser-report/worker.log' EXIT
+          for attempt in $(seq 1 40); do curl -fsS http://localhost:8790/api/hq/auth/status >/dev/null && break; sleep 1; done
+          node scripts/hq-worker-smoke.mjs | tee account-browser-report/worker-smoke.txt
+          node scripts/account-worker-smoke.mjs | tee account-browser-report/passkey-smoke.txt
+          python tests/account-browser.py
+      - name: Save synthetic acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: account-browser-report
+          path: account-browser-report/
+          retention-days: 7

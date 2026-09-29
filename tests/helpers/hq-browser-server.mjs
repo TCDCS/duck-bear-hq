@@ -8,7 +8,7 @@ import original from '../../src/index.js';
 import {createGameHandler} from '../../src/game-routes.js';
 const port=Number(process.env.PORT||8789),root=resolve('public');
 const {env}=await fixture();
-env.SITE_ORIGIN='http://127.0.0.1:'+port;
+env.SITE_ORIGIN=process.env.SITE_ORIGIN||'http://127.0.0.1:'+port;
 const types={'.html':'text/html','.css':'text/css','.js':'text/javascript','.mjs':'text/javascript','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.json':'application/json','.webmanifest':'application/manifest+json'};
 env.ASSETS.fetch=async request=>{let path=decodeURIComponent(new URL(request.url).pathname),file=resolve(root,'.'+path);if(!file.startsWith(root+'/')&&file!==root)return new Response('Not found',{status:404});try{if((await stat(file)).isDirectory())file=resolve(file,'index.html');return new Response(await readFile(file),{headers:{'content-type':types[extname(file)]||'application/octet-stream'}});}catch{return new Response('Not found',{status:404});}};
 const handler=createGameHandler({assets:new Map(),fallback:createHqHandler(original)});
