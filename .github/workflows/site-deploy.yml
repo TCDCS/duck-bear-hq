@@ -1,17 +1,14 @@
 name: Site Deploy
-# Manual content deploy trigger: Seagull Simulator Build 1.0.1 live metadata sync
-
 on:
   workflow_dispatch:
   push:
     branches: [main]
-
 permissions:
   contents: read
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -46,3 +43,45 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler deploy
+      - name: Verify the deployed source and public privacy boundaries
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {readFile,writeFile} from 'node:fs/promises';
+          import {createHash} from 'node:crypto';
+          import {VERSION,BUILD} from './src/hq/core.mjs';
+          const origin='https://duck-bear-hq.zachary-chambers2.workers.dev';
+          const hash=text=>createHash('sha256').update(text).digest('hex');
+          const expected=hash(await readFile('public/hq/app.mjs','utf8'));
+          const report={origin,version:VERSION,build:BUILD,commit:process.env.GITHUB_SHA,checks:[]};
+          const get=path=>fetch(origin+path,{redirect:'manual',headers:{'cache-control':'no-cache'},signal:AbortSignal.timeout(15000)});
+          let ready=false;
+          for(let i=0;i<15;i++){
+            try{const r=await get('/hq/app.mjs?release='+BUILD);if(r.status===200&&hash(await r.text())===expected){ready=true;break;}}catch{}
+            await new Promise(resolve=>setTimeout(resolve,2000));
+          }
+          assert.ok(ready,'Deployed application does not match the released source');
+          report.checks.push('Application source matches the release SHA-256');
+          const home=await get('/');assert.equal(home.status,200);assert.ok((await home.text()).includes('Website '+VERSION));
+          report.checks.push('Homepage reports Website '+VERSION);
+          for(const path of ['/info/','/info/index.html','/about/','/about/index.html']){
+            const r=await get(path);assert.equal(r.status,302,path);assert.ok(r.headers.get('location')?.startsWith('/sign-in/'),path);report.checks.push(path+' redirects signed-out visitors to sign-in');
+          }
+          for(const path of ['/api/hq/me','/api/hq/records?kind=memory','/api/hq/records?kind=person']){
+            const r=await get(path);assert.equal(r.status,401,path);report.checks.push(path+' denies unauthenticated access');
+          }
+          for(const path of ['/sign-in/','/menus/','/menus/archive/','/games/']){
+            const r=await get(path);assert.equal(r.status,200,path);report.checks.push(path+' is reachable');
+          }
+          const auth=await get('/api/hq/auth/status');assert.equal(auth.status,200);const settings=await auth.json();assert.equal(settings.registration,'invite-only');
+          report.emailConfigured=settings.emailConfigured;report.checkedAt=new Date().toISOString();
+          await writeFile('site-live-verification.json',JSON.stringify(report,null,2));
+          console.log(JSON.stringify(report,null,2));
+          JS
+      - name: Save live verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-live-verification
+          path: site-live-verification.json
+          retention-days: 14
