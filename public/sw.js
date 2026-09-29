@@ -1,11 +1,11 @@
-const CACHE = 'duck-bear-hq-v6-1-home-eight';
-const CORE=['./','./index.html','./home.css?v=4','./home.js?v=4','./account.html','./styles.css?v=5.1.0','./app.js?v=5.1.0','./zoo.css?v=5.1.0','./kart-games.js?v=1','./manifest.webmanifest','./assets/icon.svg','./assets/icon-192.png','./assets/icon-512.png','./assets/apple-touch-icon.png'];
+const CACHE = 'duck-bear-hq-v6-2-anime-home';
+const CORE=['./','./index.html','./home.css?v=6.2.0','./home.js?v=6.2.0','./account.html','./styles.css?v=5.1.0','./app.js?v=6.2.0','./zoo.css?v=5.1.0','./kart-games.js?v=1','./manifest.webmanifest','./assets/icon.svg','./assets/icon-192.png','./assets/icon-512.png','./assets/apple-touch-icon.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{
   const r=e.request;if(r.method!=='GET')return;
   const u=new URL(r.url);
-  if(u.origin!==self.location.origin||u.pathname.startsWith('/api/')||u.pathname.startsWith('/media/')||u.pathname.startsWith('/games/'))return;
+  if(u.origin!==self.location.origin||u.pathname.startsWith('/api/')||u.pathname.startsWith('/media/')||u.pathname.startsWith('/games/')||u.pathname.startsWith('/hub/')||u.pathname.startsWith('/info/')||u.pathname.startsWith('/about/'))return;
   e.respondWith(fetch(r).then(resp=>{
     if(resp.ok&&!/no-store|private/i.test(resp.headers.get('cache-control')||'')){
       const copy=resp.clone();e.waitUntil(caches.open(CACHE).then(c=>c.put(r,copy)).catch(()=>{}));
