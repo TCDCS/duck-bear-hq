@@ -1,40 +1,125 @@
-name: Website lettering preparation
+name: Shared sketch release acceptance
 on:
   push:
     branches: [site/guannan-sketch-theme]
     paths: [.github/workflows/sketch-prep.yml]
 permissions:
-  contents: read
+  contents: write
+  actions: read
+concurrency:
+  group: sketch-source-assembly
+  cancel-in-progress: false
 jobs:
-  lettering:
+  acceptance:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 20
     steps:
-      - name: Embed licensed web lettering without runtime third-party requests
-        run: |
-          mkdir -p result
-          node --input-type=module <<'JS'
-          import {writeFile} from 'node:fs/promises';
-          import {createHash} from 'node:crypto';
-          const endpoint='https://fonts.googleapis.com/css2?family=Kalam:wght@700&display=swap';
-          const headers={'User-Agent':'Mozilla/5.0 AppleWebKit/537.36 Chrome/130.0.0.0 Safari/537.36'};
-          const res=await fetch(endpoint,{headers});if(!res.ok)throw Error('Lettering source unavailable');
-          let css=await res.text();const sources=[];
-          for(const url of [...new Set([...css.matchAll(/url\((https:\/\/fonts\.gstatic\.com\/[^)]+)\)/g)].map(m=>m[1]))]){
-            const r=await fetch(url);if(!r.ok)throw Error('Lettering download failed');const b=Buffer.from(await r.arrayBuffer());if(b.length>300000)throw Error('Unexpected lettering size');
-            sources.push({url,sha256:createHash('sha256').update(b).digest('hex'),bytes:b.length});
-            css=css.replaceAll(url,'data:font/woff2;base64,'+b.toString('base64'));
-          }
-          if(!sources.length||css.includes('url(https:'))throw Error('Lettering source was not embedded');
-          const licence=await (await fetch('https://raw.githubusercontent.com/google/fonts/main/ofl/kalam/OFL.txt')).text();
-          if(!licence.includes('SIL OPEN FONT LICENSE'))throw Error('License missing');
-          await writeFile('result/lettering.css','/* Kalam, Copyright 2014 Indian Type Foundry. SIL OFL 1.1. Full license: LETTERING-LICENSE.txt. Embedded website lettering; no third-party browser requests. */\n'+css);
-          await writeFile('result/LETTERING-LICENSE.txt',licence);
-          await writeFile('result/lettering-provenance.json',JSON.stringify({source:endpoint,retrievedAt:new Date().toISOString(),sources},null,2));
-          console.log('Embedded licensed lettering in website stylesheet; no separate font files exported.');
-          JS
-      - uses: actions/upload-artifact@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve previously verified licensed website lettering
+        uses: actions/download-artifact@v4
         with:
           name: website-lettering
-          path: result/
-          retention-days: 2
+          run-id: 36598472158
+          github-token: ${{ github.token }}
+          path: /tmp/sketch-lettering
+      - name: Assemble reviewed readable source changes
+        run: |
+          python - <<'PY'
+          import pathlib,json,hashlib,subprocess,shutil
+          root=pathlib.Path.cwd()
+          staging=root/'.github/sketch-transfer'
+          for name,c in json.loads((staging/'changes.json').read_text()).items():
+            p=root/name
+            assert p.resolve().is_relative_to(root) and not name.startswith('.github/')
+            old=p.read_bytes()
+            assert hashlib.sha256(old).hexdigest()==c['old_sha256'],'Changed baseline: '+name
+            text=old.decode()
+            for a,b,replacement in reversed(c['edits']):text=text[:a]+replacement+text[b:]
+            result=text.encode()
+            assert hashlib.sha256(result).hexdigest()==c['new_sha256'],'Changed output: '+name
+            p.write_bytes(result)
+          css=''.join((staging/f'style-{n}.css').read_text() for n in range(1,4))
+          assert hashlib.sha256(css.encode()).hexdigest()=='f56b999a3ffe6e658e0cf8e9fb31ed0cd2f6875d2fc95da4556c618d584d8fee','Stylesheet changed during transfer'
+          (root/'public/hq/sketch.css').write_text(css)
+          subprocess.run(['python',str(staging/'build-art.py')],check=True)
+          subprocess.run(['python',str(staging/'build-covers.py')],check=True)
+          source=pathlib.Path('/tmp/sketch-lettering')
+          text=(source/'lettering.css').read_text()
+          text=text.split('/* devanagari */')[0]+text[text.index('/* latin-ext */'):]
+          assert hashlib.sha256(text.encode()).hexdigest()=='485859d25a0a1f37d69d1a36b01c98f68d1b29d463f9f41452424331dcebf2c4','Lettering differs from inspected source'
+          (root/'public/hq/lettering.css').write_text(text)
+          shutil.copyfile(source/'LETTERING-LICENSE.txt',root/'public/hq/LETTERING-LICENSE.txt')
+          provenance=json.loads((source/'lettering-provenance.json').read_text())
+          allowed={'1fc176f6b1fbc091d4321ef2c9b683a6f512f645b9f22c460c2e2f3d298fcf74','252063af6ade8b9a744cde4ddad0fc21ea53b8ba711eed121a0c2e8610ea9c93'}
+          provenance['sources']=[x for x in provenance['sources'] if x['sha256'] in allowed]
+          assert len(provenance['sources'])==2
+          provenance['usage']='Latin and Latin-ext subsets embedded in lettering.css; body and non-Latin content use the system font.'
+          (root/'public/hq/lettering-provenance.json').write_text(json.dumps(provenance,indent=2)+'\n')
+          shutil.rmtree(staging)
+          print('Assembled hash-checked website changes and original illustrations. No production records accessed.')
+          PY
+      - run: npm ci
+      - name: Full unit and regression suite
+        run: |
+          set -euo pipefail
+          mkdir -p sketch-browser-report
+          npm test | tee sketch-browser-report/unit-tests.txt
+      - run: npm run check
+      - run: npx wrangler deploy --dry-run --outdir /tmp/sketch-worker
+      - name: Install native browser
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Actual Workers, accounts and passkeys
+        env:
+          ACCOUNT_BASE: http://localhost:8790
+          HQ_REPORT: sketch-browser-report
+        run: |
+          set -euo pipefail
+          npx wrangler d1 migrations apply DB --local
+          npx wrangler dev --ip 127.0.0.1 --port 8790 --var SETUP_SECRET:hq-fixture-setup --var SITE_ORIGIN:http://localhost:8790 >/tmp/sketch-worker.log 2>&1 &
+          worker=$!
+          trap 'kill "$worker" || true; cp /tmp/sketch-worker.log sketch-browser-report/worker.log' EXIT
+          for attempt in $(seq 1 40); do curl -fsS http://localhost:8790/api/hq/auth/status >/dev/null && break; sleep 1; done
+          node scripts/hq-worker-smoke.mjs | tee sketch-browser-report/worker-smoke.txt
+          node scripts/account-worker-smoke.mjs | tee sketch-browser-report/passkey-smoke.txt
+          python tests/account-browser.py
+      - name: Existing site and full shared-theme browser journeys
+        env:
+          BASE_URL: http://localhost:8789
+          SITE_ORIGIN: http://localhost:8789
+          HQ_REPORT: sketch-browser-report
+        run: |
+          set -euo pipefail
+          node tests/helpers/hq-browser-server.mjs >/tmp/sketch-fixture.log 2>&1 &
+          server=$!
+          trap 'kill "$server" || true' EXIT
+          for attempt in $(seq 1 30); do curl -fsS "$BASE_URL/api/hq/auth/status" >/dev/null && break; sleep 1; done
+          python tests/hq-browser.py
+          python tests/site-browser.py
+          python tests/sketch-css.py
+          python tests/sketch-browser.py
+      - name: Publish only tested source to its isolated branch
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src public/hq public/index.html public/account.html public/games/index.html public/menus public/sw.js tests scripts docs package.json package-lock.json wrangler.jsonc .github/sketch-transfer
+          test -z "$(git diff --cached --name-only -- public/games ':!public/games/index.html')"
+          git diff --cached --quiet -- .github/workflows
+          git commit -m 'Apply colourful shared sketch design and guannan.party account origin 7.3.0'
+          git push origin HEAD:site/guannan-sketch-theme
+          git archive --format=tar.gz HEAD > sketch-browser-report/tested-source.tar.gz
+      - name: Save synthetic browser and verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sketch-browser-report
+          path: sketch-browser-report/
+          retention-days: 7
