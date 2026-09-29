@@ -24,7 +24,13 @@
       "/games/games.css",
       "/games/hub.mjs",
       "/games/mango-mayhem",
-      "/games/mango-mayhem/*"
+      "/games/mango-mayhem/*",
+      "/hub",
+      "/hub/*",
+      "/info",
+      "/info/*",
+      "/about",
+      "/about/*"
     ]
   },
   "rules": [
