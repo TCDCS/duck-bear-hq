@@ -167,6 +167,7 @@ export async function routeHubApi(request,env,url,user){
   try{await ensureHubSchema(env);}catch(err){console.error('Duck & Bear hub schema bootstrap failed',err);return j({error:'Private Home storage is not ready.'},503);}
   const path=url.pathname;
   if(path==='/api/hub'&&request.method==='GET')return hubDashboard(env,user);
+  if(path==='/api/hub/export'&&request.method==='GET')return exportHubData(env,user);
   if(path==='/api/hub/users'&&request.method==='GET')return listUsers(env,user);
   if(path==='/api/hub/users'&&request.method==='POST')return createUser(request,env,user);
   let m=path.match(/^\/api\/hub\/users\/([^/]+)$/);
@@ -273,6 +274,26 @@ async function hubDashboard(env,user){return withErrors(async()=>{
   if(user.role==='admin')tasks.push(env.DB.prepare('SELECT COUNT(*) n FROM users WHERE active=1').first().then(x=>counts.users=Number(x?.n||0)));
   await Promise.all(tasks);
   return j({user:safeUser(user),permissions:p,counts,build:'6.2.0'});
+});}
+
+async function exportHubData(env,user){return withErrors(async()=>{
+  const permissions=await getPermissions(env,user),out={version:1,build:'6.2.0',exportedAt:stamp(),user:safeUser(user),permissions};
+  out.info=(await env.DB.prepare('SELECT id,slug,title,category,summary,body,created_by,created_at,updated_at FROM hub_info_pages WHERE active=1 ORDER BY category,title').all()).results||[];
+  out.board=(await env.DB.prepare('SELECT * FROM hub_board_items ORDER BY created_at').all()).results||[];
+  out.boardVotes=(await env.DB.prepare('SELECT * FROM hub_board_votes ORDER BY created_at').all()).results||[];
+  if(levelOk(permissions.familyTree,'read')){
+    out.familyPeople=(await env.DB.prepare('SELECT * FROM family_people ORDER BY branch,name').all()).results||[];
+    out.familyRelations=(await env.DB.prepare('SELECT * FROM family_relations ORDER BY created_at').all()).results||[];
+  }
+  if(levelOk(permissions.scrapbook,'read'))out.scrapbook=(await env.DB.prepare('SELECT * FROM scrapbook_items ORDER BY COALESCE(happened_on,created_at)').all()).results||[];
+  if(levelOk(permissions.menus,'read')){
+    out.menuLibrary=(await env.DB.prepare('SELECT * FROM menu_library WHERE active=1 ORDER BY title').all()).results||[];
+    out.weeklyMenus=(await env.DB.prepare('SELECT * FROM weekly_menus ORDER BY week_start').all()).results||[];
+    out.weeklyMenuItems=(await env.DB.prepare('SELECT * FROM weekly_menu_items ORDER BY week_id,day_key,meal_slot').all()).results||[];
+  }
+  if(user.role==='admin')out.users=(await env.DB.prepare("SELECT u.id,u.username,u.display_name,u.role,u.active,u.created_at,u.updated_at,p.family_tree_level,p.scrapbook_level,p.menus_level FROM users u LEFT JOIN hub_permissions p ON p.user_id=u.id ORDER BY u.display_name").all()).results||[];
+  const body=JSON.stringify(out,null,2);
+  return new Response(body,{headers:{...headers({'Content-Type':'application/json; charset=utf-8','Content-Disposition':'attachment; filename="duck-bear-home-backup.json"'})}});
 });}
 
 async function listUsers(env,user){return withErrors(async()=>{
