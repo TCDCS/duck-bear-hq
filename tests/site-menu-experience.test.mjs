@@ -25,7 +25,7 @@ test('every current public meal card links to the real serving review route',asy
  for(const id of ids)assert.match(html,new RegExp('href="/menus/meals/'+id+'/reviews/"'),id);
  assert.equal((html.match(/class="meal(?: featured-meal)? meal-review-card"/g)||[]).length,10);
  assert.match(html,/data-date="2026-09-29"/);
- assert.match(html,/\/menus\/menus\.js\?v=7\.4\.1/);
+ assert.match(html,/\/menus\/menus\.js\?v=7\.4\.2/);
 });
 
 test('homepage hero is fixed to the Causeway artwork and below-fold catalogue is deferred',async()=>{
@@ -36,7 +36,7 @@ test('homepage hero is fixed to the Causeway artwork and below-fold catalogue is
    readFile(new URL('../public/menus/menus.js',import.meta.url),'utf8')
  ]);
  assert.match(html,/friendly brown bear with a map posing on the Giant’s Causeway/);
- assert.match(html,/rel="preload" as="image" href="\/hq\/sketch-world\.svg\?v=7\.4\.1"/);
+ assert.match(html,/rel="preload" as="image" href="\/hq\/sketch-world\.svg\?v=7\.4\.2"/);
  assert.doesNotMatch(js,/heroUrl/);
  assert.match(js,/IntersectionObserver/);
  assert.match(art,/Giant's Causeway/);
@@ -71,6 +71,6 @@ test('Worker-rendered live menu uses Dublin-time status and real serving review 
   assert.match(html,/class="meal-status (?:served|upcoming)"/);
   assert.match(html,/data-day-status>(?:Served|Upcoming)</);
   assert.match(html,/\/menus\/menus\.css\?v=8/);
-  assert.match(html,/Website 7\.4\.1/);
+  assert.match(html,/Website 7\.4\.2/);
  }finally{f.close();}
 });
