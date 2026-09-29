@@ -8,7 +8,7 @@ import {VERSION,BUILD} from '../src/hq/core.mjs';
 
 const origin='https://guannan.party';
 const legacy='https://duck-bear-hq.zachary-chambers2.workers.dev';
-const hash=text=>createHash('sha256').update(text).digest('hex');
+const hash=value=>createHash('sha256').update(value).digest('hex');
 const report={origin,version:VERSION,build:BUILD,commit:process.env.GITHUB_SHA,checks:[]};
 const get=(path,base=origin)=>fetch(base+path,{redirect:'manual',headers:{'cache-control':'no-cache'},signal:AbortSignal.timeout(15000)});
 const releasePath=path=>path+(path.includes('?')?'&':'?')+'release='+encodeURIComponent(BUILD);
@@ -36,7 +36,15 @@ async function verify(){
 
  const home=await waitText('/',html=>html.includes('Website '+VERSION)&&html.includes('/hq/sketch.css')&&html.includes('/hq/duck-bear-causeway.webp?v='+VERSION),'Homepage did not reach Website '+VERSION+' during propagation window');
  assert.ok(home.includes('friendly brown bear with a map posing on the Giant’s Causeway'));
- report.checks.push('Homepage reports Website '+VERSION+' and references the supplied Giant’s Causeway artwork');\n const heroResponse=await get(releasePath('/hq/duck-bear-causeway.webp'));assert.equal(heroResponse.status,200,'Causeway artwork');\n assert.match(heroResponse.headers.get('content-type')||'',/^image\\/webp/);\n const liveHero=Buffer.from(await heroResponse.arrayBuffer()),sourceHero=await readFile('public/hq/duck-bear-causeway.webp');\n assert.equal(hash(liveHero),hash(sourceHero),'Causeway artwork hash');\n report.checks.push('Supplied Giant’s Causeway artwork matches the released file SHA-256');
+ report.checks.push('Homepage reports Website '+VERSION+' and references the supplied Giant’s Causeway artwork');
+
+ const heroResponse=await get(releasePath('/hq/duck-bear-causeway.webp'));
+ assert.equal(heroResponse.status,200,'Causeway artwork');
+ assert.match(heroResponse.headers.get('content-type')||'',/^image\/webp/);
+ const liveHero=Buffer.from(await heroResponse.arrayBuffer());
+ const sourceHero=await readFile('public/hq/duck-bear-causeway.webp');
+ assert.equal(hash(liveHero),hash(sourceHero),'Causeway artwork hash');
+ report.checks.push('Supplied Giant’s Causeway artwork matches the released file SHA-256');
 
  const menu=await waitText('/menus/',html=>html.includes('Website '+VERSION)&&/\/menus\/meals\/[A-Za-z0-9_-]+\/reviews\//.test(html)&&/class="meal-status (?:served|upcoming)"/.test(html),'Live menu did not expose timed meal statuses and review links');
  report.checks.push('Live menu has real serving review links and Served/Upcoming status');
