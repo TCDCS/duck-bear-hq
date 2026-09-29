@@ -26,7 +26,6 @@ jobs:
           import pathlib,base64,gzip,hashlib,json,shutil
           root=pathlib.Path.cwd()
           chunks=[(root/f'.github/account-transfer/part-{n}.b64').read_text().strip() for n in range(1,5)]
-          for n,c in enumerate(chunks,1): print('chunk',n,len(c),hashlib.sha256(c.encode()).hexdigest())
           raw=base64.b64decode(''.join(chunks),validate=True)
           assert hashlib.sha256(raw).hexdigest()=='221308eedd9090c285b0924c937c25ae8d98504e0a365796d01e9e3fde31b03d','Source transfer checksum mismatch'
           m=json.loads(gzip.decompress(raw))
@@ -41,6 +40,19 @@ jobs:
             result=text.encode()
             assert hashlib.sha256(result).hexdigest()==c['new_sha256'],name
             p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(result)
+          review=json.loads((root/'.github/account-transfer/review.json').read_text())
+          for name,changes in review['replacements'].items():
+            p=root/name
+            assert p.resolve().is_relative_to(root) and not name.startswith('.github/')
+            text=p.read_text()
+            for old,new in changes:
+              assert text.count(old)==1,name
+              text=text.replace(old,new)
+            p.write_text(text)
+          for name,text in review['newFiles'].items():
+            p=root/name
+            assert p.resolve().is_relative_to(root) and name.startswith('tests/') and not p.exists()
+            p.write_text(text)
           shutil.rmtree(root/'.github/account-transfer')
           print('Assembled verified account source; no live accounts or secrets accessed.')
           PY
