@@ -1,4 +1,4 @@
-name: Sketch theme preparation
+name: Domain email readiness
 on:
   push:
     branches: [site/guannan-sketch-theme]
@@ -8,48 +8,24 @@ permissions:
 jobs:
   inspect:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 4
     steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - run: npm ci
-      - name: Read-only domain and email configuration check
+      - name: Read only email sending status
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          mkdir -p /tmp/sketch-prep
+          mkdir -p report
           node --input-type=module <<'JS'
           import {writeFile} from 'node:fs/promises';
-          import {resolveTxt,resolveMx,resolveNs} from 'node:dns/promises';
-          const report={checkedAt:new Date().toISOString(),http:[],dns:{}};
-          for(const origin of ['https://guannan.party','https://www.guannan.party','https://duck-bear-hq.zachary-chambers2.workers.dev']){
-            for(const path of ['/','/api/hq/auth/status']){
-              try{const r=await fetch(origin+path,{redirect:'manual',signal:AbortSignal.timeout(12000)});const body=await r.text();report.http.push({origin,path,status:r.status,location:r.headers.get('location'),...(path.includes('/api/')&&r.status===200?{auth:JSON.parse(body)}:{websiteVersion:body.match(/Website ([0-9.]+)/)?.[1]||null})});}catch{report.http.push({origin,path,error:'Request failed'});}
-            }
-          }
-          for(const name of ['guannan.party','cf-bounce.guannan.party','cf-bounce._domainkey.guannan.party','_dmarc.guannan.party']){
-            report.dns[name]={};for(const [type,fn] of [['TXT',resolveTxt],['MX',resolveMx],['NS',resolveNs]]){try{report.dns[name][type]=await fn(name);}catch{report.dns[name][type]=[];}}
-          }
-          const id=process.env.CLOUDFLARE_ACCOUNT_ID,token=process.env.CLOUDFLARE_API_TOKEN;
-          if(id&&token){
-            const r=await fetch(`https://api.cloudflare.com/client/v4/accounts/${id}/workers/scripts/duck-bear-hq/settings`,{headers:{Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(15000)});
-            const j=await r.json();report.workerSettings={status:r.status,success:!!j.success,bindings:(j.result?.bindings||[]).map(b=>({name:b.name,type:b.type,...(['SITE_ORIGIN','PASSWORD_RESET_FROM'].includes(b.name)&&b.type==='plain_text'?{text:b.text}:{})}))};
-            const z=await fetch('https://api.cloudflare.com/client/v4/zones?name=guannan.party',{headers:{Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(15000)});const zj=await z.json();report.domainAccess={status:z.status,success:!!zj.success,matched:(zj.result||[]).filter(x=>x.name==='guannan.party').length};
-          }
-          await writeFile('/tmp/sketch-prep/domain-status.json',JSON.stringify(report,null,2));
-          console.log(JSON.stringify(report,null,2));
+          const token=process.env.CLOUDFLARE_API_TOKEN;
+          const get=async path=>{const r=await fetch('https://api.cloudflare.com/client/v4'+path,{headers:{Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(15000)});let j={};try{j=await r.json()}catch{}return {status:r.status,j};};
+          const z=await get('/zones?name=guannan.party');const zone=z.j.result?.find(x=>x.name==='guannan.party');
+          const report={checkedAt:new Date().toISOString(),domain:'guannan.party',zoneReadable:!!zone};
+          if(zone){for(const [name,path] of [['sending','/email/sending/subdomains'],['routing','/email/routing']]){const {status,j}=await get(`/zones/${zone.id}`+path);report[name]={status,success:!!j.success,errorCodes:(j.errors||[]).map(e=>e.code),...(name==='sending'?{domains:(Array.isArray(j.result)?j.result:[]).map(d=>({name:d.name,enabled:d.enabled,previewEnabled:d.preview_enabled}))}:{enabled:j.result?.enabled})};}}
+          await writeFile('report/email-domain-status.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
           JS
-      - name: Package code and dependencies only
-        run: |
-          git archive --format=tar.gz HEAD > /tmp/sketch-prep/source.tar.gz
-          tar -czf /tmp/sketch-prep/dependencies.tar.gz node_modules
       - uses: actions/upload-artifact@v4
         with:
-          name: sketch-development-source
-          path: /tmp/sketch-prep/*
+          name: email-domain-status
+          path: report/
           retention-days: 2
