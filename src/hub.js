@@ -84,16 +84,49 @@ const HUB_SCHEMA_STATEMENTS=[
     sort_order INTEGER NOT NULL DEFAULT 100,
     created_at TEXT NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS hub_info_pages (
+    id TEXT PRIMARY KEY,
+    slug TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'General',
+    summary TEXT NOT NULL DEFAULT '',
+    body TEXT NOT NULL DEFAULT '',
+    created_by TEXT NOT NULL REFERENCES users(id),
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS hub_board_items (
+    id TEXT PRIMARY KEY,
+    kind TEXT NOT NULL CHECK(kind IN ('note','bucket','decision')),
+    title TEXT NOT NULL,
+    body TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open','planned','done','closed')),
+    options_json TEXT NOT NULL DEFAULT '[]',
+    created_by TEXT NOT NULL REFERENCES users(id),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS hub_board_votes (
+    item_id TEXT NOT NULL REFERENCES hub_board_items(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    choice TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY(item_id,user_id)
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_hub_info_category ON hub_info_pages(active,category,title)`,
+  `CREATE INDEX IF NOT EXISTS idx_hub_board_kind ON hub_board_items(kind,status,updated_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_hub_board_votes ON hub_board_votes(item_id,choice)`,
   `CREATE INDEX IF NOT EXISTS idx_family_people_branch ON family_people(branch,name)`,
   `CREATE INDEX IF NOT EXISTS idx_scrapbook_date ON scrapbook_items(COALESCE(happened_on,created_at) DESC)`,
   `CREATE INDEX IF NOT EXISTS idx_menu_library_active ON menu_library(active,title)`,
   `CREATE INDEX IF NOT EXISTS idx_weekly_menu_items_week ON weekly_menu_items(week_id,day_key,sort_order)`
 ];
 async function ensureHubSchema(env){
-  const names="'hub_permissions','family_people','family_relations','scrapbook_items','menu_library','weekly_menus','weekly_menu_items'";
+  const names="'hub_permissions','family_people','family_relations','scrapbook_items','menu_library','weekly_menus','weekly_menu_items','hub_info_pages','hub_board_items','hub_board_votes'";
   try{
     const row=await env.DB.prepare(`SELECT COUNT(*) n FROM sqlite_master WHERE type='table' AND name IN (${names})`).first();
-    if(Number(row?.n||0)===7)return;
+    if(Number(row?.n||0)===10)return;
   }catch{}
   for(const sql of HUB_SCHEMA_STATEMENTS)await env.DB.prepare(sql).run();
   await env.DB.prepare(`INSERT OR IGNORE INTO hub_permissions (user_id,family_tree_level,scrapbook_level,menus_level,updated_at)
@@ -101,7 +134,33 @@ async function ensureHubSchema(env){
       CASE WHEN role='admin' THEN 'admin' ELSE 'contribute' END,
       CASE WHEN role='admin' THEN 'admin' ELSE 'contribute' END,?
     FROM users`).bind(stamp()).run();
+  const seedId='info_allergies_handwash',seedSlug='allergies-hand-wash',seedTitle='Skin irritation: washing-up liquid & hand wash';
+  const seedSummary='A simple guide to the ingredients worth watching when washing-up liquid irritates hands.';
+  const seedBody=`Quick answer
 
+For hand wash, products containing Sodium Laureth Sulfate (SLES) or Sodium Lauryl Sulfate (SLS) are worth avoiding first when they repeatedly irritate the skin. A sulfate-free, milder cleanser is a better starting point.
+
+For washing dishes, washing-up liquid is designed to remove grease and can also strip protective oils from the skin. Use gloves and avoid prolonged bare-hand contact.
+
+Ingredients to watch
+
+• Sodium Laureth Sulfate (SLES)
+• Sodium Lauryl Sulfate (SLS)
+• Limonene — worth avoiding when it appears to be a repeat trigger
+• Methylisothiazolinone (MI)
+• Methylchloroisothiazolinone (MCI)
+
+Better choices
+
+Look for sulfate-free hand or body washes, glycerin or other moisturising ingredients, and milder cleansers such as sodium cocoyl isethionate, sodium cocoyl glutamate or sodium methyl cocoyl taurate.
+
+Products previously checked
+
+Fresh Milk Body & Hand Wash was tolerated and did not list SLS/SLES. The blue Asda antibacterial hand wash contained SLES high in the ingredient list, so it was not the preferred next product to try. The Tesco and Dunnes washing-up liquids checked contained stronger surfactant systems; the labels also included fragrance allergens/preservatives worth noting.
+
+This is a practical irritation guide, not a diagnosis of allergy. If a rash becomes very itchy, blistered or swollen, keeps recurring despite avoiding detergents, or does not settle, a GP or dermatologist can assess it and patch testing can investigate contact allergy.`;
+  const admin=await env.DB.prepare("SELECT id FROM users WHERE active=1 ORDER BY CASE role WHEN 'admin' THEN 0 ELSE 1 END,created_at LIMIT 1").first();
+  if(admin?.id)await env.DB.prepare('INSERT OR IGNORE INTO hub_info_pages (id,slug,title,category,summary,body,created_by,active,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(seedId,seedSlug,seedTitle,'Health & household',seedSummary,seedBody,admin.id,1,stamp(),stamp()).run();
 }
 
 export async function routeHubApi(request,env,url,user){
@@ -115,6 +174,20 @@ export async function routeHubApi(request,env,url,user){
   if(m&&request.method==='DELETE')return deleteUser(env,user,decodeURIComponent(m[1]));
   m=path.match(/^\/api\/hub\/users\/([^/]+)\/permissions$/);
   if(m&&request.method==='PUT')return updatePermissions(request,env,user,decodeURIComponent(m[1]));
+
+  if(path==='/api/hub/info'&&request.method==='GET')return infoSnapshot(env,user);
+  if(path==='/api/hub/info'&&request.method==='POST')return createInfoPage(request,env,user);
+  m=path.match(/^\/api\/hub\/info\/([^/]+)$/);
+  if(m&&request.method==='PUT')return updateInfoPage(request,env,user,decodeURIComponent(m[1]));
+  if(m&&request.method==='DELETE')return deleteInfoPage(env,user,decodeURIComponent(m[1]));
+
+  if(path==='/api/hub/board'&&request.method==='GET')return boardSnapshot(env,user);
+  if(path==='/api/hub/board'&&request.method==='POST')return createBoardItem(request,env,user);
+  m=path.match(/^\/api\/hub\/board\/([^/]+)$/);
+  if(m&&request.method==='PUT')return updateBoardItem(request,env,user,decodeURIComponent(m[1]));
+  if(m&&request.method==='DELETE')return deleteBoardItem(env,user,decodeURIComponent(m[1]));
+  m=path.match(/^\/api\/hub\/board\/([^/]+)\/vote$/);
+  if(m&&request.method==='POST')return voteBoardItem(request,env,user,decodeURIComponent(m[1]));
 
   if(path==='/api/hub/family'&&request.method==='GET')return familySnapshot(env,user);
   if(path==='/api/hub/family'&&request.method==='POST')return createFamilyPerson(request,env,user);
@@ -177,14 +250,19 @@ async function audit(env,userId,action,entityType,entityId,detail={}){
 }
 async function hubDashboard(env,user){return withErrors(async()=>{
   const p=await getPermissions(env,user);
-  const counts={family:0,scrapbook:0,menuLibrary:0,weeks:0,users:0};
+  const counts={family:0,scrapbook:0,menuLibrary:0,weeks:0,info:0,bucket:0,decisions:0,users:0};
   const tasks=[];
   if(levelOk(p.familyTree,'read'))tasks.push(env.DB.prepare('SELECT COUNT(*) n FROM family_people').first().then(x=>counts.family=Number(x?.n||0)));
   if(levelOk(p.scrapbook,'read'))tasks.push(env.DB.prepare('SELECT COUNT(*) n FROM scrapbook_items').first().then(x=>counts.scrapbook=Number(x?.n||0)));
   if(levelOk(p.menus,'read'))tasks.push(env.DB.prepare('SELECT COUNT(*) n FROM menu_library WHERE active=1').first().then(x=>counts.menuLibrary=Number(x?.n||0)),env.DB.prepare('SELECT COUNT(*) n FROM weekly_menus').first().then(x=>counts.weeks=Number(x?.n||0)));
+  tasks.push(
+    env.DB.prepare('SELECT COUNT(*) n FROM hub_info_pages WHERE active=1').first().then(x=>counts.info=Number(x?.n||0)),
+    env.DB.prepare("SELECT COUNT(*) n FROM hub_board_items WHERE kind='bucket' AND status!='done'").first().then(x=>counts.bucket=Number(x?.n||0)),
+    env.DB.prepare("SELECT COUNT(*) n FROM hub_board_items WHERE kind='decision' AND status='open'").first().then(x=>counts.decisions=Number(x?.n||0))
+  );
   if(user.role==='admin')tasks.push(env.DB.prepare('SELECT COUNT(*) n FROM users WHERE active=1').first().then(x=>counts.users=Number(x?.n||0)));
   await Promise.all(tasks);
-  return j({user:safeUser(user),permissions:p,counts,build:'6.1.0'});
+  return j({user:safeUser(user),permissions:p,counts,build:'6.2.0'});
 });}
 
 async function listUsers(env,user){return withErrors(async()=>{
@@ -257,6 +335,87 @@ async function updatePermissions(request,env,user,targetId){return withErrors(as
   await env.DB.prepare('INSERT INTO hub_permissions (user_id,family_tree_level,scrapbook_level,menus_level,updated_at) VALUES (?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET family_tree_level=excluded.family_tree_level,scrapbook_level=excluded.scrapbook_level,menus_level=excluded.menus_level,updated_at=excluded.updated_at').bind(targetId,family,scrapbook,menus,t).run();
   await audit(env,user.id,'hub.permissions_update','user',targetId,{family,scrapbook,menus});
   return j({ok:true});
+});}
+
+function infoSlug(value){
+  return txt(value,100).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,80);
+}
+function infoOut(r){return {id:r.id,slug:r.slug,title:r.title,category:r.category,summary:r.summary,body:r.body,createdBy:r.created_by,createdAt:r.created_at,updatedAt:r.updated_at};}
+async function infoSnapshot(env,user){return withErrors(async()=>{
+  const rows=(await env.DB.prepare('SELECT * FROM hub_info_pages WHERE active=1 ORDER BY category,title').all()).results||[];
+  return j({pages:rows.map(infoOut),canEdit:user.role==='admin'});
+});}
+async function createInfoPage(request,env,user){return withErrors(async()=>{
+  if(user.role!=='admin')return j({error:'Admin access required to create library pages.'},403);
+  const b=await jsonBody(request)||{},title=txt(b.title,160),slug=infoSlug(b.slug||title),category=txt(b.category,80)||'General',summary=txt(b.summary,500),body=txt(b.body,12000);
+  if(!title||!slug)return j({error:'Title is required.'},400);
+  const id=uid('info'),t=stamp();
+  try{await env.DB.prepare('INSERT INTO hub_info_pages (id,slug,title,category,summary,body,created_by,active,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(id,slug,title,category,summary,body,user.id,1,t,t).run();}
+  catch(err){if(String(err).toLowerCase().includes('unique'))return j({error:'That page address is already in use.'},409);throw err;}
+  await audit(env,user.id,'hub.info_create','info_page',id,{slug,title});
+  return infoSnapshot(env,user);
+});}
+async function updateInfoPage(request,env,user,id){return withErrors(async()=>{
+  if(user.role!=='admin')return j({error:'Admin access required to edit library pages.'},403);
+  const row=await env.DB.prepare('SELECT * FROM hub_info_pages WHERE id=? AND active=1').bind(id).first();if(!row)return j({error:'Info page not found.'},404);
+  const b=await jsonBody(request)||{},title=txt(b.title,160)||row.title,slug=infoSlug(b.slug||row.slug),category=txt(b.category,80)||'General',summary=txt(b.summary,500),body=txt(b.body,12000);
+  try{await env.DB.prepare('UPDATE hub_info_pages SET slug=?,title=?,category=?,summary=?,body=?,updated_at=? WHERE id=?').bind(slug,title,category,summary,body,stamp(),id).run();}
+  catch(err){if(String(err).toLowerCase().includes('unique'))return j({error:'That page address is already in use.'},409);throw err;}
+  await audit(env,user.id,'hub.info_update','info_page',id,{slug,title});
+  return infoSnapshot(env,user);
+});}
+async function deleteInfoPage(env,user,id){return withErrors(async()=>{
+  if(user.role!=='admin')return j({error:'Admin access required to remove library pages.'},403);
+  const row=await env.DB.prepare('SELECT id FROM hub_info_pages WHERE id=? AND active=1').bind(id).first();if(!row)return j({error:'Info page not found.'},404);
+  await env.DB.prepare('UPDATE hub_info_pages SET active=0,updated_at=? WHERE id=?').bind(stamp(),id).run();
+  await audit(env,user.id,'hub.info_delete','info_page',id,{});
+  return infoSnapshot(env,user);
+});}
+
+function boardOut(r,votes,userId){
+  let options=[];try{options=JSON.parse(r.options_json||'[]');}catch{}
+  const itemVotes=votes.filter(v=>v.item_id===r.id),totals={};for(const v of itemVotes)totals[v.choice]=(totals[v.choice]||0)+1;
+  return {id:r.id,kind:r.kind,title:r.title,body:r.body,status:r.status,options:Array.isArray(options)?options:[],createdBy:r.created_by,createdAt:r.created_at,updatedAt:r.updated_at,votes:totals,myVote:itemVotes.find(v=>v.user_id===userId)?.choice||''};
+}
+async function boardSnapshot(env,user){return withErrors(async()=>{
+  const [items,votes]=await Promise.all([env.DB.prepare('SELECT * FROM hub_board_items ORDER BY updated_at DESC LIMIT 250').all(),env.DB.prepare('SELECT item_id,user_id,choice FROM hub_board_votes').all()]);
+  return j({items:(items.results||[]).map(r=>boardOut(r,votes.results||[],user.id))});
+});}
+async function createBoardItem(request,env,user){return withErrors(async()=>{
+  const b=await jsonBody(request)||{},kind=['note','bucket','decision'].includes(b.kind)?b.kind:'note',title=txt(b.title,160),body=txt(b.body,3000);
+  if(!title)return j({error:'Title is required.'},400);
+  const options=kind==='decision'?(Array.isArray(b.options)?b.options:txt(b.options,1000).split('\n')).map(x=>txt(x,80)).filter(Boolean).slice(0,8):[];
+  if(kind==='decision'&&options.length<2)return j({error:'A decision needs at least two choices.'},400);
+  const id=uid('board'),t=stamp();
+  await env.DB.prepare('INSERT INTO hub_board_items (id,kind,title,body,status,options_json,created_by,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)').bind(id,kind,title,body,'open',JSON.stringify(options),user.id,t,t).run();
+  await audit(env,user.id,'hub.board_create','board_item',id,{kind,title});
+  return boardSnapshot(env,user);
+});}
+async function updateBoardItem(request,env,user,id){return withErrors(async()=>{
+  const row=await env.DB.prepare('SELECT * FROM hub_board_items WHERE id=?').bind(id).first();if(!row)return j({error:'Item not found.'},404);
+  if(row.created_by!==user.id&&user.role!=='admin')return j({error:'Only the person who added this item, or an admin, can edit it.'},403);
+  const b=await jsonBody(request)||{},status=['open','planned','done','closed'].includes(b.status)?b.status:row.status,title=txt(b.title,160)||row.title,body=txt(b.body,3000);
+  let options;try{options=JSON.parse(row.options_json||'[]');}catch{options=[];}
+  if(row.kind==='decision'&&b.options!==undefined)options=(Array.isArray(b.options)?b.options:txt(b.options,1000).split('\n')).map(x=>txt(x,80)).filter(Boolean).slice(0,8);
+  await env.DB.prepare('UPDATE hub_board_items SET title=?,body=?,status=?,options_json=?,updated_at=? WHERE id=?').bind(title,body,status,JSON.stringify(options),stamp(),id).run();
+  await audit(env,user.id,'hub.board_update','board_item',id,{status});
+  return boardSnapshot(env,user);
+});}
+async function deleteBoardItem(env,user,id){return withErrors(async()=>{
+  const row=await env.DB.prepare('SELECT created_by FROM hub_board_items WHERE id=?').bind(id).first();if(!row)return j({error:'Item not found.'},404);
+  if(row.created_by!==user.id&&user.role!=='admin')return j({error:'Only the person who added this item, or an admin, can delete it.'},403);
+  await env.DB.prepare('DELETE FROM hub_board_items WHERE id=?').bind(id).run();
+  await audit(env,user.id,'hub.board_delete','board_item',id,{});
+  return boardSnapshot(env,user);
+});}
+async function voteBoardItem(request,env,user,id){return withErrors(async()=>{
+  const row=await env.DB.prepare("SELECT options_json,status FROM hub_board_items WHERE id=? AND kind='decision'").bind(id).first();if(!row)return j({error:'Decision not found.'},404);
+  if(row.status!=='open')return j({error:'This decision is closed.'},409);
+  let options=[];try{options=JSON.parse(row.options_json||'[]');}catch{}
+  const b=await jsonBody(request)||{},choice=txt(b.choice,80);if(!options.includes(choice))return j({error:'Choose one of the available options.'},400);
+  await env.DB.prepare('INSERT INTO hub_board_votes (item_id,user_id,choice,created_at) VALUES (?,?,?,?) ON CONFLICT(item_id,user_id) DO UPDATE SET choice=excluded.choice,created_at=excluded.created_at').bind(id,user.id,choice,stamp()).run();
+  await audit(env,user.id,'hub.board_vote','board_item',id,{choice});
+  return boardSnapshot(env,user);
 });}
 
 async function familySnapshot(env,user){return withErrors(async()=>{
