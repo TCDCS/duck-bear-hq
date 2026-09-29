@@ -30,7 +30,7 @@ with sync_playwright() as p:
   page.goto(BASE+'/info/');page.get_by_label('Search',exact=True).fill('Updated useful note');page.get_by_role('button',name='Search',exact=True).click();page.get_by_role('heading',name='Updated useful note',exact=True).wait_for()
   page.goto(BASE+'/info/allergies/');page.get_by_role('heading',name='Hand wash & allergies',exact=True).wait_for();page.screenshot(path=str(OUT/'info-desktop.png'),full_page=True)
   page.goto(BASE+'/about/');page.get_by_role('heading',name='Our little corner',exact=True).wait_for()
-  page.goto(BASE+'/settings/updates/');page.get_by_role('heading',name='Website 7.4.0',exact=True).wait_for()
+  page.goto(BASE+'/settings/updates/');page.get_by_role('heading',name='Website 7.4.1',exact=True).wait_for()
   page.goto(BASE+'/hub/#family');page.wait_for_url('**/family-tree/');page.get_by_role('heading').first.wait_for()
   for width in [390,768]:
    page.set_viewport_size({'width':width,'height':844})
