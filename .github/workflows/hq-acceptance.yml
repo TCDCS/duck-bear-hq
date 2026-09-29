@@ -3,7 +3,7 @@ on:
   push:
     branches: [main, fix/site-1-2-reconciled]
   pull_request:
-    paths: ['src/hq/**', 'public/hq/**', 'tests/hq-*', 'tests/site-*', 'tests/helpers/hq-*', 'scripts/hq-*', 'wrangler.jsonc', '.github/workflows/hq-acceptance.yml']
+    paths: ['src/hq/**', 'public/hq/**', 'public/index.html', 'public/menus/**', 'public/games/index.html', 'tests/hq-*', 'tests/site-*', 'tests/sketch-*', 'tests/guannan-*', 'tests/helpers/hq-*', 'scripts/hq-*', 'wrangler.jsonc', '.github/workflows/hq-acceptance.yml']
 permissions:
   contents: read
 concurrency:
@@ -44,7 +44,8 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Real browser acceptance with isolated test accounts
         env:
-          BASE_URL: http://127.0.0.1:8789
+          BASE_URL: http://localhost:8789
+          SITE_ORIGIN: http://localhost:8789
           HQ_REPORT: hq-browser-report
         run: |
           set -euo pipefail
@@ -54,6 +55,8 @@ jobs:
           for attempt in $(seq 1 30); do curl -fsS "$BASE_URL/api/hq/auth/status" >/dev/null && break; sleep 1; done
           python tests/hq-browser.py
           python tests/site-browser.py
+          python tests/sketch-css.py
+          python tests/sketch-browser.py
       - name: Save actual screenshots and reports
         if: always()
         uses: actions/upload-artifact@v4
