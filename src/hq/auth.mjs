@@ -1,6 +1,6 @@
 /** Authentication uses the existing users/sessions; recovery metadata is transactional D1. */
 import {fail,json,body,text,integer,choice,token,sha,b64,unb64,now,id,queryAll,authenticate,safeUser,rate,sameOrigin} from './core.mjs';
-import {initialise,schemaReady,requireOwner,permission} from './schema.mjs';
+import {initialise,schemaReady,requireOwner,permission,legacyPair} from './schema.mjs';
 const DEFAULT_ORIGIN='https://duck-bear-hq.zachary-chambers2.workers.dev';
 export function normalizeEmail(value){const e=text(value,254).toLowerCase();if(!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(e)||/[\r\n]/.test(e))fail(400,'Enter a valid email address.');return e;}
 export function maskEmail(value){if(!value)return '';const [a,b]=value.split('@');return a.slice(0,1)+'***@'+b;}
@@ -22,7 +22,7 @@ async function login(request,env){
  if(!user&&identifier.includes('@')){if(ready){const identity=await env.DB.prepare('SELECT user_id FROM hq_identity WHERE email=?').bind(identifier).first();if(identity)user=await env.DB.prepare('SELECT * FROM users WHERE id=? AND active=1').bind(identity.user_id).first();}else{const object=await env.MEDIA.get('account-security/private-v1.json');if(object){let saved;try{saved=JSON.parse(await object.text());}catch{fail(503,'Account recovery data needs owner attention.');}const profile=saved.profiles?.find(p=>p.email_normalized===identifier);if(profile)user=await env.DB.prepare('SELECT * FROM users WHERE id=? AND active=1').bind(profile.user_id).first();}}}
  const ok=user?await checkPassword(user,b.password):Boolean(await passwordHash(String(b.password||'').slice(0,128),'AAAAAAAAAAAAAAAAAAAAAA').then(()=>false));
  await env.DB.prepare('INSERT INTO login_attempts(id,username,ip_hash,success,created_at) VALUES(?,?,?,?,?)').bind(id('attempt'),identifier,await sha(ip),ok?1:0,now()).run();
- if(!ok)fail(401,'Invalid username/email or password.');await initialise(env,user);
+ if(!ok)fail(401,'Invalid username/email or password.');if(!ready){const pair=await legacyPair(env);if(pair&&[pair.owner,pair.partner].includes(user.id))await initialise(env,user);}
  const raw=token(),stamp=now(),sid=id('session');await env.DB.batch([env.DB.prepare('DELETE FROM sessions WHERE expires_at<?').bind(stamp),env.DB.prepare('INSERT INTO sessions(id,user_id,token_hash,expires_at,created_at,last_seen_at,user_agent,ip_hash) VALUES(?,?,?,?,?,?,?,?)').bind(sid,user.id,await sha(raw),new Date(Date.now()+30*86400000).toISOString(),stamp,stamp,text(request.headers.get('user-agent')||'',250),await sha(ip))]);
  return json({ok:true,user:safeUser(user)},200,{'set-cookie':sessionCookie(raw)});
 }
