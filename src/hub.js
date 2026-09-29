@@ -239,6 +239,16 @@ async function need(env,user,area,level){
   if(!levelOk(actual,level))throw Object.assign(new Error('You do not have access to this private section.'),{status:403});
   return p;
 }
+export async function hubPermissionAllows(env,user,area,level='read'){
+  try{
+    await ensureHubSchema(env);
+    const p=await getPermissions(env,user);
+    return levelOk(p[area],level);
+  }catch(err){
+    console.warn('Hub permission check failed',err);
+    return false;
+  }
+}
 async function withErrors(fn){
   try{return await fn();}catch(err){
     console.error('Duck & Bear hub error',err);
