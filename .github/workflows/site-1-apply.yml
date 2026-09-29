@@ -1,0 +1,107 @@
+name: Site 1 source integration
+on:
+  push:
+    branches: [site-1-storybook-20260929]
+    paths: ['.site-1-transfer/ready.txt']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: site-1-source-integration
+  cancel-in-progress: false
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: site-1-storybook-20260929
+          fetch-depth: 0
+      - name: Verify source and apply reviewed changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 0c5b878d10f26098e4a81f6333f41a915c45bf6a HEAD
+          git diff --exit-code 0c5b878d10f26098e4a81f6333f41a915c45bf6a HEAD -- . ':!.site-1-transfer/**' ':!.github/workflows/site-1-apply.yml'
+          python3 - <<'PY'
+          import base64, hashlib, lzma
+          from pathlib import Path
+          parts = sorted(Path('.site-1-transfer').glob('part-*.b64'))
+          assert len(parts) == 7
+          payload = ''.join(p.read_text().strip() for p in parts)
+          patch = lzma.decompress(base64.b64decode(payload, validate=True))
+          assert len(patch) == 183661
+          assert hashlib.sha256(patch).hexdigest() == 'aa421f6e3ed699fa14671d91077d6ce731970ddb0399eaa2a1367d2c9fec0d94'
+          Path('/tmp/site-1.patch').write_bytes(patch)
+          PY
+          git apply --check --unidiff-zero /tmp/site-1.patch
+          git apply --index --unidiff-zero /tmp/site-1.patch
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('wrangler.jsonc')
+          source = p.read_text()
+          old = '      "/games/proper-karted/*"\n'
+          assert source.count(old) == 1
+          routes = ['/our-space','/our-space/*','/menus/planner','/menus/planner/*','/menus/library','/menus/library/*','/family','/family/*','/scrapbook','/scrapbook/*','/settings','/settings/*','/signin','/signin/*','/forgot-password','/forgot-password/*']
+          replacement = '      "/games/proper-karted/*",\n' + ',\n'.join('      "'+route+'"' for route in routes) + '\n'
+          p.write_text(source.replace(old,replacement))
+          PY
+          git add wrangler.jsonc
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Unit and regression tests
+        run: npm test
+      - name: Build games and validate repository
+        run: npm run check
+      - name: Compile production Worker without deployment
+        run: npx wrangler deploy --dry-run --outdir /tmp/site-1-worker
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install browser acceptance dependencies
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Desktop and mobile acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/site-1-evidence
+          node tests/helpers/site-server.mjs >/tmp/site-1-server.log 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true' EXIT
+          ready=0
+          for i in {1..40}; do
+            if curl -fsS http://127.0.0.1:8765/api/site/health >/dev/null; then ready=1; break; fi
+            sleep 1
+          done
+          test "$ready" = 1
+          SITE_SCREENSHOTS=/tmp/site-1-evidence python tests/site-browser.py
+      - name: Commit verified implementation to development branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -r .site-1-transfer .github/workflows/site-1-apply.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat: implement Duck & Bear Site 1 storybook spaces v7.0.0'
+          git push origin HEAD:site-1-storybook-20260929
+      - name: Save evidence and source snapshot
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p /tmp/site-1-evidence
+          cp /tmp/site-1-server.log /tmp/site-1-evidence/server.log 2>/dev/null || true
+          git rev-parse HEAD > /tmp/site-1-evidence/commit.txt
+          git diff --cached --binary > /tmp/site-1-evidence/staged.patch
+          git archive --format=tar HEAD | gzip > /tmp/site-1-evidence/source.tar.gz
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: site-1-integration-evidence
+          path: /tmp/site-1-evidence/
+          retention-days: 7
