@@ -7,7 +7,7 @@ with sync_playwright() as p:
  browser=p.chromium.launch(headless=True,**({'executable_path':os.environ['CHROMIUM']} if os.environ.get('CHROMIUM') else {}),args=['--no-sandbox'])
  ctx=browser.new_context(viewport={'width':1440,'height':1000});page=ctx.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
  try:
-  page.goto(BASE+'/');page.locator('#publicProducts .public-product').first.wait_for()
+  page.goto(BASE+'/');page.locator('#shop').scroll_into_view_if_needed();page.locator('#publicProducts .public-product').first.wait_for()
   assert not page.locator('[data-signed-in]:visible').count()
   page.screenshot(path=str(OUT/'homepage-desktop.png'),full_page=True)
   for path in ['/info/','/info/index.html','/about/','/about/index.html']:
