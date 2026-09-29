@@ -1,5 +1,5 @@
 import {routeMangoApi} from './mango/api.mjs';
-import {routeHubApi} from './hub.js';
+import {routeHubApi,hubPermissionAllows} from './hub.js';
 
 const ORDER_STATUSES = ['Received','Bear notified','Preparing','Out for Bear Delivery','Delivered','Cancelled'];
 const SESSION_DAYS = 30;
@@ -94,11 +94,23 @@ async function routeApi(request, env, url) {
   m = path.match(/^\/api\/badges\/([^/]+)\/unlock$/);
   if (m && request.method === 'POST') return unlockSecretBadge(env, auth.user, decodeURIComponent(m[1]));
 
-  if (path === '/api/menus/dashboard' && request.method === 'GET') return menuDashboard(env, auth.user);
-  if (path === '/api/menus/suggestions' && request.method === 'POST') return saveMenuSuggestion(request, env, auth.user);
+  if (path === '/api/menus/dashboard' && request.method === 'GET') {
+    if(!(await hubPermissionAllows(env,auth.user,'menus','read')))return apiJson({error:'You do not have access to private menus.'},403);
+    return menuDashboard(env, auth.user);
+  }
+  if (path === '/api/menus/suggestions' && request.method === 'POST') {
+    if(!(await hubPermissionAllows(env,auth.user,'menus','contribute')))return apiJson({error:'You cannot contribute to private menus.'},403);
+    return saveMenuSuggestion(request, env, auth.user);
+  }
   m = path.match(/^\/api\/menus\/suggestions\/([^/]+)\/status$/);
-  if (m && request.method === 'POST') return updateMenuSuggestionStatus(request, env, auth.user, decodeURIComponent(m[1]));
-  if (path === '/api/menus/reviews' && request.method === 'POST') return saveMenuReview(request, env, auth.user);
+  if (m && request.method === 'POST') {
+    if(!(await hubPermissionAllows(env,auth.user,'menus','admin')))return apiJson({error:'Menu admin access required.'},403);
+    return updateMenuSuggestionStatus(request, env, auth.user, decodeURIComponent(m[1]));
+  }
+  if (path === '/api/menus/reviews' && request.method === 'POST') {
+    if(!(await hubPermissionAllows(env,auth.user,'menus','contribute')))return apiJson({error:'You cannot contribute to private menus.'},403);
+    return saveMenuReview(request, env, auth.user);
+  }
 
   if (path === '/api/fun' && request.method === 'GET') return funSnapshot(env, auth.user);
   if (path === '/api/fun/dates' && request.method === 'POST') return saveDate(request, env, auth.user);
@@ -110,9 +122,15 @@ async function routeApi(request, env, url) {
   if (m && request.method === 'POST') return updateAdventureStatus(request, env, auth.user, decodeURIComponent(m[1]));
 
   if (path === '/api/media/upload' && request.method === 'POST') return uploadMedia(request, env, auth.user);
-  if (path === '/api/memories' && request.method === 'POST') return saveMemory(request, env, auth.user);
+  if (path === '/api/memories' && request.method === 'POST') {
+    if(!(await hubPermissionAllows(env,auth.user,'scrapbook','contribute')))return apiJson({error:'You cannot contribute to the private scrapbook.'},403);
+    return saveMemory(request, env, auth.user);
+  }
   m = path.match(/^\/api\/memories\/([^/]+)$/);
-  if (m && request.method === 'DELETE') return deleteMemory(env, auth.user, decodeURIComponent(m[1]));
+  if (m && request.method === 'DELETE') {
+    if(!(await hubPermissionAllows(env,auth.user,'scrapbook','contribute')))return apiJson({error:'You cannot edit the private scrapbook.'},403);
+    return deleteMemory(env, auth.user, decodeURIComponent(m[1]));
+  }
 
   if (path === '/api/export/orders.csv' && request.method === 'GET') return exportOrdersCsv(env, auth.user);
   if (path === '/api/export/loyalty.csv' && request.method === 'GET') return exportLoyaltyCsv(env, auth.user, url.searchParams.get('userId'));
@@ -378,6 +396,7 @@ async function bootstrap(env, user) {
   const loyalty=await loyaltyData(env,user.id);
   const orders=await ordersWithItems(env,user,user.role==='admin'?null:user.id,8);
   const fun=await funData(env,user.id);
+  if(!(await hubPermissionAllows(env,user,'scrapbook','read')))fun.memories=[];
   const accountSecurity=await accountSecurityForUser(env,user);
   let admin=null;
   if(user.role==='admin') admin=await adminData(env);
@@ -441,7 +460,7 @@ async function funData(env,userId){ const [dates,reviews,complaints,adventures,m
   env.DB.prepare('SELECT * FROM adventures WHERE user_id=? ORDER BY created_at DESC LIMIT 50').bind(userId).all(),
   env.DB.prepare('SELECT * FROM memories ORDER BY COALESCE(happened_on,created_at) DESC LIMIT 100').all()
 ]); return {dates:dates.results,reviews:reviews.results,complaints:complaints.results,adventures:adventures.results,memories:memories.results}; }
-async function funSnapshot(env,user){ return apiJson({fun:await funData(env,user.id),dateIdeas:DATE_IDEAS,roomServiceMenu:ROOM_SERVICE_MENU}); }
+async function funSnapshot(env,user){ const fun=await funData(env,user.id);if(!(await hubPermissionAllows(env,user,'scrapbook','read')))fun.memories=[];return apiJson({fun,dateIdeas:DATE_IDEAS,roomServiceMenu:ROOM_SERVICE_MENU}); }
 async function saveDate(request,env,user){ const b=await bodyJson(request); const title=text(b.title,100); if(!title)return apiJson({error:'Date title is required.'},400); const rec={id:id('date'),title,detail:text(b.detail,300),plannedFor:text(b.plannedFor,30)||null}; await env.DB.prepare('INSERT INTO date_bookings (id,user_id,title,detail,planned_for,status,created_at) VALUES (?,?,?,?,?,?,?)').bind(rec.id,user.id,rec.title,rec.detail,rec.plannedFor,'Saved',now()).run(); await audit(env,user.id,'date.save','date_booking',rec.id,{}); return apiJson({ok:true,fun:await funData(env,user.id)},201); }
 async function roomService(request,env,user){ const b=await bodyJson(request); const selected=Array.isArray(b.items)?b.items.slice(0,12):[]; if(!selected.length)return apiJson({error:'Choose at least one room-service item.'},400); const items=selected.map(x=>{const found=ROOM_SERVICE_MENU.find(m=>m.id===x.id); return found?{...found,qty:int(x.qty,1,5,1)}:null;}).filter(Boolean); if(!items.length)return apiJson({error:'No valid items selected.'},400); const orderId=id('ord'),number=orderNumber(),t=now(); const st=[env.DB.prepare('INSERT INTO orders (id,order_number,user_id,source,customer_name,delivery_method,delivery_notes,status,total_pence,points_awarded,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,0,5,?,?)').bind(orderId,number,user.id,'room-service',user.display_name,'Bear Room Service',text(b.notes,300),'Received',t,t),env.DB.prepare('INSERT INTO order_status_history (id,order_id,status,note,actor_user_id,created_at) VALUES (?,?,?,?,?,?)').bind(id('osh'),orderId,'Received','Room-service order placed.',user.id,t)]; for(const i of items)st.push(env.DB.prepare('INSERT INTO order_items (id,order_id,product_id,item_name,item_emoji,quantity,unit_price_pence) VALUES (?,?,?,?,?,?,0)').bind(id('itm'),orderId,null,i.name,i.emoji,i.qty)); st.push(loyaltyTxStatement(env,{txId:id('tx'),accountUserId:user.id,actorUserId:user.id,type:'earn',label:'Room-service checkout bonus',delta:5,referenceType:'order',referenceId:orderId,note:'Automatic room-service bonus.',createdAt:t})); await env.DB.batch(st); await awardBadge(env,user.id,'first-order'); await maybePointBadges(env,user.id,await currentBalance(env,user.id)); await audit(env,user.id,'room_service.create','order',orderId,{orderNumber:number}); return apiJson({ok:true,order:await getOrder(env,orderId),loyalty:await loyaltyData(env,user.id)},201); }
 async function saveReview(request,env,user){ const b=await bodyJson(request); const rating=int(b.rating,1,5,5), body=text(b.body,2000); if(!body)return apiJson({error:'Write something in the review.'},400); const t=now(), rid=id('rev'), month=t.slice(0,7); await env.DB.prepare('INSERT INTO reviews (id,user_id,rating,title,body,month_key,created_at) VALUES (?,?,?,?,?,?,?)').bind(rid,user.id,rating,text(b.title,120),body,month,t).run(); await awardBadge(env,user.id,'reviewer'); await audit(env,user.id,'review.create','review',rid,{rating}); return apiJson({ok:true,fun:await funData(env,user.id)},201); }
@@ -570,9 +589,9 @@ async function saveMenuReview(request,env,user){
   return apiJson({ok:true,dashboard:await menuDashboardData(env,user,saved)},created?201:200);
 }
 
-async function uploadMedia(request,env,user){ const form=await request.formData(); const file=form.get('file'); if(!(file instanceof File))return apiJson({error:'Choose a file.'},400); if(file.size<1||file.size>MAX_UPLOAD_BYTES)return apiJson({error:'Files must be 8 MB or smaller.'},400); if(!ALLOWED_UPLOAD_TYPES.has(file.type))return apiJson({error:'Allowed: JPG, PNG, WebP, GIF, MP4, WebM or PDF.'},400); const purpose=text(form.get('purpose'),40); const menuReview=purpose==='menu-review'; if(menuReview&&!['image/jpeg','image/png','image/webp','image/gif'].includes(file.type))return apiJson({error:'Menu reviews accept JPG, PNG, WebP or GIF images.'},400); const ext=extensionFor(file.type),folder=menuReview?'menu-reviews':'memories'; const key=`${folder}/${new Date().toISOString().slice(0,10)}/${user.id}/${crypto.randomUUID()}${ext}`; await env.MEDIA.put(key,file.stream(),{httpMetadata:{contentType:file.type},customMetadata:{originalName:text(file.name,160),uploadedBy:user.id,purpose:menuReview?'menu-review':'memory'}}); await audit(env,user.id,menuReview?'menu.media.upload':'media.upload','r2_object',key,{name:text(file.name,160),size:file.size,type:file.type}); return apiJson({ok:true,attachment:{key,name:text(file.name,160),type:file.type,size:file.size,url:`/media/${key}`}},201); }
+async function uploadMedia(request,env,user){ const form=await request.formData(); const file=form.get('file'); if(!(file instanceof File))return apiJson({error:'Choose a file.'},400); if(file.size<1||file.size>MAX_UPLOAD_BYTES)return apiJson({error:'Files must be 8 MB or smaller.'},400); if(!ALLOWED_UPLOAD_TYPES.has(file.type))return apiJson({error:'Allowed: JPG, PNG, WebP, GIF, MP4, WebM or PDF.'},400); const purpose=text(form.get('purpose'),40); const menuReview=purpose==='menu-review'; if(menuReview&&!(await hubPermissionAllows(env,user,'menus','contribute')))return apiJson({error:'You cannot upload private menu-review photos.'},403); if(!menuReview&&!(await hubPermissionAllows(env,user,'scrapbook','contribute')))return apiJson({error:'You cannot upload private scrapbook media.'},403); if(menuReview&&!['image/jpeg','image/png','image/webp','image/gif'].includes(file.type))return apiJson({error:'Menu reviews accept JPG, PNG, WebP or GIF images.'},400); const ext=extensionFor(file.type),folder=menuReview?'menu-reviews':'memories'; const key=`${folder}/${new Date().toISOString().slice(0,10)}/${user.id}/${crypto.randomUUID()}${ext}`; await env.MEDIA.put(key,file.stream(),{httpMetadata:{contentType:file.type},customMetadata:{originalName:text(file.name,160),uploadedBy:user.id,purpose:menuReview?'menu-review':'memory'}}); await audit(env,user.id,menuReview?'menu.media.upload':'media.upload','r2_object',key,{name:text(file.name,160),size:file.size,type:file.type}); return apiJson({ok:true,attachment:{key,name:text(file.name,160),type:file.type,size:file.size,url:`/media/${key}`}},201); }
 function extensionFor(type){ return ({'image/jpeg':'.jpg','image/png':'.png','image/webp':'.webp','image/gif':'.gif','video/mp4':'.mp4','video/webm':'.webm','application/pdf':'.pdf'})[type]||''; }
-async function serveMedia(request,env,url){ const auth=await getAuth(request,env); if(!auth)return new Response('Unauthorized',{status:401,headers:{'Cache-Control':'no-store'}}); const key=decodeURIComponent(url.pathname.slice('/media/'.length)); if(!key.startsWith('memories/')&&!key.startsWith('menu-reviews/'))return new Response('Not found',{status:404}); const obj=await env.MEDIA.get(key); if(!obj)return new Response('Not found',{status:404}); const h=new Headers(); obj.writeHttpMetadata(h); h.set('etag',obj.httpEtag); h.set('Cache-Control','private, max-age=300'); h.set('X-Content-Type-Options','nosniff'); h.set('Content-Security-Policy',"default-src 'none'; sandbox"); return new Response(obj.body,{headers:h}); }
+async function serveMedia(request,env,url){ const auth=await getAuth(request,env); if(!auth)return new Response('Unauthorized',{status:401,headers:{'Cache-Control':'no-store'}}); const key=decodeURIComponent(url.pathname.slice('/media/'.length)); if(!key.startsWith('memories/')&&!key.startsWith('menu-reviews/'))return new Response('Not found',{status:404}); const area=key.startsWith('menu-reviews/')?'menus':'scrapbook';if(!(await hubPermissionAllows(env,auth.user,area,'read')))return new Response('Forbidden',{status:403,headers:{'Cache-Control':'no-store'}}); const obj=await env.MEDIA.get(key); if(!obj)return new Response('Not found',{status:404}); const h=new Headers(); obj.writeHttpMetadata(h); h.set('etag',obj.httpEtag); h.set('Cache-Control','private, max-age=300'); h.set('X-Content-Type-Options','nosniff'); h.set('Content-Security-Policy',"default-src 'none'; sandbox"); return new Response(obj.body,{headers:h}); }
 async function saveMemory(request,env,user){ const b=await bodyJson(request); const title=text(b.title,120); if(!title)return apiJson({error:'Memory title is required.'},400); let key=null,name=null,type=null,size=null; if(b.attachment?.key){ key=text(b.attachment.key,500); if(!key.includes(`/${user.id}/`) && user.role!=='admin')return apiJson({error:'Invalid attachment.'},400); name=text(b.attachment.name,160);type=text(b.attachment.type,100);size=int(b.attachment.size,0,MAX_UPLOAD_BYTES,0); }
   const mid=id('mem'),t=now(); await env.DB.prepare('INSERT INTO memories (id,user_id,title,body,happened_on,mood,attachment_key,attachment_name,attachment_type,attachment_size,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').bind(mid,user.id,title,text(b.body,3000),text(b.happenedOn,20)||null,text(b.mood,10)||'💚',key,name,type,size,t,t).run(); await audit(env,user.id,'memory.create','memory',mid,{}); return apiJson({ok:true,fun:await funData(env,user.id)},201); }
 async function deleteMemory(env,user,memoryId){ const m=await env.DB.prepare('SELECT * FROM memories WHERE id=?').bind(memoryId).first(); if(!m)return apiJson({error:'Memory not found.'},404); if(user.role!=='admin'&&m.user_id!==user.id)return apiJson({error:'Not allowed.'},403); if(m.attachment_key)await env.MEDIA.delete(m.attachment_key); await env.DB.prepare('DELETE FROM memories WHERE id=?').bind(memoryId).run(); await audit(env,user.id,'memory.delete','memory',memoryId,{}); return apiJson({ok:true,fun:await funData(env,user.id)}); }
