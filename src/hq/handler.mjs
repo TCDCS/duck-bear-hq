@@ -1,10 +1,10 @@
 import {publicPasskeys,privatePasskeys} from './passkeys.mjs';
 import {resolveRoute} from '../../public/hq/routes.mjs';
 import {extrasApi,publicSite,publicMenuPage} from './extras.mjs';
-import {importLegacy} from './migrate.mjs';
+import {importLegacy,importRecentMenuRecipes} from './migrate.mjs';
 import {importPrivateHome} from './import-hub.mjs';
 import {ensureLibrary} from './library.mjs';
-async function migrate(env,user){await importPrivateHome(env,user);await importLegacy(env,user);await ensureLibrary(env,user);}
+async function migrate(env,user){await importPrivateHome(env,user);await importLegacy(env,user);await importRecentMenuRecipes(env,user);await ensureLibrary(env,user);}
 import {backupApi} from './backup.mjs';
 import {mediaApi,publicMedia} from './media.mjs';
 import {adminAccounts} from './admin-accounts.mjs';
