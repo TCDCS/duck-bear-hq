@@ -26,3 +26,164 @@ export async function importLegacy(env,user){
  for(const p of security?.profiles||[]){if(!known.has(p.user_id)||!p.email)continue;const email=String(p.email_normalized||p.email).trim().toLowerCase();steps.push(env.DB.prepare('INSERT OR IGNORE INTO hq_identity(user_id,email,verified,pending_email,updated_at) VALUES(?,?,0,NULL,?)').bind(p.user_id,email,p.updated_at||now()));}
  steps.push(env.DB.prepare("INSERT OR IGNORE INTO hq_meta(key,value) VALUES('legacy-imported-v1',?)").bind(now()));await env.DB.batch(steps);
 }
+
+
+const RECENT_MENU_RECIPES=[
+ {
+  id:'recipe-2026-09-28-mongolian-lamb',
+  servingId:'menu-2026-09-28-mon-dinner',
+  data:{
+   title:'The Mongolian Submission — Mongolian Lamb Shanks',
+   description:'Slow-cooked Mongolian-style lamb shanks with jasmine rice and sesame vegetables.',
+   course:'dinner',cuisine:'Mongolian-style',tags:['lamb','slow-cooked','rice'],minutes:210,servings:2,
+   ingredients:[
+    '2 lamb shanks',
+    '4 tbsp soy sauce',
+    '3 tbsp hoisin sauce',
+    '2 tbsp brown sugar',
+    '4 garlic cloves, crushed',
+    '3 cm ginger, grated',
+    '1 tbsp rice vinegar',
+    '1 tsp sesame oil',
+    '400 ml beef stock',
+    '150 g jasmine rice',
+    '2 pak choi',
+    '1 courgette, sliced',
+    '2 carrots, sliced',
+    '2 spring onions, sliced',
+    '1 tbsp sesame seeds',
+    '1 tsp cornflour + 1 tbsp water, optional for thickening'
+   ],
+   instructions:'1. Heat the oven to 160°C fan. Brown the lamb shanks in a casserole or ovenproof pan.\n2. Mix the soy, hoisin, brown sugar, garlic, ginger, rice vinegar, sesame oil and beef stock. Pour around the lamb and bring to a simmer.\n3. Cover and cook for about 3 hours, turning the shanks halfway, until very tender.\n4. Remove the lamb. Reduce the sauce on the hob until glossy. If needed, stir in the cornflour slurry and simmer briefly.\n5. Cook the jasmine rice. Fry the pak choi, courgette and carrots until just tender; add a splash of water and cover the pak choi for 2–3 minutes.\n6. Serve the lamb over rice with the vegetables, sauce, spring onion and sesame.',
+   link:'',week:'2026-09-28',status:'planned',photos:[],coverId:'',attachmentId:''
+  }
+ },
+ {
+  id:'recipe-2026-09-29-tropical-yoghurt',
+  servingId:'menu-2026-09-28-tue-breakfast',
+  data:{
+   title:'Tropical Tease — Yoghurt Bowl',
+   description:'Greek yoghurt with pineapple, banana, coconut and crunchy granola.',
+   course:'breakfast',cuisine:'Breakfast',tags:['quick','yoghurt','fruit'],minutes:5,servings:2,
+   ingredients:['300 g Greek yoghurt','150 g pineapple, chopped','1 banana, sliced','2 tbsp desiccated or shredded coconut','60 g granola'],
+   instructions:'1. Divide the Greek yoghurt between two bowls.\n2. Add the pineapple and banana.\n3. Sprinkle over the coconut.\n4. Add the granola immediately before eating so it stays crunchy. If making it the night before, refrigerate everything except the granola and add that in the morning.',
+   link:'',week:'2026-09-28',status:'planned',photos:[],coverId:'',attachmentId:''
+  }
+ },
+ {
+  id:'recipe-2026-09-29-harissa-chicken',
+  servingId:'menu-2026-09-28-tue-dinner',
+  data:{
+   title:'Moroccan Restraint — Harissa Chicken & Vegetables',
+   description:'Harissa chicken with roasted vegetables and a cooling lemon-garlic yoghurt sauce.',
+   course:'dinner',cuisine:'Moroccan-style',tags:['chicken','harissa','roast'],minutes:45,servings:2,
+   ingredients:[
+    '2 chicken breasts or equivalent chicken portions',
+    '50 g harissa sauce or marinade',
+    '3 tbsp Greek yoghurt',
+    '1 tsp sesame oil',
+    '1 tbsp tomato purée',
+    '1 tbsp lemon juice',
+    '1 tsp honey',
+    '1 garlic clove, crushed',
+    '1/2 tsp smoked paprika',
+    '1–2 tbsp water, as needed',
+    '2 carrots, cut into batons',
+    '1 courgette, chopped',
+    'Cooked beetroot, cut into wedges',
+    '100 g Greek yoghurt, for the sauce',
+    '1 small garlic clove, finely grated, for the sauce',
+    'Lemon juice, to taste, for the sauce'
+   ],
+   instructions:'1. Heat the oven to 200°C conventional / 180°C fan, or the air fryer to about 190°C.\n2. Mix the harissa, 3 tbsp yoghurt, sesame oil, tomato purée, lemon juice, honey, garlic and smoked paprika. Loosen with 1–2 tbsp water if needed.\n3. Coat the chicken well. Toss the carrots with a little of the harissa mixture and start them first because they take longest.\n4. Add the chicken and cook until fully cooked through. Add the courgette for the final 15–20 minutes so it does not go soft. Add the beetroot near the end just to heat and colour.\n5. Mix the extra yoghurt with garlic and lemon juice. Serve it cold alongside the hot chicken and vegetables.',
+   link:'',week:'2026-09-28',status:'planned',photos:[],coverId:'',attachmentId:''
+  }
+ },
+ {
+  id:'recipe-2026-09-30-mexican-eggs',
+  servingId:'menu-2026-09-28-wed-breakfast',
+  data:{
+   title:'Morning Mischief — Mexican Scrambled Egg Tortillas',
+   description:'Soft scrambled eggs in warm tortillas with salsa, cheese and avocado.',
+   course:'breakfast',cuisine:'Mexican-style',tags:['eggs','tortilla','quick'],minutes:15,servings:2,
+   ingredients:['4 eggs','2 large tortillas or 4 small tortillas','4 tbsp salsa','60 g grated cheese','1 avocado, sliced','Salt and black pepper'],
+   instructions:'1. Warm the tortillas in a dry pan or microwave and keep them covered.\n2. Beat the eggs with a little salt and pepper. Scramble gently in a non-stick pan until just set.\n3. Spoon the eggs into the tortillas.\n4. Add salsa, grated cheese and avocado. Fold and serve straight away.',
+   link:'',week:'2026-09-28',status:'planned',photos:[],coverId:'',attachmentId:''
+  }
+ },
+ {
+  id:'recipe-2026-09-30-thai-salmon',
+  servingId:'menu-2026-09-28-wed-dinner',
+  data:{
+   title:'Thai Tied Salmon — Soy, Honey, Ginger & Garlic Salmon',
+   description:'Sticky soy-honey salmon with ginger and garlic, jasmine rice and stir-fried vegetables.',
+   course:'dinner',cuisine:'Thai-style',tags:['salmon','rice','quick'],minutes:30,servings:2,
+   ingredients:['2 salmon fillets','2 tbsp soy sauce','1 tbsp honey','1 garlic clove, crushed','2 cm ginger, grated','150 g jasmine rice','300 g mixed stir-fry vegetables','1 lime'],
+   instructions:'1. Cook the jasmine rice.\n2. Mix the soy, honey, garlic and ginger. Coat the salmon with the mixture.\n3. Bake or air-fry the salmon until cooked to your liking and sticky at the edges, brushing with any remaining glaze during cooking.\n4. Stir-fry the vegetables until just tender.\n5. Serve the salmon with the rice and vegetables and squeeze lime over the top.',
+   link:'',week:'2026-09-28',status:'planned',photos:[],coverId:'',attachmentId:''
+  }
+ },
+ {
+  id:'recipe-2026-10-01-korean-egg-rice',
+  servingId:'menu-2026-09-28-thu-breakfast',
+  data:{
+   title:'The Korean Wake-Up Call — Egg, Rice, Kimchi & Gochujang',
+   description:'Fried egg over hot rice with kimchi and gochujang.',
+   course:'breakfast',cuisine:'Korean-style',tags:['egg','rice','kimchi'],minutes:15,servings:2,
+   ingredients:['150 g rice, uncooked','2 eggs','150 g kimchi','1–2 tbsp gochujang, to taste'],
+   instructions:'1. Cook the rice and divide it between two bowls.\n2. Fry the eggs so the whites are set and the yolks are still soft, if preferred.\n3. Put an egg on each bowl of rice.\n4. Add kimchi and gochujang. Mix through as you eat.',
+   link:'',week:'2026-09-28',status:'planned',photos:[],coverId:'',attachmentId:''
+  }
+ },
+ {
+  id:'recipe-2026-10-02-greek-pita',
+  servingId:'menu-2026-09-28-fri-breakfast',
+  data:{
+   title:'Greek Temptation — Warm Feta Pita',
+   description:'Warm pita filled with feta, tomato, cucumber, olive oil and oregano.',
+   course:'breakfast',cuisine:'Greek-style',tags:['pita','feta','quick'],minutes:10,servings:2,
+   ingredients:['2 pita breads','100 g feta','1 tomato, chopped','1/2 cucumber, chopped','1 tbsp olive oil','1 tsp dried oregano'],
+   instructions:'1. Warm or lightly toast the pita breads.\n2. Mix the tomato and cucumber with the olive oil and oregano.\n3. Crumble in the feta.\n4. Open the warm pitas and fill with the mixture. Serve immediately.',
+   link:'',week:'2026-09-28',status:'planned',photos:[],coverId:'',attachmentId:''
+  }
+ },
+ {
+  id:'recipe-2026-10-02-korean-fish-chips',
+  servingId:'menu-2026-09-28-fri-dinner',
+  data:{
+   title:'Korean Punishment Fish & Chips',
+   description:'Frozen fish and chips upgraded with a sticky gochujang glaze and spicy mayo.',
+   course:'dinner',cuisine:'Korean-style',tags:['fish','gochujang','easy'],minutes:30,servings:2,
+   ingredients:['2 frozen battered or breaded fish portions','Frozen oven chips for 2','1 tbsp gochujang','1 tbsp honey','1 tsp soy sauce','1 lime','2 spring onions, sliced','1 tbsp sesame seeds','3 tbsp mayonnaise','Sriracha, to taste'],
+   instructions:'1. Cook the frozen fish and chips according to the packet instructions.\n2. Mix the gochujang, honey and soy with a squeeze of lime.\n3. When the fish is nearly done, brush or drizzle the glaze over it and return it to the oven or air fryer briefly so it turns sticky.\n4. Mix the mayonnaise with sriracha to taste.\n5. Top the fish with spring onion and sesame. Serve with the chips, spicy mayo and extra lime.',
+   link:'',week:'2026-09-28',status:'planned',photos:[],coverId:'',attachmentId:''
+  }
+ }
+];
+
+export async function importRecentMenuRecipes(env,user){
+ if(!(await permission(env,user,'intimate')).pair)return;
+ if(await env.DB.prepare("SELECT 1 AS ok FROM hq_meta WHERE key='recent-menu-recipes-v1'").first())return;
+ const pair=await env.DB.prepare("SELECT user_id FROM hq_pair WHERE role='owner' ORDER BY user_id LIMIT 1").first();
+ if(!pair)return;
+ const owner=pair.user_id,stamp=now(),steps=[];
+ for(const r of RECENT_MENU_RECIPES){
+  steps.push(env.DB.prepare('INSERT OR IGNORE INTO hq_records(id,kind,section,parent_id,creator_id,updated_by,revision,data,created_at,updated_at) VALUES(?,?,?,?,?,?,1,?,?,?)').bind(r.id,'recipe','menus',null,owner,owner,JSON.stringify(r.data),stamp,stamp));
+  const serving=await env.DB.prepare("SELECT data FROM hq_records WHERE id=? AND kind='serving' AND deleted_at IS NULL").bind(r.servingId).first();
+  if(serving){
+   const data={...JSON.parse(serving.data),recipeId:r.id,ingredients:r.data.ingredients,ingredientsConfirmed:true};
+   steps.push(env.DB.prepare('UPDATE hq_records SET data=?,revision=revision+1,updated_by=?,updated_at=? WHERE id=? AND deleted_at IS NULL').bind(JSON.stringify(data),owner,stamp,r.servingId));
+  }
+ }
+ const week=await env.DB.prepare("SELECT data FROM hq_records WHERE id='week-2026-09-28' AND kind='week' AND deleted_at IS NULL").first();
+ if(week){
+  const data=JSON.parse(week.data),byServing=new Map(RECENT_MENU_RECIPES.map(r=>[r.servingId,r]));
+  if(data.snapshot?.meals) data.snapshot.meals=data.snapshot.meals.map(meal=>{
+   const r=byServing.get(meal.id);
+   return r?{...meal,recipeId:r.id,ingredients:r.data.ingredients,ingredientsConfirmed:true}:meal;
+  });
+  steps.push(env.DB.prepare("UPDATE hq_records SET data=?,revision=revision+1,updated_by=?,updated_at=? WHERE id='week-2026-09-28' AND deleted_at IS NULL").bind(JSON.stringify(data),owner,stamp));
+ }
+ steps.push(env.DB.prepare("INSERT OR IGNORE INTO hq_meta(key,value) VALUES('recent-menu-recipes-v1',?)").bind(stamp));
+ await env.DB.batch(steps);
+}
