@@ -10,11 +10,12 @@ const chapters={
  admin:{id:'admin',label:'Behind the scenes',art:'settings'},
  auth:{id:'auth',label:'Your private entrance',art:'settings'},
  games:{id:'games',label:'A little friendly chaos',art:'games'},
- shop:{id:'shop',label:'Little treats',art:'menus'}
+ shop:{id:'shop',label:'Little treats',art:'menus'},
+ adults:{id:'adults',label:'Behind the velvet rope',art:'plans'}
 };
 export function chapterFor(path='/'){
  const part=path.split('/').filter(Boolean)[0]||'';
- const id=({menus:'menus','family-tree':'family',scrapbook:'scrapbook','image-library':'scrapbook',plans:'plans',info:'info',settings:'settings',admin:'admin',games:'games',shop:'shop',orders:'shop',points:'shop','sign-in':'auth','reset-password':'auth','verify-email':'auth','accept-invitation':'auth'})[part]||'home';
+ const id=({menus:'menus','family-tree':'family',scrapbook:'scrapbook','image-library':'scrapbook',plans:'plans',info:'info',settings:'settings',admin:'admin',games:'games',shop:'shop',orders:'shop',points:'shop','adults-only':'adults','sign-in':'auth','reset-password':'auth','verify-email':'auth','accept-invitation':'auth'})[part]||'home';
  return chapters[id];
 }
 export function applySketchChapter(path=globalThis.location?.pathname||'/'){
