@@ -59,13 +59,13 @@ test('Info library has persistent editable pages, signed-in reading, revision ch
   const seed=await call(h,f.env,'/api/hq/records/info-allergies',{user:'guest'});assert.equal(seed.status,200);assert.match(seed.data.record.data.text,/not.*diagnos|not.*prove/i);
  }finally{f.close();}
 });
-test('Info and About are protected server-side including direct index.html and nested pages',async()=>{
- const f=await fixture();try{for(const path of ['/info','/info/','/info/index.html','/info/allergies/','/info/pages/new/','/about','/about/','/about/index.html']){const x=await call(h,f.env,path,{user:null});assert.equal(x.status,302,path);assert.match(x.response.headers.get('location'),/^\/sign-in\/\?next=/);assert.match(x.response.headers.get('cache-control'),/no-store/);}
- for(const path of ['/info/','/about/'])assert.equal((await call(h,f.env,path)).status,200,path);
+test('Info, About and Adults Only are protected server-side including nested pages',async()=>{
+ const f=await fixture();try{for(const path of ['/info','/info/','/info/index.html','/info/allergies/','/info/pages/new/','/about','/about/','/about/index.html','/adults-only','/adults-only/','/adults-only/outfits/']){const x=await call(h,f.env,path,{user:null});assert.equal(x.status,302,path);assert.match(x.response.headers.get('location'),/^\/sign-in\/\?next=/);assert.match(x.response.headers.get('cache-control'),/no-store/);}
+ for(const path of ['/info/','/about/','/adults-only/','/adults-only/outfits/'])assert.equal((await call(h,f.env,path)).status,200,path);
  }finally{f.close();}
 });
 test('nested Info and legacy Home links resolve to the single editing surface',()=>{
- assert.equal(resolveRoute('/info/').kind,'info');assert.equal(resolveRoute('/info/pages/new/').view,'form');assert.equal(resolveRoute('/info/allergies/').path,'/info/pages/info-allergies/');assert.equal(resolveRoute('/about/').view,'about');assert.equal(resolveRoute('/hub/').path,'/our-space/');assert.equal(resolveRoute('/settings/updates/').view,'setting');
+ assert.equal(resolveRoute('/info/').kind,'info');assert.equal(resolveRoute('/info/pages/new/').view,'form');assert.equal(resolveRoute('/info/allergies/').path,'/info/pages/info-allergies/');assert.equal(resolveRoute('/about/').view,'about');assert.equal(resolveRoute('/adults-only/').view,'adults');assert.equal(resolveRoute('/adults-only/outfits/').tab,'outfits');assert.equal(resolveRoute('/hub/').path,'/our-space/');assert.equal(resolveRoute('/settings/updates/').view,'setting');
 });
 test('missing Home attachment aborts the import atomically and leaves the original records intact',async()=>{const f=await seeded();try{await f.env.MEDIA.delete('hub/scrapbook/s1/photo.png');const x=await call(h,f.env,'/api/hq/me');assert.equal(x.status,503);assert.equal(f.env.DB.db.prepare("SELECT COUNT(*) n FROM hq_records WHERE id LIKE 'home-%'").get().n,0);assert.equal(f.env.DB.db.prepare('SELECT COUNT(*) n FROM family_people').get().n,2);}finally{f.close();}});
 test('both original household accounts are protected against accidental disable and deletion',async()=>{const f=await fixture();try{await call(h,f.env,'/api/hq/me');for(const who of ['owner','partner']){assert.equal((await call(h,f.env,'/api/hq/admin/users/'+who,{method:'DELETE',body:{currentPassword:'test-password-123',confirm:'DELETE'}})).status,403);assert.equal((await call(h,f.env,'/api/hq/admin/users/'+who,{method:'PUT',body:{active:false,currentPassword:'test-password-123'}})).status,403);}}finally{f.close();}});
