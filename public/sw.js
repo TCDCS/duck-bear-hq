@@ -5,7 +5,7 @@ self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise
 self.addEventListener('fetch',e=>{
   const r=e.request;if(r.method!=='GET')return;
   const u=new URL(r.url);
-  if(u.searchParams.has('reset')||/^\/(info|about|hub|account|legacy-account|our-space|family-tree|scrapbook|plans|image-library|settings|admin|shop|orders|points|sign-in|reset-password|verify-email|accept-invitation)([/.]|$)/.test(u.pathname)||/^\/menus\/(planner|ideas|recipes|reviews|shopping|weeks|member|meals)(\/|$)/.test(u.pathname))return;
+  if(u.searchParams.has('reset')||/^\/(info|about|adults-only|hub|account|legacy-account|our-space|family-tree|scrapbook|plans|image-library|settings|admin|shop|orders|points|sign-in|reset-password|verify-email|accept-invitation)([/.]|$)/.test(u.pathname)||/^\/menus\/(planner|ideas|recipes|reviews|shopping|weeks|member|meals)(\/|$)/.test(u.pathname))return;
   if(u.origin!==self.location.origin||u.pathname.startsWith('/api/')||u.pathname.startsWith('/media/')||u.pathname.startsWith('/games/'))return;
   e.respondWith(fetch(r).then(resp=>{
     if(resp.ok&&!/no-store|private/i.test(resp.headers.get('cache-control')||'')){
