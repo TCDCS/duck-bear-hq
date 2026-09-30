@@ -12,7 +12,7 @@ test('each website shell and published menu renderer uses the shared sketch them
 test('theme accents follow nested navigation and never derive private text from a public route',async()=>{
  assert.ok(fs.existsSync('public/hq/sketch.mjs'),'Shared theme module must exist');
  const {chapterFor}=await import('../public/hq/sketch.mjs');
- for(const [path,chapter] of [['/','home'],['/menus/archive/2026-09-28/','menus'],['/family-tree/people/person-1/edit/','family'],['/scrapbook/albums/','scrapbook'],['/settings/passkeys/','settings'],['/admin/users/owner/email/','admin'],['/verify-email/','auth'],['/info/allergies/','info'],['/games/','games']])assert.equal(chapterFor(path).id,chapter,path);
+ for(const [path,chapter] of [['/','home'],['/menus/archive/2026-09-28/','menus'],['/family-tree/people/person-1/edit/','family'],['/scrapbook/albums/','scrapbook'],['/settings/passkeys/','settings'],['/admin/users/owner/email/','admin'],['/verify-email/','auth'],['/info/allergies/','info'],['/adults-only/outfits/','adults'],['/games/','games']])assert.equal(chapterFor(path).id,chapter,path);
  assert.equal(chapterFor('/something/unknown/').id,'home');
 });
 test('the shared skin has reduced motion, dark mode, narrow screen and visible focus treatment',()=>{
