@@ -7,6 +7,7 @@ export const NAV=[
  {title:'Image Library',icon:'▧',base:'/image-library/',section:null,items:[['All images','/image-library/'],['Upload','/image-library/upload/'],['Recycle bin','/image-library/recycle/']]},
  {title:'Shop & Points',icon:'🎁',base:'/shop/',pair:true,items:[['Gift shop','/shop/'],['Basket','/shop/basket/'],['Orders','/orders/'],['Yaya Points','/points/'],['Rewards','/points/rewards/']]},
  {title:'Info Library',icon:'📚',base:'/info/',section:'library',items:[['All pages','/info/'],['Hand wash & allergies','/info/allergies/'],['About Duck & Bear','/about/']]},
+ {title:'Adults Only',icon:'⛓',base:'/adults-only/',section:null,items:[['Adults Only','/adults-only/'],['Outfits','/adults-only/outfits/']]},
  {title:'Settings',icon:'⚙',base:'/settings/',section:null,items:[['All settings','/settings/'],['Profile','/settings/profile/'],['Email','/settings/email/'],['Security','/settings/security/'],['Passkeys','/settings/passkeys/'],['Devices','/settings/devices/'],['Notifications','/settings/notifications/'],['Appearance','/settings/appearance/'],['Language','/settings/language/'],['Images & covers','/settings/images/'],['My data','/settings/data/'],['Updates','/settings/updates/']]},
  {title:'Admin',icon:'✦',base:'/admin/',owner:true,items:[['Overview','/admin/'],['Users','/admin/users/'],['Invitations','/admin/invitations/'],['Permissions','/admin/permissions/'],['Site appearance','/admin/appearance/'],['Recovery requests','/admin/recovery/'],['Email delivery','/admin/email/'],['Backups & restore','/admin/backups/'],['Change history','/admin/history/']]}
 ];
@@ -38,6 +39,8 @@ const legacyHashes={home:'/our-space/',shop:'/shop/',loyalty:'/points/',orders:'
 export function resolveRoute(raw,hash=''){const path=normalize(raw);if(aliases[path]){const oldAccount=['/hub/','/hub/index.html/','/account/','/account.html/'].includes(path);return {view:'redirect',path:oldAccount?(legacyHashes[hash.replace(/^#\/?/,'')]||aliases[path]):aliases[path]};}
  if(path==='/info/')return {view:'collection',...COLLECTIONS['/info/pages/'],base:'/info/pages/'};
  if(path==='/about/')return {view:'about'};
+ if(path==='/adults-only/')return {view:'adults',tab:'index'};
+ if(path==='/adults-only/outfits/')return {view:'adults',tab:'outfits'};
  if(['/sign-in/','/reset-password/','/verify-email/','/accept-invitation/'].includes(path))return {view:'auth',mode:path.split('/')[1]};
  if(path==='/family-tree/'||path==='/family-tree/tree/'||path==='/family-tree/timeline/'||path==='/family-tree/access/')return {view:'family',section:'family',tab:path.split('/')[2]||'overview'};
  if(path==='/scrapbook/')return {view:'collection',...COLLECTIONS['/scrapbook/albums/'],base:'/scrapbook/albums/'};
