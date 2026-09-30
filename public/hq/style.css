@@ -6,3 +6,9 @@
 
 /* Account forms stay readable on phones. */
 .key-row{padding:1.2rem 0;border-top:1px solid var(--line,#d7cabe)}.key-row .actions{flex-wrap:wrap}.key-row input,.form-panel input{min-width:0;max-width:100%}
+
+/* Shared Google Calendar */
+.shared-calendar-panel{padding:0;overflow:hidden}
+.shared-calendar-frame{display:block;width:100%;height:720px;border:0;background:#fff}
+.shared-calendar-actions{margin-top:16px}
+@media(max-width:700px){.shared-calendar-frame{height:680px}}
