@@ -63,7 +63,9 @@
       "/info",
       "/info/*",
       "/about",
-      "/about/*"
+      "/about/*",
+      "/adults-only",
+      "/adults-only/*"
     ]
   },
   "rules": [
