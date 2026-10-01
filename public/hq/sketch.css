@@ -14,7 +14,7 @@ body[data-chapter=shop]{--chapter:#f6b69f;--chapter-wash:#fff0dd;--chapter-art:u
 .sketch-theme a{text-underline-offset:5px}.sketch-theme :is(a,button,input,textarea,select,summary):focus-visible{outline:3px solid #157486;outline-offset:4px}
 .sketch-theme :is(.site-bar,.public-header,.games-top){background:var(--surface);border-bottom:2px solid var(--line);box-shadow:0 5px 0 #f4c56550;padding-top:16px;padding-bottom:16px;position:relative;z-index:30;color:var(--ink)}
 .sketch-theme .site-bar{padding-inline:clamp(16px,3vw,46px);gap:24px;min-height:88px;position:sticky;top:0}
-.sketch-theme .wordmark{font-size:25px;letter-spacing:-1px}.sketch-theme .wordmark>span:first-child{display:grid;place-items:center;flex:none;width:63px;height:49px;font-size:0;background:url('/hq/sketch-world.svg') 51% 53%/128px 96px no-repeat;border:2px solid var(--line);border-radius:40% 46% 41% 43%;box-shadow:2px 2px 0 #ffca6d}
+.sketch-theme .wordmark{font-size:25px;letter-spacing:-1px}.sketch-theme .wordmark>span:first-child{display:grid;place-items:center;flex:none;width:63px;height:49px;font-size:0;background:url('/assets/causeway-v1-mark.webp') center/cover no-repeat;border:2px solid var(--line);border-radius:40% 46% 41% 43%;box-shadow:2px 2px 0 #ffca6d}
 .sketch-theme .wordmark small{letter-spacing:1.8px;font-weight:800;line-height:1.7;font-size:9px}
 .sketch-theme :is(.site-bar .public-links a,.public-header nav a){color:var(--ink);font-size:14px;font-weight:700;text-decoration:none}
 .sketch-theme :is(.site-bar .public-links a,.public-header nav a):hover{text-decoration:underline;text-decoration-color:#ef8579;text-decoration-thickness:3px}

@@ -34,7 +34,7 @@ async function verify(){
  assert.equal(hash(app),expected);
  report.checks.push('Application SHA-256 matches the released source on guannan.party');
 
- const home=await waitText('/',html=>html.includes('Website '+VERSION)&&html.includes('/hq/sketch.css')&&html.includes('/hq/sketch-world.svg?v='+VERSION),'Homepage did not reach Website '+VERSION+' during propagation window');
+ const home=await waitText('/',html=>html.includes('Website '+VERSION)&&html.includes('/hq/sketch.css')&&html.includes('/hq/causeway-v1-768.webp')&&html.includes('/assets/causeway-v1-32.png'),'Homepage did not reach Website '+VERSION+' during propagation window');
  assert.ok(home.includes('friendly brown grizzly bear posing on the Giant’s Causeway'));
  report.checks.push('Homepage reports Website '+VERSION+' and the Giant’s Causeway hero');
 
@@ -57,6 +57,14 @@ async function verify(){
   assert.equal(hash(await r.text()),hash(await readFile('public'+path,'utf8')),path+' source hash');
   report.checks.push(path+' matches the released source');
  }
+ for(const path of ['/favicon.ico','/assets/causeway-v1-32.png','/assets/causeway-v1-180.png','/assets/causeway-v1-192.png','/assets/causeway-v1-512.png','/hq/causeway-v1-480.webp','/hq/causeway-v1-768.webp']){
+  const r=await get(path);assert.equal(r.status,200,path);
+  assert.equal(hash(Buffer.from(await r.arrayBuffer())),hash(await readFile('public'+path)),path+' binary SHA-256');
+  report.checks.push(path+' matches the released artwork');
+ }
+ const manifest=await get('/manifest.webmanifest?v='+VERSION);assert.equal(manifest.status,200);
+ assert.deepEqual(await manifest.json(),JSON.parse(await readFile('public/manifest.webmanifest','utf8')));
+ report.checks.push('Installed app manifest matches the new Causeway icons');
  const auth=await get('/api/hq/auth/status');assert.equal(auth.status,200);const settings=await auth.json();
  assert.equal(settings.registration,'invite-only');assert.equal(settings.passkeys,true);
  report.passkeysEnabled=settings.passkeys;report.emailConfigured=settings.emailConfigured;
