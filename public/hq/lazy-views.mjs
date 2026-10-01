@@ -6,7 +6,7 @@ export const familyView = async (...args)=>(await import('./views.mjs')).familyV
 export const scrapbookView = async (...args)=>(await import('./views.mjs')).scrapbookView(...args);
 export const plansView = async (...args)=>(await import('./views.mjs')).plansView(...args);
 export const homeView = async (...args)=>(await import('./views.mjs')).homeView(...args);
-export const tripsView = async (...args)=>(await import('./trips.mjs')).tripsView(...args);
+export const tripsView = async (...args)=>(await import(args[1]?.tab==='prague'?'./prague-weekend.mjs':'./trips.mjs')).tripsView(...args);
 export const settingsView = async (...args)=>(await import('./settings.mjs')).settingsView(...args);
 export const adminView = async (...args)=>(await import('./settings.mjs')).adminView(...args);
 export const accessView = async (...args)=>(await import('./settings.mjs')).accessView(...args);
