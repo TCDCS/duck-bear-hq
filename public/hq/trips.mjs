@@ -1,4 +1,4 @@
-import {esc,pageHead} from './client.mjs';
+import {esc,pageHead,api,allRecords,action,toast,dateLabel} from './client.mjs';
 
 const MAPS=q=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);
 const route=(from,to)=>'https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent(from)+'&destination='+encodeURIComponent(to);
