@@ -1,0 +1,36 @@
+name: Site Performance Verification
+on:
+  push:
+    branches: [performance/site-speed-icons-20261001]
+  pull_request:
+    paths:
+      - 'src/hq/**'
+      - 'public/hq/**'
+      - 'public/home.js'
+      - 'public/_headers'
+      - 'public/manifest.webmanifest'
+      - 'scripts/site-*.mjs'
+      - 'tests/site-performance*'
+      - '.github/workflows/site-performance.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Archive exact source for reproducible review
+        run: git archive --format=zip --output=site-source.zip HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site-performance-source
+          path: site-source.zip
+          retention-days: 3
+      - run: npm ci
+      - run: npm test
+      - run: npm run check
