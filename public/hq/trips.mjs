@@ -140,13 +140,131 @@ const ROAD={
 };
 
 const SPICY=[
-  {when:'Sat 10 Oct · from 22:30',name:'RDV Club Rouen',flames:'🔥🔥🔥',location:'28 rue Crevier, 76000 Rouen, France',detail:'Saturday libertine club option after the Rouen evening. Saved hours: 22:30–07:00, no admission after 04:00. Saved Saturday price: €25 pp with one alcoholic drink or €20 pp with one soft drink. The itinerary leaves Rouen early Sunday, so keep this flexible.',links:[['Map',MAPS('RDV Club 28 rue Crevier Rouen')],['Official site','https://www.rdvclubrouen.fr/']]},
-  {when:'Sun 11 Oct · 18:00–01:00',name:'Only4You',flames:'🔥🔥🔥',location:'Rue Fonds de nos Bois 3, 6567 Merbes-le-Château, Belgium',detail:'Libertine / swingers club with disco, sauna, jacuzzi and themed areas. This is an optional evening from the Jurbise base. Recheck opening hours before leaving.',links:[['Map',MAPS('Only4You Rue Fonds de nos Bois 3 Merbes-le-Château Belgium')]]},
-  {when:'Sun 11 Oct · 20:00–03:00',name:'La Doña',flames:'🔥🔥🔥',location:'Chaussée de Belle-Vue 104A, 7322 Bernissart, Belgium',detail:'Adult sauna / libertine club option. Recheck entry rules and opening hours before travelling from La Cure.',links:[['Map',MAPS('La Doña Chaussée de Belle-Vue 104A Bernissart Belgium')]]},
-  {when:'Mon 12 Oct · 12:00–17:00',name:'XEN Club',flames:'🔥🔥',location:"Grand'Route 8, 7604 Péruwelz, Belgium",detail:'Libertine / swingers club option. This clashes with the Pairi Daiza day and follows the 10:00–12:00 Edenya slot, so it only works if you deliberately leave the zoo early.',links:[['Map',MAPS("XEN Club Grand'Route 8 Péruwelz Belgium")]]},
-  {when:'Thu 15–Fri 16 Oct',name:'BisouX Caen · Love Room',flames:'🔥🔥🔥',location:'35 Avenue Daniel Bruand, 14112 Biéville-Beuville, France',detail:'Intended Love Room overnight stay. Self check-in from 18:30, check-out by 10:00 and gravel courtyard parking from the original booking. Still awaiting reconfirmation from BisouX.',status:'AWAITING RECONFIRMATION',links:[['Map',MAPS('35 Avenue Daniel Bruand 14112 Biéville-Beuville France')]]},
-  {when:'Fri 16 Oct · late night',name:'Sauna California · Rennes',flames:'🔥🔥🔥',location:'7 Rue de Léon, 35000 Rennes, France',detail:'Optional after the Mont-Saint-Michel dusk visit. Saved plan: leave around 21:30, aim for Rennes around 22:45, then return to Le Saint Aubert after the session. Recheck Friday hours, entry rules and price before leaving.',links:[['Map',MAPS('Sauna California 7 Rue de Léon Rennes France')]]}
+  {
+    "when": "Sat 10 Oct · from 22:30",
+    "name": "RDV Club Rouen",
+    "flames": "🔥🔥🔥",
+    "location": "28 rue Crevier, 76000 Rouen, France",
+    "price": "Saturday €25 pp with alcoholic drink or €20 pp with soft drink",
+    "type": "Social libertine nightclub",
+    "expect": "Think nightclub first: music, bar and adult/social spaces. Saturday is a late session and the official site says couples, formed trios and LGBTQIA+ guests are welcome. Men need a shirt; dress is expected to be smart.",
+    "ease": "There is no reason to rush into anything. Go in together, have a drink, look around and decide how comfortable you both feel. Leaving after twenty minutes is completely fine. The official site says there are no showers, which is useful to know before choosing it.",
+    "detail": "Official Saturday hours: 22:30–07:00, with no admission after 04:00. Keep this optional because Sunday starts early.",
+    "links": [
+      [
+        "Google Maps",
+        "https://www.google.com/maps/search/?api=1&query=RDV%20Club%2028%20rue%20Crevier%20Rouen"
+      ],
+      [
+        "Official site",
+        "https://www.rdvclubrouen.fr/"
+      ]
+    ]
+  },
+  {
+    "when": "Sun 11 Oct · evening",
+    "name": "Only4You",
+    "flames": "🔥🔥🔥",
+    "location": "Rue Fonds de nos Bois 3, 6567 Merbes-le-Château, Belgium",
+    "price": "Sunday couples €80; membership card €15/person/year",
+    "type": "Large libertine club with wellness facilities",
+    "expect": "This is more of an evening club complex: disco, bar/buffet, sauna, jacuzzi, relaxation areas and themed rooms. The official information requires ID and minimum age 21. Sunday dress becomes lingerie from 22:00.",
+    "ease": "You can use it like a couples’ night out rather than an obligation to take part in anything. Stay together, start with the public areas, have food/drinks, use the sauna or jacuzzi if comfortable and only move on if both of you actively want to.",
+    "detail": "Official Sunday hours should be rechecked before travel. Drinks and hot/cold buffet are included according to the venue information.",
+    "links": [
+      [
+        "Google Maps",
+        "https://www.google.com/maps/search/?api=1&query=Only4You%20Rue%20Fonds%20de%20nos%20Bois%203%20Merbes-le-Ch%C3%A2teau%20Belgium"
+      ],
+      [
+        "Official information",
+        "https://www.only4you.be/club-libertin/infos/"
+      ]
+    ]
+  },
+  {
+    "when": "Sun 11 Oct · evening",
+    "name": "La Doña",
+    "flames": "🔥🔥🔥",
+    "location": "Chaussée de Belle-Vue 104A, 7322 Bernissart, Belgium",
+    "price": "Recheck directly before going",
+    "type": "Adult sauna / libertine venue",
+    "expect": "The saved plan describes this as an adult sauna/libertine option. I could not verify a reliable current official venue page, so treat the saved hours and entry information as provisional rather than relying on them.",
+    "ease": "Because the current rules are not well documented online, this is one to choose only after phoning/checking directly. If anything feels unclear at the door, skip it; there are other better-documented options on the trip.",
+    "detail": "Saved Sunday hours were 20:00–03:00. Recheck entry rules, dress code, price and opening before leaving La Cure.",
+    "links": [
+      [
+        "Google Maps",
+        "https://www.google.com/maps/search/?api=1&query=La%20Do%C3%B1a%20Chauss%C3%A9e%20de%20Belle-Vue%20104A%20Bernissart%20Belgium"
+      ]
+    ]
+  },
+  {
+    "when": "Mon 12 Oct · 12:00–17:00",
+    "name": "XEN Club",
+    "flames": "🔥🔥",
+    "location": "Grand'Route 8, 7604 Péruwelz, Belgium",
+    "price": "Weekday couples €40",
+    "type": "Daytime libertine club",
+    "expect": "The official site describes a discreet, convivial club. Monday is a daytime session. Drinks and full club access are included and no membership card or reservation is required.",
+    "ease": "This may feel less intense than arriving at a late-night club because it is a daytime session. You can stay together, have a drink and see the venue before deciding whether to stay. The practical downside is that it clashes with your Pairi Daiza day.",
+    "detail": "Official Monday hours: 12:00–17:00. Only worth doing if you both deliberately choose to leave Pairi Daiza early after Edenya.",
+    "links": [
+      [
+        "Google Maps",
+        "https://www.google.com/maps/search/?api=1&query=XEN%20Club%20Grand'Route%208%20P%C3%A9ruwelz%20Belgium"
+      ],
+      [
+        "Official site",
+        "https://xen-club.be/accueil"
+      ]
+    ]
+  },
+  {
+    "when": "Thu 15–Fri 16 Oct",
+    "name": "BisouX Caen · Love Room",
+    "flames": "🔥🔥🔥",
+    "location": "35 Avenue Daniel Bruand, 14112 Biéville-Beuville, France",
+    "price": "€151.30 originally paid · awaiting reconfirmation",
+    "type": "Private couples’ Love Room — not a club",
+    "expect": "This is completely private to the two of you. The current room page shows a two-person spa bath, walk-in shower, mood lighting, Bluetooth speaker, Netflix and adult-themed furniture. There is no social-club element or other couples to deal with.",
+    "ease": "This is the lowest-pressure option because you control the room and the pace. Nothing is expected beyond enjoying the hotel together. If Guannan is unsure about clubs, this gives you the adult-themed experience without a public/social setting.",
+    "detail": "Intended 15–16 October stay. Self check-in from 18:30, checkout by 10:00 and free gravel courtyard parking. Waiting for BisouX to reconfirm the original booking.",
+    "status": "AWAITING RECONFIRMATION",
+    "links": [
+      [
+        "Google Maps",
+        "https://www.google.com/maps/search/?api=1&query=35%20Avenue%20Daniel%20Bruand%2014112%20Bi%C3%A9ville-Beuville%20France"
+      ],
+      [
+        "Room & photos",
+        "https://bisoux-caen.fr/love-room/bisoux-love-room-romantique-et-sensuel-normandie/"
+      ]
+    ]
+  },
+  {
+    "when": "Fri 16 Oct · late night",
+    "name": "Sauna California · Rennes",
+    "flames": "🔥🔥🔥",
+    "location": "7 Rue de Léon, 35000 Rennes, France",
+    "price": "Recent couple price around €20 · recheck",
+    "type": "Mixed adult sauna / wellness venue",
+    "expect": "This is a sauna-style venue rather than a conventional nightclub, with sauna/hammam/jacuzzi-type facilities and adult areas. Friday is normally a mixed session, but the live schedule and entry rules should be checked again on the day.",
+    "ease": "Treat it first as a late-night sauna visit: arrive together, get settled, see the facilities and only stay while both of you are comfortable. It is optional after a long Mont-Saint-Michel day, so skipping it if either of you is tired is built into the plan.",
+    "detail": "Rennes is roughly 1h10–1h15 each way from Mont-Saint-Michel. The saved plan aims for about 22:45 arrival and a return to Le Saint Aubert around 02:00–02:15.",
+    "links": [
+      [
+        "Google Maps",
+        "https://www.google.com/maps/search/?api=1&query=Sauna%20California%207%20Rue%20de%20L%C3%A9on%20Rennes%20France"
+      ],
+      [
+        "Official access info",
+        "https://www.saunacalifornia.com/acces/"
+      ]
+    ]
+  }
 ];
+
 
 function calendarEvents(items){return `<section class="trip-section"><div class="section-title"><h2>From the shared calendar</h2></div><div class="trip-calendar">${items.map(([when,title,detail])=>`<article><span class="trip-badge calendar">CALENDAR</span><strong>${esc(when)}</strong><h3>${esc(title)}</h3><p>${esc(detail)}</p></article>`).join('')}</div></section>`;}
 function cleanPlaceTitle(title){return String(title||'').replace(/^(Drive to|Walk from|Walk to|Leave|Arrive|Park ·|Check in ·|Dinner ·|Lunch ·|Optional ·|Tram 9 ·|Metro A ·|Trolleybus 59 →)\s*/i,'').replace(/·.*$/,'').trim();}
@@ -178,7 +296,9 @@ function hotelCards(scope){
   return '<article class="trip-hotel-detail-card">'+(h.image?'<a class="trip-room-photo" href="'+esc(h.gallery||h.site)+'" target="_blank" rel="noopener noreferrer"><img src="'+esc(h.image)+'" alt="'+esc(h.room+' at '+h.name)+'" loading="lazy"><span>Room photos ↗</span></a>':'<a class="trip-room-photo placeholder" href="'+esc(h.gallery||h.site)+'" target="_blank" rel="noopener noreferrer"><span>Open room photos ↗</span></a>')+'<div class="trip-hotel-detail-copy"><div class="trip-hotel-status"><span>'+esc(h.dates)+'</span><span class="trip-badge booked">'+esc(h.status)+'</span></div><h3>'+esc(h.name)+'</h3><p class="trip-hotel-room">'+esc(h.room)+'</p><p><strong>'+esc(h.price)+'</strong></p><p>'+esc(h.details)+'</p><p class="muted">'+esc(h.address)+'</p><div class="actions">'+links.join('')+'</div></div></article>';
  }).join('')+'</div><div class="notice trip-notice"><strong>Confirmation security:</strong> booking status, dates, room type, price and inclusions are shown here. Booking PINs and property access codes stay out of the website source; use the Gmail button for the original confirmation.</div></section>';
 }
-function spicyPane(){return `<section class="trip-spicy-pane" data-trip-pane="spicy" id="spicy" hidden><div class="spicy-hero"><div><span class="trip-badge spicy">🔥 SPICY 🔥</span><h2>Adult options</h2><p>These are optional adult stops already saved around the road trip. They stay separate from the main itinerary so the normal day plan is easy to scan.</p></div><div class="spicy-flames" aria-hidden="true">🔥🔥🔥</div></div><div class="spicy-grid">${SPICY.map(x=>`<article class="spicy-card"><div class="spicy-card-top"><span>${esc(x.when)}</span><strong aria-label="Spicy rating">${esc(x.flames)}</strong></div><h3>🔥 ${esc(x.name)}</h3>${x.status?`<span class="trip-badge spicy">${esc(x.status)}</span>`:''}<p class="spicy-location">${esc(x.location)}</p><p>${esc(x.detail)}</p><div class="actions">${x.links.map(([label,href])=>external(href,label)).join('')}</div></article>`).join('')}</div><p class="muted spicy-foot">Opening hours, prices and entry rules can change. Recheck the venue before travelling.</p></section>`;}
+function spicyPane(){
+ return '<section class="trip-spicy-pane" data-trip-pane="spicy" id="spicy" hidden><div class="spicy-hero"><div><span class="trip-badge spicy">🔥 SPICY 🔥</span><h2>Adult options — at your pace</h2><p>These are choices, not commitments. Agree together what is and is not on the table before going. Stay together, start slowly, ask staff when a rule is unclear and leave whenever either of you wants to. Going in just to look around or use the normal bar/wellness areas is a perfectly valid plan.</p></div><div class="spicy-flames" aria-hidden="true">🔥🔥🔥</div></div><div class="spicy-grid">'+SPICY.map(x=>'<article class="spicy-card"><div class="spicy-card-top"><span>'+esc(x.when)+'</span><strong aria-label="Spicy rating">'+esc(x.flames)+'</strong></div><h3>🔥 '+esc(x.name)+'</h3>'+(x.status?'<span class="trip-badge spicy">'+esc(x.status)+'</span>':'')+'<p class="spicy-type">'+esc(x.type)+'</p><p class="spicy-location">'+esc(x.location)+'</p><p><strong>'+esc(x.price)+'</strong></p><h4>What to expect</h4><p>'+esc(x.expect)+'</p><h4>For Guannan / keeping it comfortable</h4><p>'+esc(x.ease)+'</p><p>'+esc(x.detail)+'</p><div class="actions">'+x.links.map(y=>external(y[1],y[0])).join('')+'</div></article>').join('')+'</div><p class="muted spicy-foot">Venue hours, prices and rules can change. The page deliberately treats all of these as optional; recheck the venue before travelling.</p></section>';
+}
 function tripViewTabs(){return `<nav class="trip-view-tabs" aria-label="Trip view"><button type="button" data-trip-view="itinerary" aria-selected="true">🗺️ Itinerary</button><button type="button" data-trip-view="spicy" aria-selected="false">🔥 Spicy 🔥</button></nav>`;}
 function bindTripInteractions(A){const root=A.content;if(!root)return;const panes=[...root.querySelectorAll('[data-trip-pane]')],tabs=[...root.querySelectorAll('[data-trip-view]')];
  const setPane=(name,writeHash=true)=>{if(panes.length){panes.forEach(p=>p.hidden=p.dataset.tripPane!==name);tabs.forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tripView===name)));}if(writeHash){const hash=name==='spicy'?'#spicy':'';history.replaceState({},'',location.pathname+location.search+hash);}if(name==='spicy')requestAnimationFrame(()=>root.querySelector('#spicy')?.scrollIntoView({behavior:'smooth',block:'start'}));};
