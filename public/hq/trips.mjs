@@ -56,35 +56,35 @@ const ROAD={
   days:[
     {date:'Fri 9 Oct',title:'Dublin → ferry',summary:'Start of the road trip.',stops:[
       ['15:30','Leave Rathingle','Drive to Dublin Port.'],
-      ['17:00','Be at the ferry','Calendar reminder. Vehicle check-in planned before sailing.'],
+      ['17:00','Aim to be at Dublin Ferryport','Irish Ferries vehicle check-in closes at 17:30 for this France sailing.'], 
       ['18:30','Irish Ferries departs Dublin','Overnight cabin to Cherbourg.']
     ]},
     {date:'Sat 10 Oct',title:'Cherbourg → Rouen',summary:'Long first drive after the ferry.',stops:[
-      ['15:30','Arrive Cherbourg','Calendar arrival time.'],
+      ['15:30','Arrive Cherbourg','France local time.'], 
       ['16:15','Drive to Rouen','About 3–3.25 hours including a short stop.'],
       ['~19:30','Check in · Urban Style Hotel de l’Europe','87 rue aux Ours. Parking de la Pucelle about 50 m away.'],
       ['20:15','Rouen evening','Rouen à Table! / cathedral atmosphere, then L’Entrepôt Food Hall if needed.']
     ],links:[['Cherbourg → Rouen',route('Cherbourg Ferry Terminal','Urban Style Hotel de l’Europe Rouen')],['Hotel',MAPS("Urban Style Hotel de l'Europe Rouen")]]},
-    {date:'Sun 11 Oct',title:'Rouen → Nausicaá → Soignies',summary:'Early start for the aquarium, then into Belgium.',stops:[
+    {date:'Sun 11 Oct',title:'Rouen → Nausicaá → Jurbise',summary:'Early start for the aquarium, then La Cure. Nausicaá vouchers are bought but the redemption issue is not resolved yet.',stops:[
       ['06:30','Leave Rouen','Drive toward Boulogne-sur-Mer.'],
       ['09:10','Park near Nausicaá','Try Q-Park Nausicaá.'],
-      ['09:30–14:00','Nausicaá','Main aquarium visit. Lunch inside around 13:20 if useful.'],
-      ['14:35','Drive to Soignies','About 2h40 baseline.'],
-      ['18:00','Check in · Aux Lits de la Senne','Place du Jeu de Balle 6 · free on-site parking.']
-    ],links:[['Nausicaá',MAPS('Nausicaá Boulogne-sur-Mer')],['Nausicaá → Soignies',route('Nausicaá Boulogne-sur-Mer','Aux Lits de la Senne Soignies')]]},
+      ['09:30–14:00','Nausicaá · planned, entry not yet confirmed','Two Social Deal vouchers were bought, but the Nausicaá site reported the voucher as no longer valid when redemption was attempted. Resolve this before relying on entry.'], 
+      ['14:00','Drive to Jurbise','Allow roughly 2.5–3 hours from Boulogne-sur-Mer.'], 
+      ['~16:45–18:00','Check in · La Cure de Masnuy-Saint-Pierre','Rue Lieutenant de Saint-Martin 1, Jurbise. Confirmed and paid. Check-in closes at 18:00.']
+    ],links:[['Nausicaá',MAPS('Nausicaá Boulogne-sur-Mer')],['Nausicaá → La Cure',route('Nausicaá Boulogne-sur-Mer','La Cure de Masnuy-Saint-Pierre Jurbise')]]},
     {date:'Mon 12 Oct',title:'Pairi Daiza · day 1 + Edenya',summary:'Tickets and parking are booked. Edenya is booked 10:00–12:00.',status:'BOOKED',stops:[
       ['~09:00','Drive to Pairi Daiza','Allow time to park and get through the entrance.'],
       ['10:00–12:00','Edenya · booked','2 × Edenya entry. This replaces the older workbook note that treated Edenya as optional.'],
       ['Rest of day','Pairi Daiza · day 1','Full park day. Entry and one-day parking are booked.'],
-      ['After closing','Food + recharge','Eat in the park or keep dinner simple back in Soignies.']
-    ],links:[['Pairi Daiza',MAPS('Pairi Daiza Brugelette Belgium')],['Soignies → Pairi Daiza',route('Aux Lits de la Senne Soignies','Pairi Daiza')]]},
+      ['After closing','Food + recharge','Eat in the park or keep dinner simple back at La Cure in Jurbise.']
+    ],links:[['Pairi Daiza',MAPS('Pairi Daiza Brugelette Belgium')],['La Cure → Pairi Daiza',route('La Cure de Masnuy-Saint-Pierre Jurbise','Pairi Daiza')]]},
     {date:'Tue 13 Oct',title:'Pairi Daiza · day 2 → Bruges',summary:'Second full zoo day, then drive to Bruges.',status:'BOOKED',stops:[
-      ['07:45–08:30','Breakfast + pack','Check out of Soignies.'],
-      ['09:00','Pairi Daiza · day 2','Entry and one-day parking are booked.'],
+      ['08:00–09:00','Pack + check out','La Cure check-out is 08:00–10:00. There is no breakfast included.'], 
+      ['At opening','Pairi Daiza · day 2','Entry and one-day parking are booked.'], 
       ['After closing','Drive to Bruges','About 1.5–2 hours.'],
-      ['~19:30–20:30','Park + check in','Centrum-’t Zand; hotel is about 100–150 m away.'],
+      ['20:00','Check in · InnBrugas B&B','Expected arrival is 20:00. Garage is booked for both nights.'], 
       ['After check-in','Dinner · FritBar','Loaded fries · target €32–40.']
-    ],links:[['Pairi Daiza → Bruges',route('Pairi Daiza','10 Speelmansrei Bruges')],['Centrum-’t Zand',MAPS("Parking Centrum 't Zand Bruges")]]},
+    ],links:[['Pairi Daiza → InnBrugas',route('Pairi Daiza','InnBrugas B&B Brugge')],['InnBrugas',MAPS('InnBrugas B&B Nikolaas Gombertstraat 21 Brugge')]]},
     {date:'Wed 14 Oct',title:'Bruges full day',summary:'Photos, Belfry, canal, Historium, museums and evening drinks.',stops:[
       ['07:45–08:45','Early photo walk','Boniface Bridge → Arentshof → Rozenhoedkaai → canals.'],
       ['08:45','Breakfast · That’s Toast','Target €20–30.'],
@@ -96,23 +96,24 @@ const ROAD={
       ['18:30','Dinner · De Republiek','Target €30–50.'],
       ['20:00–22:00','Le Trappiste + night photos','Finish at Rozenhoedkaai / Burg / canals.']
     ],links:[['Rozenhoedkaai',MAPS('Rozenhoedkaai Bruges')],['Bruges Belfry',MAPS('Belfry of Bruges')],['Historium',MAPS('Historium Bruges')]]},
-    {date:'Thu 15 Oct',title:'Bruges → Le Bourget → Caen',summary:'Aviation museum then the Love Room.',stops:[
+    {date:'Thu 15 Oct',title:'Bruges → Le Bourget → Caen area',summary:'Aviation museum, then Caen. The old BisouX booking was cancelled and is still awaiting reconfirmation.',stops:[
       ['08:30','Leave Bruges','Pay ’t Zand and head for Le Bourget.'],
       ['~11:15','Park · Musée de l’Air et de l’Espace','Planned museum day.'],
       ['11:30–13:30','Museum block 1','Full passes planned.'],
       ['13:30–14:00','Lunch · L’Hélice','Museum restaurant.'],
       ['14:00–16:30','Museum block 2','Finish the museum before the drive.'],
-      ['16:40','Drive to BisouX Caen','About 2h18 baseline.'],
-      ['~19:15','Check in · BisouX Caen','35 Avenue Daniel Bruand, Biéville-Beuville. Paid booking; free gravel parking.'],
+      ['16:40','Drive toward Caen','About 2h18 baseline from Le Bourget.'], 
+      ['~19:15','Caen accommodation · NOT YET CONFIRMED','The original BisouX Love Room booking was cancelled in August. A reinstatement request was sent on 30 September; no reply has arrived yet. Have a confirmed stay before travel.'], 
       ['Before bed','Contact Le Saint Aubert','Ask for the next-day barrier code.']
-    ],links:[['Le Bourget museum',MAPS("Musée de l'Air et de l'Espace Le Bourget")],['Le Bourget → BisouX',route("Musée de l'Air et de l'Espace","BisouX Caen")]]},
-    {date:'Fri 16 Oct',title:'Mont-Saint-Michel day',summary:'Windmill, Abbey, Alligator Bay and dusk photos.',stops:[
-      ['07:45–08:00','Leave BisouX','Early start.'],
+    ],links:[['Le Bourget museum',MAPS("Musée de l'Air et de l'Espace Le Bourget")],['Le Bourget → Caen',route("Musée de l'Air et de l'Espace","Caen France")]]},
+    {date:'Fri 16 Oct',title:'Caen area → Mont-Saint-Michel',summary:'Windmill, Abbey, Alligator Bay, Le Saint Aubert check-in and dusk photos.',stops:[
+      ['07:45–08:00','Leave Caen-area accommodation','Exact starting point depends on the confirmed overnight stay.'], 
       ['10:00–10:35','Moulin de Moidrey','Quick visit before the Mont.'],
-      ['10:45','Le Saint Aubert parking','Hotel-area parking; barrier code needed.'],
+      ['10:45','Le Saint Aubert / hotel parking area','Contact the hotel on 15 October for the one-time access code. October parking is listed as €10 per 24 hours.'], 
       ['11:45–13:00','Mont-Saint-Michel Abbey','Main visit.'],
       ['13:00–13:35','Lunch · Crêperie La Cloche','Only if there is no wait; otherwise takeaway.'],
-      ['14:30–16:30','Alligator Bay','Reconfirm October hours before travel.'],
+      ['14:30–16:15','Alligator Bay','Reconfirm October hours before travel.'],
+      ['16:15–17:00','Check in · Le Saint Aubert','Confirmed one-night stay. Check-in 16:00–19:00; breakfast included; double-bed request approved.'], 
       ['18:15–21:30','Dusk/night Mont photos','Budget takeaway + walk one direction on the causeway.']
     ],links:[['Mont-Saint-Michel',MAPS('Mont-Saint-Michel Abbey')],['Alligator Bay',MAPS('Alligator Bay Beauvoir France')]]},
     {date:'Sat 17 Oct',title:'D-Day Experience → Cherbourg ferry',summary:'Museum morning, then ferry home.',stops:[
@@ -121,7 +122,7 @@ const ROAD={
       ['12:00–13:00','Optional lunch · Les Ponts d’Ouve','Use if timing works.'],
       ['13:00','Drive toward Cherbourg','Allow a flexible stop for waterfront / café / shopping.'],
       ['15:30–16:15','Fuel + ferry snacks','Do this before port check-in.'],
-      ['16:30–17:00','Arrive Cherbourg ferry terminal','Comfortable buffer before sailing.'],
+      ['18:00','Arrive Cherbourg ferry terminal','Latest vehicle check-in is 18:30. Aim for about 18:00.'], 
       ['19:30 local','Irish Ferries · Cherbourg → Dublin','Calendar: 18:30 Dublin time. Overnight cabin.']
     ],links:[['D-Day Experience',MAPS('D-Day Experience Saint-Côme-du-Mont')],['D-Day Experience → Cherbourg',route('D-Day Experience Saint-Côme-du-Mont','Cherbourg Ferry Terminal')]]},
     {date:'Sun 18 Oct',title:'Arrive Dublin',summary:'End of the road trip.',stops:[
@@ -144,12 +145,15 @@ function prague(A){A.content.innerHTML=pageHead('PRAGUE · 3–7 OCTOBER','Guann
 ['Wed 7 Oct · 11:50 Prague','EI0643 · Prague → Dublin','Arrives Dublin 13:25 local time.']
 ])}${days(PRAGUE.days)}<section class="trip-section"><div class="section-title"><h2>Saved photo stops</h2></div><div class="trip-photo-grid">${photo(wikimedia('Astronomical Clock.JPG'),'Prague Astronomical Clock','Astronomical Clock · Tuesday')}${photo(wikimedia('Old Town Square, Prague 05.jpg'),'Old Town Square in Prague','Old Town Square · Tuesday')}${photo(wikimedia('Praha - Staroměstská radnice.jpg'),'Prague Old Town Hall','Old Town Hall · Tuesday')}${photo(wikimedia('Prague Old Town Hall, astronomical clock, c1919.jpg'),'Historic Prague Old Town Hall image','Old Town detail')}</div></section><section class="trip-section" id="useful"><div class="section-title"><h2>Useful on the phone</h2></div><div class="trip-link-grid"><article><span>🚋</span><h3>Getting around</h3><p>Use PID Lítačka for live routes and ticket options. Planned transport is about 308 CZK total.</p>${external('https://pidlitacka.cz/en','PID Lítačka')}</article><article><span>✈️</span><h3>Airport route</h3><p>Walk to Flora → Metro A → Nádraží Veleslavín → trolleybus 59.</p>${external(route('Congress & Wellness Hotel Olšanka, Prague','Václav Havel Airport Prague'),'Open airport route')}</article><article><span>📍</span><h3>Hotel</h3><p>Congress & Wellness Hotel Olšanka, Táboritská 23/1000, Prague 3.</p>${external(MAPS('Congress & Wellness Hotel Olšanka Prague'),'Open hotel map')}</article></div></section>${attribution([['Prague clock · J. Miers / Wikimedia Commons','https://commons.wikimedia.org/wiki/File:Astronomical_Clock.JPG'],['Old Town Square / Wikimedia Commons','https://commons.wikimedia.org/wiki/File:Old_Town_Square,_Prague_05.jpg'],['Old Town Hall / Wikimedia Commons','https://commons.wikimedia.org/wiki/File:Praha_-_Starom%C4%9Bstsk%C3%A1_radnice.jpg']])}`;}
 
-function road(A){A.content.innerHTML=pageHead('FRANCE + BELGIUM · 9–18 OCTOBER','France + Belgium road trip','Ferry, hotels, attraction days and the route in one mobile page. Booking references and access PINs are deliberately left off the page.',`<div class="actions">${external(MAPS('Pairi Daiza'),'Pairi Daiza map')}</div>`)+jump(ROAD.days)+`<section class="trip-hero road"><div class="trip-hero-copy"><span class="trip-badge">10 DAYS · ROAD TRIP</span><h2>Dublin → Normandy → Belgium → Normandy → Dublin</h2><p>The updated workbook is the base plan. Shared-calendar bookings override older notes where they differ.</p><dl class="trip-facts"><div><dt>Ferry out</dt><dd>Fri 9 Oct · depart Dublin 18:30. Be at the port by 17:00.</dd></div><div><dt>Arrive France</dt><dd>Sat 10 Oct · Cherbourg 15:30.</dd></div><div><dt>Pairi Daiza</dt><dd>12–13 Oct · 2 adults + parking booked both days.</dd></div><div><dt>Ferry home</dt><dd>Sat 17 Oct · 19:30 Cherbourg local. Arrive Dublin Sun 18 Oct 14:30.</dd></div></dl></div><figure class="trip-hero-image"><img src="${wikimedia('BE-brugge-rozenhoedkai.jpg')}" alt="Rozenhoedkaai and canals in Bruges" loading="eager" referrerpolicy="no-referrer"><figcaption>Bruges · 13–15 October.</figcaption></figure></section><div id="calendar"></div>${calendarEvents([
-['Fri 9 Oct','Ferry out','Be at Dublin Port by 17:00 · sailing 18:30.'],
-['Sat 10 Oct · 15:30','Arrive France','Cherbourg arrival, then drive to Rouen.'],
-['Mon 12–Tue 13 Oct','Pairi Daiza · booked','2 adult entries + one-day parking for both days.'],
+function road(A){A.content.innerHTML=pageHead('FRANCE + BELGIUM · 9–18 OCTOBER','France + Belgium road trip','Ferry, hotels, attraction days and the route in one mobile page. Booking references and access PINs are deliberately left off the page.',`<div class="actions">${external(MAPS('Pairi Daiza'),'Pairi Daiza map')}</div>`)+jump(ROAD.days)+`<section class="trip-hero road"><div class="trip-hero-copy"><span class="trip-badge">10 DAYS · ROAD TRIP</span><h2>Dublin → Normandy → Belgium → Normandy → Dublin</h2><p>The updated workbook is the base plan. Shared-calendar bookings override older notes where they differ.</p><dl class="trip-facts"><div><dt>Ferry out</dt><dd>Fri 9 Oct · depart Dublin 18:30. Vehicle check-in closes 17:30; aim for 17:00.</dd></div><div><dt>Arrive France</dt><dd>Sat 10 Oct · Cherbourg 15:30.</dd></div><div><dt>Pairi Daiza</dt><dd>12–13 Oct · 2 adults + parking booked both days.</dd></div><div><dt>Ferry home</dt><dd>Sat 17 Oct · 19:30 Cherbourg local. Arrive Dublin Sun 18 Oct 14:30.</dd></div></dl></div><figure class="trip-hero-image"><img src="${wikimedia('BE-brugge-rozenhoedkai.jpg')}" alt="Rozenhoedkaai and canals in Bruges" loading="eager" referrerpolicy="no-referrer"><figcaption>Bruges · 13–15 October.</figcaption></figure></section><div id="calendar"></div>${calendarEvents([
+['Fri 9 Oct','Ferry out','Aim for Dublin Port 17:00 · latest check-in 17:30 · sailing 18:30.'], 
+['Sat 10 Oct · 15:30 France time','Arrive France','Cherbourg arrival, then drive to Rouen.'], 
+['Sun 11–Tue 13 Oct','La Cure · confirmed','Jurbise · 2 nights · check-in 15:00–18:00 · check-out by 10:00 Tuesday.'],
+['Mon 12–Tue 13 Oct','Pairi Daiza · booked','2 adult entries + one-day parking for both days.'], 
 ['Mon 12 Oct · 10:00–12:00','Edenya · booked','2 entries. This is the confirmed slot from the calendar.'],
+['Tue 13–Thu 15 Oct','InnBrugas · confirmed','Bruges · garage + breakfast booked · expected arrival 20:00.'],
+['Fri 16–Sat 17 Oct','Le Saint Aubert · confirmed','One night · breakfast included · check-in 16:00–19:00.'], 
 ['Sat 17 Oct · 19:30 local','Cherbourg → Dublin','Overnight ferry; arrives Dublin Sun 18 Oct at 14:30.']
-])}<section class="trip-section"><div class="section-title"><h2>Route at a glance</h2></div><div class="trip-route"><div>🇮🇪 <strong>Dublin</strong><small>9 Oct</small></div><span>→</span><div>🇫🇷 <strong>Rouen</strong><small>10 Oct</small></div><span>→</span><div>🐠 <strong>Nausicaá</strong><small>11 Oct</small></div><span>→</span><div>🇧🇪 <strong>Soignies</strong><small>11–13</small></div><span>→</span><div>🐼 <strong>Pairi Daiza</strong><small>12–13</small></div><span>→</span><div>🇧🇪 <strong>Bruges</strong><small>13–15</small></div><span>→</span><div>✈️ <strong>Le Bourget</strong><small>15 Oct</small></div><span>→</span><div>❤️ <strong>Caen</strong><small>15 Oct</small></div><span>→</span><div>🏰 <strong>Mont-Saint-Michel</strong><small>16 Oct</small></div><span>→</span><div>🎖️ <strong>D-Day Experience</strong><small>17 Oct</small></div><span>→</span><div>⛴️ <strong>Cherbourg</strong><small>17 Oct</small></div></div></section>${days(ROAD.days)}<section class="trip-section"><div class="section-title"><h2>Places to look forward to</h2></div><div class="trip-photo-grid">${photo(wikimedia('Rouen-cathedral.jpg'),'Rouen Cathedral at sunset','Rouen · Saturday night')}${photo(wikimedia('Pairi-Daiza.jpg'),'Pairi Daiza in Belgium','Pairi Daiza · Monday + Tuesday')}${photo(wikimedia('BE-brugge-rozenhoedkai.jpg'),'Rozenhoedkaai in Bruges','Bruges · Wednesday photo route')}${photo(wikimedia('Panorama de la baie du Mont Saint-Michel.jpg'),'Panorama of Mont-Saint-Michel bay','Mont-Saint-Michel · Friday')}</div></section><section class="trip-section" id="useful"><div class="section-title"><h2>Hotels + parking</h2></div><div class="trip-hotel-grid"><article><span>10 Oct</span><h3>Urban Style Hotel de l’Europe · Rouen</h3><p>87 rue aux Ours. Parking de la Pucelle about 50 m away; hotel preferential 16h rate about €10–11.</p></article><article><span>11–13 Oct</span><h3>Aux Lits de la Senne · Soignies</h3><p>Place du Jeu de Balle 6. Free on-site parking.</p></article><article><span>13–15 Oct</span><h3>Hotel Entree · Bruges</h3><p>10 Speelmansrei. Use Centrum-’t Zand; about 100–150 m walk.</p></article><article><span>15–16 Oct</span><h3>BisouX Caen</h3><p>35 Avenue Daniel Bruand, Biéville-Beuville. Love Room; free gravel parking.</p></article><article><span>16–17 Oct</span><h3>Le Saint Aubert · Mont-Saint-Michel</h3><p>La Caserne. Breakfast included. Hotel-area parking requires the barrier code requested on 15 Oct.</p></article></div><div class="notice trip-notice"><strong>Kept private:</strong> booking confirmation numbers, payment references and access PINs are not shown here.</div></section>${attribution([['Rouen · Kaelkael / Wikimedia Commons','https://commons.wikimedia.org/wiki/File:Rouen-cathedral.jpg'],['Pairi Daiza · Arnau Domènech / Wikimedia Commons','https://commons.wikimedia.org/wiki/File:Pairi-Daiza.jpg'],['Bruges · Balou46 / Wikimedia Commons','https://commons.wikimedia.org/wiki/File:BE-brugge-rozenhoedkai.jpg'],['Mont-Saint-Michel · Obit / Wikimedia Commons','https://commons.wikimedia.org/wiki/File:Panorama_de_la_baie_du_Mont_Saint-Michel.jpg']])}`;}
+])}<section class="trip-section"><div class="section-title"><h2>Route at a glance</h2></div><div class="trip-route"><div>🇮🇪 <strong>Dublin</strong><small>9 Oct</small></div><span>→</span><div>🇫🇷 <strong>Rouen</strong><small>10 Oct</small></div><span>→</span><div>🐠 <strong>Nausicaá</strong><small>11 Oct</small></div><span>→</span><div>🇧🇪 <strong>Jurbise</strong><small>11–13</small></div><span>→</span><div>🐼 <strong>Pairi Daiza</strong><small>12–13</small></div><span>→</span><div>🇧🇪 <strong>Bruges</strong><small>13–15</small></div><span>→</span><div>✈️ <strong>Le Bourget</strong><small>15 Oct</small></div><span>→</span><div>⚠️ <strong>Caen</strong><small>15 Oct · stay pending</small></div><span>→</span><div>🏰 <strong>Mont-Saint-Michel</strong><small>16 Oct</small></div><span>→</span><div>🎖️ <strong>D-Day Experience</strong><small>17 Oct</small></div><span>→</span><div>⛴️ <strong>Cherbourg</strong><small>17 Oct</small></div></div></section>${days(ROAD.days)}<section class="trip-section"><div class="section-title"><h2>Places to look forward to</h2></div><div class="trip-photo-grid">${photo(wikimedia('Rouen-cathedral.jpg'),'Rouen Cathedral at sunset','Rouen · Saturday night')}${photo(wikimedia('Pairi-Daiza.jpg'),'Pairi Daiza in Belgium','Pairi Daiza · Monday + Tuesday')}${photo(wikimedia('BE-brugge-rozenhoedkai.jpg'),'Rozenhoedkaai in Bruges','Bruges · Wednesday photo route')}${photo(wikimedia('Panorama de la baie du Mont Saint-Michel.jpg'),'Panorama of Mont-Saint-Michel bay','Mont-Saint-Michel · Friday')}</div></section><section class="trip-section" id="useful"><div class="section-title"><h2>Hotels + parking</h2></div><div class="trip-hotel-grid"><article><span>10–11 Oct</span><h3>Urban Style Hotel de l’Europe · Rouen</h3><p>87 rue aux Ours. Confirmed one night. Check-in 15:00–23:30; check-out 06:30–11:00. Breakfast is optional at €15 per person.</p></article><article><span>11–13 Oct</span><h3>La Cure de Masnuy-Saint-Pierre · Jurbise</h3><p>Confirmed and paid. Check-in 15:00–18:00; check-out 08:00–10:00. Two-bedroom apartment; no meal option included.</p></article><article><span>13–15 Oct</span><h3>InnBrugas B&B · Bruges</h3><p>Nikolaas Gombertstraat 21. Expected arrival 20:00. Garage is booked for both nights and breakfast buffet for both mornings.</p></article><article><span>15–16 Oct</span><h3>Caen accommodation · awaiting confirmation</h3><p>The original BisouX Love Room stay was cancelled in August. Reinstatement was requested on 30 September but has not yet been confirmed.</p></article><article><span>16–17 Oct</span><h3>Le Saint Aubert · Mont-Saint-Michel</h3><p>Confirmed one night. Check-in 16:00–19:00; check-out 07:00–11:00. Breakfast included; double-bed request approved. Contact the hotel on 15 Oct for the one-time parking/access code; October parking is €10 per 24h.</p></article></div><div class="notice trip-notice"><strong>Current booking changes:</strong> Aux Lits de la Senne and Hotel Entree are cancelled. BisouX Caen is not currently reconfirmed. Nausicaá vouchers are bought but the redemption problem is unresolved.</div><div class="notice trip-notice"><strong>Kept private:</strong> booking confirmation numbers, payment references and access PINs are not shown here.</div></section>${attribution([['Rouen · Kaelkael / Wikimedia Commons','https://commons.wikimedia.org/wiki/File:Rouen-cathedral.jpg'],['Pairi Daiza · Arnau Domènech / Wikimedia Commons','https://commons.wikimedia.org/wiki/File:Pairi-Daiza.jpg'],['Bruges · Balou46 / Wikimedia Commons','https://commons.wikimedia.org/wiki/File:BE-brugge-rozenhoedkai.jpg'],['Mont-Saint-Michel · Obit / Wikimedia Commons','https://commons.wikimedia.org/wiki/File:Panorama_de_la_baie_du_Mont_Saint-Michel.jpg']])}`;}
 
 export async function tripsView(A,route){if(route.tab==='prague')return prague(A);if(route.tab==='france-belgium')return road(A);return hub(A);}
