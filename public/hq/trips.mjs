@@ -63,8 +63,9 @@ const ROAD={
       ['15:30','Arrive Cherbourg','France local time.'], 
       ['16:15','Drive to Rouen','About 3–3.25 hours including a short stop.'],
       ['~19:30','Check in · Urban Style Hotel de l’Europe','87 rue aux Ours. Parking de la Pucelle about 50 m away.'],
-      ['20:15','Rouen evening','Rouen à Table! / cathedral atmosphere, then L’Entrepôt Food Hall if needed.']
-    ],links:[['Cherbourg → Rouen',route('Cherbourg Ferry Terminal','Urban Style Hotel de l’Europe Rouen')],['Hotel',MAPS("Urban Style Hotel de l'Europe Rouen")]]},
+      ['20:15','Rouen evening','Rouen à Table! / cathedral atmosphere, then L’Entrepôt Food Hall if needed.'],
+      ['22:30 onward','OPTION · RDV Club Rouen','28 rue Crevier. Optional late stop after dinner; roughly 10–15 minutes on foot from the hotel. Saturday opening 22:30–07:00; no admission after 04:00. Keep the visit flexible because Sunday starts early.']
+    ],links:[['Cherbourg → Rouen',route('Cherbourg Ferry Terminal','Urban Style Hotel de l’Europe Rouen')],['Hotel',MAPS("Urban Style Hotel de l'Europe Rouen")],['RDV Club',MAPS('RDV Club 28 rue Crevier Rouen')],['RDV Club website','https://www.rdvclubrouen.fr/']]},
     {date:'Sun 11 Oct',title:'Rouen → Nausicaá → Jurbise',summary:'Early start for Nausicaá, then La Cure. The two Nausicaá vouchers are verified.',status:'VERIFIED',stops:[
       ['06:30','Leave Rouen','Drive toward Boulogne-sur-Mer.'],
       ['09:10','Park near Nausicaá','Try Q-Park Nausicaá.'],
@@ -148,6 +149,7 @@ function prague(A){A.content.innerHTML=pageHead('PRAGUE · 3–7 OCTOBER','Guann
 function road(A){A.content.innerHTML=pageHead('FRANCE + BELGIUM · 9–18 OCTOBER','France + Belgium road trip','Ferry, hotels, attraction days and the route in one mobile page. Booking references and access PINs are deliberately left off the page.',`<div class="actions">${external(MAPS('Pairi Daiza'),'Pairi Daiza map')}</div>`)+jump(ROAD.days)+`<section class="trip-hero road"><div class="trip-hero-copy"><span class="trip-badge">10 DAYS · ROAD TRIP</span><h2>Dublin → Normandy → Belgium → Normandy → Dublin</h2><p>The updated workbook is the base plan. Shared-calendar bookings override older notes where they differ.</p><dl class="trip-facts"><div><dt>Ferry out</dt><dd>Fri 9 Oct · depart Dublin 18:30. Vehicle check-in closes 17:30; aim for 17:00.</dd></div><div><dt>Arrive France</dt><dd>Sat 10 Oct · Cherbourg 15:30.</dd></div><div><dt>Pairi Daiza</dt><dd>12–13 Oct · 2 adults + parking booked both days.</dd></div><div><dt>Ferry home</dt><dd>Sat 17 Oct · 19:30 Cherbourg local. Arrive Dublin Sun 18 Oct 14:30.</dd></div></dl></div><figure class="trip-hero-image"><img src="${wikimedia('BE-brugge-rozenhoedkai.jpg')}" alt="Rozenhoedkaai and canals in Bruges" loading="eager" referrerpolicy="no-referrer"><figcaption>Bruges · 13–15 October.</figcaption></figure></section><div id="calendar"></div>${calendarEvents([
 ['Fri 9 Oct','Ferry out','Aim for Dublin Port 17:00 · latest check-in 17:30 · sailing 18:30.'], 
 ['Sat 10 Oct · 15:30 France time','Arrive France','Cherbourg arrival, then drive to Rouen.'],
+['Sat 10 Oct · 22:30','OPTION · RDV Club Rouen','Optional after dinner. Club open Saturday 22:30–07:00; no admission after 04:00.'],
 ['Sun 11 Oct · 09:30','Nausicaá · verified','Two Social Deal vouchers are verified.'], 
 ['Sun 11–Tue 13 Oct','La Cure · confirmed','Jurbise · 2 nights · check-in 15:00–18:00 · check-out by 10:00 Tuesday.'],
 ['Mon 12–Tue 13 Oct','Pairi Daiza · booked','2 adult entries + one-day parking for both days.'], 
