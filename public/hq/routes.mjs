@@ -3,7 +3,7 @@ export const NAV=[
  {title:'Menus',icon:'🍋',base:'/menus/planner/',section:'menus',items:[['Current menu','/menus/'],['Weekly planner','/menus/planner/'],['Meal ideas','/menus/ideas/'],['Recipes','/menus/recipes/'],['Shopping list','/menus/shopping/'],['Reviews','/menus/reviews/','intimate'],['Archive','/menus/archive/']]},
  {title:'Family Tree',icon:'🌿',base:'/family-tree/',section:'family',items:[['Overview','/family-tree/'],['Tree view','/family-tree/tree/'],['People','/family-tree/people/'],['Timeline','/family-tree/timeline/'],['Stories','/family-tree/stories/'],['Suggested changes','/family-tree/changes/'],['Access','/family-tree/access/']]},
  {title:'Scrapbook',icon:'♡',base:'/scrapbook/',section:'scrapbook',items:[['Albums','/scrapbook/'],['All memories','/scrapbook/memories/'],['Calendar','/scrapbook/calendar/'],['Favourites','/scrapbook/favourites/'],['Drafts','/scrapbook/drafts/'],['Recycle bin','/scrapbook/recycle/']]},
- {title:'Plans & Adventures',icon:'☀',base:'/plans/',section:'plans',items:[['Our plans','/plans/'],['Calendar','/plans/calendar/'],['Ideas','/plans/ideas/'],['Polls','/plans/polls/'],['Bucket list','/plans/bucket-list/'],['Completed','/plans/completed/'],['Surprise me','/plans/surprise/']]},
+ {title:'Plans & Adventures',icon:'☀',base:'/plans/',section:'plans',items:[['Our plans','/plans/'],['Trips','/plans/trips/'],['Calendar','/plans/calendar/'],['Ideas','/plans/ideas/'],['Polls','/plans/polls/'],['Bucket list','/plans/bucket-list/'],['Completed','/plans/completed/'],['Surprise me','/plans/surprise/']]},
  {title:'Image Library',icon:'▧',base:'/image-library/',section:null,items:[['All images','/image-library/'],['Upload','/image-library/upload/'],['Recycle bin','/image-library/recycle/']]},
  {title:'Shop & Points',icon:'🎁',base:'/shop/',pair:true,items:[['Gift shop','/shop/'],['Basket','/shop/basket/'],['Orders','/orders/'],['Yaya Points','/points/'],['Rewards','/points/rewards/']]},
  {title:'Info Library',icon:'📚',base:'/info/',section:'library',items:[['All pages','/info/'],['Hand wash & allergies','/info/allergies/'],['About Duck & Bear','/about/']]},
@@ -46,6 +46,7 @@ export function resolveRoute(raw,hash=''){const path=normalize(raw);if(aliases[p
  if(path==='/scrapbook/')return {view:'collection',...COLLECTIONS['/scrapbook/albums/'],base:'/scrapbook/albums/'};
  if(['/scrapbook/calendar/','/scrapbook/favourites/','/scrapbook/drafts/','/scrapbook/recycle/'].includes(path))return {view:'scrapbook',section:'scrapbook',tab:path.split('/')[2]};
  if(path==='/plans/')return {view:'collection',...COLLECTIONS['/plans/adventures/'],base:'/plans/adventures/'};
+ if(path==='/plans/trips/'||path==='/plans/prague/'||path==='/plans/france-belgium/')return {view:'trips',section:'plans',tab:path==='/plans/prague/'?'prague':path==='/plans/france-belgium/'?'france-belgium':'index'};
  if(['/plans/calendar/','/plans/completed/','/plans/surprise/'].includes(path))return {view:'plans',section:'plans',tab:path.split('/')[2]};
  if(['/our-space/','/our-space/this-week/','/our-space/activity/','/our-space/notifications/','/our-space/favourites/'].includes(path))return {view:'home',tab:path.split('/')[2]||'today'};
  if(['/image-library/','/image-library/upload/','/image-library/recycle/'].includes(path))return {view:'images',tab:path.split('/')[2]||'all'};
