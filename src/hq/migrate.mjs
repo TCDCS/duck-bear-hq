@@ -168,12 +168,10 @@ export async function importRecentMenuRecipes(env,user){
  if(!pair)return;
  const owner=pair.user_id,stamp=now(),steps=[];
  for(const r of RECENT_MENU_RECIPES){
-  steps.push(env.DB.prepare('INSERT OR IGNORE INTO hq_records(id,kind,section,parent_id,creator_id,updated_by,revision,data,created_at,updated_at) VALUES(?,?,?,?,?,?,1,?,?,?)').bind(r.id,'recipe','menus',null,owner,owner,JSON.stringify(r.data),stamp,stamp));
-  const serving=await env.DB.prepare("SELECT data FROM hq_records WHERE id=? AND kind='serving' AND deleted_at IS NULL").bind(r.servingId).first();
-  if(serving){
-   const data={...JSON.parse(serving.data),recipeId:r.id,ingredients:r.data.ingredients,ingredientsConfirmed:true};
-   steps.push(env.DB.prepare('UPDATE hq_records SET data=?,revision=revision+1,updated_by=?,updated_at=? WHERE id=? AND deleted_at IS NULL').bind(JSON.stringify(data),owner,stamp,r.servingId));
-  }
+  // Published servings are deliberately immutable. Keep the recipe link on the
+  // recipe record so this data migration never bypasses that protection.
+  const data={...r.data,servingId:r.servingId};
+  steps.push(env.DB.prepare('INSERT OR IGNORE INTO hq_records(id,kind,section,parent_id,creator_id,updated_by,revision,data,created_at,updated_at) VALUES(?,?,?,?,?,?,1,?,?,?)').bind(r.id,'recipe','menus',null,owner,owner,JSON.stringify(data),stamp,stamp));
  }
  const week=await env.DB.prepare("SELECT data FROM hq_records WHERE id='week-2026-09-28' AND kind='week' AND deleted_at IS NULL").first();
  if(week){
