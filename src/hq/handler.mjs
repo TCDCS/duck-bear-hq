@@ -1,23 +1,26 @@
 import {publicPasskeys,privatePasskeys} from './passkeys.mjs';
 import {resolveRoute} from '../../public/hq/routes.mjs';
 import {extrasApi,publicSite,publicMenuPage} from './extras.mjs';
-import {importLegacy,importRecentMenuRecipes} from './migrate.mjs';
-import {importPrivateHome} from './import-hub.mjs';
-import {ensureLibrary} from './library.mjs';
-async function migrate(env,user){await importPrivateHome(env,user);await importLegacy(env,user);await importRecentMenuRecipes(env,user);await ensureLibrary(env,user);}
+import {migrate} from './readiness.mjs';
 import {backupApi} from './backup.mjs';
 import {mediaApi,publicMedia} from './media.mjs';
 import {adminAccounts} from './admin-accounts.mjs';
 import {mailReady} from './email.mjs';
 import {publicAuth,accountApi} from './auth.mjs';
 import {BUILD,VERSION,SECTIONS,HttpError,fail,json,headers,authenticate,safeUser,sameOrigin,body,queryAll,now,ref,choice} from './core.mjs';
-import {initialise,schemaReady,legacyPair,permission,requireAccess,requireOwner,pairOnly} from './schema.mjs';
+import {initialise,schemaReady,legacyPair,permission,permissionsForUser,requireAccess,requireOwner,pairOnly} from './schema.mjs';
 import {getRecord,listRecords,createRecord,updateRecord,deleteRecord,restoreRecord,history,publishWeek,copyWeek,vote,pollResults} from './records.mjs';
 
 const SHELL_ROOTS=['info','about','adults-only','hub','our-space','family-tree','scrapbook','plans','image-library','settings','admin','shop','orders','points','sign-in','reset-password','verify-email','accept-invitation'];
 export function isHqPath(path){return /^\/(account(?:\.html)?|legacy-account)\/?$/.test(path)||SHELL_ROOTS.some(r=>path==='/'+r||path.startsWith('/'+r+'/'))||/^\/menus\/(planner|ideas|recipes|reviews|shopping|weeks|meals)(\/|$)/.test(path)||/^\/menus\/member\/?$/.test(path);}
 function isLegacyPrivate(path){return path.startsWith('/media/')||path.startsWith('/api/')&&!['/api/health','/api/setup','/api/setup/status','/api/auth/login','/api/auth/recovery/request','/api/auth/recovery/reset'].includes(path)&&!path.startsWith('/api/hq/')&&!path.startsWith('/api/public/')&&!path.startsWith('/api/mango/');}
-async function me(env,user){await migrate(env,user);const access={};for(const s of SECTIONS)access[s]=await permission(env,user,s);const prefs=await env.DB.prepare('SELECT revision,data FROM hq_prefs WHERE user_id=?').bind(user.id).first();const identity=await env.DB.prepare('SELECT email,verified,pending_email FROM hq_identity WHERE user_id=?').bind(user.id).first();return {...(access.intimate.pair?{ratingLabels:{5:'I want to kiss you',6:'I want to fuck you'}}:{}),user:safeUser(user),owner:access.intimate.owner,pair:access.intimate.pair,access,preferences:prefs?JSON.parse(prefs.data):{},preferencesRevision:prefs?.revision||0,email:identity||{email:'',verified:0,pending_email:''},emailConfigured:mailReady(env),version:VERSION,build:BUILD};}
+async function me(env,user){
+ const [access,prefs,identity]=await Promise.all([
+  permissionsForUser(env,user),
+  env.DB.prepare('SELECT revision,data FROM hq_prefs WHERE user_id=?').bind(user.id).first(),
+  env.DB.prepare('SELECT email,verified,pending_email FROM hq_identity WHERE user_id=?').bind(user.id).first()
+ ]);
+ return {...(access.intimate.pair?{ratingLabels:{5:'I want to kiss you',6:'I want to fuck you'}}:{}),user:safeUser(user),owner:access.intimate.owner,pair:access.intimate.pair,access,preferences:prefs?JSON.parse(prefs.data):{},preferencesRevision:prefs?.revision||0,email:identity||{email:'',verified:0,pending_email:''},emailConfigured:mailReady(env),version:VERSION,build:BUILD};}
 async function changeGrant(env,user,section,userId,b){if(!['family','menus','plans'].includes(section))fail(403,'This section cannot be shared.');const access=await requireAccess(env,user,section,'manage');const role=choice(b.role,['none','read','contribute','edit','manage']);if(!access.owner&&role==='manage')fail(403,'Only the owner can appoint access managers.');const target=await env.DB.prepare('SELECT id FROM users WHERE id=? AND active=1').bind(userId).first();if(!target)fail(404,'User not found.');if(await env.DB.prepare('SELECT role FROM hq_pair WHERE user_id=?').bind(userId).first())fail(400,'The household pair does not need a section grant.');if(role==='none')await env.DB.prepare('DELETE FROM hq_grants WHERE user_id=? AND section=?').bind(userId,section).run();else await env.DB.prepare('INSERT INTO hq_grants(user_id,section,role,can_export,updated_by,updated_at) VALUES(?,?,?,?,?,?) ON CONFLICT(user_id,section) DO UPDATE SET role=excluded.role,can_export=excluded.can_export,updated_by=excluded.updated_by,updated_at=excluded.updated_at').bind(userId,section,role,b.export===true?1:0,user.id,now()).run();return {ok:true};}
 async function api(request,env,user,url){
  const passkey=await privatePasskeys(request,env,user,url);if(passkey)return passkey;

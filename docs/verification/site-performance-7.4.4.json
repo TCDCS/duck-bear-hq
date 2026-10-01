@@ -1,0 +1,69 @@
+{
+  "description": "Uncompressed static JavaScript source bytes and database statements per warm request; not transfer bytes or real-user load times.",
+  "baselineCommit": "7dcbcf07668780f97c0d5c31ec8554d261b3c01a",
+  "version": "7.4.4",
+  "before": {
+    "signIn": {
+      "files": [
+        "public/hq/app.mjs",
+        "public/hq/sketch.mjs",
+        "public/hq/passkeys.mjs",
+        "public/hq/client.mjs",
+        "public/hq/webauthn.mjs",
+        "public/hq/routes.mjs",
+        "public/hq/forms.mjs",
+        "public/hq/images.mjs",
+        "public/hq/views.mjs",
+        "public/hq/trips.mjs",
+        "public/hq/settings.mjs",
+        "public/hq/account-admin.mjs",
+        "public/hq/zip.mjs",
+        "public/hq/shop.mjs",
+        "public/hq/adults.mjs"
+      ],
+      "sourceBytes": 233863
+    },
+    "backend": {
+      "/api/hq/me": {
+        "databaseStatements": 27
+      },
+      "/api/hq/records?kind=plan": {
+        "databaseStatements": 13
+      },
+      "/api/hq/records?kind=memory": {
+        "databaseStatements": 13
+      }
+    }
+  },
+  "after": {
+    "signIn": {
+      "files": [
+        "public/hq/app.mjs",
+        "public/hq/sketch.mjs",
+        "public/hq/passkeys.mjs",
+        "public/hq/client.mjs",
+        "public/hq/webauthn.mjs",
+        "public/hq/routes.mjs",
+        "public/hq/lazy-views.mjs"
+      ],
+      "sourceBytes": 49591
+    },
+    "backend": {
+      "/api/hq/me": {
+        "databaseStatements": 7
+      },
+      "/api/hq/records?kind=plan": {
+        "databaseStatements": 6
+      },
+      "/api/hq/records?kind=memory": {
+        "databaseStatements": 6
+      }
+    }
+  },
+  "artwork": {
+    "beforeSvgBytes": 104988,
+    "afterDesktopWebpBytes": 78410,
+    "afterMobileWebpBytes": 43290,
+    "afterWordmarkBytes": 7214
+  }
+}

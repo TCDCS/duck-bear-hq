@@ -1,3 +1,4 @@
+import {titleOf} from './record-title.mjs';
 import {$,$$,api,esc,allRecords,input,textarea,select,check,submit,status,toast,monday,today,imageUrl,pageHead,linkButton} from './client.mjs';
 import {COLLECTIONS,KIND_PATH,recordLink} from './routes.mjs';
 import {chooseImage} from './images.mjs';
@@ -23,7 +24,7 @@ export const FIELDS={
 };FIELDS.recipe=FIELDS.idea;FIELDS.bucket=FIELDS.planIdea;
 const PHOTO_KINDS=['person','story','memory','idea','recipe','serving','review','plan','planIdea','bucket'];
 const COVER_KINDS=['person','album','memory','idea','recipe'];
-export function titleOf(r){return r.data?.name||r.data?.title||r.data?.mealSnapshot?.title||r.data?.text?.slice(0,50)||r.kind;}
+export {titleOf} from './record-title.mjs';
 export async function recordForm(A,route){let record=route.id?(await api('/api/hq/records/'+route.id)).record:null;const q=new URLSearchParams(location.search),data=record?structuredClone(record.data):{course:'dinner',minutes:30,servings:2,confidence:'unknown',layout:'notebook',status:['idea','recipe'].includes(route.kind)?'suggested':['planIdea','bucket'].includes(route.kind)?'someday':route.kind==='memory'?'saved':route.kind==='plan'?'planned':undefined};
  for(const key of ['albumId','personId','from','to','targetId','weekId','servingId','recipeId'])if(!record&&q.get(key))data[key]=q.get(key);
  if(!record&&route.kind==='plan'&&q.get('trip')==='1')data.trip=true;

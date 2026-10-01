@@ -1,4 +1,4 @@
-import {fail,queryAll,now} from './core.mjs';
+import {fail,queryAll,now,SECTIONS} from './core.mjs';
 import {ensureAccountSchema} from './account-schema.mjs';
 
 // Additive schema only. Existing tables, accounts and R2 objects are never dropped.
@@ -58,14 +58,24 @@ export async function initialise(env,user){
  await env.DB.batch(statements);
  await ensureAccountSchema(env);
 }
-export async function permission(env,user,section){
- const pair=await env.DB.prepare('SELECT role FROM hq_pair WHERE user_id=?').bind(user.id).first();
+function accessFromRows(pair,grant,section){
  const owner=pair?.role==='owner';
  if(pair)return {read:true,contribute:true,edit:true,manage:owner,export:true,pair:true,owner};
  if(section==='library')return {read:true,contribute:false,edit:false,manage:false,export:false,pair:false,owner:false};
  if(section==='intimate'||section==='scrapbook'||!['family','menus','plans'].includes(section))return {read:false,contribute:false,edit:false,manage:false,export:false,pair:false,owner:false};
- const grant=await env.DB.prepare('SELECT role,can_export FROM hq_grants WHERE user_id=? AND section=?').bind(user.id,section).first();
  return {read:Boolean(grant),contribute:['contribute','edit','manage'].includes(grant?.role),edit:['edit','manage'].includes(grant?.role),manage:grant?.role==='manage',export:Boolean(grant?.can_export),pair:false,owner:false};
+}
+export async function permission(env,user,section){
+ const pair=await env.DB.prepare('SELECT role FROM hq_pair WHERE user_id=?').bind(user.id).first();
+ const grant=!pair&&['family','menus','plans'].includes(section)?await env.DB.prepare('SELECT role,can_export FROM hq_grants WHERE user_id=? AND section=?').bind(user.id,section).first():null;
+ return accessFromRows(pair,grant,section);
+}
+/** Fresh snapshot for navigation only. Record endpoints enforce access independently. */
+export async function permissionsForUser(env,user){
+ const pair=await env.DB.prepare('SELECT role FROM hq_pair WHERE user_id=?').bind(user.id).first();
+ const grants=pair?[]:await queryAll(env.DB,'SELECT section,role,can_export FROM hq_grants WHERE user_id=?',user.id);
+ const bySection=new Map(grants.map(row=>[row.section,row]));
+ return Object.fromEntries(SECTIONS.map(section=>[section,accessFromRows(pair,bySection.get(section),section)]));
 }
 export async function requireAccess(env,user,section,action='read'){const access=await permission(env,user,section);if(!access[action])fail(403,'You do not have access to this section.');return access;}
 export async function requireOwner(env,user){const x=await permission(env,user,'intimate');if(!x.owner)fail(403,'Owner access required.');return x;}

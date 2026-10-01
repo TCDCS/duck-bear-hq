@@ -1,17 +1,29 @@
 {
-  "name": "Duck & Bear HQ",
-  "short_name": "D&B HQ",
+  "name": "Duck & Bear",
+  "short_name": "Duck & Bear",
   "id": "./",
-  "start_url": "./#home",
+  "start_url": "/",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f7efe7",
-  "theme_color": "#f7efe7",
-  "description": "The £0 Shop, Yaya Loyalty, orders and completely serious Duck & Bear operations.",
-  "categories": ["lifestyle", "entertainment"],
+  "background_color": "#fff9ed",
+  "theme_color": "#fff9ed",
+  "description": "Games, good food, small adventures and a private home for our memories.",
+  "categories": [
+    "lifestyle",
+    "entertainment"
+  ],
   "icons": [
-    {"src":"assets/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
-    {"src":"assets/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"},
-    {"src":"assets/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}
+    {
+      "src": "/assets/causeway-v1-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/causeway-v1-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
   ]
 }
