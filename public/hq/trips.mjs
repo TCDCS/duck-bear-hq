@@ -149,8 +149,27 @@ const SPICY=[
 ];
 
 function calendarEvents(items){return `<section class="trip-section"><div class="section-title"><h2>From the shared calendar</h2></div><div class="trip-calendar">${items.map(([when,title,detail])=>`<article><span class="trip-badge calendar">CALENDAR</span><strong>${esc(when)}</strong><h3>${esc(title)}</h3><p>${esc(detail)}</p></article>`).join('')}</div></section>`;}
-function stopList(stops){return `<div class="trip-stops">${stops.map(([time,title,detail])=>`<div class="trip-stop"><time>${esc(time)}</time><div><strong>${esc(title)}</strong><p>${esc(detail)}</p></div></div>`).join('')}</div>`;}
-function days(items){return `<section class="trip-section" id="days"><div class="section-title"><h2>Day by day</h2><span class="muted">Tap a day to open it</span></div><div class="trip-days">${items.map((d,i)=>{const badges=[d.spicy?'<b class="trip-badge spicy">🔥</b>':'',d.status?`<b class="trip-badge booked">${esc(d.status)}</b>`:''].filter(Boolean).join('');return `<details class="trip-day" ${i===0?'open':''} id="day-${i+1}"><summary><div><span>${esc(d.date)}</span><strong>${esc(d.title)}</strong></div><div class="trip-day-badges">${badges||'<b aria-hidden="true">＋</b>'}</div></summary><div class="trip-day-body"><p class="trip-day-summary">${esc(d.summary)}</p>${stopList(d.stops)}${d.links?.length?`<div class="actions">${d.links.map(([label,href])=>external(href,label)).join('')}</div>`:''}</div></details>`;}).join('')}</div></section>`;}
+function cleanPlaceTitle(title){return String(title||'').replace(/^(Drive to|Walk from|Walk to|Leave|Arrive|Park ·|Check in ·|Dinner ·|Lunch ·|Optional ·|Tram 9 ·|Metro A ·|Trolleybus 59 →)\s*/i,'').replace(/·.*$/,'').trim();}
+function placeQuery(scope,title){const info=placeInfo(scope,title);return info?.query||cleanPlaceTitle(title)||title;}
+function stopList(stops,scope){
+ return '<div class="trip-stops">'+stops.map((stop,i)=>{
+  const [time,title,detail]=stop,info=placeInfo(scope,title),q=placeQuery(scope,title),prev=i?placeQuery(scope,stops[i-1][1]):'',map=MAPS(q);
+  const actions=[external(map,'Google Maps')];
+  if(prev&&q&&prev!==q)actions.push(external(route(prev,q),'Directions from previous'));
+  if(info?.site)actions.push(external(info.site,'Official / booking page'));
+  for(const x of info?.extras||[])actions.push(external(x[1],x[0]));
+  return '<article class="trip-stop trip-stop-rich"><time>'+esc(time)+'</time><div class="trip-stop-main"><div class="trip-stop-title"><a href="'+esc(map)+'" target="_blank" rel="noopener noreferrer"><strong>'+esc(title)+'</strong> <span aria-hidden="true">↗</span></a></div><p>'+esc(detail)+'</p>'+
+   (info?'<div class="trip-stop-meta">'+(info.status?'<span class="trip-badge booked">'+esc(info.status)+'</span>':'')+(info.price?'<span class="trip-price">'+esc(info.price)+'</span>':'')+'</div><p class="trip-workbook-note">'+esc(info.info)+'</p>':'')+
+   '<div class="actions trip-stop-actions">'+actions.join('')+'</div></div></article>';
+ }).join('')+'</div>';
+}
+function days(items){
+ const scope=items===ROAD.days?'road':'prague';
+ return '<section class="trip-section" id="days"><div class="section-title"><h2>Day by day</h2><span class="muted">Tap a day to open it</span></div><div class="trip-days">'+items.map((d,i)=>{
+  const badges=[d.spicy?'<b class="trip-badge spicy">🔥</b>':'',d.status?'<b class="trip-badge booked">'+esc(d.status)+'</b>':''].filter(Boolean).join('');
+  return '<details class="trip-day" '+(i===0?'open':'')+' id="day-'+(i+1)+'"><summary><div><span>'+esc(d.date)+'</span><strong>'+esc(d.title)+'</strong></div><div class="trip-day-badges">'+(badges||'<b aria-hidden="true">＋</b>')+'</div></summary><div class="trip-day-body"><p class="trip-day-summary">'+esc(d.summary)+'</p>'+stopList(d.stops,scope)+(d.links?.length?'<div class="actions">'+d.links.map(x=>external(x[1],x[0])).join('')+'</div>':'')+'</div></details>';
+ }).join('')+'</div></section>';
+}
 function jump(items,spicy=false){return `<nav class="trip-jump" aria-label="Trip days"><button type="button" data-trip-target="calendar">Calendar</button>${items.map((d,i)=>`<button type="button" data-trip-day="day-${i+1}" aria-label="Open ${esc(d.date)}">${d.spicy?'🔥 ':''}${esc(d.date.replace('Oct',''))}</button>`).join('')}${spicy?'<button type="button" class="trip-jump-spicy" data-trip-view="spicy">🔥 Spicy</button>':''}<button type="button" data-trip-target="useful">Useful</button></nav>`;}
 function spicyPane(){return `<section class="trip-spicy-pane" data-trip-pane="spicy" id="spicy" hidden><div class="spicy-hero"><div><span class="trip-badge spicy">🔥 SPICY 🔥</span><h2>Adult options</h2><p>These are optional adult stops already saved around the road trip. They stay separate from the main itinerary so the normal day plan is easy to scan.</p></div><div class="spicy-flames" aria-hidden="true">🔥🔥🔥</div></div><div class="spicy-grid">${SPICY.map(x=>`<article class="spicy-card"><div class="spicy-card-top"><span>${esc(x.when)}</span><strong aria-label="Spicy rating">${esc(x.flames)}</strong></div><h3>🔥 ${esc(x.name)}</h3>${x.status?`<span class="trip-badge spicy">${esc(x.status)}</span>`:''}<p class="spicy-location">${esc(x.location)}</p><p>${esc(x.detail)}</p><div class="actions">${x.links.map(([label,href])=>external(href,label)).join('')}</div></article>`).join('')}</div><p class="muted spicy-foot">Opening hours, prices and entry rules can change. Recheck the venue before travelling.</p></section>`;}
 function tripViewTabs(){return `<nav class="trip-view-tabs" aria-label="Trip view"><button type="button" data-trip-view="itinerary" aria-selected="true">🗺️ Itinerary</button><button type="button" data-trip-view="spicy" aria-selected="false">🔥 Spicy 🔥</button></nav>`;}
