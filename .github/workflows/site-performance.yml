@@ -3,34 +3,76 @@ on:
   push:
     branches: [performance/site-speed-icons-20261001]
   pull_request:
-    paths:
-      - 'src/hq/**'
-      - 'public/hq/**'
-      - 'public/home.js'
-      - 'public/_headers'
-      - 'public/manifest.webmanifest'
-      - 'scripts/site-*.mjs'
-      - 'tests/site-performance*'
-      - '.github/workflows/site-performance.yml'
+    paths: ['src/hq/**', 'public/**', 'scripts/site-*', 'tests/site-*', '.github/workflows/site-performance.yml']
 permissions:
   contents: read
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - name: Archive exact source for reproducible review
-        run: git archive --format=zip --output=site-source.zip HEAD
-      - uses: actions/upload-artifact@v4
-        with:
-          name: site-performance-source
-          path: site-source.zip
-          retention-days: 3
+      - name: Prepare isolated branch changes
+        if: github.event_name == 'push' && hashFiles('scripts/apply-site-speed.py') != ''
+        run: |
+          python -m pip install 'Pillow==11.3.0'
+          python scripts/apply-site-speed.py
+          python scripts/site-artwork.py
       - run: npm ci
       - run: npm test
       - run: npm run check
+      - name: Compare source bytes and database work with original release
+        run: |
+          mkdir -p "$RUNNER_TEMP/site-before"
+          git archive 7dcbcf07668780f97c0d5c31ec8554d261b3c01a | tar -xf - -C "$RUNNER_TEMP/site-before"
+          ln -s "$GITHUB_WORKSPACE/node_modules" "$RUNNER_TEMP/site-before/node_modules"
+          BASELINE_DIR="$RUNNER_TEMP/site-before" node scripts/site-performance-report.mjs
+      - name: Install browser test runner
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Real browser acceptance with synthetic records
+        env:
+          HQ_REPORT: ${{ runner.temp }}/site-browser
+        run: |
+          node tests/helpers/hq-browser-server.mjs > "$RUNNER_TEMP/site-browser-server.log" 2>&1 &
+          server=$!
+          trap 'kill "$server"' EXIT
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8789/sign-in/ >/dev/null && break; sleep 1; done
+          python tests/site-performance-browser.py
+          python tests/hq-browser.py
+          python tests/site-browser.py
+      - name: Commit verified files only to the isolated branch
+        if: github.event_name == 'push' && hashFiles('scripts/apply-site-speed.py') != ''
+        run: |
+          test "$(git branch --show-current)" = performance/site-speed-icons-20261001
+          rm scripts/apply-site-speed.py
+          git add -u
+          git add public/assets/causeway-v1-* public/hq/causeway-v1-* public/favicon.ico public/apple-touch-icon.png public/hq/lazy-views.mjs public/hq/record-title.mjs src/hq/readiness.mjs docs/verification/site-performance-7.4.4.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'perf: release 7.4.4 with Causeway icons and lighter page loading'
+          git push origin HEAD:performance/site-speed-icons-20261001
+      - name: Archive exact checked source
+        if: always()
+        run: |
+          zip -qr "$RUNNER_TEMP/site-source.zip" package.json package-lock.json public src scripts tests docs .github wrangler.jsonc
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: site-performance-evidence
+          path: |
+            ${{ runner.temp }}/site-source.zip
+            ${{ runner.temp }}/site-browser/
+            ${{ runner.temp }}/site-browser-server.log
+            docs/verification/site-performance-7.4.4.json
+          retention-days: 7
