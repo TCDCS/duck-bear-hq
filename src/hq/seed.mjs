@@ -87,7 +87,7 @@ export const LEGACY_MEALS=[
     "meal_date": "2026-10-02",
     "meal_type": "dinner",
     "display_name": "Korean Punishment Fish & Chips",
-    "description": "Frozen fish and chips upgraded Korean-style with gochujang, honey, soy, lime, sesame, spring onion and spicy sriracha mayo.",
+    "description": "Crispy fish with a sticky gochujang, honey and soy glaze, sesame-spring onion chips and gochujang mayo.",
     "served": 0
   }
 ];
