@@ -207,20 +207,31 @@ export async function importRecentMenuRecipes(env,user){
 
 export async function importCookedKoreanFishChips(env,user){
  if(!(await permission(env,user,'intimate')).pair)return;
- const marker='cooked-korean-fish-chips-2026-10-02-v1';
+ const marker='cooked-korean-fish-chips-2026-10-02-v2';
  if(await env.DB.prepare('SELECT 1 AS ok FROM hq_meta WHERE key=?').bind(marker).first())return;
  const pair=await env.DB.prepare("SELECT user_id FROM hq_pair WHERE role='owner' ORDER BY user_id LIMIT 1").first();
  if(!pair)return;
  const owner=pair.user_id,stamp=now(),recipe=RECENT_MENU_RECIPES.find(r=>r.id==='recipe-2026-10-02-korean-fish-chips');
+ const cooked={...recipe.data,servingId:recipe.servingId},steps=[];
  const row=await env.DB.prepare("SELECT data FROM hq_records WHERE id=? AND kind='recipe' AND deleted_at IS NULL").bind(recipe.id).first();
- const cooked={...recipe.data,servingId:recipe.servingId};
- const steps=[];
  if(row){
   let existing={};try{existing=JSON.parse(row.data||'{}');}catch{}
   const data={...existing,...cooked,photos:existing.photos||cooked.photos,coverId:existing.coverId||cooked.coverId,attachmentId:existing.attachmentId||cooked.attachmentId};
   steps.push(env.DB.prepare('UPDATE hq_records SET data=?,revision=revision+1,updated_by=?,updated_at=? WHERE id=? AND kind=\'recipe\' AND deleted_at IS NULL').bind(JSON.stringify(data),owner,stamp,recipe.id));
  }else{
   steps.push(env.DB.prepare('INSERT INTO hq_records(id,kind,section,parent_id,creator_id,updated_by,revision,data,created_at,updated_at) VALUES(?,?,?,?,?,?,1,?,?,?)').bind(recipe.id,'recipe','menus',null,owner,owner,JSON.stringify(cooked),stamp,stamp));
+ }
+ const serving=await env.DB.prepare("SELECT data FROM hq_records WHERE id=? AND kind='serving' AND deleted_at IS NULL").bind(recipe.servingId).first();
+ if(serving){
+  let existing={};try{existing=JSON.parse(serving.data||'{}');}catch{}
+  const data={...existing,description:recipe.data.description,recipeId:recipe.id,ingredients:recipe.data.ingredients,ingredientsConfirmed:true};
+  steps.push(env.DB.prepare('UPDATE hq_records SET data=?,revision=revision+1,updated_by=?,updated_at=? WHERE id=? AND kind=\'serving\' AND deleted_at IS NULL').bind(JSON.stringify(data),owner,stamp,recipe.servingId));
+ }
+ const week=await env.DB.prepare("SELECT data FROM hq_records WHERE id='week-2026-09-28' AND kind='week' AND deleted_at IS NULL").first();
+ if(week){
+  const data=JSON.parse(week.data);
+  if(data.snapshot?.meals) data.snapshot.meals=data.snapshot.meals.map(meal=>meal.id===recipe.servingId?{...meal,description:recipe.data.description,recipeId:recipe.id,ingredients:recipe.data.ingredients,ingredientsConfirmed:true}:meal);
+  steps.push(env.DB.prepare("UPDATE hq_records SET data=?,revision=revision+1,updated_by=?,updated_at=? WHERE id='week-2026-09-28' AND deleted_at IS NULL").bind(JSON.stringify(data),owner,stamp));
  }
  steps.push(env.DB.prepare('INSERT OR IGNORE INTO hq_meta(key,value) VALUES(?,?)').bind(marker,stamp));
  await env.DB.batch(steps);
