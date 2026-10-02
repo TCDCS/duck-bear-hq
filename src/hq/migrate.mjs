@@ -207,14 +207,13 @@ export async function importRecentMenuRecipes(env,user){
 
 export async function importCookedKoreanFishChips(env,user){
  if(!(await permission(env,user,'intimate')).pair)return;
- const marker='cooked-korean-fish-chips-2026-10-02-v1';
+ const marker='cooked-korean-fish-chips-2026-10-02-v2';
  if(await env.DB.prepare('SELECT 1 AS ok FROM hq_meta WHERE key=?').bind(marker).first())return;
  const pair=await env.DB.prepare("SELECT user_id FROM hq_pair WHERE role='owner' ORDER BY user_id LIMIT 1").first();
  if(!pair)return;
  const owner=pair.user_id,stamp=now(),recipe=RECENT_MENU_RECIPES.find(r=>r.id==='recipe-2026-10-02-korean-fish-chips');
+ const cooked={...recipe.data,servingId:recipe.servingId},steps=[];
  const row=await env.DB.prepare("SELECT data FROM hq_records WHERE id=? AND kind='recipe' AND deleted_at IS NULL").bind(recipe.id).first();
- const cooked={...recipe.data,servingId:recipe.servingId};
- const steps=[];
  if(row){
   let existing={};try{existing=JSON.parse(row.data||'{}');}catch{}
   const data={...existing,...cooked,photos:existing.photos||cooked.photos,coverId:existing.coverId||cooked.coverId,attachmentId:existing.attachmentId||cooked.attachmentId};
@@ -222,6 +221,9 @@ export async function importCookedKoreanFishChips(env,user){
  }else{
   steps.push(env.DB.prepare('INSERT INTO hq_records(id,kind,section,parent_id,creator_id,updated_by,revision,data,created_at,updated_at) VALUES(?,?,?,?,?,?,1,?,?,?)').bind(recipe.id,'recipe','menus',null,owner,owner,JSON.stringify(cooked),stamp,stamp));
  }
+ // Published week/serving records are protected by database triggers. Keep the
+ // historical snapshot immutable and correct its public presentation via
+ // publicMenuMeal(), while the editable recipe record receives the cooked version.
  steps.push(env.DB.prepare('INSERT OR IGNORE INTO hq_meta(key,value) VALUES(?,?)').bind(marker,stamp));
  await env.DB.batch(steps);
 }

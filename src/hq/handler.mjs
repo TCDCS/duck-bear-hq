@@ -1,6 +1,6 @@
 import {publicPasskeys,privatePasskeys} from './passkeys.mjs';
 import {resolveRoute} from '../../public/hq/routes.mjs';
-import {extrasApi,publicSite,publicMenuPage} from './extras.mjs';
+import {extrasApi,publicSite,publicMenuPage,publicMenuMeal} from './extras.mjs';
 import {migrate} from './readiness.mjs';
 import {backupApi} from './backup.mjs';
 import {mediaApi,publicMedia} from './media.mjs';
@@ -48,7 +48,7 @@ async function publicApi(request,env,url){
  if(await schemaReady(env)){const image=await publicMedia(request,env,url);if(image)return image;}
  if(!(await schemaReady(env)))return json({weeks:[],week:null,version:VERSION},200,{'cache-control':'no-store'});
  if(url.pathname==='/api/public/hq/menus'){const rows=await queryAll(env.DB,"SELECT data FROM hq_records WHERE kind='week' AND deleted_at IS NULL AND json_extract(data,'$.status')='published' ORDER BY json_extract(data,'$.start') DESC");return json({weeks:rows.map(x=>{const d=JSON.parse(x.data);return {start:d.start,title:d.title};})},200,{'cache-control':'no-store'});}
- const m=url.pathname.match(/^\/api\/public\/hq\/menus\/(\d{4}-\d{2}-\d{2})$/);if(m){const row=await env.DB.prepare("SELECT data FROM hq_records WHERE kind='week' AND deleted_at IS NULL AND json_extract(data,'$.start')=? AND json_extract(data,'$.status')='published'").bind(m[1]).first();if(!row)fail(404,'That published menu is not available.');const snapshot=JSON.parse(row.data).snapshot;return json({week:{...snapshot,meals:snapshot.meals.map(({id,date,course,title,description,served})=>({id,date,course,title,description,served}))}},200,{'cache-control':'no-store'});}
+ const m=url.pathname.match(/^\/api\/public\/hq\/menus\/(\d{4}-\d{2}-\d{2})$/);if(m){const row=await env.DB.prepare("SELECT data FROM hq_records WHERE kind='week' AND deleted_at IS NULL AND json_extract(data,'$.start')=? AND json_extract(data,'$.status')='published'").bind(m[1]).first();if(!row)fail(404,'That published menu is not available.');const snapshot=JSON.parse(row.data).snapshot;return json({week:{...snapshot,meals:snapshot.meals.map(publicMenuMeal).map(({id,date,course,title,description,served})=>({id,date,course,title,description,served}))}},200,{'cache-control':'no-store'});}
  fail(404,'Not found.');
 }
 export function createHqHandler(fallback){return {async fetch(request,env,ctx){

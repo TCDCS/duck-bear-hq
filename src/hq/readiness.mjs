@@ -3,7 +3,7 @@ import {importLegacy,importRecentMenuRecipes,importCookedKoreanFishChips} from '
 import {importPrivateHome} from './import-hub.mjs';
 import {ensureLibrary} from './library.mjs';
 export async function migrate(env,user){
- const ready=await env.DB.prepare("SELECT COUNT(*) AS n FROM hq_meta WHERE key IN ('private-home-imported-v1','legacy-imported-v1','recent-menu-recipes-v1','cooked-korean-fish-chips-2026-10-02-v1','info-library-v1')").first();
+ const ready=await env.DB.prepare("SELECT COUNT(*) AS n FROM hq_meta WHERE key IN ('private-home-imported-v1','legacy-imported-v1','recent-menu-recipes-v1','cooked-korean-fish-chips-2026-10-02-v2','info-library-v1')").first();
  if(Number(ready?.n)===5)return;
  // Keep existing household guards and idempotent imports on the cold path.
  // Missing or failed imports are retried; no process-global permission cache.

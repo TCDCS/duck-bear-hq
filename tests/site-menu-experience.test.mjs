@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {mealStatus,SERVING_TIMES} from '../public/menus/menus.js';
-import {publicMealStatus} from '../src/hq/extras.mjs';
+import {publicMealStatus,publicMenuMeal} from '../src/hq/extras.mjs';
 import {createHqHandler} from '../src/hq/handler.mjs';
 import {fixture,call} from './helpers/hq-fixture.mjs';
 const handler=createHqHandler({fetch:async()=>new Response('fallback',{status:404})});
@@ -55,6 +55,14 @@ test('Our Space no longer fetches every private record before rendering',async()
 });
 
 
+
+test('cooked Korean fish correction replaces the earlier sriracha snapshot copy',()=>{
+ const stale={id:'menu-2026-09-28-fri-dinner',description:'Earlier spicy sriracha mayo copy'};
+ const corrected=publicMenuMeal(stale);
+ assert.match(corrected.description,/gochujang mayo/);
+ assert.doesNotMatch(corrected.description,/sriracha/i);
+});
+
 test('Worker-rendered live menu uses Dublin-time status and real serving review routes',async()=>{
  assert.equal(publicMealStatus('2026-09-29','breakfast',new Date('2026-09-29T05:44:00Z')),'upcoming');
  assert.equal(publicMealStatus('2026-09-29','breakfast',new Date('2026-09-29T05:45:00Z')),'served');
@@ -72,5 +80,7 @@ test('Worker-rendered live menu uses Dublin-time status and real serving review 
   assert.match(html,/data-day-status>(?:Served|Upcoming)</);
   assert.match(html,/\/menus\/menus\.css\?v=8/);
   assert.match(html,/Website 7\.4\.4/);
+  assert.match(html,/sesame-spring onion chips and gochujang mayo/);
+  assert.doesNotMatch(html,/sriracha mayo/i);
  }finally{f.close();}
 });
