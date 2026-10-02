@@ -70,16 +70,17 @@ const ROAD={
       ['16:15','Drive to Rouen','About 3–3.25 hours including a short stop.'],
       ['~19:30','Check in · Urban Style Hotel de l’Europe','87 rue aux Ours. Parking de la Pucelle about 50 m away.'],
       ['20:15','Rouen evening','Rouen à Table! / cathedral atmosphere, then L’Entrepôt Food Hall if needed.'],
-      ['22:30 onward','OPTION · RDV Club Rouen','28 rue Crevier. Optional late stop after dinner; roughly 10–15 minutes on foot from the hotel. Saturday opening 22:30–07:00; no admission after 04:00. Keep the visit flexible because Sunday starts early.']
+      ['22:10–00:30','OPTION · RDV Club Rouen','Leave the hotel on foot about 22:10; allow 10–15 minutes each way. Aim to enter at 22:30, stay until about 00:15 and be back at the hotel around 00:30. Saturday opening is 22:30–07:00, but the shorter visit protects the 06:30 Sunday departure.']
     ],links:[['Cherbourg → Rouen',route('Cherbourg Ferry Terminal','Urban Style Hotel de l’Europe Rouen')],['Hotel',MAPS("Urban Style Hotel de l'Europe Rouen")],['RDV Club',MAPS('RDV Club 28 rue Crevier Rouen')],['RDV Club website','https://www.rdvclubrouen.fr/']]},
     {date:'Sun 11 Oct',title:'Rouen → Nausicaá → Jurbise',summary:'Early start for Nausicaá, then La Cure. The two Nausicaá vouchers are verified.',status:'VERIFIED',spicy:true,stops:[
       ['06:30','Leave Rouen','Drive toward Boulogne-sur-Mer.'],
       ['09:10','Park near Nausicaá','Try Q-Park Nausicaá.'],
       ['09:30–14:00','Nausicaá · vouchers verified','Two Social Deal vouchers are verified. Keep the aquarium visit in the confirmed trip plan.'], 
       ['14:00','Drive to Jurbise','Allow roughly 2.5–3 hours from Boulogne-sur-Mer.'], 
-      ['~16:45–18:00','Check in · La Cure de Masnuy-Saint-Pierre','Rue Lieutenant de Saint-Martin 1, Jurbise. Confirmed and paid. Check-in closes at 18:00.']
+      ['~16:45–17:15','Check in · La Cure de Masnuy-Saint-Pierre','Rue Lieutenant de Saint-Martin 1, Jurbise. Confirmed and paid. Check-in closes at 18:00. Freshen up before the optional club trip.'],
+      ['17:15–00:15','OPTION · Only4You','Leave La Cure about 17:15 and allow roughly 40–45 minutes each way. Aim for the club around 18:00, stay until about 23:30 and return to La Cure around 00:15. Buffet and drinks are included; bring photo ID and clubwear.']
     ],links:[['Nausicaá',MAPS('Nausicaá Boulogne-sur-Mer')],['Nausicaá → La Cure',route('Nausicaá Boulogne-sur-Mer','La Cure de Masnuy-Saint-Pierre Jurbise')]]},
-    {date:'Mon 12 Oct',title:'Pairi Daiza · day 1 + Edenya',summary:'Tickets and parking are booked. Edenya is booked 10:00–12:00.',status:'BOOKED',spicy:true,stops:[
+    {date:'Mon 12 Oct',title:'Pairi Daiza · day 1 + Edenya',summary:'Tickets and parking are booked. Edenya is booked 10:00–12:00.',status:'BOOKED',stops:[
       ['~09:00','Drive to Pairi Daiza','Allow time to park and get through the entrance.'],
       ['10:00–12:00','Edenya · booked','2 × Edenya entry. This replaces the older workbook note that treated Edenya as optional.'],
       ['Rest of day','Pairi Daiza · day 1','Full park day. Entry and one-day parking are booked.'],
@@ -121,8 +122,9 @@ const ROAD={
       ['13:00–13:35','Lunch · Crêperie La Cloche','Only if there is no wait; otherwise takeaway.'],
       ['14:30–16:15','Alligator Bay','Reconfirm October hours before travel.'],
       ['16:15–17:00','Check in · Le Saint Aubert','Confirmed one-night stay. Check-in 16:00–19:00; breakfast included; double-bed request approved.'], 
-      ['18:15–21:30','Dusk/night Mont photos','Budget takeaway + walk one direction on the causeway.']
-    ],links:[['Mont-Saint-Michel',MAPS('Mont-Saint-Michel Abbey')],['Alligator Bay',MAPS('Alligator Bay Beauvoir France')]]},
+      ['18:15–20:30','Dusk/night Mont photos','Budget takeaway + walk one direction on the causeway. This still gives time for the optional Rennes visit without arriving near closing.'],
+      ['20:30–01:30','OPTION · Sauna California · Rennes','Leave the Mont / Le Saint Aubert area about 20:30. Allow about 1h15 each way plus parking. Aim to arrive around 21:45–22:00, stay until about 00:15 and be back at Le Saint Aubert around 01:30. Friday TTC mixed session runs 18:00–01:00.']
+    ],links:[['Mont-Saint-Michel',MAPS('Mont-Saint-Michel Abbey')],['Alligator Bay',MAPS('Alligator Bay Beauvoir France')],['Sauna California',MAPS('Sauna California 7 Rue de Léon Rennes')],['Sauna California schedule','https://www.saunacalifornia.com/agenda/categorie/mixte/liste/']]},
     {date:'Sat 17 Oct',title:'D-Day Experience → Cherbourg ferry',summary:'Museum morning, then ferry home.',stops:[
       ['08:30','Leave Mont-Saint-Michel','Drive toward Saint-Côme-du-Mont.'],
       ['10:00–12:00','D-Day Experience · Option 2','Museums + hologram + C-47 simulator. Same-day simulator entry is not available.'],
@@ -141,83 +143,35 @@ const ROAD={
 
 const SPICY=[
   {
-    "when": "Sat 10 Oct · from 22:30",
+    "when": "Sat 10 Oct · leave hotel 22:10 · club 22:30–00:15 · back ~00:30",
     "name": "RDV Club Rouen",
     "flames": "🔥🔥🔥",
     "location": "28 rue Crevier, 76000 Rouen, France",
     "price": "Saturday €25 pp with alcoholic drink or €20 pp with soft drink",
     "type": "Social libertine nightclub",
-    "expect": "Think nightclub first: music, bar and adult/social spaces. Saturday is a late session and the official site says couples, formed trios and LGBTQIA+ guests are welcome. Men need a shirt; dress is expected to be smart.",
-    "ease": "There is no reason to rush into anything. Go in together, have a drink, look around and decide how comfortable you both feel. Leaving after twenty minutes is completely fine. The official site says there are no showers, which is useful to know before choosing it.",
-    "detail": "Official Saturday hours: 22:30–07:00, with no admission after 04:00. Keep this optional because Sunday starts early.",
+    "dress": "Elegant. Zach: a shirt is compulsory; black smart trousers and clean smart shoes are the safest choice. Guannan: an elegant or sexy evening outfit works. This is not a towel/lingerie-only venue.",
+    "expect": "Nightclub first: music, bar and adult/social spaces. Saturday is a late session and the official site welcomes couples, formed trios and LGBTQIA+ guests. There are no showers.",
+    "ease": "Go in together, have a drink and look around first. Nothing requires you to take part. Leaving early is completely fine.",
+    "detail": "TRAVEL PLAN — Walk from Urban Style Hotel de l’Europe about 22:10; allow 10–15 minutes. Enter at opening around 22:30, leave about 00:15 and aim to be back at the hotel around 00:30. The club itself stays open until 07:00, but Sunday has a 06:30 departure.",
     "links": [
-      [
-        "Google Maps",
-        "https://www.google.com/maps/search/?api=1&query=RDV%20Club%2028%20rue%20Crevier%20Rouen"
-      ],
-      [
-        "Official site",
-        "https://www.rdvclubrouen.fr/"
-      ]
+      ["Google Maps","https://www.google.com/maps/search/?api=1&query=RDV%20Club%2028%20rue%20Crevier%20Rouen"],
+      ["Official site","https://www.rdvclubrouen.fr/"]
     ]
   },
   {
-    "when": "Sun 11 Oct · evening",
+    "when": "Sun 11 Oct · leave La Cure 17:15 · club 18:00–23:30 · back ~00:15",
     "name": "Only4You",
     "flames": "🔥🔥🔥",
     "location": "Rue Fonds de nos Bois 3, 6567 Merbes-le-Château, Belgium",
-    "price": "Sunday couples €80; membership card €15/person/year",
-    "type": "Large libertine club with wellness facilities",
-    "expect": "This is more of an evening club complex: disco, bar/buffet, sauna, jacuzzi, relaxation areas and themed rooms. The official information requires ID and minimum age 21. Sunday dress becomes lingerie from 22:00.",
-    "ease": "You can use it like a couples’ night out rather than an obligation to take part in anything. Stay together, start with the public areas, have food/drinks, use the sauna or jacuzzi if comfortable and only move on if both of you actively want to.",
-    "detail": "Official Sunday hours should be rechecked before travel. Drinks and hot/cold buffet are included according to the venue information.",
+    "price": "Sunday couple €80; membership card €15/person/year",
+    "type": "Large libertine club with disco, buffet and wellness facilities",
+    "dress": "Bring clubwear and plan to change there. Guannan: lingerie or VERY sexy clubwear; ordinary streetwear, trousers and leggings are not accepted. Zach: fitted briefs/boxers or other permitted clubwear; ordinary shorts/¾ trousers are not accepted. On Sunday lingerie is compulsory from 22:00.",
+    "expect": "A full evening complex with disco, hot/cold buffet, drinks, sauna, jacuzzi, relaxation areas and themed rooms. Photo ID is needed for the membership card. Phones/cameras are not permitted inside.",
+    "ease": "Use it first as a couples’ night out: eat, have a drink, explore the public areas and only go further if you both want to. Watching without joining in is allowed.",
+    "detail": "TRAVEL PLAN — From La Cure allow roughly 40–45 minutes each way. Leave about 17:15, aim to arrive around 18:00, leave about 23:30 and expect to be back around 00:15. Recheck Sunday opening time on the day.",
     "links": [
-      [
-        "Google Maps",
-        "https://www.google.com/maps/search/?api=1&query=Only4You%20Rue%20Fonds%20de%20nos%20Bois%203%20Merbes-le-Ch%C3%A2teau%20Belgium"
-      ],
-      [
-        "Official information",
-        "https://www.only4you.be/club-libertin/infos/"
-      ]
-    ]
-  },
-  {
-    "when": "Sun 11 Oct · evening",
-    "name": "La Doña",
-    "flames": "🔥🔥🔥",
-    "location": "Chaussée de Belle-Vue 104A, 7322 Bernissart, Belgium",
-    "price": "Recheck directly before going",
-    "type": "Adult sauna / libertine venue",
-    "expect": "The saved plan describes this as an adult sauna/libertine option. I could not verify a reliable current official venue page, so treat the saved hours and entry information as provisional rather than relying on them.",
-    "ease": "Because the current rules are not well documented online, this is one to choose only after phoning/checking directly. If anything feels unclear at the door, skip it; there are other better-documented options on the trip.",
-    "detail": "Saved Sunday hours were 20:00–03:00. Recheck entry rules, dress code, price and opening before leaving La Cure.",
-    "links": [
-      [
-        "Google Maps",
-        "https://www.google.com/maps/search/?api=1&query=La%20Do%C3%B1a%20Chauss%C3%A9e%20de%20Belle-Vue%20104A%20Bernissart%20Belgium"
-      ]
-    ]
-  },
-  {
-    "when": "Mon 12 Oct · 12:00–17:00",
-    "name": "XEN Club",
-    "flames": "🔥🔥",
-    "location": "Grand'Route 8, 7604 Péruwelz, Belgium",
-    "price": "Weekday couples €40",
-    "type": "Daytime libertine club",
-    "expect": "The official site describes a discreet, convivial club. Monday is a daytime session. Drinks and full club access are included and no membership card or reservation is required.",
-    "ease": "This may feel less intense than arriving at a late-night club because it is a daytime session. You can stay together, have a drink and see the venue before deciding whether to stay. The practical downside is that it clashes with your Pairi Daiza day.",
-    "detail": "Official Monday hours: 12:00–17:00. Only worth doing if you both deliberately choose to leave Pairi Daiza early after Edenya.",
-    "links": [
-      [
-        "Google Maps",
-        "https://www.google.com/maps/search/?api=1&query=XEN%20Club%20Grand'Route%208%20P%C3%A9ruwelz%20Belgium"
-      ],
-      [
-        "Official site",
-        "https://xen-club.be/accueil"
-      ]
+      ["Google Maps","https://www.google.com/maps/search/?api=1&query=Only4You%20Rue%20Fonds%20de%20nos%20Bois%203%20Merbes-le-Ch%C3%A2teau%20Belgium"],
+      ["Official information","https://www.only4you.be/club-libertin/infos/"]
     ]
   },
   {
@@ -227,44 +181,34 @@ const SPICY=[
     "location": "35 Avenue Daniel Bruand, 14112 Biéville-Beuville, France",
     "price": "€151.30 originally paid · awaiting reconfirmation",
     "type": "Private couples’ Love Room — not a club",
-    "expect": "This is completely private to the two of you. The current room page shows a two-person spa bath, walk-in shower, mood lighting, Bluetooth speaker, Netflix and adult-themed furniture. There is no social-club element or other couples to deal with.",
-    "ease": "This is the lowest-pressure option because you control the room and the pace. Nothing is expected beyond enjoying the hotel together. If Guannan is unsure about clubs, this gives you the adult-themed experience without a public/social setting.",
+    "dress": "No club dress code. This is your private room, so wear whatever you both want.",
+    "expect": "Completely private to the two of you. The room page shows a two-person spa bath, walk-in shower, mood lighting, Bluetooth speaker, Netflix and adult-themed furniture. There is no social-club element.",
+    "ease": "This is the lowest-pressure adult option because you control the room and the pace.",
     "detail": "Intended 15–16 October stay. Self check-in from 18:30, checkout by 10:00 and free gravel courtyard parking. Waiting for BisouX to reconfirm the original booking.",
     "status": "AWAITING RECONFIRMATION",
     "links": [
-      [
-        "Google Maps",
-        "https://www.google.com/maps/search/?api=1&query=35%20Avenue%20Daniel%20Bruand%2014112%20Bi%C3%A9ville-Beuville%20France"
-      ],
-      [
-        "Room & photos",
-        "https://bisoux-caen.fr/love-room/bisoux-love-room-romantique-et-sensuel-normandie/"
-      ]
+      ["Google Maps","https://www.google.com/maps/search/?api=1&query=35%20Avenue%20Daniel%20Bruand%2014112%20Bi%C3%A9ville-Beuville%20France"],
+      ["Room & photos","https://bisoux-caen.fr/love-room/bisoux-love-room-romantique-et-sensuel-normandie/"]
     ]
   },
   {
-    "when": "Fri 16 Oct · late night",
+    "when": "Fri 16 Oct · leave Mont 20:30 · sauna ~22:00–00:15 · hotel ~01:30",
     "name": "Sauna California · Rennes",
     "flames": "🔥🔥🔥",
     "location": "7 Rue de Léon, 35000 Rennes, France",
-    "price": "Recent couple price around €20 · recheck",
+    "price": "Friday mixed/TTC couple price around €20 · recheck",
     "type": "Mixed adult sauna / wellness venue",
-    "expect": "This is a sauna-style venue rather than a conventional nightclub, with sauna/hammam/jacuzzi-type facilities and adult areas. Friday is normally a mixed session, but the live schedule and entry rules should be checked again on the day.",
-    "ease": "Treat it first as a late-night sauna visit: arrive together, get settled, see the facilities and only stay while both of you are comfortable. It is optional after a long Mont-Saint-Michel day, so skipping it if either of you is tired is built into the plan.",
-    "detail": "Rennes is roughly 1h10–1h15 each way from Mont-Saint-Michel. The saved plan aims for about 22:45 arrival and a return to Le Saint Aubert around 02:00–02:15.",
+    "dress": "No special outfit to buy. Arrive in normal clothes. Inside, nudity is compulsory under the towel supplied by the venue; swimwear and underwear are not allowed. Shower on arrival is compulsory.",
+    "expect": "Sauna, hammam, jacuzzi/wet facilities and adult areas. Friday 16 October is listed as TTC/mixed from 18:00 to 01:00. Phones and cameras must stay in the locker; alcohol and drugs are not allowed.",
+    "ease": "Treat it first as a sauna visit: arrive together, tell reception it is your first time if useful, look around and stay only while you are both comfortable.",
+    "detail": "TRAVEL PLAN — Mont-Saint-Michel to Rennes is about 1h13 by car before parking. Leave around 20:30, aim to arrive 21:45–22:00, leave about 00:15 and expect to be back at Le Saint Aubert around 01:30.",
     "links": [
-      [
-        "Google Maps",
-        "https://www.google.com/maps/search/?api=1&query=Sauna%20California%207%20Rue%20de%20L%C3%A9on%20Rennes%20France"
-      ],
-      [
-        "Official access info",
-        "https://www.saunacalifornia.com/acces/"
-      ]
+      ["Google Maps","https://www.google.com/maps/search/?api=1&query=Sauna%20California%207%20Rue%20de%20L%C3%A9on%20Rennes%20France"],
+      ["Official schedule","https://www.saunacalifornia.com/agenda/categorie/mixte/liste/"],
+      ["Rules","https://www.saunacalifornia.com/reglement-interieur/"]
     ]
   }
 ];
-
 
 function calendarEvents(items){return `<section class="trip-section"><div class="section-title"><h2>From the shared calendar</h2></div><div class="trip-calendar">${items.map(([when,title,detail])=>`<article><span class="trip-badge calendar">CALENDAR</span><strong>${esc(when)}</strong><h3>${esc(title)}</h3><p>${esc(detail)}</p></article>`).join('')}</div></section>`;}
 function cleanPlaceTitle(title){return String(title||'').replace(/^(Drive to|Walk from|Walk to|Leave|Arrive|Park ·|Check in ·|Dinner ·|Lunch ·|Optional ·|Tram 9 ·|Metro A ·|Trolleybus 59 →)\s*/i,'').replace(/·.*$/,'').trim();}
@@ -297,7 +241,7 @@ function hotelCards(scope){
  }).join('')+'</div><div class="notice trip-notice" style="margin-top:16px"><strong>Confirmation security:</strong> the useful booking details are here, but confidential PINs and property access codes are not stored in the page source. Open the original Gmail confirmation when you need them.</div></section>';
 }
 function spicyPane(){
- return '<section class="trip-spicy-pane" data-trip-pane="spicy" id="spicy" hidden><div class="spicy-hero"><div><span class="trip-badge spicy">🔥 SPICY 🔥</span><h2>Adult options — at your pace</h2><p>These are choices, not commitments. Agree together what is and is not on the table before going. Stay together, start slowly, ask staff when a rule is unclear and leave whenever either of you wants to. Going in just to look around or use the normal bar/wellness areas is a perfectly valid plan.</p></div><div class="spicy-flames" aria-hidden="true">🔥🔥🔥</div></div><div class="spicy-grid">'+SPICY.map(x=>'<article class="spicy-card"><div class="spicy-card-top"><span>'+esc(x.when)+'</span><strong aria-label="Spicy rating">'+esc(x.flames)+'</strong></div><h3>🔥 '+esc(x.name)+'</h3>'+(x.status?'<span class="trip-badge spicy">'+esc(x.status)+'</span>':'')+'<p class="spicy-type">'+esc(x.type)+'</p><p class="spicy-location">'+esc(x.location)+'</p><p><strong>'+esc(x.price)+'</strong></p><h4>What to expect</h4><p>'+esc(x.expect)+'</p><h4>For Guannan / keeping it comfortable</h4><p>'+esc(x.ease)+'</p><p>'+esc(x.detail)+'</p><div class="actions">'+x.links.map(y=>external(y[1],y[0])).join('')+'</div></article>').join('')+'</div><p class="muted spicy-foot">Venue hours, prices and rules can change. The page deliberately treats all of these as optional; recheck the venue before travelling.</p></section>';
+ return '<section class="trip-spicy-pane" data-trip-pane="spicy" id="spicy" hidden><div class="spicy-hero"><div><span class="trip-badge spicy">🔥 SPICY 🔥</span><h2>Adult options — at your pace</h2><p>These are choices, not commitments. Agree together what is and is not on the table before going. Stay together, start slowly, ask staff when a rule is unclear and leave whenever either of you wants to. Going in just to look around or use the normal bar/wellness areas is a perfectly valid plan.</p></div><div class="spicy-flames" aria-hidden="true">🔥🔥🔥</div></div><div class="spicy-grid">'+SPICY.map(x=>'<article class="spicy-card"><div class="spicy-card-top"><span>'+esc(x.when)+'</span><strong aria-label="Spicy rating">'+esc(x.flames)+'</strong></div><h3>🔥 '+esc(x.name)+'</h3>'+(x.status?'<span class="trip-badge spicy">'+esc(x.status)+'</span>':'')+'<p class="spicy-type">'+esc(x.type)+'</p><p class="spicy-location">'+esc(x.location)+'</p><p><strong>'+esc(x.price)+'</strong></p><h4>DRESS CODE</h4><p>'+esc(x.dress||'No special dress code listed.')+'</p><h4>WHAT TO EXPECT</h4><p>'+esc(x.expect)+'</p><h4>KEEPING IT COMFORTABLE</h4><p>'+esc(x.ease)+'</p><p>'+esc(x.detail)+'</p><div class="actions">'+x.links.map(y=>external(y[1],y[0])).join('')+'</div></article>').join('')+'</div><p class="muted spicy-foot">Venue hours, prices and rules can change. The page deliberately treats all of these as optional; recheck the venue before travelling.</p></section>';
 }
 function tripViewTabs(){return `<nav class="trip-view-tabs" aria-label="Trip view"><button type="button" data-trip-view="itinerary" aria-selected="true">🗺️ Itinerary</button><button type="button" data-trip-view="spicy" aria-selected="false">🔥 Spicy 🔥</button></nav>`;}
 function bindTripInteractions(A){const root=A.content;if(!root)return;const panes=[...root.querySelectorAll('[data-trip-pane]')],tabs=[...root.querySelectorAll('[data-trip-view]')];
@@ -325,14 +269,16 @@ function prague(A){A.content.innerHTML=pageHead('PRAGUE · 3–7 OCTOBER','Guann
 function road(A){A.content.innerHTML=pageHead('FRANCE + BELGIUM · 9–18 OCTOBER','France + Belgium road trip','Ferry, hotels, attraction days and the route in one mobile page. Booking references and access PINs are deliberately left off the page.',`<div class="actions">${external(MAPS('Pairi Daiza'),'Pairi Daiza map')}</div>`)+tripViewTabs()+jump(ROAD.days,true)+`<div data-trip-pane="itinerary"><section class="trip-hero road"><div class="trip-hero-copy"><span class="trip-badge">10 DAYS · ROAD TRIP</span><h2>Dublin → Normandy → Belgium → Normandy → Dublin</h2><p>The updated workbook is the base plan. Shared-calendar bookings override older notes where they differ.</p><dl class="trip-facts"><div><dt>Ferry out</dt><dd>Fri 9 Oct · depart Dublin 18:30. Vehicle check-in closes 17:30; aim for 17:00.</dd></div><div><dt>Arrive France</dt><dd>Sat 10 Oct · Cherbourg 15:30.</dd></div><div><dt>Pairi Daiza</dt><dd>12–13 Oct · 2 adults + parking booked both days.</dd></div><div><dt>Ferry home</dt><dd>Sat 17 Oct · 19:30 Cherbourg local. Arrive Dublin Sun 18 Oct 14:30.</dd></div></dl></div><figure class="trip-hero-image"><img src="${wikimedia('BE-brugge-rozenhoedkai.jpg')}" alt="Rozenhoedkaai and canals in Bruges" loading="eager" referrerpolicy="no-referrer"><figcaption>Bruges · 13–15 October.</figcaption></figure></section><div id="calendar"></div>${calendarEvents([
 ['Fri 9 Oct','Ferry out','Aim for Dublin Port 17:00 · latest check-in 17:30 · sailing 18:30.'], 
 ['Sat 10 Oct · 15:30 France time','Arrive France','Cherbourg arrival, then drive to Rouen.'],
-['Sat 10 Oct · 22:30','OPTION · RDV Club Rouen','Optional after dinner. Club open Saturday 22:30–07:00; no admission after 04:00.'],
+['Sat 10 Oct · 22:10–00:30','OPTION · RDV Club Rouen','Leave hotel 22:10 · walk 10–15 min · club about 22:30–00:15 · hotel around 00:30.'],
+['Sun 11 Oct · 17:15–00:15','OPTION · Only4You','Leave La Cure 17:15 · allow 40–45 min each way · club about 18:00–23:30 · back around 00:15.'],
 ['Sun 11 Oct · 09:30','Nausicaá · verified','Two Social Deal vouchers are verified.'], 
 ['Sun 11–Tue 13 Oct','La Cure · confirmed','Jurbise · 2 nights · check-in 15:00–18:00 · check-out by 10:00 Tuesday.'],
 ['Mon 12–Tue 13 Oct','Pairi Daiza · booked','2 adult entries + one-day parking for both days.'], 
 ['Mon 12 Oct · 10:00–12:00','Edenya · booked','2 entries. This is the confirmed slot from the calendar.'],
 ['Tue 13–Thu 15 Oct','InnBrugas · confirmed','Bruges · garage + breakfast booked · expected arrival 20:00.'],
 ['Thu 15–Fri 16 Oct','BisouX Caen · awaiting reconfirmation','Keep in the route as the intended Love Room stay; waiting for the property to reconfirm.'],
-['Fri 16–Sat 17 Oct','Le Saint Aubert · confirmed','One night · breakfast included · check-in 16:00–19:00.'], 
+['Fri 16–Sat 17 Oct','Le Saint Aubert · confirmed','One night · breakfast included · check-in 16:00–19:00.'],
+['Fri 16 Oct · 20:30–01:30','OPTION · Sauna California','Leave Mont area 20:30 · allow about 1h15 each way · sauna about 22:00–00:15 · hotel around 01:30.'], 
 ['Sat 17 Oct · 19:30 local','Cherbourg → Dublin','Overnight ferry; arrives Dublin Sun 18 Oct at 14:30.']
 ])}<section class="trip-section"><div class="section-title"><h2>Route at a glance</h2></div><div class="trip-route"><div>🇮🇪 <strong>Dublin</strong><small>9 Oct</small></div><span>→</span><div>🇫🇷 <strong>Rouen</strong><small>10 Oct</small></div><span>→</span><div>🐠 <strong>Nausicaá</strong><small>11 Oct</small></div><span>→</span><div>🇧🇪 <strong>Jurbise</strong><small>11–13</small></div><span>→</span><div>🐼 <strong>Pairi Daiza</strong><small>12–13</small></div><span>→</span><div>🇧🇪 <strong>Bruges</strong><small>13–15</small></div><span>→</span><div>✈️ <strong>Le Bourget</strong><small>15 Oct</small></div><span>→</span><div>❤️ <strong>BisouX Caen</strong><small>15 Oct · awaiting reconfirmation</small></div><span>→</span><div>🏰 <strong>Mont-Saint-Michel</strong><small>16 Oct</small></div><span>→</span><div>🎖️ <strong>D-Day Experience</strong><small>17 Oct</small></div><span>→</span><div>⛴️ <strong>Cherbourg</strong><small>17 Oct</small></div></div></section>${days(ROAD.days)}<section class="trip-section"><div class="section-title"><h2>Places to look forward to</h2></div><div class="trip-photo-grid">${photo(wikimedia('Rouen-cathedral.jpg'),'Rouen Cathedral at sunset','Rouen · Saturday night')}${photo(wikimedia('Pairi-Daiza.jpg'),'Pairi Daiza in Belgium','Pairi Daiza · Monday + Tuesday')}${photo(wikimedia('BE-brugge-rozenhoedkai.jpg'),'Rozenhoedkaai in Bruges','Bruges · Wednesday photo route')}${photo(wikimedia('Panorama de la baie du Mont Saint-Michel.jpg'),'Panorama of Mont-Saint-Michel bay','Mont-Saint-Michel · Friday')}</div></section>${hotelCards('road')}<section class="trip-section" id="useful"><div class="section-title"><h2>Useful trip status</h2></div><div class="notice trip-notice"><strong>Current status:</strong> Nausicaá vouchers are verified. BisouX Caen stays in the plan for 15–16 October and is awaiting reconfirmation. All other accommodation shown in the hotel cards is confirmed.</div><div class="notice trip-notice"><strong>Keep private:</strong> booking PINs and property access codes are not stored on this page. Use each hotel’s Gmail button to open the original confirmation.</div></section></div>${spicyPane()}${attribution([['Rouen · Kaelkael / Wikimedia Commons','https://commons.wikimedia.org/wiki/File:Rouen-cathedral.jpg'],['Pairi Daiza · Arnau Domènech / Wikimedia Commons','https://commons.wikimedia.org/wiki/File:Pairi-Daiza.jpg'],['Bruges · Balou46 / Wikimedia Commons','https://commons.wikimedia.org/wiki/File:BE-brugge-rozenhoedkai.jpg'],['Mont-Saint-Michel · Obit / Wikimedia Commons','https://commons.wikimedia.org/wiki/File:Panorama_de_la_baie_du_Mont_Saint-Michel.jpg']])}`;}
 
