@@ -8,7 +8,7 @@ import * as schema from '../src/hq/schema.mjs';
 import {SECTIONS} from '../src/hq/core.mjs';
 const root=resolve(import.meta.dirname,'..');
 const source=path=>readFileSync(resolve(root,path),'utf8');
-const markers=['private-home-imported-v1','legacy-imported-v1','recent-menu-recipes-v1','info-library-v1'];
+const markers=['private-home-imported-v1','legacy-imported-v1','recent-menu-recipes-v1','cooked-korean-fish-chips-2026-10-02-v1','info-library-v1'];
 function staticGraph(entry){const found=new Set();function visit(path){if(found.has(path))return;found.add(path);for(const m of source(path).matchAll(/(?:import|export)\s+(?:[^;'"\n]*?\s+from\s*)?['"](\.[^'"]+)['"]/g))visit(resolve(root,dirname(path),m[1]).slice(root.length+1));}visit(entry);return {files:[...found],bytes:[...found].reduce((n,p)=>n+statSync(resolve(root,p)).size,0)};}
 function countQueries(env){let calls=0;const original=env.DB.prepare.bind(env.DB);env.DB.prepare=sql=>{calls++;return original(sql);};return ()=>calls;}
 test('sign-in static dependency graph fits a 65KB source budget and excludes section code',()=>{const graph=staticGraph('public/hq/app.mjs');assert.ok(graph.bytes<65000,`sign-in loads ${graph.bytes} source bytes before selection`);for(const name of ['trips','views','settings','adults','shop','forms','images'])assert.ok(!graph.files.includes(`public/hq/${name}.mjs`),name);});
