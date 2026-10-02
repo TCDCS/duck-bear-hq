@@ -221,18 +221,9 @@ export async function importCookedKoreanFishChips(env,user){
  }else{
   steps.push(env.DB.prepare('INSERT INTO hq_records(id,kind,section,parent_id,creator_id,updated_by,revision,data,created_at,updated_at) VALUES(?,?,?,?,?,?,1,?,?,?)').bind(recipe.id,'recipe','menus',null,owner,owner,JSON.stringify(cooked),stamp,stamp));
  }
- const serving=await env.DB.prepare("SELECT data FROM hq_records WHERE id=? AND kind='serving' AND deleted_at IS NULL").bind(recipe.servingId).first();
- if(serving){
-  let existing={};try{existing=JSON.parse(serving.data||'{}');}catch{}
-  const data={...existing,description:recipe.data.description,recipeId:recipe.id,ingredients:recipe.data.ingredients,ingredientsConfirmed:true};
-  steps.push(env.DB.prepare('UPDATE hq_records SET data=?,revision=revision+1,updated_by=?,updated_at=? WHERE id=? AND kind=\'serving\' AND deleted_at IS NULL').bind(JSON.stringify(data),owner,stamp,recipe.servingId));
- }
- const week=await env.DB.prepare("SELECT data FROM hq_records WHERE id='week-2026-09-28' AND kind='week' AND deleted_at IS NULL").first();
- if(week){
-  const data=JSON.parse(week.data);
-  if(data.snapshot?.meals) data.snapshot.meals=data.snapshot.meals.map(meal=>meal.id===recipe.servingId?{...meal,description:recipe.data.description,recipeId:recipe.id,ingredients:recipe.data.ingredients,ingredientsConfirmed:true}:meal);
-  steps.push(env.DB.prepare("UPDATE hq_records SET data=?,revision=revision+1,updated_by=?,updated_at=? WHERE id='week-2026-09-28' AND deleted_at IS NULL").bind(JSON.stringify(data),owner,stamp));
- }
+ // Published week/serving records are protected by database triggers. Keep the
+ // historical snapshot immutable and correct its public presentation via
+ // publicMenuMeal(), while the editable recipe record receives the cooked version.
  steps.push(env.DB.prepare('INSERT OR IGNORE INTO hq_meta(key,value) VALUES(?,?)').bind(marker,stamp));
  await env.DB.batch(steps);
 }
