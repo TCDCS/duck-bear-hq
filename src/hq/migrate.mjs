@@ -152,10 +152,28 @@ const RECENT_MENU_RECIPES=[
   servingId:'menu-2026-09-28-fri-dinner',
   data:{
    title:'Korean Punishment Fish & Chips',
-   description:'Frozen fish and chips upgraded with a sticky gochujang glaze and spicy mayo.',
+   description:'Crispy fish with a sticky gochujang, honey and soy glaze, sesame-spring onion chips and gochujang mayo.',
    course:'dinner',cuisine:'Korean-style',tags:['fish','gochujang','easy'],minutes:30,servings:2,
-   ingredients:['2 frozen battered or breaded fish portions','Frozen oven chips for 2','1 tbsp gochujang','1 tbsp honey','1 tsp soy sauce','1 lime','2 spring onions, sliced','1 tbsp sesame seeds','3 tbsp mayonnaise','Sriracha, to taste'],
-   instructions:'1. Cook the frozen fish and chips according to the packet instructions.\n2. Mix the gochujang, honey and soy with a squeeze of lime.\n3. When the fish is nearly done, brush or drizzle the glaze over it and return it to the oven or air fryer briefly so it turns sticky.\n4. Mix the mayonnaise with sriracha to taste.\n5. Top the fish with spring onion and sesame. Serve with the chips, spicy mayo and extra lime.',
+   ingredients:[
+    '2 battered or breaded fish portions',
+    'Chips for 2',
+    '2 spring onions, finely sliced',
+    '1 1/2 tbsp gochujang, for the fish glaze',
+    '1 tbsp honey, for the fish glaze',
+    '1 tbsp soy sauce',
+    '1 tsp rice vinegar or lime juice',
+    '1 tsp sesame oil, for the fish glaze',
+    '1 small garlic clove, crushed',
+    '1–2 tsp water, as needed',
+    '3 tbsp mayonnaise',
+    '1/2–1 tsp gochujang, for the mayo',
+    'Small squeeze of lemon or lime juice, for the mayo',
+    '1/2 tsp honey, optional for the mayo',
+    '1/2 tsp sesame oil, for the cooked chips',
+    'Pinch of salt',
+    '1 tsp sesame seeds, divided'
+   ],
+   instructions:'1. Cook the chips until properly crisp. Do not sauce or toss them before cooking.\n2. Cook the battered fish separately until crisp and piping hot through.\n3. While they cook, make the fish glaze: gently heat 1 1/2 tbsp gochujang, 1 tbsp honey, 1 tbsp soy sauce, 1 tsp rice vinegar or lime juice, 1 tsp sesame oil, the crushed garlic and 1–2 tsp water for 2–3 minutes, stirring until glossy.\n4. Make the gochujang mayo by mixing 3 tbsp mayonnaise with 1/2–1 tsp gochujang and a squeeze of lemon or lime. Add 1/2 tsp honey if a slightly sweeter mayo is wanted.\n5. When the fish is fully cooked and crisp, spoon or brush the hot glaze over the top. Keep the underside mostly dry so the batter stays crisp.\n6. As soon as the chips are cooked, toss them lightly with 1/2 tsp sesame oil, a pinch of salt, about 1/2 tsp sesame seeds and some of the sliced spring onion. Toss only after cooking so they stay crisp.\n7. Finish the glazed fish with the remaining spring onion and sesame seeds. Serve with the seasoned chips and drizzle or dip with the gochujang mayo.',
    link:'',week:'2026-09-28',status:'planned',photos:[],coverId:'',attachmentId:''
   }
  }
@@ -183,5 +201,27 @@ export async function importRecentMenuRecipes(env,user){
   steps.push(env.DB.prepare("UPDATE hq_records SET data=?,revision=revision+1,updated_by=?,updated_at=? WHERE id='week-2026-09-28' AND deleted_at IS NULL").bind(JSON.stringify(data),owner,stamp));
  }
  steps.push(env.DB.prepare("INSERT OR IGNORE INTO hq_meta(key,value) VALUES('recent-menu-recipes-v1',?)").bind(stamp));
+ await env.DB.batch(steps);
+}
+
+
+export async function importCookedKoreanFishChips(env,user){
+ if(!(await permission(env,user,'intimate')).pair)return;
+ const marker='cooked-korean-fish-chips-2026-10-02-v1';
+ if(await env.DB.prepare('SELECT 1 AS ok FROM hq_meta WHERE key=?').bind(marker).first())return;
+ const pair=await env.DB.prepare("SELECT user_id FROM hq_pair WHERE role='owner' ORDER BY user_id LIMIT 1").first();
+ if(!pair)return;
+ const owner=pair.user_id,stamp=now(),recipe=RECENT_MENU_RECIPES.find(r=>r.id==='recipe-2026-10-02-korean-fish-chips');
+ const row=await env.DB.prepare("SELECT data FROM hq_records WHERE id=? AND kind='recipe' AND deleted_at IS NULL").bind(recipe.id).first();
+ const cooked={...recipe.data,servingId:recipe.servingId};
+ const steps=[];
+ if(row){
+  let existing={};try{existing=JSON.parse(row.data||'{}');}catch{}
+  const data={...existing,...cooked,photos:existing.photos||cooked.photos,coverId:existing.coverId||cooked.coverId,attachmentId:existing.attachmentId||cooked.attachmentId};
+  steps.push(env.DB.prepare('UPDATE hq_records SET data=?,revision=revision+1,updated_by=?,updated_at=? WHERE id=? AND kind=\'recipe\' AND deleted_at IS NULL').bind(JSON.stringify(data),owner,stamp,recipe.id));
+ }else{
+  steps.push(env.DB.prepare('INSERT INTO hq_records(id,kind,section,parent_id,creator_id,updated_by,revision,data,created_at,updated_at) VALUES(?,?,?,?,?,?,1,?,?,?)').bind(recipe.id,'recipe','menus',null,owner,owner,JSON.stringify(cooked),stamp,stamp));
+ }
+ steps.push(env.DB.prepare('INSERT OR IGNORE INTO hq_meta(key,value) VALUES(?,?)').bind(marker,stamp));
  await env.DB.batch(steps);
 }
