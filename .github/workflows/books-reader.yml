@@ -16,7 +16,7 @@ on:
       - 'package*.json'
       - '.github/workflows/books-reader.yml'
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: books-reader-${{ github.ref }}
   cancel-in-progress: true
@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref || github.ref_name }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -36,17 +36,9 @@ jobs:
         with:
           python-version: '3.12'
       - run: mkdir -p verification
-      - name: Apply checksum-verified reader review fixes
-        if: github.ref == 'refs/heads/feature/books-reader-2026-10-03' && hashFiles('tools/books/reviewed-fixes.py') != ''
-        run: |
-          python tools/books/reviewed-fixes.py
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git rm tools/books/reviewed-fixes.py
-          git add src/books/google.mjs src/books/api.mjs public/books/reader.mjs public/books/publication.mjs tests/books/google.test.mjs tests/books/reader-contract.test.mjs tools/books/browser_test.py
-          git commit -m 'fix: open EPUB bytes correctly and protect reading versions from changed Drive files'
-          git push origin HEAD:feature/books-reader-2026-10-03
       - run: npm ci
+      - name: Record dependency audit
+        run: npm audit --json > verification/dependency-audit.json || true
       - name: All existing and new unit tests
         run: |
           set -o pipefail
@@ -79,3 +71,15 @@ jobs:
           name: books-reader-evidence
           path: verification/
           retention-days: 7
+      - name: Preserve development source for offline diagnosis
+        if: always() && github.event_name == 'push'
+        run: |
+          git archive --format=tar HEAD > /tmp/books-source.tar
+          gzip /tmp/books-source.tar
+      - uses: actions/upload-artifact@v4
+        if: always() && github.event_name == 'push'
+        with:
+          name: books-source-snapshot
+          path: /tmp/books-source.tar.gz
+          retention-days: 3
+          compression-level: 0
