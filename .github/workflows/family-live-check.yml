@@ -8,32 +8,40 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 8e2b3266c087e2a3f79428a2444e624d168bdaea
+          ref: 0ed8e060e61a1e155f2979f45ff68a499f0a5bef
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Verify deployed family source and login boundaries
+      - name: Verify deployed genealogy source and login boundaries
         run: |
           node --input-type=module <<'NODE'
           import assert from 'node:assert/strict';
           import {readFile,writeFile} from 'node:fs/promises';
           import {createHash} from 'node:crypto';
-          const origin='https://guannan.party',report={commit:'8e2b3266c087e2a3f79428a2444e624d168bdaea',ok:false,checks:[]};
+          import {setTimeout as sleep} from 'node:timers/promises';
+          const origin='https://guannan.party',report={commit:'0ed8e060e61a1e155f2979f45ff68a499f0a5bef',ok:false,checks:[]};
           const hash=b=>createHash('sha256').update(b).digest('hex');
           try{
-            for(const path of ['/hq/family.mjs','/hq/family-model.mjs','/hq/family.css','/hq/forms.mjs','/hq/routes.mjs','/hq/lazy-views.mjs','/hq/world-land.svg','/hq/app.mjs']){
-              const r=await fetch(origin+path+'?release=2026.10.03-family-history.1',{headers:{'cache-control':'no-cache'},signal:AbortSignal.timeout(20000)});
-              assert.equal(r.status,200,path);assert.equal(hash(Buffer.from(await r.arrayBuffer())),hash(await readFile('public'+path)),path+' released source');report.checks.push(path+' source hash matches');
+            const paths=['/hq/family.mjs','/hq/family-genealogy.mjs','/hq/family-tree.mjs','/hq/family-model.mjs','/hq/family.css','/hq/forms.mjs','/hq/routes.mjs','/hq/lazy-views.mjs','/hq/world-land.svg','/hq/app.mjs'];
+            for(const path of paths){
+              const expected=hash(await readFile('public'+path));let matches=false;
+              for(let attempt=0;attempt<9;attempt++){
+                const r=await fetch(origin+path+'?release=2026.10.03-genealogy.2&probe='+attempt,{headers:{'cache-control':'no-cache'},signal:AbortSignal.timeout(15000)});
+                matches=r.status===200&&hash(Buffer.from(await r.arrayBuffer()))===expected;
+                if(matches)break;
+                if(attempt<8)await sleep(5000);
+              }
+              assert.ok(matches,path+' must match released source');report.checks.push(path+' source hash matches');
             }
-            // These routes return a static shell. The released app handles login;
-            // no person data is embedded in the HTML. Verify the exact static bytes.
+            // The HTML is a data-free shell; the protected API enforces login.
             const shellHash=hash(await readFile('public/hq/index.html'));
-            for(const path of ['/family-tree/','/family-tree/tree/','/family-tree/map/','/family-tree/timeline/','/family-tree/import/']){
-              const r=await fetch(origin+path,{redirect:'manual',signal:AbortSignal.timeout(20000)});assert.equal(r.status,200,path);assert.equal(hash(Buffer.from(await r.arrayBuffer())),shellHash,path+' static shell only');report.checks.push(path+' serves only the data-free application shell');
+            for(const path of ['/family-tree/','/family-tree/tree/','/family-tree/people/','/family-tree/map/','/family-tree/timeline/','/family-tree/import/']){
+              const r=await fetch(origin+path,{redirect:'manual',signal:AbortSignal.timeout(20000)});
+              assert.equal(r.status,200,path);assert.equal(hash(Buffer.from(await r.arrayBuffer())),shellHash,path+' static shell only');report.checks.push(path+' serves only the data-free application shell');
             }
             for(const path of ['/api/hq/me','/api/hq/records?kind=person','/api/hq/records?kind=familyPrivate']){
               const r=await fetch(origin+path,{signal:AbortSignal.timeout(20000)});assert.equal(r.status,401,path);report.checks.push(path+' rejects anonymous read');
