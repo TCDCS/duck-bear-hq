@@ -1,8 +1,8 @@
 /** Load only the selected feature; browser import caching deduplicates downloads. */
 export const recordForm = async (...args)=>(await import('./forms.mjs')).recordForm(...args);
 export const collectionView = async (...args)=>(await import('./views.mjs')).collectionView(...args);
-export const recordView = async (...args)=>(await import('./views.mjs')).recordView(...args);
-export const familyView = async (...args)=>(await import('./views.mjs')).familyView(...args);
+export const recordView = async (...args)=>['person','relationship','story','lifeEvent','familyPlace','familySource','familyResearch','familyPrivate'].includes(args[1]?.kind)?(await import('./family.mjs')).familyRecordView(...args):(await import('./views.mjs')).recordView(...args);
+export const familyView = async (...args)=>(await import('./family.mjs')).familyView(...args);
 export const scrapbookView = async (...args)=>(await import('./views.mjs')).scrapbookView(...args);
 export const plansView = async (...args)=>(await import('./views.mjs')).plansView(...args);
 export const homeView = async (...args)=>(await import('./views.mjs')).homeView(...args);

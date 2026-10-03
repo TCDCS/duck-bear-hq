@@ -21,7 +21,7 @@ with sync_playwright() as p:
   page.get_by_role('heading',name='Test family person',exact=True).wait_for()
   person_url=page.url
   page.reload();page.get_by_role('heading',name='Test family person',exact=True).wait_for()
-  page.get_by_role('link',name='Edit',exact=True).click()
+  page.get_by_role('link',name='Edit person',exact=True).click()
   page.get_by_label('Notes',exact=True).fill('A real saved family note.')
   page.get_by_role('button',name='Save person',exact=True).click()
   page.get_by_text('A real saved family note.',exact=True).wait_for()

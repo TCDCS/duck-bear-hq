@@ -1,3 +1,4 @@
+import {familyImportApi} from './family-import.mjs';
 import {publicPasskeys,privatePasskeys} from './passkeys.mjs';
 import {resolveRoute} from '../../public/hq/routes.mjs';
 import {extrasApi,publicSite,publicMenuPage,publicMenuMeal} from './extras.mjs';
@@ -29,6 +30,7 @@ async function api(request,env,user,url){
  const backup=await backupApi(request,env,user,url);if(backup)return backup;
  const media=await mediaApi(request,env,user,url);if(media)return media;
  const account=await accountApi(request,env,user,url);if(account)return account;
+ const family=await familyImportApi(request,env,user,url);if(family)return family;
  const path=url.pathname,method=request.method;let m;
  if(path==='/api/hq/me'&&method==='GET')return json(await me(env,user));
  if(path==='/api/hq/records'&&method==='GET')return json(await listRecords(env,user,{kind:url.searchParams.get('kind')||undefined,section:url.searchParams.get('section')||undefined,parent:url.searchParams.get('parent')||undefined,search:url.searchParams.get('q')||'',cursor:url.searchParams.get('cursor')||'0',limit:Number(url.searchParams.get('limit')||60),trash:url.searchParams.get('trash')==='1'}));

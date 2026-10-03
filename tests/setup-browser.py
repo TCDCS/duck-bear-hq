@@ -26,7 +26,9 @@ async def main():
    await context.add_init_script("localStorage.setItem('proper-karted-settings-v1',JSON.stringify({quality:'low',sound:false,music:false,reduced:true}))")
    page=await context.new_page();page.on('pageerror',lambda e:errors.append(str(e)))
    await page.goto(BASE+'/',wait_until='domcontentloaded')
-   await check('both homepage solo links open setup, not auto-play',await page.locator('a[href="/games/wacky-races/"]').count()==2 and await page.locator('a[href*="play=1"]').count()==0)
+   # The current hero links to the Games catalogue; its Wacky Races card remains the solo entry.
+   # Verify the real entry and no autoplay rather than requiring an obsolete duplicate hero link.
+   await check('homepage solo entry opens setup, not auto-play',await page.locator('a[href="/games/wacky-races/"]').count()>=1 and await page.locator('a[href*="play=1"]').count()==0)
    await page.locator('a[href="/games/wacky-races/"]').first.click();await wait(page,'!!window.WackyRaces');await page.wait_for_timeout(3500)
    await check('opening the homepage game link stays in setup',await page.evaluate('WackyRaces.screen==="menu"&&document.getElementById("hud").hidden'))
    await check('level, vehicle, driver and settings controls are available',all([await page.locator('#'+i).is_visible() for i in ['trackNext','vehicle','driverOpen','settingsOpen','startRace']]))

@@ -48,8 +48,13 @@ with sync_playwright() as p:
         page.locator('#sidebar a[href="/family-tree/people/"]').click()
         page.wait_for_url('**/family-tree/people/')
         expect(page.locator('body')).to_have_attribute('data-chapter','family')
+        # The directory uses profile links, not a heading for each person's name.
+        profile=page.locator('a.family-person-card').filter(has=page.get_by_text('Test family person',exact=True))
+        expect(profile).to_be_visible()
+        profile.click()
         page.get_by_role('heading',name='Test family person',exact=True).wait_for()
-        checks.append({'test':'SPA chapter switch'})
+        expect(page.locator('body')).to_have_attribute('data-chapter','family')
+        checks.append({'test':'SPA chapter switch and family profile link'})
         for path,chapter,name in [
             ('/family-tree/tree/','family','family'),
             ('/scrapbook/','scrapbook','scrapbook'),

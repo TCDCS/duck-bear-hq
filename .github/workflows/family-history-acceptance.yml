@@ -1,0 +1,38 @@
+name: Family history acceptance
+on:
+  push:
+    branches: [codex/family-history-20261003]
+    paths: ['src/**', 'public/**', 'tests/**', 'scripts/**', 'migrations/**', '.github/workflows/family-history-acceptance.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: family-history-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run check
+      - name: Install browser acceptance dependencies
+        run: pip install playwright && python -m playwright install --with-deps chromium
+      - name: Synthetic family browser acceptance
+        run: |
+          node tests/helpers/family-browser-server.mjs > /tmp/family-browser-server.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8793/hq/family.mjs >/dev/null && break; sleep 1; done
+          timeout 180 python tests/family-browser.py
+      - name: Synthetic browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: family-browser-evidence-${{ github.sha }}
+          path: family-acceptance/
+          retention-days: 3
