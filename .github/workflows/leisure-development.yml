@@ -1,0 +1,67 @@
+name: Books development
+on:
+  push:
+    branches: [feature/books-reader-integrations]
+  pull_request:
+    paths:
+      - 'src/hq/leisure/**'
+      - 'public/books/**'
+      - 'tests/leisure*'
+      - 'scripts/leisure*'
+      - '.github/workflows/leisure-development.yml'
+permissions:
+  contents: read
+concurrency:
+  group: books-development-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  baseline-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Full unit suite
+        id: tests
+        continue-on-error: true
+        run: |
+          mkdir -p .development-evidence
+          set -o pipefail
+          npm test 2>&1 | tee .development-evidence/unit-tests.log
+      - name: Repository checks
+        id: checks
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run check 2>&1 | tee .development-evidence/repository-checks.log
+      - name: Record exact baseline and outcomes
+        if: always()
+        env:
+          TEST_RESULT: ${{ steps.tests.outcome }}
+          CHECK_RESULT: ${{ steps.checks.outcome }}
+        run: |
+          mkdir -p .development-evidence
+          printf 'commit=%s\nunit_tests=%s\nrepository_checks=%s\n' "$GITHUB_SHA" "$TEST_RESULT" "$CHECK_RESULT" > .development-evidence/summary.txt
+          git status --short >> .development-evidence/summary.txt
+          cat .development-evidence/summary.txt >> "$GITHUB_STEP_SUMMARY"
+      - name: Package isolated development workspace
+        if: always()
+        run: |
+          tar --exclude='./.git' --exclude='./.wrangler' --exclude='./development-workspace.tar.gz' -czf /tmp/development-workspace.tar.gz .
+          mv /tmp/development-workspace.tar.gz development-workspace.tar.gz
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: books-development-workspace
+          path: development-workspace.tar.gz
+          retention-days: 3
+          compression-level: 0
+      - name: Keep failures visible
+        if: steps.tests.outcome != 'success' || steps.checks.outcome != 'success'
+        run: exit 1
