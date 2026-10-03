@@ -25,10 +25,13 @@ try{
  report.before=(await DB.prepare("SELECT * FROM hq_records WHERE section='family' OR kind='familyPrivate' ORDER BY id").all()).results;
  const options={overwrite:true};const preview=await previewFamilyImport(env,owner,payload,options);report.preview=preview;
  if(preview.conflicts.length)throw Error('Import conflicts require private review.');
+ if(process.env.FAMILY_IMPORT_PHASE==='preview'){report.ok=true;console.log(JSON.stringify({ok:true,phase:'preview',newRecords:preview.createCount,updatedRecords:preview.updateCount,unchanged:preview.keepCount}));}else{
+ if(process.env.FAMILY_EXPECTED_SIGNATURE&&preview.signature!==process.env.FAMILY_EXPECTED_SIGNATURE)throw Error('Family records changed since the approved preview. Nothing was imported.');
  report.applied=await applyFamilyImport(env,owner,payload,{...options,signature:preview.signature});
  report.after=(await DB.prepare("SELECT * FROM hq_records WHERE section='family' OR kind='familyPrivate' ORDER BY id").all()).results;
  const second=await previewFamilyImport(env,owner,payload,options);report.repeatPreview=second;
  if(second.createCount||second.updateCount||second.conflicts.length)throw Error('Repeat import was not idempotent.');
  report.ok=true;console.log(JSON.stringify({ok:true,created:report.applied.created,updated:report.applied.updated,unchanged:report.applied.unchanged,repeatImportChanges:0}));
+ }
 }catch(e){report.error=String(e.message);console.error('Private import did not complete. Review the encrypted result; no family details were logged.');process.exitCode=1;}
 finally{report.finishedAt=new Date().toISOString();await privateReport();}
