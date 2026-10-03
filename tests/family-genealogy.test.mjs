@@ -64,3 +64,17 @@ test('layout is stable for input ordering and an absent focus safely picks the m
  assert.deepEqual(mod.pedigreeLayout(pp,rr,'bad'),mod.pedigreeLayout([...pp].reverse(),[...rr].reverse(),'bad'));
  assert.deepEqual(mod.pedigreeLayout([],[],'none').nodes,[]);
 });
+
+test('initial chart view keeps readable cards and focus visible on phones and large trees',()=>{
+ assert.equal(typeof mod.initialTreeViewport,'function');
+ const pp=['root','mum','dad','adopt1','adopt2','grand1','grand2'].map(x=>person(x));
+ const rr=[rel('mum','root'),rel('dad','root'),rel('adopt1','dad','adoptive-parent'),rel('adopt2','dad','adoptive-parent'),rel('grand1','dad'),rel('grand2','dad')];
+ for(const size of [[360,520],[760,560],[1200,650]])for(const l of [mod.pedigreeLayout(pp,rr,'root',6),mod.immediateFamilyLayout(pp,rr,'root')]){
+  const v=mod.initialTreeViewport(l,...size),n=l.nodes.find(x=>x.id===l.root);
+  assert.ok(v.scale>=.9&&v.scale<=1,'Readable starting scale');
+  assert.ok(n.x*v.scale+v.x>=12,'Focus left visible');
+  assert.ok((n.x+n.width)*v.scale+v.x<=size[0]-12,'Focus right visible');
+  assert.ok(n.y*v.scale+v.y>=12,'Focus top visible');
+  assert.ok((n.y+n.height)*v.scale+v.y<=size[1]-48,'Focus bottom visible');
+ }
+});

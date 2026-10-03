@@ -101,8 +101,21 @@ async def main():
                 for tab,selector in [('tree','.genealogy-stage'),('people','#family-directory'),('timeline','#timeline-rows'),('map','#map-place-list')]:
                     await visit('/family-tree/'+tab+'/',selector)
                     assert await page.evaluate('document.documentElement.scrollWidth <= window.innerWidth + 1'),f'{width} {tab} overflows'
+                    if tab=='tree':
+                        assert int((await page.locator('[data-scale]').inner_text()).strip('%'))>=90,'Initial chart is too small to read'
+                        assert await page.evaluate("""()=>{const box=document.querySelector('.tree-view-switch').getBoundingClientRect();return [...document.querySelectorAll('[data-tree-mode]')].every(e=>{const b=e.getBoundingClientRect();return b.width>=60&&b.left>=box.left&&b.right<=box.right})}"""),'Layout button is clipped'
+                        stage=page.locator('.genealogy-stage');await stage.focus()
+                        before=await page.locator('#tree-world').get_attribute('style');await page.keyboard.press('ArrowRight')
+                        assert await page.locator('#tree-world').get_attribute('style')!=before
+                        await page.get_by_role('button',name='Home person',exact=True).click()
+                        focus=await page.locator('.tree-person.is-focus').bounding_box();box=await stage.bounding_box()
+                        assert focus['x']>=box['x'] and focus['x']+focus['width']<=box['x']+box['width'],'Focus card not visible'
+                        # Both layout controls must remain usable without horizontal scrolling.
+                        await page.locator('[data-tree-mode=family]').click()
+                        assert 'Charlie Rowan' in await page.locator('#tree-world').inner_text()
+                        await page.locator('[data-tree-mode=ancestors]').click()
                     await page.screenshot(path=str(OUT/f'{tab}-{width}.png'),full_page=True)
-            checks.append('390px and 768px responsive tree, people, timeline and locations')
+            checks.append('390px and 768px responsive layouts, readable focus, unclipped view buttons and keyboard pan')
             # The redesign must not delete archived facts or alter household boundaries.
             response=await ctx.request.get(BASE+'/api/hq/records?kind=lifeEvent')
             facts=(await response.json())['records'];assert any(r['data']['eventType']=='career' for r in facts);assert any(r['data']['eventType']=='achievement' for r in facts)

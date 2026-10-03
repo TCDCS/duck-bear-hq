@@ -1,7 +1,7 @@
 /** Interactive genealogy chart. All data and portraits remain in the signed-in site. */
 import {$,$$,esc,imageUrl,linkButton} from './client.mjs';
 import {familyDate,RELATION_LABELS} from './family-model.mjs';
-import {pedigreeLayout,immediateFamilyLayout,closeRelatives,lifespan,isPerson} from './family-genealogy.mjs';
+import {pedigreeLayout,immediateFamilyLayout,closeRelatives,lifespan,isPerson,initialTreeViewport} from './family-genealogy.mjs';
 const PROFILE='/family-tree/people/';
 const initials=name=>String(name).split(/\s+/).slice(0,2).map(s=>s[0]||'').join('');
 const portrait=p=>p.data.avatarId?`<img src="${imageUrl(p.data.avatarId)}" alt="" style="object-position:${Number(p.data.avatarX??50)}% ${Number(p.data.avatarY??50)}%" draggable="false">`:`<span aria-hidden="true">${esc(initials(p.data.name))}</span>`;
@@ -20,10 +20,11 @@ function edgePath(e,nodes,mode){
  return `M ${x1} ${y1} V ${mid} H ${x2} V ${y2}`;
 }
 function viewport(host,world,size){
- let scale=1,x=0,y=0,pointers=new Map(),gesture=null,moved=false,fitMode=true;
+ let scale=1,x=0,y=0,pointers=new Map(),gesture=null,moved=false,fitMode='initial';
  const clamp=n=>Math.max(.22,Math.min(2,n));
  const draw=()=>{world.style.transform=`translate(${x}px,${y}px) scale(${scale})`;const out=$('[data-scale]',host);if(out)out.textContent=Math.round(scale*100)+'%';};
- const fit=()=>{const w=host.clientWidth,h=host.clientHeight;scale=clamp(Math.min((w-48)/size.width,(h-100)/size.height,1));x=(w-size.width*scale)/2;y=(h-size.height*scale)/2;fitMode=true;draw();};
+ const fit=()=>{const w=host.clientWidth,h=host.clientHeight;scale=clamp(Math.min((w-48)/size.width,(h-100)/size.height,1));x=(w-size.width*scale)/2;y=(h-size.height*scale)/2;fitMode='fit';draw();};
+ const initial=()=>{const start=initialTreeViewport(size,host.clientWidth,host.clientHeight);({scale,x,y}=start);fitMode='initial';draw();};
  const zoom=(factor,cx=host.clientWidth/2,cy=host.clientHeight/2)=>{const next=clamp(scale*factor);x=cx-(cx-x)*next/scale;y=cy-(cy-y)*next/scale;scale=next;fitMode=false;draw();};
  const abort=new AbortController(),opts={signal:abort.signal};
  host.addEventListener('wheel',e=>{if(e.target.closest('.tree-preview,.tree-toolbar'))return;e.preventDefault();const r=host.getBoundingClientRect();zoom(Math.exp(-e.deltaY*.002),e.clientX-r.left,e.clientY-r.top);},{...opts,passive:false});
@@ -44,8 +45,8 @@ function viewport(host,world,size){
  $('[data-tree-zoom=out]',host).onclick=()=>zoom(1/1.2);
  $('[data-tree-zoom=fit]',host).onclick=fit;
  $('[data-tree-zoom=actual]',host).onclick=()=>zoom(1/scale);
- let observer=new ResizeObserver(()=>{if(!host.isConnected){observer.disconnect();abort.abort();return;}if(fitMode)fit();});observer.observe(host);
- fit();return {destroy(){abort.abort();observer.disconnect();},fit};
+ let observer=new ResizeObserver(()=>{if(!host.isConnected){observer.disconnect();abort.abort();return;}if(fitMode==='fit')fit();else if(fitMode==='initial')initial();});observer.observe(host);
+ initial();return {destroy(){abort.abort();observer.disconnect();},fit};
 }
 export function renderGenealogyTree(body,model,A){
  const people=model.people.filter(isPerson).sort((a,b)=>a.data.name.localeCompare(b.data.name)),byId=new Map(people.map(p=>[p.id,p]));
@@ -61,7 +62,7 @@ export function renderGenealogyTree(body,model,A){
   <div class="genealogy-stage" id="family-tree-canvas" tabindex="0" role="region" aria-label="Interactive family tree. Drag to move; scroll or use plus and minus to zoom. Arrow keys move the chart.">
    <div class="tree-world" id="tree-world"></div>
    <div class="tree-zoom-controls" role="group" aria-label="Tree zoom"><button type="button" data-tree-zoom="in" aria-label="Zoom in">+</button><button type="button" data-tree-zoom="out" aria-label="Zoom out">−</button><button type="button" data-tree-zoom="fit">Fit</button><button type="button" data-tree-zoom="actual" aria-label="Actual size"><span data-scale>100%</span></button></div>
-   <div class="tree-hint">Drag to move · Scroll or pinch to zoom</div><aside class="tree-preview" id="tree-preview" aria-label="Selected person" hidden></aside>
+   <div class="tree-hint">Drag to explore · Use Fit to see all branches</div><aside class="tree-preview" id="tree-preview" aria-label="Selected person" hidden></aside>
   </div>
   <footer class="tree-footer"><div id="tree-summary" role="status"></div><div class="tree-key"><span class="tree-key-bio">Biological</span><span class="tree-key-adopt">Adoptive</span><span class="tree-key-partner">Partner / former partner</span></div></footer>
  </section>`;

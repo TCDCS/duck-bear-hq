@@ -102,3 +102,11 @@ export function closeRelatives(people,relations,id){
  for(const e of edges)if(e.to!==id&&parentIds.has(e.from)&&ANCESTOR_TYPES.has(e.type))add('siblings',e.to,e.type==='adoptive-parent'?'adoptive-sibling':'sibling');
  return result;
 }
+/** Start at readable text size; Fit remains an explicit overview control. */
+export function initialTreeViewport(layout,width,height){
+ const fit=Math.min((width-48)/layout.width,(height-100)/layout.height,1);
+ const scale=Math.max(.9,fit),focus=layout.nodes.find(n=>n.id===layout.root)||layout.nodes[0];
+ if(!focus||fit>=.9)return {scale,x:(width-layout.width*scale)/2,y:(height-layout.height*scale)/2};
+ const x=layout.mode==='ancestors'?24-focus.x*scale:width/2-(focus.x+focus.width/2)*scale;
+ return {scale,x,y:(height-44)/2-(focus.y+focus.height/2)*scale};
+}
