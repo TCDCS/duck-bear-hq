@@ -10,3 +10,13 @@ export async function prepareEpub(bytes){await epubTools();const raw=new Uint8Ar
  const container=zip.file('META-INF/container.xml');if(!container)throw new Error('This is not a supported EPUB.');const root=xml(await container.async('string')).getElementsByTagName('rootfile')[0]?.getAttribute('full-path');const opfPath=localPath(root||'');if(!zip.file(opfPath))throw new Error('The EPUB package is missing.');const opf=xml(await zip.file(opfPath).async('string'));const text=(tag)=>opf.getElementsByTagNameNS('*',tag)[0]?.textContent?.trim()||'';const metadata={title:text('title'),authors:[...opf.getElementsByTagNameNS('*','creator')].map(x=>x.textContent.trim()),description:text('description'),language:text('language')};const items=[...opf.getElementsByTagNameNS('*','item')];let cover=null;for(const item of items){const path=localPath(item.getAttribute('href')||'',opfPath);if(!zip.file(path))throw new Error('An EPUB resource is missing: '+path);const mt=item.getAttribute('media-type')||'';if(/(?:javascript|ecmascript)/i.test(mt))zip.file(path,'');if(/image\/(?:jpeg|png|webp)/.test(mt)&&((item.getAttribute('properties')||'').includes('cover-image')||item.id===opf.querySelector('meta[name="cover"]')?.getAttribute('content')))cover={bytes:await zip.file(path).async('uint8array'),mime:mt};}
  for(const item of entries){if(item.dir)continue;if(/\.(?:xhtml|html|htm|svg)$/i.test(item.name)){if(/\.svg$/i.test(item.name)){const d=DOMPurify.sanitize(await item.async('string'),{USE_PROFILES:{svg:true,svgFilters:false},FORBID_TAGS:['script','foreignObject','use','image','a','animate','set']});zip.file(item.name,d);}else zip.file(item.name,cleanChapter(await item.async('string')));}else if(/\.css$/i.test(item.name))zip.file(item.name,(await item.async('string')).replace(/@import[^;]*;?/gi,'').replace(/url\s*\([^)]*\)/gi,''));}
  return {bytes:await zip.generateAsync({type:'arraybuffer',compression:'STORE'}),metadata,cover};}
+
+export async function openPreparedEpub(bytes){
+ const book=ePub(undefined,{replacements:'blobUrl'});
+ let timer;
+ try {
+  await Promise.race([(async()=>{await book.open(bytes,'binary');await book.ready;})(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('This EPUB could not be opened within the reader time limit.')),20000);})]);
+  return book;
+ }catch(error){book.destroy();throw error;}
+ finally{clearTimeout(timer);}
+}
