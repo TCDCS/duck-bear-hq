@@ -1,7 +1,7 @@
 /** Interactive genealogy chart. All data and portraits remain in the signed-in site. */
 import {$,$$,esc,imageUrl,linkButton} from './client.mjs';
 import {familyDate,RELATION_LABELS} from './family-model.mjs';
-import {pedigreeLayout,immediateFamilyLayout,closeRelatives,lifespan,isPerson,initialTreeViewport} from './family-genealogy.mjs';
+import {pedigreeLayout,immediateFamilyLayout,extendedFamilyLayout,closeRelatives,lifespan,isPerson,initialTreeViewport} from './family-genealogy.mjs';
 const PROFILE='/family-tree/people/';
 const initials=name=>String(name).split(/\s+/).slice(0,2).map(s=>s[0]||'').join('');
 const portrait=p=>p.data.avatarId?`<img src="${imageUrl(p.data.avatarId)}" alt="" style="object-position:${Number(p.data.avatarX??50)}% ${Number(p.data.avatarY??50)}%" draggable="false">`:`<span aria-hidden="true">${esc(initials(p.data.name))}</span>`;
@@ -52,11 +52,11 @@ export function renderGenealogyTree(body,model,A){
  const people=model.people.filter(isPerson).sort((a,b)=>a.data.name.localeCompare(b.data.name)),byId=new Map(people.map(p=>[p.id,p]));
  if(!people.length){body.innerHTML='<section class="panel"><h2>Start with one person</h2><p>Add yourself, then connect your parents and family.</p>'+linkButton(PROFILE+'new/','Add a person')+'</section>';return;}
  const q=new URLSearchParams(location.search),home=people.find(p=>p.data.isRoot)||people[0];
- let focus=byId.has(q.get('focus'))?q.get('focus'):home.id,mode=q.get('view')==='family'?'family':'ancestors',depth=Math.min(6,Math.max(2,Number(q.get('generations'))||4)),selected=null,view=null;
+ let focus=byId.has(q.get('focus'))?q.get('focus'):home.id,mode=q.get('view')==='family'?'family':'ancestors',depth=Math.min(6,Math.max(2,Number(q.get('generations'))||4)),selected=null,view=null,extendedFamily=q.get('extendedFamily')==='1',extendedAncestry=q.get('extendedAncestry')==='1';
  body.innerHTML=`<section class="genealogy-workbench" aria-label="Family tree explorer">
   <div class="tree-toolbar"><div class="tree-view-switch" role="group" aria-label="Tree layout"><button type="button" data-tree-mode="ancestors">Ancestors</button><button type="button" data-tree-mode="family">Family</button></div>
    <div class="tree-search-wrap"><label class="sr-only" for="tree-search">Find a person in the tree</label><input id="tree-search" type="search" placeholder="Find a person…" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="tree-search-results" aria-autocomplete="list"><div id="tree-search-results" role="listbox" hidden></div></div>
-   <label class="tree-generations">Generations<select name="tree-depth" aria-label="Generations">${[2,3,4,5,6].map(n=>`<option value="${n}" ${n===depth?'selected':''}>${n}</option>`).join('')}</select></label>
+   <div class="tree-extended-options" hidden><label><input type="checkbox" id="tree-extended-family" ${extendedFamily?'checked':''}>Extended family</label><label><input type="checkbox" id="tree-extended-ancestry" ${extendedAncestry?'checked':''}>Extended ancestry</label></div><label class="tree-generations">Generations<select name="tree-depth" aria-label="Generations">${[2,3,4,5,6].map(n=>`<option value="${n}" ${n===depth?'selected':''}>${n}</option>`).join('')}</select></label>
    <button type="button" class="tree-tool" id="tree-home">Home person</button><button type="button" class="tree-tool" id="tree-fullscreen" aria-label="Expand tree to full screen">⛶</button>
   </div>
   <div class="genealogy-stage" id="family-tree-canvas" tabindex="0" role="region" aria-label="Interactive family tree. Drag to move; scroll or use plus and minus to zoom. Arrow keys move the chart.">
@@ -67,7 +67,7 @@ export function renderGenealogyTree(body,model,A){
   <footer class="tree-footer"><div id="tree-summary" role="status"></div><div class="tree-key"><span class="tree-key-bio">Biological</span><span class="tree-key-adopt">Adoptive</span><span class="tree-key-partner">Partner / former partner</span></div></footer>
  </section>`;
  const stage=$('#family-tree-canvas',body),world=$('#tree-world',body),preview=$('#tree-preview',body),search=$('#tree-search',body),results=$('#tree-search-results',body);
- function setUrl(){const params=new URLSearchParams(location.search);params.set('focus',focus);params.set('view',mode);params.set('generations',String(depth));history.replaceState({},'',location.pathname+'?'+params);}
+ function setUrl(){const params=new URLSearchParams(location.search);params.set('focus',focus);params.set('view',mode);params.set('generations',String(depth));params.set('extendedFamily',extendedFamily?'1':'0');params.set('extendedAncestry',extendedAncestry?'1':'0');history.replaceState({},'',location.pathname+'?'+params);}
  function recenter(id){if(!byId.has(id))return;focus=id;selected=null;preview.hidden=true;results.hidden=true;search.value='';search.setAttribute('aria-expanded','false');setUrl();draw();}
  function selectPerson(id){
   const person=byId.get(id);if(!person)return;selected=id;const d=person.data,relations=closeRelatives(people,model.relations,id);
@@ -79,18 +79,20 @@ export function renderGenealogyTree(body,model,A){
   $$('[data-relative]',preview).forEach(b=>b.onclick=()=>selectPerson(b.dataset.relative));
  }
  function draw(){
-  view?.destroy();const layout=mode==='ancestors'?pedigreeLayout(people,model.relations,focus,depth):immediateFamilyLayout(people,model.relations,focus);
+  view?.destroy();const layout=mode==='ancestors'?pedigreeLayout(people,model.relations,focus,depth):extendedFamilyLayout(people,model.relations,focus,{extendedFamily,extendedAncestry,generations:depth});
   const nodes=new Map(layout.nodes.map(n=>[n.key,n]));
   $$('[data-tree-mode]',body).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.treeMode===mode)));
-  $('.tree-generations',body).hidden=mode!=='ancestors';
+  $('.tree-generations',body).hidden=mode!=='ancestors'&&!extendedAncestry;$('.tree-extended-options',body).hidden=mode!=='family';
   world.style.width=layout.width+'px';world.style.height=layout.height+'px';
-  world.innerHTML=`<svg id="family-tree-svg" class="tree-connections" width="${layout.width}" height="${layout.height}" aria-hidden="true" focusable="false">${layout.edges.map(e=>`<path d="${edgePath(e,nodes,mode)}" class="tree-edge edge-${esc(e.type)}"><title>${esc(RELATION_LABELS[e.type]||e.type)}</title></path>`).join('')}</svg>${layout.nodes.map(n=>`<button type="button" class="tree-person ${n.id===focus?'is-focus':''}" data-person="${esc(n.id)}" data-node="${esc(n.key)}" style="left:${n.x}px;top:${n.y}px;width:${n.width}px;height:${n.height}px" title="${esc(n.data.name+' · '+lifespan(n.data))}" aria-label="Show ${esc(n.data.name)}"><span class="tree-card-portrait">${portrait(n)}</span><span class="tree-card-copy"><strong>${esc(n.data.name)}</strong><span class="tree-card-years">${esc(lifespan(n.data))}</span><small>${n.id===focus?'Focus person':n.expandable?'More ancestors →':n.generation<0?(layout.edges.some(e=>e.from===n.key&&e.type==='adoptive-parent')?'Adoptive family':'Ancestor'):n.generation>0?'Child':'Family'}</small></span></button>`).join('')}`;
+  world.innerHTML=`<svg id="family-tree-svg" class="tree-connections" width="${layout.width}" height="${layout.height}" aria-hidden="true" focusable="false">${layout.edges.map(e=>`<path d="${edgePath(e,nodes,mode)}" class="tree-edge edge-${esc(e.type)}"><title>${esc(RELATION_LABELS[e.type]||e.type)}</title></path>`).join('')}</svg>${layout.nodes.map(n=>`<button type="button" class="tree-person ${n.id===focus?'is-focus':''}" data-person="${esc(n.id)}" data-node="${esc(n.key)}" style="left:${n.x}px;top:${n.y}px;width:${n.width}px;height:${n.height}px" title="${esc(n.data.name+' · '+lifespan(n.data))}" aria-label="Show ${esc(n.data.name)}"><span class="tree-card-portrait">${portrait(n)}</span><span class="tree-card-copy"><strong>${esc(n.data.name)}</strong><span class="tree-card-years">${esc(lifespan(n.data))}</span><small>${n.relationCaption||(n.id===focus?'Focus person':n.expandable?'More ancestors →':n.generation<0?(layout.edges.some(e=>e.from===n.key&&e.type==='adoptive-parent')?'Adoptive family':'Ancestor'):n.generation>0?'Child':'Family')}</small></span></button>`).join('')}`;
   $$('[data-person]',world).forEach(b=>{b.onclick=()=>selectPerson(b.dataset.person);b.ondblclick=()=>recenter(b.dataset.person);});
-  $('#tree-summary',body).textContent=byId.get(focus).data.name+' · '+new Set(layout.nodes.map(n=>n.id)).size+' people shown'+(mode==='family'?' · Parents, partners and children':' · Direct ancestors');
+  $('#tree-summary',body).textContent=byId.get(focus).data.name+' · '+new Set(layout.nodes.map(n=>n.id)).size+' people shown'+(mode==='family'?' · '+(extendedFamily?'Extended family':'Parents, partners and children')+(extendedAncestry?' and earlier ancestors':''):' · Direct ancestors');
   view=viewport(stage,world,layout);
   if(selected)selectPerson(selected);
  }
  $$('[data-tree-mode]',body).forEach(b=>b.onclick=()=>{mode=b.dataset.treeMode;setUrl();draw();});
+ $('#tree-extended-family',body).onchange=e=>{extendedFamily=e.target.checked;setUrl();draw();};
+ $('#tree-extended-ancestry',body).onchange=e=>{extendedAncestry=e.target.checked;setUrl();draw();};
  $('[name=tree-depth]',body).onchange=e=>{depth=Number(e.target.value);setUrl();draw();};
  $('#tree-home',body).onclick=()=>recenter(home.id);
  $('#tree-fullscreen',body).onclick=async()=>{const bench=$('.genealogy-workbench',body);try{if(document.fullscreenElement)await document.exitFullscreen();else await bench.requestFullscreen();view.fit();}catch{stage.focus();}};

@@ -48,7 +48,7 @@ async def main():
             await page.locator('[data-search-person]').click()
             assert await page.locator('.tree-person.is-focus').inner_text() and 'Jordan Rowan' in await page.locator('.tree-person.is-focus').inner_text()
             await page.locator('[data-tree-mode=ancestors]').click()
-            assert await page.locator('.tree-person').count()==5
+            assert await page.locator('.tree-person').count()==6
             await page.get_by_role('button',name='Home person',exact=True).click()
             assert 'Example Main Person' in await page.locator('.tree-person.is-focus').inner_text()
             checks.append('zoom, fit, person preview, family layout, search, refocus and home')
