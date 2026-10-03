@@ -31,7 +31,7 @@ with sync_playwright() as p:
   page.goto(BASE+'/info/allergies/');page.get_by_role('heading',name='Hand wash & allergies',exact=True).wait_for();page.screenshot(path=str(OUT/'info-desktop.png'),full_page=True)
   page.goto(BASE+'/about/');page.get_by_role('heading',name='Our little corner',exact=True).wait_for()
   page.goto(BASE+'/settings/updates/');page.get_by_role('heading',name='Website 7.4.4',exact=True).wait_for()
-  page.goto(BASE+'/hub/#family');page.wait_for_url('**/family-tree/');page.get_by_role('heading').first.wait_for()
+  page.goto(BASE+'/hub/#family');page.wait_for_url('**/family-tree/tree/');page.get_by_role('heading',name='Family tree',exact=True).wait_for()
   for width in [390,768]:
    page.set_viewport_size({'width':width,'height':844})
    for path in ['/info/','/info/allergies/','/about/','/settings/updates/','/','/sign-in/']:
