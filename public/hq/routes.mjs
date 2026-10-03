@@ -53,7 +53,7 @@ export function resolveRoute(raw,hash=''){const path=normalize(raw);if(aliases[p
  if(['/scrapbook/calendar/','/scrapbook/favourites/','/scrapbook/drafts/','/scrapbook/recycle/'].includes(path))return {view:'scrapbook',section:'scrapbook',tab:path.split('/')[2]};
  if(path==='/plans/')return {view:'collection',...COLLECTIONS['/plans/adventures/'],base:'/plans/adventures/'};
  if(path==='/plans/trips/'||path==='/plans/prague/'||path==='/plans/france-belgium/')return {view:'trips',section:'plans',tab:path==='/plans/prague/'?'prague':path==='/plans/france-belgium/'?'france-belgium':'index'};
- if(['/plans/calendar/','/plans/completed/','plans/surprise/'].includes(path))return {view:'plans',section:'plans',tab:path.split('/')[2]};
+ if(['/plans/calendar/','/plans/completed/','/plans/surprise/'].includes(path))return {view:'plans',section:'plans',tab:path.split('/')[2]};
  if(['/our-space/','/our-space/this-week/','/our-space/activity/','/our-space/notifications/','/our-space/favourites/'].includes(path))return {view:'home',tab:path.split('/')[2]||'today'};
  if(['/image-library/','/image-library/upload/','/image-library/recycle/'].includes(path))return {view:'images',tab:path.split('/')[2]||'all'};
  const image=path.match(/^\/image-library\/([\w-]+)\/$/);if(image)return {view:'image',id:image[1]};
