@@ -1,0 +1,61 @@
+name: Family books delivery
+on:
+  push:
+    branches: [codex/family-books-details-20261003]
+    paths: ['.family-books-delivery.json']
+permissions:
+  contents: write
+concurrency:
+  group: family-books-delivery
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/family-books-details-20261003
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Apply hash-checked generic source
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFile,writeFile,mkdir} from 'node:fs/promises';import {createHash} from 'node:crypto';import {gunzipSync} from 'node:zlib';import {dirname} from 'node:path';
+          const d=JSON.parse(await readFile('.family-books-delivery.json','utf8'));const r=await fetch(d.url,{signal:AbortSignal.timeout(45000)});if(!r.ok)throw Error('Source unavailable');const bytes=Buffer.from(await r.arrayBuffer());const hash=b=>createHash('sha256').update(b).digest('hex');if(hash(bytes)!==d.sha256)throw Error('Source hash mismatch');const patch=JSON.parse(gunzipSync(bytes));
+          for(const f of patch.files){if(!/^(src\/hq|public\/hq|tests|docs)\/[\w./-]+$/.test(f.path)||f.path.includes('..'))throw Error('Invalid path');let old=null;try{old=await readFile(f.path);}catch{}if((old?hash(old):null)!==f.before)throw Error('Concurrent source change: '+f.path);}
+          for(const f of patch.files){await mkdir(dirname(f.path),{recursive:true});await writeFile(f.path,f.content);}
+          await writeFile('/tmp/family-changed-files.json',JSON.stringify(patch.files.map(f=>f.path)));
+          console.log('Verified generic files:',patch.files.length);
+          NODE
+      - run: npm ci
+      - run: timeout 180 npm test
+      - run: npm run check
+      - name: Browser dependencies
+        run: pip install playwright && python -m playwright install --with-deps chromium
+      - name: Real browser and PDF acceptance
+        run: |
+          node tests/helpers/family-browser-server.mjs > /tmp/family-browser.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8793/hq/family.mjs >/dev/null && break; sleep 1; done
+          timeout 180 python tests/family-browser.py
+          timeout 180 python tests/family-books-browser.py
+      - name: Synthetic browser and PDF evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: family-books-evidence
+          path: family-acceptance/
+          retention-days: 3
+      - name: Commit only the tested source files
+        run: |
+          git config user.name 'Duck Bear Family Maintenance'
+          git config user.email 'actions@users.noreply.github.com'
+          node --input-type=module <<'NODE'
+          import {readFile} from 'node:fs/promises';import {execFileSync} from 'node:child_process';
+          execFileSync('git',['add','--',...JSON.parse(await readFile('/tmp/family-changed-files.json','utf8'))]);
+          NODE
+          git rm .family-books-delivery.json .github/workflows/family-books-source.yml .github/workflows/family-books-delivery.yml
+          git commit -m 'feat: extended relatives, private family details and printable storybooks'
+          git push origin HEAD:codex/family-books-details-20261003
