@@ -2,7 +2,7 @@
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 export const PARENT_TYPES=['parent','adoptive-parent','step-parent','guardian'];
 export const EVIDENCE_LABELS={family:'Family confirmed',document:'Document supported',index:'Index entry',reported:'Reported / needs checking',unresolved:'Unresolved',excluded:'Excluded lead'};
-export const RELATION_LABELS={parent:'Biological parent','adoptive-parent':'Adoptive parent','step-parent':'Step-parent',guardian:'Guardian',partner:'Partner / spouse','former-partner':'Former partner / spouse',sibling:'Sibling','adoptive-sibling':'Sibling through adoption','half-sibling':'Half-sibling',cousin:'Cousin',pet:'Family pet',witness:'Witness / friend',other:'Other connection'};
+export const RELATION_LABELS={parent:'Biological parent','adoptive-parent':'Adoptive parent','step-parent':'Step-parent',guardian:'Guardian',partner:'Partner','former-partner':'Former partner',sibling:'Sibling','adoptive-sibling':'Sibling through adoption','half-sibling':'Half-sibling',cousin:'Cousin',pet:'Family pet',witness:'Witness / friend',other:'Other connection'};
 export function familyDate(value){
  const raw=String(value||'').trim();let m;
  if((m=raw.match(/^(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?$/))){const y=+m[1],month=m[2]?+m[2]:1,day=m[3]?+m[3]:1;const stamp=new Date(`${m[1]}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}T12:00:00Z`);if(y>0&&month>=1&&month<=12&&day>=1&&Number.isFinite(+stamp)&&stamp.getUTCFullYear()===y&&stamp.getUTCMonth()+1===month&&stamp.getUTCDate()===day)return {raw,sort:+stamp,year:y,precision:m[3]?'day':m[2]?'month':'year',label:m[3]?`${day} ${MONTHS[month-1]} ${y}`:m[2]?`${MONTHS[month-1]} ${y}`:m[1]};}
