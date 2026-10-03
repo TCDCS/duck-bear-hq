@@ -53,6 +53,8 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Browser tests with synthetic books only
         run: |
+          python tools/books/publication_test.py
+          python tools/books/reader_ui_test.py
           python tools/books/make-fixtures.py
           node --experimental-sqlite tools/books/dev-server.mjs > verification/dev-server.log 2>&1 &
           for i in $(seq 1 30); do curl -s http://127.0.0.1:8788/books/ >/dev/null && break; sleep 1; done

@@ -1,22 +1,67 @@
 /** Private per-reader offline storage. The service worker never caches personal APIs. */
+import {createSyncQueue} from './sync.mjs';
 const NAME='duck-bear-books-v1';let database;
-async function db(){if(!database)database=new Promise((resolve,reject)=>{const r=indexedDB.open(NAME,1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>{r.result.onversionchange=()=>{r.result.close();database=null;};resolve(r.result);};r.onerror=()=>reject(r.error);});return database;}
-async function access(mode,fn){const d=await db();return new Promise((resolve,reject)=>{const t=d.transaction('kv',mode);let result;try{result=fn(t.objectStore('kv'));}catch(e){reject(e);return;}t.oncomplete=()=>resolve(result?.result);t.onerror=()=>reject(t.error);t.onabort=()=>reject(t.error||new Error('Offline storage was interrupted.'));});}
-export const get=key=>access('readonly',s=>s.get(key));export const put=(key,value)=>access('readwrite',s=>s.put(value,key));export const remove=key=>access('readwrite',s=>s.delete(key));
+async function db(){
+ if(!database)database=new Promise((resolve,reject)=>{
+  const r=indexedDB.open(NAME,1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');
+  r.onsuccess=()=>{r.result.onversionchange=()=>{r.result.close();database=null;};resolve(r.result);};
+  r.onerror=()=>{database=null;reject(r.error);};
+ });return database;
+}
+async function access(mode,fn){
+ const d=await db();return new Promise((resolve,reject)=>{
+  const t=d.transaction('kv',mode);let result;
+  try{result=fn(t.objectStore('kv'));}catch(e){t.abort();reject(e);return;}
+  t.oncomplete=()=>resolve(result?.result);t.onerror=()=>reject(t.error);t.onabort=()=>reject(t.error||new Error('Offline storage was interrupted.'));
+ });
+}
+const changedAccount=()=>Object.assign(new Error('The signed-in reader changed. Reopen Books before saving.'),{status:401,code:'identity_changed'});
 export const key=(user,type,id='')=>`${user}:${type}:${id}`;
-export async function all(user,type){const keys=await access('readonly',s=>s.getAllKeys()),prefix=key(user,type);const result=[];for(const k of keys)if(String(k).startsWith(prefix))result.push(await get(k));return result;}
-export async function rememberIdentity(me){const old=await get('identity');if(old&&old.user.id!==me.user.id)await clearOffline();await put('identity',me);return me;}
-export async function clearOffline(){await access('readwrite',s=>s.clear());localStorage.setItem('db-books-logout',String(Date.now()));}
+export const get=key=>access('readonly',s=>s.get(key));
+async function identity(user){const me=await get('identity');if(me?.user.id!==user)throw changedAccount();return me.localEpoch;}
+/** Read/modify/write the listed keys in one transaction, with no await inside it. */
+async function transaction(user,keys,change,epoch){
+ const d=await db();return new Promise((resolve,reject)=>{
+  const tx=d.transaction('kv','readwrite'),s=tx.objectStore('kv'),values={};let result,failure,remaining=keys.length+1;
+  const done=()=>{
+   if(--remaining)return;
+   try{
+    const me=values.identity;if(me?.user.id!==user||(epoch!==undefined&&me.localEpoch!==epoch))throw changedAccount();
+    delete values.identity;result=change(values);
+    for(const k of keys){if(!k.startsWith(user+':'))throw changedAccount();if(values[k]===undefined)s.delete(k);else s.put(values[k],k);}
+   }catch(e){failure=e;tx.abort();}
+  };
+  for(const k of ['identity',...keys]){const r=s.get(k);r.onsuccess=()=>{values[k]=r.result;done();};}
+  tx.oncomplete=()=>resolve(result);tx.onerror=()=>reject(failure||tx.error);tx.onabort=()=>reject(failure||tx.error||new Error('Offline storage was interrupted.'));
+ });
+}
+export function put(k,value){
+ if(k==='identity')return access('readwrite',s=>s.put(value,k));
+ return transaction(k.split(':')[0],[k],r=>{r[k]=value;});
+}
+export const remove=k=>transaction(k.split(':')[0],[k],r=>{delete r[k];});
+export async function all(user,type){
+ await identity(user);const prefix=key(user,type);
+ return access('readonly',s=>s.getAll(IDBKeyRange.bound(prefix,prefix+'\uffff')));
+}
+export async function rememberIdentity(me){
+ const old=await get('identity');if(old&&old.user.id!==me.user.id)await clearOffline();
+ const saved={...me,localEpoch:old?.user.id===me.user.id&&old.localEpoch?old.localEpoch:crypto.randomUUID()};
+ await put('identity',saved);return saved;
+}
+export async function clearOffline(){await access('readwrite',s=>s.clear());localStorage.setItem('db-books-logout',crypto.randomUUID());}
 export async function forgetFile(user,file){await remove(key(user,'file',file.id+'@'+file.version));}
-export async function saveFile(user,book,file,bytes){if(bytes.byteLength>32*1024*1024)throw new Error('This book is too large for the offline reader.');await put(key(user,'file',file.id+'@'+file.version),{book,file,bytes,savedAt:new Date().toISOString()});try{await navigator.storage?.persist?.();}catch{}return true;}
+export async function saveFile(user,book,file,bytes){
+ if(bytes.byteLength>32*1024*1024)throw new Error('This book is too large for the offline reader.');
+ await put(key(user,'file',file.id+'@'+file.version),{book,file,bytes,savedAt:new Date().toISOString()});
+ try{await navigator.storage?.persist?.();}catch{}return true;
+}
 export const cachedFile=(user,file)=>get(key(user,'file',file.id+'@'+file.version));
 export function deviceId(){let id=localStorage.getItem('db-books-device');if(!id){id=crypto.randomUUID();localStorage.setItem('db-books-device',id);}return id;}
-export async function localState(user,file){return await get(key(user,'progress',file.id+'@'+file.version));}
-export async function storeState(user,file,state){await put(key(user,'progress',file.id+'@'+file.version),state);}
-export async function queueProgress(user,file,state){const k=key(user,'pending',file.id+'@'+file.version),existing=await get(k);const b={version:file.version,revision:existing?.payload.revision??state.revision??0,locator:state.locator,progress:state.progress,deviceId:deviceId(),opId:crypto.randomUUID()};const record={fileId:file.id,payload:b};await put(k,record);await storeState(user,file,{...state,dirty:true});return record;}
-const locks=new Map();
-export async function flushProgress(user,file,api,onConflict){const k=key(user,'pending',file.id+'@'+file.version);if(locks.has(k))return locks.get(k);const run=(async()=>{const p=await get(k);if(!p)return null;try{const saved=await api(`/api/hq/books/files/${file.id}/progress`,{method:'PUT',data:p.payload});const newer=await get(k);if(newer?.payload.opId===p.payload.opId){await remove(k);await storeState(user,file,saved);}else if(newer){newer.payload.revision=saved.revision;await put(k,newer);const local=await localState(user,file);await storeState(user,file,{...local,revision:saved.revision});}return saved;}catch(e){if(e.status===409&&e.code==='progress_conflict')onConflict?.(e.details.current,p.payload);throw e;}})();locks.set(k,run);try{return await run;}finally{locks.delete(k);}}
-export async function resolveProgress(user,file,choice,current){const k=key(user,'pending',file.id+'@'+file.version),p=await get(k);if(choice==='cloud'){await remove(k);await storeState(user,file,current);return current;}if(p){p.payload.revision=current.revision;p.payload.opId=crypto.randomUUID();await put(k,p);return {...p.payload,dirty:true};}return current;}
-export async function saveLocalNote(user,note){await put(key(user,'note',note.id),note);await put(key(user,'note-pending',note.id),note);}
-export async function flushNotes(user,api){for(const n of await all(user,'note-pending')){try{const saved=await api('/api/hq/books/annotations/'+n.id,{method:'PUT',data:n});const current=await get(key(user,'note-pending',n.id));if(current&&JSON.stringify(current)===JSON.stringify(n)){await put(key(user,'note',n.id),saved);await remove(key(user,'note-pending',n.id));}}catch(e){if(e.status===409){throw new Error('A note changed on another device. The local note is preserved; reconnect before editing it again.');}throw e;}}}
-export async function mergeNotes(user,remote){const pending=new Set((await all(user,'note-pending')).map(n=>n.id));for(const note of remote)if(!pending.has(note.id))await put(key(user,'note',note.id),note);}
+export const localState=(user,file)=>get(key(user,'progress',file.id+'@'+file.version));
+export const storeState=(user,file,state)=>put(key(user,'progress',file.id+'@'+file.version),state);
+const queue=createSyncQueue({identity,transaction,all,exclusive:(name,fn)=>navigator.locks?navigator.locks.request('db-books-'+name,fn):fn()},{deviceId,operationId:()=>crypto.randomUUID()});
+export const {queueProgress,flushProgress,resolveProgress,saveLocalNote,flushNotes,resolveNote}=queue;
+export async function mergeNotes(user,remote){
+ for(const note of remote){const n=key(user,'note',note.id),p=key(user,'note-pending',note.id);await transaction(user,[n,p],r=>{if(!r[p])r[n]=note;});}
+}

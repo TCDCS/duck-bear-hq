@@ -13,5 +13,25 @@ export async function saveProgress(env,user,fileId,input){await assertVersion(en
 }
 export async function listAnnotations(env,user,fileId,version){return (await query(env.DB,'SELECT * FROM books_annotations WHERE user_id=? AND file_id=? AND version=? AND deleted=0 ORDER BY updated_at DESC',user.id,fileId,version)).map(annotation);}
 function annotation(r){return {id:r.id,fileId:r.file_id,version:r.version,kind:r.kind,locator:JSON.parse(r.locator_json),endOffset:r.end_offset,selectedText:r.selected_text,note:r.note,colour:r.colour,revision:r.revision,deleted:Boolean(r.deleted),updatedAt:r.updated_at};}
-export async function saveAnnotation(env,user,id,input){if(!/^[\w-]{12,100}$/.test(id))fail(400,'The note ID is not valid.');await assertVersion(env,input.fileId,input.version);const locator=validateLocator(input.locator);if(!['bookmark','highlight','note'].includes(input.kind)||!Number.isInteger(input.revision)||input.revision<0)fail(400,'The note is not valid.');const end=input.endOffset??null;if(end!==null&&(!Number.isInteger(end)||locator.type!=='epub'||end<=locator.offset||end>100000000))fail(400,'The highlighted range is not valid.');const colour=['yellow','green','pink','blue'].includes(input.colour)?input.colour:'yellow';const current=await env.DB.prepare('SELECT * FROM books_annotations WHERE id=? AND user_id=?').bind(id,user.id).first();if((current?.revision||0)!==input.revision)fail(409,'This note has been updated on another device.','annotation_conflict',{current:current?annotation(current):null});
- const written=await env.DB.prepare(`INSERT INTO books_annotations(id,user_id,file_id,version,kind,locator_json,end_offset,selected_text,note,colour,revision,deleted,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,1,?,?) ON CONFLICT(user_id,id) DO UPDATE SET kind=excluded.kind,locator_json=excluded.locator_json,end_offset=excluded.end_offset,selected_text=excluded.selected_text,note=excluded.note,colour=excluded.colour,revision=books_annotations.revision+1,deleted=excluded.deleted,updated_at=excluded.updated_at WHERE books_annotations.revision=? AND books_annotations.file_id=excluded.file_id AND books_annotations.version=excluded.version RETURNING *`).bind(id,user.id,input.fileId,input.version,input.kind,JSON.stringify(locator),end,plain(input.selectedText,4000),plain(input.note,12000),colour,input.deleted===true?1:0,now(),input.revision).all();if(!written.results?.length)fail(409,'The note changed before it could be saved.','annotation_conflict');return annotation(written.results[0]);}
+export async function saveAnnotation(env,user,id,input){
+ if(!/^[\w-]{12,100}$/.test(id))fail(400,'The note ID is not valid.');
+ await assertVersion(env,input.fileId,input.version);
+ const locator=validateLocator(input.locator);
+ if(!['bookmark','highlight','note'].includes(input.kind)||!Number.isInteger(input.revision)||input.revision<0||input.revision>2147483646)fail(400,'The note is not valid.');
+ const end=input.endOffset??null;
+ if(end!==null&&(!Number.isInteger(end)||locator.type!=='epub'||end<=locator.offset||end>100000000))fail(400,'The highlighted range is not valid.');
+ const colour=['yellow','green','pink','blue'].includes(input.colour)?input.colour:'yellow';
+ const fields={fileId:input.fileId,version:input.version,kind:input.kind,locator,endOffset:end,selectedText:plain(input.selectedText,4000),note:plain(input.note,12000),colour,deleted:input.deleted===true};
+ const read=async()=>{const row=await env.DB.prepare('SELECT * FROM books_annotations WHERE id=? AND user_id=?').bind(id,user.id).first();return row?annotation(row):null;};
+ // An identical immediate retry is a lost acknowledgement, not another edit.
+ // A stale different payload still conflicts, including attempts to revive a deletion.
+ const replay=current=>current?.revision===input.revision+1&&Object.entries(fields).every(([k,v])=>JSON.stringify(current[k])===JSON.stringify(v));
+ const conflict=current=>fail(409,'This note has been updated on another device.','annotation_conflict',{current});
+ const current=await read();
+ if(replay(current))return current;
+ if((current?.revision||0)!==input.revision)conflict(current);
+ const written=await env.DB.prepare(`INSERT INTO books_annotations(id,user_id,file_id,version,kind,locator_json,end_offset,selected_text,note,colour,revision,deleted,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,1,?,?) ON CONFLICT(user_id,id) DO UPDATE SET kind=excluded.kind,locator_json=excluded.locator_json,end_offset=excluded.end_offset,selected_text=excluded.selected_text,note=excluded.note,colour=excluded.colour,revision=books_annotations.revision+1,deleted=excluded.deleted,updated_at=excluded.updated_at WHERE books_annotations.revision=? AND books_annotations.file_id=excluded.file_id AND books_annotations.version=excluded.version RETURNING *`)
+ .bind(id,user.id,input.fileId,input.version,fields.kind,JSON.stringify(locator),end,fields.selectedText,fields.note,colour,fields.deleted?1:0,now(),input.revision).all();
+ if(written.results?.length)return annotation(written.results[0]);
+ const latest=await read();if(replay(latest))return latest;conflict(latest);
+}
