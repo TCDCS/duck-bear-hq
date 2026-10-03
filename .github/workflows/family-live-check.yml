@@ -1,0 +1,49 @@
+name: Family live source verification
+on:
+  push:
+    branches: [codex/family-private-delivery-20261003]
+    paths: ['.github/workflows/family-live-check.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 8e2b3266c087e2a3f79428a2444e624d168bdaea
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify deployed family source and login boundaries
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {readFile,writeFile} from 'node:fs/promises';
+          import {createHash} from 'node:crypto';
+          const origin='https://guannan.party',report={commit:'8e2b3266c087e2a3f79428a2444e624d168bdaea',ok:false,checks:[]};
+          const hash=b=>createHash('sha256').update(b).digest('hex');
+          try{
+            for(const path of ['/hq/family.mjs','/hq/family-model.mjs','/hq/family.css','/hq/forms.mjs','/hq/routes.mjs','/hq/lazy-views.mjs','/hq/world-land.svg']){
+              const r=await fetch(origin+path+'?release=2026.10.03-family-history.1',{headers:{'cache-control':'no-cache'},signal:AbortSignal.timeout(20000)});
+              assert.equal(r.status,200,path);assert.equal(hash(Buffer.from(await r.arrayBuffer())),hash(await readFile('public'+path)),path+' released source');report.checks.push(path+' source hash matches');
+            }
+            for(const path of ['/family-tree/','/family-tree/tree/','/family-tree/map/','/family-tree/timeline/','/family-tree/import/']){
+              const r=await fetch(origin+path,{redirect:'manual',signal:AbortSignal.timeout(20000)});assert.equal(r.status,302,path);assert.ok(r.headers.get('location')?.startsWith('/sign-in/'));report.checks.push(path+' requires sign-in');
+            }
+            for(const path of ['/api/hq/records?kind=person','/api/hq/records?kind=familyPrivate']){
+              const r=await fetch(origin+path,{signal:AbortSignal.timeout(20000)});assert.equal(r.status,401,path);report.checks.push(path+' rejects anonymous read');
+            }
+            for(const action of ['preview','apply']){
+              const path='/api/hq/family/import/'+action;const r=await fetch(origin+path,{method:'POST',headers:{origin,'content-type':'application/json'},body:'{}',signal:AbortSignal.timeout(20000)});assert.equal(r.status,401,path);report.checks.push(path+' rejects anonymous write');
+            }
+            report.ok=true;
+          }finally{report.checkedAt=new Date().toISOString();await writeFile('family-live-verification.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));}
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: family-live-verification
+          path: family-live-verification.json
+          retention-days: 7
