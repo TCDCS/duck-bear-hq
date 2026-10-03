@@ -39,6 +39,17 @@ with sync_playwright() as p:
   return reader.state.locator.page;
  }""")
  if moved!=3:failures.append('A delayed sync must not replace a newer on-screen reading position')
+ progress=page.evaluate("""async()=>{
+  window.prepareEpub=async bytes=>({bytes});let ready=false,release,relocated;
+  const generated=new Promise(r=>release=r);
+  const rendition={themes:{default(){},fontSize(){}},hooks:{content:{register(){}}},on(event,fn){if(event==='relocated')relocated=fn},display:async()=>{relocated({start:{index:1,href:'two.xhtml',cfi:'epubcfi(/6/4!/4/2/1:0)'}})},annotations:{highlight(){}}};
+  window.openPreparedEpub=async()=>({loaded:{navigation:Promise.resolve()},navigation:{toc:[{href:'two.xhtml',label:'Second chapter'}]},spine:{length:2},renderTo:()=>rendition,locations:{length:()=>1,percentageFromCfi:()=>ready?0.72:0,generate:()=>generated}});
+  reader.state={revision:3,progress:0.7,locator:{type:'epub',href:'two.xhtml',offset:0,cfi:'epubcfi(/6/4!/4/2/1:0)'}};
+  reader.openEpub=Reader.prototype.openEpub.bind(reader);await reader.openEpub();
+  const whileBuilding=reader.state.progress;ready=true;release();await new Promise(r=>setTimeout(r,10));clearTimeout(reader.saveTimer);
+  return {whileBuilding,after:reader.state.progress};
+ }""")
+ if progress['whileBuilding']!=0.7 or progress['after']!=0.72:failures.append('EPUB progress must ignore a partially-built location index, then save the completed percentage: '+str(progress))
  page.set_viewport_size({'width':390,'height':844})
  if page.evaluate('document.documentElement.scrollWidth>innerWidth'):failures.append('Reader must fit a mobile viewport without page-wide horizontal scrolling')
  assert not failures,failures

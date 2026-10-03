@@ -65,6 +65,9 @@ with sync_playwright() as p:
   page.get_by_role('button',name='Open Sea and Sky',exact=True).click()
   page.get_by_role('button',name='Read EPUB',exact=True).click()
   expect(page.locator('#reader-stage iframe')).to_be_visible(timeout=20000)
+  page.wait_for_function("document.querySelector('#sync-status').textContent.startsWith('Saved') && parseInt(document.querySelector('#reader-progress').textContent)>40")
+  restored=page.evaluate("""async()=>{const f=new URL(location.href).searchParams.get('file');const book=await(await fetch('/api/hq/books/'+new URL(location.href).searchParams.get('read'))).json();const file=book.book.files.find(x=>x.id===f);const saved=await(await fetch('/api/hq/books/files/'+f+'/progress?version='+encodeURIComponent(file.version))).json();return {progress:saved.progress,displayed:parseInt(document.querySelector('#reader-progress').textContent)};}""")
+  assert restored['progress']>0.4 and abs(restored['progress']*100-restored['displayed'])<2,restored
   page.screenshot(path=str(root/'verification/reader-mobile.png'),full_page=True)
   # Wait for service worker control before a real offline reload.
   page.evaluate('navigator.serviceWorker.ready.then(() => true)');page.wait_for_timeout(1000)
@@ -73,7 +76,7 @@ with sync_playwright() as p:
   expect(page.locator('#sync-status')).to_contain_text('Offline')
   ctx.set_offline(False);page.wait_for_timeout(1800)
   assert not errors,errors
-  (root/'verification/browser.json').write_text(json.dumps({'passed':True,'externalBookRequests':external,'pageErrors':errors,'tests':['upload EPUB','metadata extraction','read EPUB','chapter navigation','bookmark','appearance','search','offline save/reload','PDF display and paging','desktop and mobile layout']},indent=2))
+  (root/'verification/browser.json').write_text(json.dumps({'passed':True,'externalBookRequests':external,'pageErrors':errors,'tests':['upload EPUB','metadata extraction','read EPUB','chapter navigation','bookmark','appearance','search','offline save/reload','restored EPUB percentage matches saved progress','PDF display and paging','desktop and mobile layout']},indent=2))
  finally:
   (root/'verification/browser-console.json').write_text(json.dumps({'pageErrors':errors,'console':console,'external':external},indent=2))
   page.screenshot(path=str(root/'verification/last-browser-screen.png'),full_page=True)

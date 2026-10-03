@@ -1,5 +1,5 @@
 /* Only application code is cached here. Book bytes and private records live in per-user IndexedDB. */
-const CACHE='db-books-code-0.1.2';
+const CACHE='db-books-code-0.1.3';
 const STATIC=['/books/index.html','/books/styles.css','/books/library.mjs','/books/common.mjs','/books/offline.mjs','/books/sync.mjs','/books/publication.mjs','/books/reader.mjs','/books/manifest.json','/books/vendor/jszip.min.js','/books/vendor/purify.min.js','/books/vendor/epub.min.js','/books/vendor/pdf.mjs','/books/vendor/pdf.worker.mjs'];
 self.addEventListener('install',event=>event.waitUntil((async()=>{const cache=await caches.open(CACHE);for(const path of STATIC){const r=await fetch(path,{credentials:'same-origin',cache:'reload'});if(!r.ok||r.redirected)throw Error('Offline shell is not available');await cache.put(path,r);}await self.skipWaiting();})()));
 self.addEventListener('activate',event=>event.waitUntil((async()=>{for(const name of await caches.keys())if(name.startsWith('db-books-code-')&&name!==CACHE)await caches.delete(name);await self.clients.claim();})()));
