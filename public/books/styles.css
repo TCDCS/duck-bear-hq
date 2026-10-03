@@ -8,3 +8,7 @@ body.reading{overflow:hidden}body.reading .top,body.reading #footer{display:none
 
 /* Grid children must shrink before the shelf tabs use their own horizontal scroll. */
 .layout>*{min-width:0}
+
+/* Backup controls keep long filenames and messages inside narrow viewports. */
+#books-backup-file{display:block;width:100%;max-width:100%;margin:12px 0 20px;}
+#restore-result{overflow-wrap:anywhere;}#restore-result input{max-width:100%;}

@@ -5,8 +5,8 @@ import os
 
 root = Path(__file__).resolve().parents[2]
 with sync_playwright() as p:
-    browser = p.chromium.launch(executable_path=os.environ.get('BOOKS_BROWSER_PATH') or None,
-                                headless=True, args=['--no-sandbox'])
+    browser = getattr(p,os.environ.get('BOOKS_BROWSER','chromium')).launch(executable_path=os.environ.get('BOOKS_BROWSER_PATH') or None,
+                                headless=True, args=['--no-sandbox'] if os.environ.get('BOOKS_BROWSER','chromium')=='chromium' else [])
     page = browser.new_page()
     page.add_script_tag(content=(root/'public/books/vendor/purify.min.js').read_text())
     # No HTTP access is needed. Load the same production sanitizer into this DOM.

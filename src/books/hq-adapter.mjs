@@ -6,5 +6,6 @@ export function withBooks(fallback){return createBooksHandler(fallback,{
  authenticate,
  async requirePair(env,user){await pairOnly(env,user);await initialise(env,user);},
  requireOwner,
+ async readerIds(env){return (await env.DB.prepare('SELECT user_id FROM hq_pair ORDER BY user_id').all()).results.map(r=>r.user_id);},
  async isOwner(env,user){return (await permission(env,user,'intimate')).owner;}
 });}

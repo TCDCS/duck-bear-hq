@@ -7,7 +7,7 @@ root=Path(__file__).resolve().parents[2]
 base='http://127.0.0.1:8788'
 evidence=root/'verification';evidence.mkdir(exist_ok=True)
 with sync_playwright() as p:
- browser=p.chromium.launch(executable_path=os.environ.get('BOOKS_BROWSER_PATH') or None,headless=True,args=['--no-sandbox'])
+ browser=getattr(p,os.environ.get('BOOKS_BROWSER','chromium')).launch(executable_path=os.environ.get('BOOKS_BROWSER_PATH') or None,headless=True,args=['--no-sandbox'] if os.environ.get('BOOKS_BROWSER','chromium')=='chromium' else [])
  contexts=[];pages=[];errors=[];checks=[]
  def reader(name):
   ctx=browser.new_context();contexts.append(ctx)

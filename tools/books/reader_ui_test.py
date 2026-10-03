@@ -4,7 +4,7 @@ from playwright.sync_api import sync_playwright
 import os, re
 root=Path(__file__).resolve().parents[2]
 with sync_playwright() as p:
- b=p.chromium.launch(executable_path=os.environ.get('BOOKS_BROWSER_PATH') or None,headless=True,args=['--no-sandbox'])
+ b=getattr(p,os.environ.get('BOOKS_BROWSER','chromium')).launch(executable_path=os.environ.get('BOOKS_BROWSER_PATH') or None,headless=True,args=['--no-sandbox'] if os.environ.get('BOOKS_BROWSER','chromium')=='chromium' else [])
  page=b.new_page(viewport={'width':1365,'height':900})
  page.set_content('<main id="main"></main><div id="message" hidden></div>')
  page.add_style_tag(content=(root/'public/books/styles.css').read_text())

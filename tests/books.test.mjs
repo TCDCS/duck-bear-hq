@@ -4,3 +4,6 @@ import './books/api.test.mjs';
 import './books/reader-contract.test.mjs';
 import './books/sync.test.mjs';
 import './books/annotation-retry.test.mjs';
+
+import './books/backup.test.mjs';
+import './books/google-lifecycle.test.mjs';

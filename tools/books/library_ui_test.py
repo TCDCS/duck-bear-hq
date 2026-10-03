@@ -5,8 +5,8 @@ import os, re
 
 root = Path(__file__).resolve().parents[2]
 with sync_playwright() as p:
-    browser = p.chromium.launch(executable_path=os.environ.get('BOOKS_BROWSER_PATH') or None,
-                                headless=True, args=['--no-sandbox'])
+    browser = getattr(p,os.environ.get('BOOKS_BROWSER','chromium')).launch(executable_path=os.environ.get('BOOKS_BROWSER_PATH') or None,
+                                headless=True, args=['--no-sandbox'] if os.environ.get('BOOKS_BROWSER','chromium')=='chromium' else [])
     page = browser.new_page(viewport={'width': 390, 'height': 844})
     shell = (root/'public/books/index.html').read_text()
     shell = re.sub(r'<script\b[^>]*>.*?</script>|<link\b[^>]*>', '', shell, flags=re.S)
@@ -41,4 +41,7 @@ with sync_playwright() as p:
             assert geometry['navigationContent'] > geometry['navigation'], geometry
     assert not failures, 'Bookshelf must fit the viewport without hiding overflow: '+str(failures)
     print('PASS bookshelf fits 320/390/760/1365px; phone shelves scroll within their row and two covers remain visible.')
+    page.get_by_role('button', name='Library connection', exact=True).click()
+    expect(page.get_by_role('button', name='Check Google connection', exact=True)).to_be_visible()
+    expect(page.get_by_role('button', name='Book backups', exact=True)).to_be_visible()
     browser.close()

@@ -6,7 +6,7 @@ root=Path(__file__).resolve().parents[2]
 base='http://127.0.0.1:8788'
 (root/'verification').mkdir(exist_ok=True)
 with sync_playwright() as p:
- browser=p.chromium.launch(executable_path=os.environ.get('BOOKS_BROWSER_PATH') or None,headless=True,args=['--no-sandbox'])
+ browser=getattr(p,os.environ.get('BOOKS_BROWSER','chromium')).launch(executable_path=os.environ.get('BOOKS_BROWSER_PATH') or None,headless=True,args=['--no-sandbox'] if os.environ.get('BOOKS_BROWSER','chromium')=='chromium' else [])
  ctx=browser.new_context(viewport={'width':1365,'height':900})
  ctx.add_cookies([{'name':'test_reader','value':'zachary','url':base}])
  page=ctx.new_page();errors=[];external=[];console=[]
