@@ -1,0 +1,48 @@
+name: Family Cloudflare connection check
+on:
+  push:
+    branches: [codex/family-private-delivery-20261003]
+    paths: ['.github/workflows/family-cloudflare-preflight.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Read-only connection diagnostics
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          node --input-type=module <<'NODE'
+          import {writeFile} from 'node:fs/promises';
+          const rawA=process.env.CLOUDFLARE_ACCOUNT_ID||'',rawT=process.env.CLOUDFLARE_API_TOKEN||'';
+          const a=rawA.trim(),t=rawT.trim(),database='05f3e993-e41a-4d0e-8166-bcd04ae235f9';
+          const report={accountPresent:!!a,accountFormatValid:/^[a-f0-9]{32}$/i.test(a),accountHasOuterWhitespace:a!==rawA,tokenPresent:!!t,tokenHasOuterWhitespace:t!==rawT,checks:{}};
+          async function probe(name,path,body){
+            try{
+              const r=await fetch('https://api.cloudflare.com/client/v4'+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+t,'content-type':'application/json'},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(20000)});
+              const d=await r.json();report.checks[name]={status:r.status,success:d.success===true,errorCodes:(d.errors||[]).map(e=>e.code)};return d;
+            }catch(e){report.checks[name]={networkError:true};return null;}
+          }
+          if(a&&t){
+            await probe('tokenVerification','/user/tokens/verify');
+            const accounts=await probe('accountAccess','/accounts?per_page=50');
+            if(accounts?.success){report.accessibleAccountCount=accounts.result?.length||0;report.configuredAccountListed=accounts.result?.some(x=>x.id===a)||false;}
+            const settings=await probe('workerSettings','/accounts/'+encodeURIComponent(a)+'/workers/scripts/duck-bear-hq/settings');
+            if(settings?.success)report.configuredDatabaseBound=(settings.result?.bindings||[]).some(b=>b.name==='DB'&&b.type==='d1'&&b.id===database);
+            await probe('databaseMetadata','/accounts/'+encodeURIComponent(a)+'/d1/database/'+database);
+            await probe('databaseRead','/accounts/'+encodeURIComponent(a)+'/d1/database/'+database+'/query',{sql:'SELECT 1 AS connection_check',params:[]});
+          }
+          await writeFile('connection-check.json',JSON.stringify(report,null,2));
+          console.log(JSON.stringify(report));
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: family-connection-check
+          path: connection-check.json
+          retention-days: 1
