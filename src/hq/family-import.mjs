@@ -30,7 +30,7 @@ function merged(old,input,overwrite){
  for(const [key,value]of Object.entries(input)){
   if(value===undefined||value===null||value===''||Array.isArray(value)&&!value.length)continue;
   if(['coverId','avatarId','photos'].includes(key)&&old?.[key]&&(key!=='photos'||old[key].length))continue;
-  if(['aliases','sourceIds'].includes(key)){next[key]=[...new Set([...(old?.[key]||[]),...value])];continue;}
+  if(['aliases','sourceIds','allergies'].includes(key)){next[key]=[...new Set([...(old?.[key]||[]),...value])];continue;}
   if(['notes','sourceNotes'].includes(key)&&old?.[key]&&String(old[key])!==String(value)){next[key]=String(old[key]).includes(String(value))?old[key]:String(value).includes(String(old[key]))?value:String(old[key])+'\n\n'+String(value);continue;}
   const previous=old?.[key],filled=previous!==undefined&&previous!==null&&previous!==''&&previous!=='unknown'&&previous!=='unresolved'&&(!Array.isArray(previous)||previous.length);
   if(filled&&stable(previous)!==stable(value)&&!['sourceKey','sourceNotes'].includes(key))differences.push(key);
@@ -50,13 +50,18 @@ async function plan(env,user,payload,{overwrite=false}={}){
   if(matches.length>1){conflicts.push({key:item.key,message:'More than one existing record matches '+(item.data.name||item.data.title||item.key)+'. Resolve the duplicate before importing.'});}
   let rid=matches.length===1?matches[0].id:'fh_'+sourceKey;
   if(!matches.length&&byId.has(rid))conflicts.push({key:item.key,message:'An existing or recycled record already uses the import ID for '+item.key+'.'});
+  if(item.requireExisting===true&&matches.length!==1)fail(409,'The required existing record was not found: '+item.key+'. Import the original family package first or resolve the identity.');
   map.set(item.key,rid);if(matches.length===1)matched.set(item.key,matches[0]);
  }
+ // Sparse updates may reference active, already imported records in the same namespace.
+ const refs=new Map(map);
+ for(const row of existing){const key=row.data.sourceKey;if(typeof key!=='string'||!key.startsWith(namespace+'__'))continue;const short=key.slice(namespace.length+2);if(map.has(short))continue;if(refs.has(short)&&refs.get(short)!==row.id)fail(409,'Duplicate existing source reference: '+short);refs.set(short,row.id);}
  // Match legacy relationships using resolved person IDs, never a surname alone.
- for(const item of input.filter(r=>r.kind==='relationship'&&!matched.has(r.key))){const d=replaceRefs(item.data,map),symmetric=['partner','former-partner','sibling','half-sibling','adoptive-sibling','cousin'].includes(d.type);const found=existing.filter(r=>r.kind==='relationship'&&r.data.type===d.type&&((r.data.from===d.from&&r.data.to===d.to)||(symmetric&&r.data.from===d.to&&r.data.to===d.from)));if(found.length===1){map.set(item.key,found[0].id);matched.set(item.key,found[0]);}else if(found.length>1)conflicts.push({key:item.key,message:'Duplicate existing relationship for '+item.key+'.'});}
+ for(const item of input.filter(r=>r.kind==='relationship'&&!matched.has(r.key))){const d=replaceRefs(item.data,refs),symmetric=['partner','former-partner','sibling','half-sibling','adoptive-sibling','cousin'].includes(d.type);const found=existing.filter(r=>r.kind==='relationship'&&r.data.type===d.type&&((r.data.from===d.from&&r.data.to===d.to)||(symmetric&&r.data.from===d.to&&r.data.to===d.from)));if(found.length===1){map.set(item.key,found[0].id);refs.set(item.key,found[0].id);matched.set(item.key,found[0]);}else if(found.length>1)conflicts.push({key:item.key,message:'Duplicate existing relationship for '+item.key+'.'});}
  if(new Set(map.values()).size!==map.size)fail(409,'Two imported people or records resolve to the same existing record. Review their names and relationships.');
  const prepared=input.map(item=>{
-  const old=matched.get(item.key),data={...replaceRefs(item.data,map),sourceKey:namespace+'__'+item.key};const merge=merged(old?.data,data,overwrite);
+  const old=matched.get(item.key),data={...replaceRefs(item.data,refs),sourceKey:namespace+'__'+item.key};const merge=merged(old?.data,data,overwrite);
+  if(item.replaceText){if(!old||typeof item.replaceText!=='object'||Array.isArray(item.replaceText))fail(400,'Text corrections need an existing record.');for(const [key,previous] of Object.entries(item.replaceText)){if(!['notes','sourceNotes'].includes(key)||typeof previous!=='string'||typeof data[key]!=='string')fail(400,'Unsupported text correction.');const current=old.data[key]||'';if(current!==previous&&current!==data[key])fail(409,'The '+key+' changed since this correction was prepared. No text was replaced.');if(overwrite||current===data[key])merge.data[key]=data[key];else conflicts.push({key:item.key,message:'Approve supplied values to apply the reviewed text correction for '+item.key+'.'});}}
   if(old&&!overwrite&&merge.differences.length)conflicts.push({key:item.key,fields:merge.differences,message:(item.data.name||item.data.title||item.key)+': supplied values differ in '+merge.differences.join(', ')+'.'});
   const parentId=['story','lifeEvent','familyPrivate','familyResearch'].includes(item.kind)?merge.data.personId||null:null;
   return {id:map.get(item.key),kind:item.kind,section:KINDS[item.kind],parentId,data:merge.data,old};

@@ -48,7 +48,7 @@ export function resolveRoute(raw,hash=''){const path=normalize(raw);if(aliases[p
  if(path==='/adults-only/')return {view:'adults',tab:'index'};
  if(path==='/adults-only/outfits/')return {view:'adults',tab:'outfits'};
  if(['/sign-in/','/reset-password/','/verify-email/','/accept-invitation/'].includes(path))return {view:'auth',mode:path.split('/')[1]};
- if(['/family-tree/','/family-tree/tree/','/family-tree/timeline/','/family-tree/access/','/family-tree/map/','/family-tree/import/','/family-tree/recycle/','/family-tree/people/'].includes(path))return {view:'family',section:'family',tab:path.split('/')[2]||'overview'};
+ if(['/family-tree/','/family-tree/tree/','/family-tree/timeline/','/family-tree/access/','/family-tree/map/','/family-tree/import/','/family-tree/export/','/family-tree/recycle/','/family-tree/people/'].includes(path))return {view:'family',section:'family',tab:path.split('/')[2]||'overview'};
  if(path==='/scrapbook/')return {view:'collection',...COLLECTIONS['/scrapbook/albums/'],base:'/scrapbook/albums/'};
  if(['/scrapbook/calendar/','/scrapbook/favourites/','/scrapbook/drafts/','/scrapbook/recycle/'].includes(path))return {view:'scrapbook',section:'scrapbook',tab:path.split('/')[2]};
  if(path==='/plans/')return {view:'collection',...COLLECTIONS['/plans/adventures/'],base:'/plans/adventures/'};

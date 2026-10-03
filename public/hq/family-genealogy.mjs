@@ -1,6 +1,6 @@
 /** Presentation-only genealogy rules. Never rewrite or discard source records. */
 import {familyTimeline,familyDate} from './family-model.mjs';
-export const GENEALOGY_TYPES={birth:'Birth',death:'Death',marriage:'Marriage',separation:'Separation',divorce:'Divorce',adoption:'Adoption',registration:'Registration',migration:'Move',residence:'Residence',funeral:'Funeral'};
+export const GENEALOGY_TYPES={birth:'Birth',death:'Death',marriage:'Marriage',separation:'Separation',divorce:'Divorce',adoption:'Adoption',registration:'Registration',migration:'Move',residence:'Residence',funeral:'Funeral','name-change':'Name change'};
 export const LOCATION_TYPES={birth:'Born',death:'Died',current:'Living now'};
 const ANCESTOR_TYPES=new Set(['parent','adoptive-parent']);
 const PARENT_TYPES=new Set([...ANCESTOR_TYPES,'step-parent','guardian']);
@@ -109,4 +109,39 @@ export function initialTreeViewport(layout,width,height){
  if(!focus||(layout.width*scale<=width-24&&layout.height*scale<=height-60))return {scale,x:(width-layout.width*scale)/2,y:(height-layout.height*scale)/2};
  const x=layout.mode==='ancestors'?24-focus.x*scale:width/2-(focus.x+focus.width/2)*scale;
  return {scale,x,y:(height-44)/2-(focus.y+focus.height/2)*scale};
+}
+
+/** Explicit extended-family window; never infer a partner or a biological link. */
+export function extendedFamilyLayout(people,relations,focus,{extendedFamily=false,extendedAncestry=false,generations=4}={}){
+ if(!extendedFamily&&!extendedAncestry)return immediateFamilyLayout(people,relations,focus);
+ const {byId,root,edges}=graph(people,relations,focus);
+ if(!root)return bounds([],[],null,'family');
+ const max=Math.min(6,Math.max(2,Number(generations)||4)),level=new Map([[root,0]]),direct=new Set([root]);
+ const add=(id,g)=>{if(byId.has(id)&&!level.has(id)){level.set(id,g);return true;}return false;};
+ // Ascend only the focus person's actual biological/adoptive lines; breadth-first
+ // fixes nearest generation in pedigree-collapse/cyclic data without infinite loops.
+ let frontier=[root];const ancestryDepth=extendedAncestry?max-1:extendedFamily?2:1;
+ for(let depth=1;depth<=ancestryDepth&&frontier.length;depth++){
+  const next=[];for(const id of frontier)for(const e of edges)if(e.to===id&&ANCESTOR_TYPES.has(e.type)){if(add(e.from,-depth))next.push(e.from);direct.add(e.from);}frontier=next;
+ }
+ const close=immediateFamilyLayout(people,relations,root);for(const n of close.nodes)add(n.id,n.generation);
+ if(extendedFamily){
+  // Actual siblings of focus/parents (including adoption) and cousins, then their
+  // children/partners. Do not walk into a spouse's entire unrelated ancestry.
+  const seed=[root,...edges.filter(e=>e.to===root&&ANCESTOR_TYPES.has(e.type)).map(e=>e.from)];
+  for(const id of seed){const g=level.get(id)||0;for(const {person} of closeRelatives(people,relations,id).siblings)add(person.id,g);}
+  for(const e of edges)if(e.type==='cousin'&&(e.from===root||e.to===root))add(e.from===root?e.to:e.from,0);
+  for(let pass=0;pass<2;pass++)for(const [id,g] of [...level])if(g>=-1&&g<=0){for(const e of edges){if(e.from===id&&PARENT_TYPES.has(e.type))add(e.to,g+1);if(PARTNER_TYPES.has(e.type)&&(e.from===id||e.to===id))add(e.from===id?e.to:e.from,g);}}
+ }
+ const grouped=new Map();for(const [id,g]of level){if(!grouped.has(g))grouped.set(g,[]);grouped.get(g).push(id);}
+ const rows=[...grouped].sort((a,b)=>a[0]-b[0]);
+ // Order each generation by recorded parent household, then name, to reduce crossings.
+ const household=id=>edges.filter(e=>e.to===id&&ANCESTOR_TYPES.has(e.type)).map(e=>e.from).sort().join('|');
+ rows.forEach(([,ids])=>ids.sort((a,b)=>household(a).localeCompare(household(b))||compare(byId.get(a),byId.get(b))));
+ const width=Math.max(...rows.map(([,ids])=>ids.length*(CW+GAP)-GAP))+PAD*2,nodes=[];
+ rows.forEach(([g,ids],y)=>ids.forEach((id,x)=>nodes.push({...byId.get(id),key:id,generation:g,x:(width-(ids.length*(CW+GAP)-GAP))/2+x*(CW+GAP),y:PAD+y*(CH+120),width:CW,height:CH,relationCaption:id===root?'Focus person':direct.has(id)?'Ancestor':g===0?'Extended family':g===1?'Younger generation':'Extended family'})));
+ // Non-vertical sibling/cousin links are available in profiles; keeping only
+ // parent/partner lines here avoids turning this chart into a dense network.
+ const lines=edges.filter(e=>level.has(e.from)&&level.has(e.to)&&(PARENT_TYPES.has(e.type)&&level.get(e.from)<level.get(e.to)||PARTNER_TYPES.has(e.type)&&level.get(e.from)===level.get(e.to)));
+ return {...bounds(nodes,lines,root,'family'),extendedFamily,extendedAncestry};
 }
