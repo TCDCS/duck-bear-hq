@@ -1,0 +1,43 @@
+name: Books dependency candidate
+on:
+  push:
+    branches: [feature/books-reader-2026-10-03]
+    paths: ['.github/workflows/books-dependency-candidate.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Resolve the reviewed patch (candidate only)
+        run: |
+          mkdir -p candidate
+          git rev-parse HEAD > candidate/base-commit.txt
+          npm pkg set overrides.undici=7.29.1
+          npm install --package-lock-only --ignore-scripts
+          cp package.json package-lock.json candidate/
+          git diff -- package.json package-lock.json > candidate/dependency.patch
+          npm pack undici@7.29.1 --pack-destination candidate
+      - run: npm ci
+      - name: Require clean candidate audit
+        run: npm audit --json > candidate/dependency-audit.json
+      - name: Test and compile candidate
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee candidate/unit-tests.log
+          npm run check 2>&1 | tee candidate/repository-checks.log
+          npx wrangler deploy --dry-run --outdir /tmp/books-build 2>&1 | tee candidate/worker-build.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: books-dependency-candidate
+          path: candidate/
+          retention-days: 3
