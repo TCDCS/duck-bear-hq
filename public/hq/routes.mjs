@@ -9,7 +9,7 @@ export const NAV=[
  {title:'Info Library',icon:'📚',base:'/info/',section:'library',items:[['All pages','/info/'],['Hand wash & allergies','/info/allergies/'],['About Duck & Bear','/about/']]},
  {title:'Adults Only',icon:'⛓',base:'/adults-only/',section:null,items:[['Adults Only','/adults-only/'],['Outfits','/adults-only/outfits/']]},
  {title:'Settings',icon:'⚙',base:'/settings/',section:null,items:[['All settings','/settings/'],['Profile','/settings/profile/'],['Email','/settings/email/'],['Security','/settings/security/'],['Passkeys','/settings/passkeys/'],['Devices','/settings/devices/'],['Notifications','/settings/notifications/'],['Appearance','/settings/appearance/'],['Language','/settings/language/'],['Images & covers','/settings/images/'],['My data','/settings/data/'],['Updates','/settings/updates/']]},
- {title:'Admin',icon:'✦',base:'/admin/',owner:true,items:[['Overview','/admin/'],['Users','/admin/users/'],['Invitations','/admin/invitations/'],['Permissions','/admin/permissions/'],['Site appearance','/admin/appearance/'],['Recovery requests','/admin/recovery/'],['Email delivery','/admin/email/'],['Backups & restore','/admin/backups/'],['Change history','/admin/history']]}
+ {title:'Admin',icon:'✦',base:'/admin/',owner:true,items:[['Overview','/admin/'],['Users','/admin/users/'],['Invitations','/admin/invitations/'],['Permissions','/admin/permissions/'],['Site appearance','/admin/appearance/'],['Recovery requests','/admin/recovery/'],['Email delivery','/admin/email/'],['Backups & restore','/admin/backups/'],['Change history','/admin/history/']]}
 ];
 export const COLLECTIONS={
  '/info/pages/':{kind:'info',section:'library',title:'Info Library',singular:'page'},
