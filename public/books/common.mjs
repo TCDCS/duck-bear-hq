@@ -1,0 +1,8 @@
+export const API='/api/hq/books';
+export const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export async function request(path,options={}){const init={credentials:'same-origin',...options};if(init.data!==undefined){init.body=JSON.stringify(init.data);init.headers={...init.headers,'content-type':'application/json'};delete init.data;}const r=await fetch(path,init);let d;try{d=await r.json();}catch{throw new Error('The server did not return a valid response.');}if(!r.ok)throw Object.assign(new Error(d.error||'The request failed.'),{status:r.status,code:d.code,details:d.details});return d;}
+export function message(text,error=false){const el=document.querySelector('#message');if(!el)return;el.textContent=text;el.classList.toggle('error',error);el.hidden=!text;}
+export function button(label,fn,className=''){const b=document.createElement('button');b.type='button';b.className=className;b.textContent=label;b.onclick=async()=>{b.disabled=true;try{await fn();}catch(e){message(e.message,true);}finally{b.disabled=false;}};return b;}
+export const fileUrl=(file,download=false)=>`${API}/files/${encodeURIComponent(file.id)}/content?version=${encodeURIComponent(file.version)}${download?'&download=1':''}`;
+export const fileSize=n=>n>1048576?(n/1048576).toFixed(1)+' MB':Math.ceil(n/1024)+' KB';
+export function downloadData(data,name,type='application/json'){const url=URL.createObjectURL(new Blob([data],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);}

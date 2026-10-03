@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {validateLocator,body} from '../../src/books/util.mjs';
+test('EPUB positions preserve content fragments for text selection and resume',()=>{const v={type:'epub',href:'OEBPS/one.xhtml',offset:0,cfi:'epubcfi(/6/2[chapter1]!/4/2/1:0)'};assert.deepEqual(validateLocator(v),v);});
+test('EPUB fragment fields reject markup rather than treating it as a location',()=>{assert.throws(()=>validateLocator({type:'epub',href:'one.xhtml',offset:0,cfi:'<script>alert(1)</script>'}));});
+test('JSON endpoints reject arrays and null instead of throwing internal errors',async()=>{for(const value of [[],null,'wrong'])await assert.rejects(()=>body(new Request('https://test.invalid/',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(value)})),e=>e.status===400);});

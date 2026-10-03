@@ -6,11 +6,14 @@ on:
     paths:
       - 'src/books/**'
       - 'public/books/**'
-      - 'public/hq/books-bridge.mjs'
+      - 'public/hq/**'
+      - 'src/hq/**'
+      - 'src/worker-games.js'
       - 'tests/books*'
       - 'tests/books/**'
       - 'tools/books/**'
       - 'scripts/build-books.mjs'
+      - 'package*.json'
       - '.github/workflows/books-reader.yml'
 permissions:
   contents: write
@@ -25,31 +28,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref || github.ref_name }}
-      - name: Recover the prepared source on this development branch only
-        if: github.ref == 'refs/heads/feature/books-reader-2026-10-03' && hashFiles('src/books/handler.mjs') == ''
-        env:
-          SOURCE_URL: 'https://sdmntprdenmarkeast.oaiusercontent.com/files/00000000-d444-8210-9a70-bb57b21bed42/raw?se=2026-10-03T22%3A20%3A29Z&sp=r&sv=2026-02-06&sr=b&scid=3ec2e11d-cd07-57ce-94df-b992e4b76abb&skoid=1d6acb5b-b3f4-43ec-a5ec-b05c4a7708c8&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-10-03T06%3A43%3A23Z&ske=2026-10-04T06%3A43%3A23Z&sks=b&skv=2026-02-06&sig=SJc1dZSX5GLOEvppadnJZ9SXVKSQEsxVB8mMQCaz2G4%3D'
-        run: |
-          python - <<'PY'
-          import os, urllib.request, hashlib, tarfile, io, pathlib
-          raw=urllib.request.urlopen(os.environ['SOURCE_URL'],timeout=40).read(2000000)
-          assert hashlib.sha256(raw).hexdigest()=='08cd40e89285f32a23dac4acba32497a9f3b4f33e1c7323b5eb5c123c26d7d5c', 'Source archive checksum mismatch'
-          allowed={'.gitignore','package.json','package-lock.json','wrangler.jsonc','public/hq/app.mjs','public/hq/routes.mjs','public/hq/books-bridge.mjs','src/hq/handler.mjs','src/worker-games.js','scripts/build-books.mjs','tests/books-hq.test.mjs','tests/books.test.mjs','docs/books-operations.md'}
-          prefixes=('src/books/','public/books/','tests/books/','tools/books/','docs/superpowers/')
-          with tarfile.open(fileobj=io.BytesIO(raw),mode='r:gz') as archive:
-            for m in archive.getmembers():
-              p=pathlib.PurePosixPath(m.name)
-              assert m.isfile() and not p.is_absolute() and '..' not in p.parts
-              assert m.name in allowed or m.name.startswith(prefixes),m.name
-              assert '/vendor/' not in m.name and m.size<1000000
-              target=pathlib.Path(m.name);target.parent.mkdir(parents=True,exist_ok=True)
-              target.write_bytes(archive.extractfile(m).read())
-          PY
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .
-          git commit -m 'feat: add isolated private Books library, OAuth and EPUB/PDF reader'
-          git push origin HEAD:feature/books-reader-2026-10-03
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -58,14 +36,23 @@ jobs:
         with:
           python-version: '3.12'
       - run: mkdir -p verification
+      - name: Attach checksum-verified integration on the development branch
+        if: github.ref == 'refs/heads/feature/books-reader-2026-10-03' && hashFiles('tools/books/attach-once.py') != ''
+        run: |
+          python tools/books/attach-once.py
+          npm install --package-lock-only --ignore-scripts
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm tools/books/attach-once.py
+          git add .gitignore package-lock.json public/hq/app.mjs public/hq/routes.mjs src/hq/handler.mjs src/worker-games.js wrangler.jsonc
+          git commit -m 'feat: attach Books to existing household authentication and isolated routes'
+          git push origin HEAD:feature/books-reader-2026-10-03
       - run: npm ci
       - name: All existing and new unit tests
-        id: unit
         run: |
           set -o pipefail
           npm test 2>&1 | tee verification/unit-tests.log
       - name: Repository checks and reader assets
-        id: checks
         run: |
           set -o pipefail
           npm run check 2>&1 | tee verification/repository-checks.log
@@ -74,7 +61,6 @@ jobs:
           python -m pip install playwright reportlab
           python -m playwright install --with-deps chromium
       - name: Browser tests with synthetic books only
-        id: browser
         run: |
           python tools/books/make-fixtures.py
           node --experimental-sqlite tools/books/dev-server.mjs > verification/dev-server.log 2>&1 &
@@ -84,6 +70,7 @@ jobs:
       - name: Record exact tested source
         if: always()
         run: |
+          mkdir -p verification
           git rev-parse HEAD > verification/tested-commit.txt
           git status --short > verification/working-tree.txt
           cat verification/tested-commit.txt >> "$GITHUB_STEP_SUMMARY"
