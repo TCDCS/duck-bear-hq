@@ -40,6 +40,11 @@ jobs:
         run: |
           set -o pipefail
           npm run check 2>&1 | tee .development-evidence/repository-checks.log
+      - name: Prepare pinned reader dependencies for offline development
+        run: |
+          npm pkg set 'overrides.@xmldom/xmldom=0.9.10'
+          npm install --save-exact epubjs@0.3.93 pdfjs-dist@6.3.289 dompurify@3.4.16 fflate@0.8.2 @xmldom/xmldom@0.9.10
+          npm audit --omit=dev --json > .development-evidence/dependency-audit.json || true
       - name: Record exact baseline and outcomes
         if: always()
         env:
