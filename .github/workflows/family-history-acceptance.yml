@@ -1,0 +1,31 @@
+name: Family history acceptance
+on:
+  push:
+    branches: [codex/family-history-20261003]
+    paths: ['src/**', 'public/**', 'tests/**', 'scripts/**', 'migrations/**', '.github/workflows/family-history-acceptance.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: family-history-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Source snapshot for verification
+        run: git archive --format=tar.gz -o /tmp/family-source.tar.gz HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: family-source-${{ github.sha }}
+          path: /tmp/family-source.tar.gz
+          retention-days: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run check
