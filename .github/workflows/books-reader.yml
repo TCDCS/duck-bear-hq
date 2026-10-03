@@ -60,6 +60,7 @@ jobs:
           for i in $(seq 1 30); do curl -s http://127.0.0.1:8788/books/ >/dev/null && break; sleep 1; done
           set -o pipefail
           python tools/books/browser_test.py 2>&1 | tee verification/browser-tests.log
+          python tools/books/sync_browser_test.py 2>&1 | tee verification/sync-browser-tests.log
       - name: Record exact tested source
         if: always()
         run: |

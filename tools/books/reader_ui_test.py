@@ -15,7 +15,10 @@ with sync_playwright() as p:
  page.evaluate('''async()=>{window.reader=new Reader({me:{user:{id:'test-user'}},book:{id:'b1',title:'Synthetic book'},file:{id:'f1',version:'v1',format:'epub'},offline:true});reader.openEpub=async()=>{reader.stage.innerHTML='<p>Local test chapter</p>';};await reader.open();}''')
  assert page.locator('#reader-stage').inner_text()=='Local test chapter'
  failures=[]
- page.click('#reader-appearance');page.keyboard.press('Escape')
+ page.click('#reader-appearance')
+ for label in ['Theme','Typeface','Reading style']:
+  if page.get_by_label(label,exact=True).count()!=1:failures.append('The '+label+' control needs an unambiguous accessible label')
+ page.keyboard.press('Escape')
  if not page.locator('#reader-panel').is_hidden():failures.append('Escape must close an open reader panel')
  page.evaluate('reader.closePanel()')
  geometry=page.evaluate('''()=>({footer:document.querySelector('.reader-bottom').getBoundingClientRect().width,stage:document.querySelector('.stage-wrap').getBoundingClientRect().width,width:innerWidth})''')
