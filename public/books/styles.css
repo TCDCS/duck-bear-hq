@@ -5,3 +5,6 @@ body.reading{overflow:hidden}body.reading .top,body.reading #footer{display:none
 
 /* Keep long lines readable and prevent global footer sizing from shrinking controls. */
 .reader .stage-wrap{max-width:1000px;width:100%;margin-inline:auto}.reader .reader-bottom{width:100%;max-width:none;margin:0;flex-shrink:0}.conflict-note{white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto}
+
+/* Grid children must shrink before the shelf tabs use their own horizontal scroll. */
+.layout>*{min-width:0}

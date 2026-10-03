@@ -1,4 +1,4 @@
-export const BOOKS_BUILD='books-0.1.3';
+export const BOOKS_BUILD='books-0.1.4';
 export const MAX_FILE_BYTES=32*1024*1024;
 export class BooksError extends Error {constructor(status,message,code='books_error',details){super(message);this.status=status;this.code=code;this.details=details;}}
 export const fail=(status,message,code,details)=>{throw new BooksError(status,message,code,details);};

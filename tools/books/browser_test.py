@@ -59,8 +59,11 @@ with sync_playwright() as p:
   page.wait_for_timeout(900)
   page.screenshot(path=str(root/'verification/reader-pdf.png'),full_page=True)
   page.get_by_role('button',name='Back to books',exact=True).click()
+  expect(page.get_by_role('heading',name='Our bookshelf',exact=True)).to_be_visible()
+  expect(page.locator('#book-count')).to_have_text('2 books')
   page.screenshot(path=str(root/'verification/library-desktop.png'),full_page=True)
   page.set_viewport_size({'width':390,'height':844})
+  assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'), 'Bookshelf is wider than the phone viewport'
   page.screenshot(path=str(root/'verification/library-mobile.png'),full_page=True)
   page.get_by_role('button',name='Open Sea and Sky',exact=True).click()
   page.get_by_role('button',name='Read EPUB',exact=True).click()
