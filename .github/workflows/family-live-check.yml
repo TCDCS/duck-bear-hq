@@ -8,26 +8,32 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 92c6f0df272aa4776a000758f9fce7005b998263
+          ref: 8ce723dbe7712431c1bd22d879ccdad2f71cba0f
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Verify released source and anonymous privacy boundaries
+      - name: Verify released family source and anonymous privacy boundaries
         run: |
           node --input-type=module <<'NODE'
           import assert from 'node:assert/strict';
           import {readFile,writeFile} from 'node:fs/promises';
           import {createHash} from 'node:crypto';
-          const origin='https://guannan.party',report={commit:'92c6f0df272aa4776a000758f9fce7005b998263',ok:false,checks:[]};
+          import {setTimeout as sleep} from 'node:timers/promises';
+          const origin='https://guannan.party',report={commit:'8ce723dbe7712431c1bd22d879ccdad2f71cba0f',ok:false,checks:[]};
           const hash=b=>createHash('sha256').update(b).digest('hex');
           try{
-            for(const path of ['/hq/family.mjs','/hq/family-book.mjs','/hq/family-book-model.mjs','/hq/family-genealogy.mjs','/hq/family-tree.mjs','/hq/family.css','/hq/forms.mjs','/hq/routes.mjs','/hq/lazy-views.mjs']){
-              const r=await fetch(origin+path+'?release=2026.10.03-family-books.1',{headers:{'cache-control':'no-cache'},signal:AbortSignal.timeout(20000)});
-              assert.equal(r.status,200,path);assert.equal(hash(Buffer.from(await r.arrayBuffer())),hash(await readFile('public'+path)),path+' released source');report.checks.push(path+' source hash matches');
+            for(const path of ['/hq/family.mjs','/hq/family-model.mjs','/hq/family-genealogy.mjs','/hq/family-tree.mjs','/hq/family.css','/hq/forms.mjs','/hq/family-book.mjs','/hq/family-book-model.mjs','/hq/routes.mjs','/hq/lazy-views.mjs']){
+              const expected=hash(await readFile('public'+path));let matches=false;
+              for(let attempt=0;attempt<18;attempt++){
+                const r=await fetch(origin+path+'?release=2026.10.03-complete-family.1&probe='+attempt,{headers:{'cache-control':'no-cache'},signal:AbortSignal.timeout(15000)});
+                matches=r.status===200&&hash(Buffer.from(await r.arrayBuffer()))===expected;
+                if(matches)break;if(attempt<17)await sleep(5000);
+              }
+              assert.ok(matches,path+' released source');report.checks.push(path+' source hash matches');
             }
             const shellHash=hash(await readFile('public/hq/index.html'));
             for(const path of ['/family-tree/tree/','/family-tree/export/','/family-tree/map/','/family-tree/timeline/','/family-tree/import/']){
