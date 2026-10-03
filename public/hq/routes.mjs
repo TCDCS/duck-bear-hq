@@ -1,7 +1,7 @@
 export const NAV=[
  {title:'Our Space',icon:'⌂',base:'/our-space/',section:null,items:[['Today','/our-space/'],['This week','/our-space/this-week/'],['Recent activity','/our-space/activity/'],['Notifications','/our-space/notifications/'],['Favourites','/our-space/favourites/'],['Little notes','/our-space/notes/']]},
  {title:'Menus',icon:'🍋',base:'/menus/planner/',section:'menus',items:[['Current menu','/menus/'],['Weekly planner','/menus/planner/'],['Meal ideas','/menus/ideas/'],['Recipes','/menus/recipes/'],['Shopping list','/menus/shopping/'],['Reviews','/menus/reviews/','intimate'],['Archive','/menus/archive/']]},
- {title:'Family Tree',icon:'🌿',base:'/family-tree/',section:'family',items:[['Overview','/family-tree/'],['Tree view','/family-tree/tree/'],['People','/family-tree/people/'],['Timeline','/family-tree/timeline/'],['Life events','/family-tree/events/'],['World map','/family-tree/map/'],['Places','/family-tree/places/'],['Sources','/family-tree/sources/'],['Research questions','/family-tree/research/'],['Stories','/family-tree/stories/'],['Suggested changes','/family-tree/changes/'],['Recycle bin','/family-tree/recycle/'],['Access','/family-tree/access/']]},
+ {title:'Family Tree',icon:'🌿',base:'/family-tree/tree/',section:'family',items:[['Tree','/family-tree/tree/'],['People','/family-tree/people/'],['Timeline','/family-tree/timeline/'],['Locations','/family-tree/map/'],['Stories','/family-tree/stories/'],['Sources','/family-tree/sources/']]},
  {title:'Scrapbook',icon:'♡',base:'/scrapbook/',section:'scrapbook',items:[['Albums','/scrapbook/'],['All memories','/scrapbook/memories/'],['Calendar','/scrapbook/calendar/'],['Favourites','/scrapbook/favourites/'],['Drafts','/scrapbook/drafts/'],['Recycle bin','/scrapbook/recycle/']]},
  {title:'Plans & Adventures',icon:'☀',base:'/plans/',section:'plans',items:[['Our plans','/plans/'],['Trips','/plans/trips/'],['Calendar','/plans/calendar/'],['Ideas','/plans/ideas/'],['Polls','/plans/polls/'],['Bucket list','/plans/bucket-list/'],['Completed','/plans/completed/'],['Surprise me','/plans/surprise/']]},
  {title:'Image Library',icon:'▧',base:'/image-library/',section:null,items:[['All images','/image-library/'],['Upload','/image-library/upload/'],['Recycle bin','/image-library/recycle/']]},
@@ -13,7 +13,7 @@ export const NAV=[
 ];
 export const COLLECTIONS={
  '/info/pages/':{kind:'info',section:'library',title:'Info Library',singular:'page'},
- '/family-tree/events/':{kind:'lifeEvent',section:'family',title:'Life events',singular:'life event'},
+ '/family-tree/facts/':{kind:'lifeEvent',section:'family',title:'Family facts',singular:'family fact'},
  '/family-tree/places/':{kind:'familyPlace',section:'family',title:'Places',singular:'place'},
  '/family-tree/sources/':{kind:'familySource',section:'family',title:'Sources',singular:'source'},
  '/family-tree/research/':{kind:'familyResearch',section:'family',title:'Research questions',singular:'research question'},
@@ -39,9 +39,10 @@ export const COLLECTIONS={
 export const KIND_PATH=Object.fromEntries(Object.entries(COLLECTIONS).map(([p,c])=>[c.kind,p]));
 export const recordLink=r=>(KIND_PATH[r.kind]||'/our-space/')+r.id+'/';
 export const normalize=p=>p==='/'?p:p.replace(/\/+$/,'')+'/';
-const aliases={'/hub/':'/our-space/','/hub/index.html/':'/our-space/','/info/index.html/':'/info/','/about/index.html/':'/about/','/info/allergies/':'/info/pages/info-allergies/','/account/':'/our-space/','/account.html/':'/our-space/','/menus/member/':'/menus/planner/','/menus/weeks/':'/menus/planner/'};
+const aliases={'/family-tree/facts/':'/family-tree/timeline/','/family-tree/':'/family-tree/tree/','/family-tree/events/':'/family-tree/timeline/','/family-tree/places/':'/family-tree/map/','/family-tree/research/':'/family-tree/sources/','/hub/':'/our-space/','/hub/index.html/':'/our-space/','/info/index.html/':'/info/','/about/index.html/':'/about/','/info/allergies/':'/info/pages/info-allergies/','/account/':'/our-space/','/account.html/':'/our-space/','/menus/member/':'/menus/planner/','/menus/weeks/':'/menus/planner/'};
 const legacyHashes={home:'/our-space/',shop:'/shop/',loyalty:'/points/',orders:'/orders/',fun:'/plans/',admin:'/admin/',family:'/family-tree/',scrapbook:'/scrapbook/',menus:'/menus/planner/',apps:'/games/',settings:'/settings/',users:'/admin/users/',permissions:'/admin/permissions/','menus/library':'/menus/ideas/','menus/week':'/menus/planner/','menus/history':'/menus/planner/','scrapbook/timeline':'/scrapbook/memories/','scrapbook/add':'/scrapbook/memories/new/','family/tree':'/family-tree/tree/','family/people':'/family-tree/people/','family/relationships':'/family-tree/relationships/','settings/profile':'/settings/profile/','settings/security':'/settings/security/','settings/appearance':'/settings/appearance/','settings/privacy':'/settings/data/','admin/users':'/admin/users/','admin/permissions':'/admin/permissions/'};
 export function resolveRoute(raw,hash=''){const path=normalize(raw);if(aliases[path]){const oldAccount=['/hub/','/hub/index.html/','/account/','/account.html/'].includes(path);return {view:'redirect',path:oldAccount?(legacyHashes[hash.replace(/^#\/?/,'')]||aliases[path]):aliases[path]};}
+ if(path.startsWith('/family-tree/events/'))return {view:'redirect',path:path.replace('/events/','/facts/')};
  if(path==='/info/')return {view:'collection',...COLLECTIONS['/info/pages/'],base:'/info/pages/'};
  if(path==='/about/')return {view:'about'};
  if(path==='/adults-only/')return {view:'adults',tab:'index'};
