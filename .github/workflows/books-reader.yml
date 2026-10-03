@@ -36,16 +36,15 @@ jobs:
         with:
           python-version: '3.12'
       - run: mkdir -p verification
-      - name: Attach checksum-verified integration on the development branch
-        if: github.ref == 'refs/heads/feature/books-reader-2026-10-03' && hashFiles('tools/books/attach-once.py') != ''
+      - name: Apply checksum-verified reader review fixes
+        if: github.ref == 'refs/heads/feature/books-reader-2026-10-03' && hashFiles('tools/books/reviewed-fixes.py') != ''
         run: |
-          python tools/books/attach-once.py
-          npm install --package-lock-only --ignore-scripts
+          python tools/books/reviewed-fixes.py
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git rm tools/books/attach-once.py
-          git add .gitignore package-lock.json public/hq/app.mjs public/hq/routes.mjs src/hq/handler.mjs src/worker-games.js wrangler.jsonc
-          git commit -m 'feat: attach Books to existing household authentication and isolated routes'
+          git rm tools/books/reviewed-fixes.py
+          git add src/books/google.mjs src/books/api.mjs public/books/reader.mjs public/books/publication.mjs tests/books/google.test.mjs tests/books/reader-contract.test.mjs tools/books/browser_test.py
+          git commit -m 'fix: open EPUB bytes correctly and protect reading versions from changed Drive files'
           git push origin HEAD:feature/books-reader-2026-10-03
       - run: npm ci
       - name: All existing and new unit tests
