@@ -1,11 +1,12 @@
 /** Interactive genealogy chart. All data and portraits remain in the signed-in site. */
 import {$,$$,esc,imageUrl,linkButton} from './client.mjs';
 import {familyDate,RELATION_LABELS} from './family-model.mjs';
-import {pedigreeLayout,immediateFamilyLayout,extendedFamilyLayout,closeRelatives,lifespan,isPerson,initialTreeViewport} from './family-genealogy.mjs';
+import {pedigreeLayout,immediateFamilyLayout,extendedFamilyLayout,completeFamilyLayout,closeRelatives,lifespan,isPerson,initialTreeViewport} from './family-genealogy.mjs';
 const PROFILE='/family-tree/people/';
 const initials=name=>String(name).split(/\s+/).slice(0,2).map(s=>s[0]||'').join('');
 const portrait=p=>p.data.avatarId?`<img src="${imageUrl(p.data.avatarId)}" alt="" style="object-position:${Number(p.data.avatarX??50)}% ${Number(p.data.avatarY??50)}%" draggable="false">`:`<span aria-hidden="true">${esc(initials(p.data.name))}</span>`;
 function edgePath(e,nodes,mode){
+ if(e.points)return e.points.map((p,i)=>(i?'L ':'M ')+p.x+' '+p.y).join(' ');
  const a=nodes.get(e.from),b=nodes.get(e.to);
  if(mode==='ancestors'){
   const x1=b.x+b.width,y1=b.y+b.height/2,x2=a.x,y2=a.y+a.height/2,mid=(x1+x2)/2;
@@ -21,7 +22,7 @@ function edgePath(e,nodes,mode){
 }
 function viewport(host,world,size){
  let scale=1,x=0,y=0,pointers=new Map(),gesture=null,moved=false,fitMode='initial';
- const clamp=n=>Math.max(.22,Math.min(2,n));
+ const clamp=n=>Math.max(.035,Math.min(2,n));
  const draw=()=>{world.style.transform=`translate(${x}px,${y}px) scale(${scale})`;const out=$('[data-scale]',host);if(out)out.textContent=Math.round(scale*100)+'%';};
  const fit=()=>{const w=host.clientWidth,h=host.clientHeight;scale=clamp(Math.min((w-48)/size.width,(h-100)/size.height,1));x=(w-size.width*scale)/2;y=(h-size.height*scale)/2;fitMode='fit';draw();};
  const initial=()=>{const start=initialTreeViewport(size,host.clientWidth,host.clientHeight);({scale,x,y}=start);fitMode='initial';draw();};
@@ -49,12 +50,12 @@ function viewport(host,world,size){
  initial();return {destroy(){abort.abort();observer.disconnect();},fit};
 }
 export function renderGenealogyTree(body,model,A){
- const people=model.people.filter(isPerson).sort((a,b)=>a.data.name.localeCompare(b.data.name)),byId=new Map(people.map(p=>[p.id,p]));
+ const people=model.people.filter(p=>p.data.evidence!=='excluded').sort((a,b)=>a.data.name.localeCompare(b.data.name)),byId=new Map(people.map(p=>[p.id,p]));
  if(!people.length){body.innerHTML='<section class="panel"><h2>Start with one person</h2><p>Add yourself, then connect your parents and family.</p>'+linkButton(PROFILE+'new/','Add a person')+'</section>';return;}
  const q=new URLSearchParams(location.search),home=people.find(p=>p.data.isRoot)||people[0];
- let focus=byId.has(q.get('focus'))?q.get('focus'):home.id,mode=q.get('view')==='family'?'family':'ancestors',depth=Math.min(6,Math.max(2,Number(q.get('generations'))||4)),selected=null,view=null,extendedFamily=q.get('extendedFamily')==='1',extendedAncestry=q.get('extendedAncestry')==='1';
+ let focus=byId.has(q.get('focus'))?q.get('focus'):home.id,mode=['family','all'].includes(q.get('view'))?q.get('view'):'ancestors',depth=Math.min(6,Math.max(2,Number(q.get('generations'))||4)),selected=null,view=null,extendedFamily=q.get('extendedFamily')==='1',extendedAncestry=q.get('extendedAncestry')==='1';
  body.innerHTML=`<section class="genealogy-workbench" aria-label="Family tree explorer">
-  <div class="tree-toolbar"><div class="tree-view-switch" role="group" aria-label="Tree layout"><button type="button" data-tree-mode="ancestors">Ancestors</button><button type="button" data-tree-mode="family">Family</button></div>
+  <div class="tree-toolbar"><div class="tree-view-switch" role="group" aria-label="Tree layout"><button type="button" data-tree-mode="ancestors">Ancestors</button><button type="button" data-tree-mode="family">Family</button><button type="button" data-tree-mode="all">Entire family</button></div>
    <div class="tree-search-wrap"><label class="sr-only" for="tree-search">Find a person in the tree</label><input id="tree-search" type="search" placeholder="Find a person…" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="tree-search-results" aria-autocomplete="list"><div id="tree-search-results" role="listbox" hidden></div></div>
    <div class="tree-extended-options" hidden><label><input type="checkbox" id="tree-extended-family" ${extendedFamily?'checked':''}>Extended family</label><label><input type="checkbox" id="tree-extended-ancestry" ${extendedAncestry?'checked':''}>Extended ancestry</label></div><label class="tree-generations">Generations<select name="tree-depth" aria-label="Generations">${[2,3,4,5,6].map(n=>`<option value="${n}" ${n===depth?'selected':''}>${n}</option>`).join('')}</select></label>
    <button type="button" class="tree-tool" id="tree-home">Home person</button><button type="button" class="tree-tool" id="tree-fullscreen" aria-label="Expand tree to full screen">⛶</button>
@@ -62,35 +63,42 @@ export function renderGenealogyTree(body,model,A){
   <div class="genealogy-stage" id="family-tree-canvas" tabindex="0" role="region" aria-label="Interactive family tree. Drag to move; scroll or use plus and minus to zoom. Arrow keys move the chart.">
    <div class="tree-world" id="tree-world"></div>
    <div class="tree-zoom-controls" role="group" aria-label="Tree zoom"><button type="button" data-tree-zoom="in" aria-label="Zoom in">+</button><button type="button" data-tree-zoom="out" aria-label="Zoom out">−</button><button type="button" data-tree-zoom="fit">Fit</button><button type="button" data-tree-zoom="actual" aria-label="Actual size"><span data-scale>100%</span></button></div>
-   <div class="tree-hint">Drag to explore · Use Fit to see all branches</div><aside class="tree-preview" id="tree-preview" aria-label="Selected person" hidden></aside>
+   <div class="tree-hint">Select a person to trace their connections · Fit shows the whole chart</div><aside class="tree-preview" id="tree-preview" aria-label="Selected person" hidden></aside>
   </div>
-  <footer class="tree-footer"><div id="tree-summary" role="status"></div><div class="tree-key"><span class="tree-key-bio">Biological</span><span class="tree-key-adopt">Adoptive</span><span class="tree-key-partner">Partner / former partner</span></div></footer>
+  <footer class="tree-footer"><div id="tree-summary" role="status"></div><div class="tree-key"><span class="tree-key-bio">Biological</span><span class="tree-key-adopt">Adoptive</span><span class="tree-key-partner">Partner / former partner</span><span class="tree-key-other">Other recorded link</span></div></footer>
  </section>`;
  const stage=$('#family-tree-canvas',body),world=$('#tree-world',body),preview=$('#tree-preview',body),search=$('#tree-search',body),results=$('#tree-search-results',body);
  function setUrl(){const params=new URLSearchParams(location.search);params.set('focus',focus);params.set('view',mode);params.set('generations',String(depth));params.set('extendedFamily',extendedFamily?'1':'0');params.set('extendedAncestry',extendedAncestry?'1':'0');history.replaceState({},'',location.pathname+'?'+params);}
- function recenter(id){if(!byId.has(id))return;focus=id;selected=null;preview.hidden=true;results.hidden=true;search.value='';search.setAttribute('aria-expanded','false');setUrl();draw();}
+ function recenter(id){if(!byId.has(id))return;if(!isPerson(byId.get(id)))mode='all';focus=id;selected=null;preview.hidden=true;results.hidden=true;search.value='';search.setAttribute('aria-expanded','false');setUrl();draw();}
  function selectPerson(id){
   const person=byId.get(id);if(!person)return;selected=id;const d=person.data,relations=closeRelatives(people,model.relations,id);
+  const known=new Set(Object.values(relations).flat().map(x=>x.person.id)),other=[];
+  for(const edge of model.relations){const data=edge.data||edge;if(data.from!==id&&data.to!==id)continue;const target=byId.get(data.from===id?data.to:data.from);if(target&&!known.has(target.id)){known.add(target.id);other.push({person:target,type:data.type});}}
+  if(other.length)relations['other recorded connections']=other;
   $$('.tree-person',world).forEach(el=>el.classList.toggle('is-selected',el.dataset.person===id));
+  world.classList.add('has-selection');
+  $$('.tree-edge',world).forEach(el=>el.classList.toggle('is-related',el.dataset.from===id||el.dataset.to===id));
   preview.hidden=false;
-  preview.innerHTML=`<button class="tree-preview-close" aria-label="Close person preview">×</button><div class="tree-preview-avatar">${portrait(person)}</div><h2>${esc(d.name)}</h2><p class="tree-preview-dates">${esc(lifespan(d))}</p>${d.alternateName?`<p class="tree-other-name">${esc(d.alternateName)}</p>`:''}<dl class="tree-preview-facts"><dt>Born</dt><dd>${esc(d.birth?familyDate(d.birth).label:'Not recorded')}${d.birthPlace?'<br>'+esc(d.birthPlace):''}</dd>${d.death||d.livingStatus==='deceased'?`<dt>Died</dt><dd>${esc(d.death?familyDate(d.death).label:'Date not recorded')}${d.deathPlace?'<br>'+esc(d.deathPlace):''}</dd>`:''}${d.currentPlace&&!d.death&&d.livingStatus!=='deceased'?`<dt>Living</dt><dd>${esc(d.currentPlace)}</dd>`:''}</dl><div class="tree-preview-actions"><a class="button" href="${PROFILE+person.id}/">View profile</a><button class="button secondary" id="tree-recenter">Centre tree here</button>${A.me.access.family?.contribute?`<a class="tree-small-link" href="/family-tree/relationships/new/?from=${esc(id)}">Add relationship</a>`:''}</div>${Object.entries(relations).filter(([,items])=>items.length).map(([group,items])=>`<section class="tree-preview-relatives"><h3>${esc(group[0].toUpperCase()+group.slice(1))}</h3>${items.map(({person:p,type})=>`<button class="tree-relative" data-relative="${esc(p.id)}"><span>${esc(p.data.name)}</span><small>${esc(type==='parent'?'Biological':type==='adoptive-parent'?'Adoptive':type==='former-partner'?'Former partner':type==='partner'?'Partner':RELATION_LABELS[type]||type)}</small></button>`).join('')}</section>`).join('')}`;
-  $('.tree-preview-close',preview).onclick=()=>{preview.hidden=true;selected=null;$('.tree-person.is-selected',world)?.focus();};
+  preview.innerHTML=`<button class="tree-preview-close" aria-label="Close person preview">×</button><div class="tree-preview-avatar">${portrait(person)}</div><h2>${esc(d.name)}</h2><p class="tree-preview-dates">${esc(lifespan(d))}</p>${[d.alternateName,...(d.aliases||[])].filter(Boolean).length?`<p class="tree-other-name">Also recorded as: ${esc([...new Set([d.alternateName,...(d.aliases||[])].filter(Boolean))].join(' · '))}</p>`:''}<dl class="tree-preview-facts"><dt>Born</dt><dd>${esc(d.birth?familyDate(d.birth).label:'Not recorded')}${d.birthPlace?'<br>'+esc(d.birthPlace):''}</dd>${d.death||d.livingStatus==='deceased'?`<dt>Died</dt><dd>${esc(d.death?familyDate(d.death).label:'Date not recorded')}${d.deathPlace?'<br>'+esc(d.deathPlace):''}</dd>`:''}${d.currentPlace&&!d.death&&d.livingStatus!=='deceased'?`<dt>Living</dt><dd>${esc(d.currentPlace)}</dd>`:''}</dl><div class="tree-preview-actions"><a class="button" href="${PROFILE+person.id}/">View profile</a><button class="button secondary" id="tree-recenter">Centre tree here</button>${A.me.access.family?.contribute?`<a class="tree-small-link" href="/family-tree/relationships/new/?from=${esc(id)}">Add relationship</a>`:''}</div>${Object.entries(relations).filter(([,items])=>items.length).map(([group,items])=>`<section class="tree-preview-relatives"><h3>${esc(group[0].toUpperCase()+group.slice(1))}</h3>${items.map(({person:p,type})=>`<button class="tree-relative" data-relative="${esc(p.id)}"><span>${esc(p.data.name)}</span><small>${esc(type==='parent'?'Biological':type==='adoptive-parent'?'Adoptive':type==='former-partner'?'Former partner':type==='partner'?'Partner':RELATION_LABELS[type]||type)}</small></button>`).join('')}</section>`).join('')}`;
+  $('.tree-preview-close',preview).onclick=()=>{preview.hidden=true;selected=null;world.classList.remove('has-selection');$('.tree-person.is-selected',world)?.focus();};
   $('#tree-recenter',preview).onclick=()=>recenter(id);
   $$('[data-relative]',preview).forEach(b=>b.onclick=()=>selectPerson(b.dataset.relative));
  }
  function draw(){
-  view?.destroy();const layout=mode==='ancestors'?pedigreeLayout(people,model.relations,focus,depth):extendedFamilyLayout(people,model.relations,focus,{extendedFamily,extendedAncestry,generations:depth});
+  view?.destroy();const layout=mode==='all'?completeFamilyLayout(people,model.relations,focus):mode==='ancestors'?pedigreeLayout(people,model.relations,focus,depth):extendedFamilyLayout(people,model.relations,focus,{extendedFamily,extendedAncestry,generations:depth});
   const nodes=new Map(layout.nodes.map(n=>[n.key,n]));
   $$('[data-tree-mode]',body).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.treeMode===mode)));
-  $('.tree-generations',body).hidden=mode!=='ancestors'&&!extendedAncestry;$('.tree-extended-options',body).hidden=mode!=='family';
+  $('.tree-generations',body).hidden=mode==='all'||(mode!=='ancestors'&&!extendedAncestry);$('.tree-extended-options',body).hidden=mode!=='family';
   world.style.width=layout.width+'px';world.style.height=layout.height+'px';
-  world.innerHTML=`<svg id="family-tree-svg" class="tree-connections" width="${layout.width}" height="${layout.height}" aria-hidden="true" focusable="false">${layout.edges.map(e=>`<path d="${edgePath(e,nodes,mode)}" class="tree-edge edge-${esc(e.type)}"><title>${esc(RELATION_LABELS[e.type]||e.type)}</title></path>`).join('')}</svg>${layout.nodes.map(n=>`<button type="button" class="tree-person ${n.id===focus?'is-focus':''}" data-person="${esc(n.id)}" data-node="${esc(n.key)}" style="left:${n.x}px;top:${n.y}px;width:${n.width}px;height:${n.height}px" title="${esc(n.data.name+' · '+lifespan(n.data))}" aria-label="Show ${esc(n.data.name)}"><span class="tree-card-portrait">${portrait(n)}</span><span class="tree-card-copy"><strong>${esc(n.data.name)}</strong><span class="tree-card-years">${esc(lifespan(n.data))}</span><small>${n.relationCaption||(n.id===focus?'Focus person':n.expandable?'More ancestors →':n.generation<0?(layout.edges.some(e=>e.from===n.key&&e.type==='adoptive-parent')?'Adoptive family':'Ancestor'):n.generation>0?'Child':'Family')}</small></span></button>`).join('')}`;
+  world.innerHTML=`<svg id="family-tree-svg" class="tree-connections" width="${layout.width}" height="${layout.height}" aria-hidden="true" focusable="false">${layout.edges.map(e=>`<path d="${edgePath(e,nodes,mode)}" class="tree-edge edge-${esc(e.type)}" data-from="${esc(nodes.get(e.from)?.id||e.from)}" data-to="${esc(nodes.get(e.to)?.id||e.to)}"><title>${esc((nodes.get(e.from)?.data.name||e.from)+' → '+(nodes.get(e.to)?.data.name||e.to)+' · '+(RELATION_LABELS[e.type]||e.type))}</title></path>`).join('')}</svg>${layout.nodes.map(n=>`<button type="button" class="tree-person ${n.id===focus?'is-focus':''}" data-person="${esc(n.id)}" data-node="${esc(n.key)}" style="left:${n.x}px;top:${n.y}px;width:${n.width}px;height:${n.height}px" title="${esc(n.data.name+' · '+lifespan(n.data))}" aria-label="Show ${esc(n.data.name)}"><span class="tree-card-portrait">${portrait(n)}</span><span class="tree-card-copy"><strong>${esc(n.data.name)}</strong><span class="tree-card-years">Born: ${esc(n.data.birth?familyDate(n.data.birth).label:'Date not recorded')}${n.data.birthDatePrivacy==='household'?' <span title="Household-only date">▣</span>':''}</span><span class="tree-card-years">${n.data.death?'Died: '+esc(familyDate(n.data.death).label):n.data.livingStatus==='deceased'?'Deceased · date not recorded':n.data.livingStatus==='living'?'Living':''}</span>${n.data.alternateName?`<span class="tree-card-alias" title="${esc(n.data.alternateName)}">${esc(n.data.alternateName)}</span>`:''}<small>${n.relationCaption||(n.id===focus?'Focus person':n.expandable?'More ancestors →':n.generation<0?(layout.edges.some(e=>e.from===n.key&&e.type==='adoptive-parent')?'Adoptive family':'Ancestor'):n.generation>0?'Child':'Family')}</small></span></button>`).join('')}`;
   $$('[data-person]',world).forEach(b=>{b.onclick=()=>selectPerson(b.dataset.person);b.ondblclick=()=>recenter(b.dataset.person);});
-  $('#tree-summary',body).textContent=byId.get(focus).data.name+' · '+new Set(layout.nodes.map(n=>n.id)).size+' people shown'+(mode==='family'?' · '+(extendedFamily?'Extended family':'Parents, partners and children')+(extendedAncestry?' and earlier ancestors':''):' · Direct ancestors');
+  const count=new Set(layout.nodes.map(n=>n.id)).size;
+  $('#tree-summary',body).textContent=byId.get(focus).data.name+' · '+count+' of '+people.length+' records shown'+(mode==='all'?' · Entire saved family, pets and associates':mode==='family'?' · Family connections'+(extendedAncestry?' and their ancestry':''):' · Direct ancestors')+(layout.unlinkedIds?.length?' · '+layout.unlinkedIds.length+' connections not yet recorded':'')+(layout.warnings?.length?' · Generation conflict: review relationship records':'');
+  if(!selected)world.classList.remove('has-selection');
   view=viewport(stage,world,layout);
   if(selected)selectPerson(selected);
  }
- $$('[data-tree-mode]',body).forEach(b=>b.onclick=()=>{mode=b.dataset.treeMode;setUrl();draw();});
+ $$('[data-tree-mode]',body).forEach(b=>b.onclick=()=>{mode=b.dataset.treeMode;if(mode!=='all'&&!isPerson(byId.get(focus)))focus=home.id;selected=null;preview.hidden=true;setUrl();draw();});
  $('#tree-extended-family',body).onchange=e=>{extendedFamily=e.target.checked;setUrl();draw();};
  $('#tree-extended-ancestry',body).onchange=e=>{extendedAncestry=e.target.checked;setUrl();draw();};
  $('[name=tree-depth]',body).onchange=e=>{depth=Number(e.target.value);setUrl();draw();};
@@ -99,6 +107,6 @@ export function renderGenealogyTree(body,model,A){
  function searchPeople(){const term=search.value.trim().toLowerCase(),matches=term?people.filter(p=>[p.data.name,p.data.alternateName,...(p.data.aliases||[])].join(' ').toLowerCase().includes(term)).slice(0,12):[];results.innerHTML=matches.length?matches.map(p=>`<button type="button" role="option" aria-selected="false" data-search-person="${esc(p.id)}"><strong>${esc(p.data.name)}</strong><small>${esc(lifespan(p.data))}</small></button>`).join(''):'<p>No matching people</p>';results.hidden=!term;search.setAttribute('aria-expanded',String(!!term));$$('[data-search-person]',results).forEach(b=>b.onclick=()=>recenter(b.dataset.searchPerson));}
  search.oninput=searchPeople;search.onkeydown=e=>{if(e.key==='Escape'){results.hidden=true;search.setAttribute('aria-expanded','false');}else if(e.key==='ArrowDown'){e.preventDefault();$('button',results)?.focus();}else if(e.key==='Enter'){const options=$$('button',results);if(options.length===1)recenter(options[0].dataset.searchPerson);}};
  results.onkeydown=e=>{const buttons=$$('button',results),index=buttons.indexOf(document.activeElement);if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();buttons[(index+(e.key==='ArrowDown'?1:buttons.length-1))%buttons.length]?.focus();}if(e.key==='Escape'){results.hidden=true;search.focus();search.setAttribute('aria-expanded','false');}};
- body.addEventListener('keydown',e=>{if(e.key==='Escape'&&!preview.hidden){preview.hidden=true;$('.tree-person.is-selected',world)?.focus();}});
+ body.addEventListener('keydown',e=>{if(e.key==='Escape'&&!preview.hidden){preview.hidden=true;selected=null;world.classList.remove('has-selection');$('.tree-person.is-selected',world)?.focus();}});
  draw();
 }

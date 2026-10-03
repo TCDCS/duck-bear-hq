@@ -19,6 +19,33 @@ async def main():
    await page.get_by_role('button',name='Fit',exact=True).click()
    await page.screenshot(path=str(OUT/'extended-family.png'),full_page=True)
    checks.append('Extended family and extended ancestry show real relatives without changing records')
+   # The entire tree includes associated people, not just direct ancestors.
+   await page.get_by_role('button',name='Entire family',exact=True).click()
+   active=(await (await ctx.request.get(BASE+'/api/hq/records?kind=person&limit=100')).json())['records']
+   expected=sum(r['data'].get('evidence')!='excluded' for r in active)
+   cards=page.locator('.tree-person');assert await cards.count()==expected
+   assert f'{expected} of {expected} records shown' in await page.locator('#tree-summary').inner_text()
+   root=page.locator('[data-person="fh_browser__root"]');assert '11 Oct 1990' in await root.inner_text()
+   kid=page.locator('[data-person="fh_browser__child-one"]');assert '23 Jun 2020' in await kid.inner_text()
+   assert await page.locator('.tree-person').filter(has_text='Example Wedding Witness').count()==1
+   await page.get_by_role('button',name='Fit',exact=True).click();await root.click()
+   await page.locator('#tree-preview').get_by_role('heading',name='Other recorded connections',exact=True).wait_for()
+   assert 'spouse' not in (await page.locator('#tree-preview').inner_text()).lower()
+   assert await page.locator('.tree-edge.is-related').count()>0
+   await page.screenshot(path=str(OUT/'whole-tree-connected.png'),full_page=True)
+   await page.get_by_role('button',name='Close person preview',exact=True).click()
+   assert not await page.locator('#tree-world').evaluate('(el)=>el.classList.contains("has-selection")')
+   checks.append('Entire family includes every record, full recorded dates, typed connections and highlighted paths')
+   # An authorised family guest sees public date precision only, never household DOBs.
+   reader=await browser.new_context();await reader.add_cookies([{'name':'db_session','value':'guest-token','url':BASE}])
+   reader_page=await reader.new_page();private_reads=[]
+   reader_page.on('request',lambda request: private_reads.append(request.url) if 'kind=familyPrivate' in request.url else None)
+   await reader_page.goto(BASE+'/family-tree/tree/?view=all');await reader_page.locator('.tree-person').first.wait_for()
+   assert 'Born: 2020' in await reader_page.locator('[data-person="fh_browser__child-one"]').inner_text()
+   assert '23 Jun 2020' not in await reader_page.locator('#tree-world').inner_text()
+   assert not private_reads,private_reads
+   await reader.close()
+   checks.append('Full dates respect household access and unauthorised views do not request private records')
    await page.goto(BASE+'/family-tree/people/fh_browser__root/private/');await page.get_by_text('SYNTHETIC-ALLERGEN',exact=True).wait_for()
    await page.get_by_text('Example recorded faith',exact=False).first.wait_for()
    await page.goto(BASE+'/family-tree/people/fh_browser__root/');await page.get_by_role('heading',name='Names and meanings').wait_for()
