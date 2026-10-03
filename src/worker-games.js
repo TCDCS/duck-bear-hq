@@ -1,3 +1,4 @@
+import {withBooks} from './books/hq-adapter.mjs';
 import original from "./index.js";
 import {createHqHandler} from "./hq/handler.mjs";
 import {createMangoHandler} from "./mango/static.mjs";
@@ -38,4 +39,4 @@ const assets=new Map([
   ['game.js',{body:asset11,type:'text/javascript; charset=utf-8'}],
   ['host.js',{body:asset12,type:'text/javascript; charset=utf-8'}],
 ]);
-export default createGameHandler({assets,fallback:createHqHandler(createMangoHandler(original))});
+export default withBooks(createGameHandler({assets,fallback:createHqHandler(createMangoHandler(original))}));

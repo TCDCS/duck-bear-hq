@@ -1,4 +1,5 @@
 export const NAV=[
+ {title:'Books',icon:'📖',base:'/books/',pair:true,feature:'books',items:[['Our bookshelf','/books/']]},
  {title:'Our Space',icon:'⌂',base:'/our-space/',section:null,items:[['Today','/our-space/'],['This week','/our-space/this-week/'],['Recent activity','/our-space/activity/'],['Notifications','/our-space/notifications/'],['Favourites','/our-space/favourites/'],['Little notes','/our-space/notes/']]},
  {title:'Menus',icon:'🍋',base:'/menus/planner/',section:'menus',items:[['Current menu','/menus/'],['Weekly planner','/menus/planner/'],['Meal ideas','/menus/ideas/'],['Recipes','/menus/recipes/'],['Shopping list','/menus/shopping/'],['Reviews','/menus/reviews/','intimate'],['Archive','/menus/archive/']]},
  {title:'Family Tree',icon:'🌿',base:'/family-tree/tree/',section:'family',items:[['Tree','/family-tree/tree/'],['People','/family-tree/people/'],['Timeline','/family-tree/timeline/'],['Locations','/family-tree/map/'],['Stories','/family-tree/stories/'],['Sources','/family-tree/sources/']]},
