@@ -1,0 +1,76 @@
+name: Final genealogy integration checks
+on:
+  push:
+    branches: [codex/family-tree-redesign-20261003]
+    paths: ['.github/workflows/family-redesign-finalise.yml']
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/family-tree-redesign-20261003
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Apply exact reviewed corrections
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFile,writeFile} from 'node:fs/promises';
+          const fixes=[
+            ['public/hq/routes.mjs',"'/plans/completed/','plans/surprise/'","'/plans/completed/','/plans/surprise/'"],
+            ['public/hq/family-genealogy.mjs','if(!focus||fit>=.9)return','if(!focus||(layout.width*scale<=width-24&&layout.height*scale<=height-60))return'],
+            ['tests/site-browser.py',"page.goto(BASE+'/hub/#family');page.wait_for_url('**/family-tree/');page.get_by_role('heading').first.wait_for()","page.goto(BASE+'/hub/#family');page.wait_for_url('**/family-tree/tree/');page.get_by_role('heading',name='Family tree',exact=True).wait_for()"]
+          ];
+          for(const [path,before,after] of fixes){const text=await readFile(path,'utf8');if(text.split(before).length!==2)throw Error('Baseline mismatch: '+path);await writeFile(path,text.replace(before,after));}
+          await writeFile('tests/family-redesign-regression.test.mjs',`import test from 'node:test';
+          import assert from 'node:assert/strict';
+          import {resolveRoute} from '../public/hq/routes.mjs';
+          import {initialTreeViewport} from '../public/hq/family-genealogy.mjs';
+          test('legacy family entry resolves directly to the new tree without a second redirect',()=>{
+           for(const path of ['/hub/','/hub/index.html','/account/','/account.html']){
+            const destination=resolveRoute(path,'#family');
+            assert.equal(destination.path,'/family-tree/tree/');
+            assert.equal(resolveRoute(destination.path).view,'family');
+           }
+           assert.equal(resolveRoute('/plans/surprise/').view,'plans');
+          });
+          test('a readable chart that fits is centred wholly instead of clipping its top ancestor',()=>{
+           const layout={width:914,height:692,mode:'ancestors',root:'root',nodes:[{id:'root',x:40,y:392,width:230,height:100}]};
+           const v=initialTreeViewport(layout,1120,690);
+           assert.ok(v.y>=0);assert.ok(v.y+layout.height*v.scale<=690);
+           assert.ok(v.x>=0);assert.ok(v.x+layout.width*v.scale<=1120);
+          });
+          `);
+          NODE
+      - run: npm ci
+      - run: npm test
+      - run: npm run check
+      - name: Browser dependencies
+        run: pip install playwright && python -m playwright install --with-deps chromium
+      - name: Family browser acceptance
+        run: |
+          node tests/helpers/family-browser-server.mjs >/tmp/family-server.log 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8793/hq/family.mjs >/dev/null && break; sleep 1; done
+          timeout 240 python tests/family-browser.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: family-final-browser-evidence
+          path: family-acceptance/
+          retention-days: 3
+      - name: Commit tested corrections and remove this temporary job
+        run: |
+          git diff --check
+          git config user.name 'Duck Bear Maintenance'
+          git config user.email 'actions@users.noreply.github.com'
+          git add public/hq/routes.mjs public/hq/family-genealogy.mjs tests/site-browser.py tests/family-redesign-regression.test.mjs
+          git rm .github/workflows/family-redesign-finalise.yml
+          git commit -m 'fix: verify legacy family navigation and readable centred tree'
+          git push origin HEAD:codex/family-tree-redesign-20261003
