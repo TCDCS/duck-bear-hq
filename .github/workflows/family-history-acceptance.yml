@@ -1,7 +1,7 @@
 name: Family history acceptance
 on:
   push:
-    branches: [main, codex/family-tree-redesign-20261003]
+    branches: [main, codex/family-tree-redesign-20261003, codex/family-books-details-20261003]
     paths: ['src/hq/**', 'public/hq/**', 'tests/**', 'scripts/**', '.github/workflows/family-history-acceptance.yml']
   pull_request:
     branches: [main]
@@ -27,14 +27,15 @@ jobs:
       - run: npm run check
       - name: Install browser acceptance dependencies
         run: pip install playwright && python -m playwright install --with-deps chromium
-      - name: Synthetic family browser acceptance
+      - name: Synthetic family and PDF browser acceptance
         run: |
           node tests/helpers/family-browser-server.mjs > /tmp/family-browser-server.log 2>&1 &
           server=$!
           trap 'kill "$server" 2>/dev/null || true' EXIT
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:8793/hq/family.mjs >/dev/null && break; sleep 1; done
           timeout 240 python tests/family-browser.py
-      - name: Synthetic browser evidence
+          timeout 240 python tests/family-books-browser.py
+      - name: Synthetic browser and PDF evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
