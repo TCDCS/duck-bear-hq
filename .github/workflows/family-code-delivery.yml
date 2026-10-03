@@ -7,11 +7,11 @@ permissions:
   contents: write
 concurrency:
   group: family-code-delivery
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   apply:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,15 +43,15 @@ jobs:
           console.log('Verified source files:',patch.files.length);
           NODE
       - run: npm ci
-      - run: npm test
+      - run: timeout 180 npm test
       - run: npm run check
       - name: Browser dependencies
         run: pip install playwright && python -m playwright install --with-deps chromium
       - name: Browser acceptance
         run: |
-          node tests/family-browser-server.mjs > /tmp/family-browser-server.log 2>&1 &
+          node tests/helpers/family-browser-server.mjs > /tmp/family-browser-server.log 2>&1 &
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:8793/hq/family.mjs >/dev/null && break; sleep 1; done
-          python tests/family-browser.py
+          timeout 180 python tests/family-browser.py
       - name: Browser evidence
         if: always()
         uses: actions/upload-artifact@v4
