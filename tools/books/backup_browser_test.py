@@ -10,7 +10,7 @@ evidence=root/'verification';evidence.mkdir(exist_ok=True)
 checks=[];errors=[]
 server_log=(evidence/'restore-dev-server.log').open('w')
 server=subprocess.Popen(['node','--experimental-sqlite','tools/books/dev-server.mjs'],cwd=root,
-    env={**os.environ,'BOOKS_TEST_PORT':'8789'},stdout=server_log,stderr=subprocess.STDOUT)
+    env={**os.environ,'BOOKS_TEST_PORT':'8789','BOOKS_TEST_FAIL_RESTORE_UPLOAD_ONCE':'1'},stdout=server_log,stderr=subprocess.STDOUT)
 try:
  with sync_playwright() as p:
     browser=getattr(p,os.environ.get('BOOKS_BROWSER','chromium')).launch(
@@ -99,13 +99,7 @@ try:
     restored.get_by_label('Choose a Books backup ZIP',exact=True).set_input_files(str(dest))
     expect(restored.get_by_role('button',name='Restore Books',exact=True)).to_be_disabled()
     restored.get_by_label('Type RESTORE BOOKS to confirm',exact=True).fill('RESTORE BOOKS')
-    interrupted=[False]
-    def interrupt_once(route):
-        if not interrupted[0]:
-            interrupted[0]=True
-            route.fulfill(status=503,content_type='application/json',body=json.dumps({'error':'Synthetic retryable upload interruption.'}))
-        else: route.continue_()
-    restored.route('**/restore/*/files/*',interrupt_once)
+    # Inject a real HTTP 503 in the isolated target; keep service workers enabled.
     apply=restored.get_by_role('button',name='Restore Books',exact=True)
     apply.click()
     expect(restored.locator('#restore-result')).to_contain_text('Synthetic retryable upload interruption.')
