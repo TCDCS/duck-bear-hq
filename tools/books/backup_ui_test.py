@@ -29,5 +29,20 @@ with sync_playwright() as p:
     page.screenshot(path=str(root/'verification/backup-dom-desktop.png'),full_page=True)
     page.set_viewport_size({'width':390,'height':844})
     page.screenshot(path=str(root/'verification/backup-dom-mobile.png'),full_page=True)
+    # A restore keeps the selected archive fixed until the server attempt completes.
+    page.evaluate("""()=>{window.fetch=async url=>String(url).endsWith('/preview')?
+      Response.json({canRestore:true,jobId:'restore-test',books:3,uploadedFiles:0,warning:'Empty library.'}):
+      new Promise(resolve=>window.__releaseRestore=()=>resolve(Response.json({error:'Synthetic retryable failure'},{status:503})));} """)
+    page.evaluate("mountBooksBackup({me:{owner:true},onBack:()=>{}})")
+    picker=page.get_by_label('Choose a Books backup ZIP',exact=True)
+    picker.set_input_files(str(fixture))
+    page.get_by_label('Type RESTORE BOOKS to confirm',exact=True).fill('RESTORE BOOKS')
+    page.get_by_role('button',name='Restore Books',exact=True).click()
+    page.wait_for_function("typeof __releaseRestore==='function'")
+    expect(picker).to_be_disabled()
+    page.evaluate('__releaseRestore()')
+    expect(page.locator('#restore-result')).to_contain_text('Synthetic retryable failure')
+    expect(picker).to_be_enabled()
+    expect(page.get_by_role('button',name='Restore Books',exact=True)).to_be_enabled()
     print('PASS backup labels, archive preview, refusal to overwrite, 320/390/1365px layout')
     browser.close()

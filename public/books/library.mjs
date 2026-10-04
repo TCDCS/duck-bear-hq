@@ -1,7 +1,7 @@
 import {API,esc,request,message,button,fileUrl,fileSize} from './common.mjs';
 import * as local from './offline.mjs';
 const main=document.querySelector('#main'),dialog=document.querySelector('#book-dialog');
-let me,filter='all',shelf='',search='',offset=0,offline=false,scanStopped=false,activeReader;
+let me,filter='all',shelf='',search='',offset=0,offline=false,scanStopped=false,scanGeneration=0,activeReader;
 const googleAPI='/api/hq/integrations/google-drive';
 window.addEventListener('storage',e=>{if(e.key==='db-books-logout')location.assign('/sign-in/');});
 window.addEventListener('online',()=>{offline=false;message('Back online. Reading changes will sync when the reader reconnects.');});
@@ -40,12 +40,55 @@ async function connectionPage(){if(!me.owner)return;scanStopped=true;try{const s
  controls.append(button('Check Google connection',async()=>{const area=document.querySelector('#connection-check');area.textContent='Checking Google configuration and library access…';try{const r=await request(googleAPI+'/check',{method:'POST',data:{}});area.textContent=r.message+(r.sample?' Sample: '+r.sample.name+'.':'');}catch(e){area.textContent=e.message;throw e;}},'quiet'),button('Book backups',backupPage,'quiet'));
  if(status.connected)controls.append(button('Disconnect',async()=>{if(!confirm('Disconnect Google Drive? Your catalogue and reading records will remain, but cloud books will not open until reconnected.'))return;const r=await request(googleAPI+'/disconnect',{method:'POST',data:{}});await connectionPage();message(r.warning||'Google disconnected.');},'quiet'));
  document.querySelector('#broad-button').append(button('Connect with read-only account access',async()=>{if(!document.querySelector('#broad-consent').checked)throw new Error('Read and confirm the permission explanation first.');const r=await request(googleAPI+'/start',{method:'POST',data:{mode:'readonly',broadReadConfirmed:true}});location.assign(r.authorizationUrl);},'quiet'));
- document.querySelector('#root-form').onsubmit=async e=>{e.preventDefault();try{const r=await request(googleAPI+'/root',{method:'PUT',data:{folder:document.querySelector('#root-input').value}});document.querySelector('#root-status').textContent=`${r.rootLabel}: ${r.visibleSampleCount} visible items in the first sample. ${r.warning}`;addScanControls();}catch(e){message(e.message,true);}};
+ document.querySelector('#root-form').onsubmit=async e=>{e.preventDefault();try{const r=await request(googleAPI+'/root',{method:'PUT',data:{folder:document.querySelector('#root-input').value}});document.querySelector('#root-status').textContent=`${r.rootLabel}: ${r.visibleSampleCount} visible items in the first sample. ${r.warning}`;await addScanControls();}catch(e){message(e.message,true);}};
  if(status.pickerConfigured)document.querySelector('#picker-slot').append(button('Choose in Google',chooseGoogleFolder,'quiet'));
- if(status.rootId)addScanControls();const latest=await request(API+'/scan/latest');if(latest&&document.querySelector('#scan-status'))document.querySelector('#scan-status').textContent=scanText(latest);
+ if(status.rootId)await addScanControls();
  }catch(e){message(e.message,true);}}
-function scanText(job){return `${job.status}: ${job.booksSeen??job.books_seen??0} books, ${job.filesSeen??job.files_seen??0} files checked. ${job.error||''} ${job.status==='complete'?'Only items Google exposed were imported; this is not a guarantee of full-folder permission.':''}`;}
-function addScanControls(){const area=document.querySelector('#scan-buttons');area.replaceChildren(button('Scan / resume library',async()=>{scanStopped=false;let latest=await request(API+'/scan/latest');let job=latest&&['running','paused'].includes(latest.status)?latest:await request(API+'/scan',{method:'POST',data:{}});while(!scanStopped&&['running','queued'].includes(job.status)){job=await request(API+'/scan/'+job.id+'/step',{method:'POST',data:{}});const el=document.querySelector('#scan-status');if(!el){scanStopped=true;break;}el.textContent=scanText(job);await new Promise(r=>setTimeout(r,120));}if(job.status==='complete')message('Visible books imported. Your Drive files were not changed.');}),button('Pause scan',()=>{scanStopped=true;message('Scan paused on this device. Completed pages are saved; choose Scan / resume library to continue.');},'quiet'));}
+function scanText(job){
+ const progress=`${job.status}: ${job.booksSeen??0} books, ${job.filesSeen??0} items checked. ${job.foldersDone??0} of ${job.foldersTotal??0} folders finished.`;
+ const completion=job.status==='complete'?' Only items Google exposed were imported; this is not a guarantee of full-folder permission.':job.status==='paused'?' Saved on the server. Resume from this checkpoint on any signed-in owner device.':'';
+ const warnings=Array.isArray(job.warnings)&&job.warnings.length?' Warnings: '+job.warnings.join(' '):'';
+ return progress+completion+warnings;
+}
+async function addScanControls(){
+ const area=document.querySelector('#scan-buttons'),status=document.querySelector('#scan-status');
+ if(!area||!status)return;scanStopped=true;const mounted=++scanGeneration;
+ let job=await request(API+'/scan/latest');
+ if(!area.isConnected||mounted!==scanGeneration)return;
+ if(job)status.textContent=scanText(job);
+ const pause=button('Pause scan',async()=>{
+  scanStopped=true;const generation=++scanGeneration;
+  if(!job?.id)return;
+  const paused=await request(API+'/scan/'+job.id+'/pause',{method:'POST',data:{}});
+  if(!area.isConnected||generation!==scanGeneration)return;
+  job=paused;status.textContent=scanText(job);
+  message(job.status==='paused'?'Scan paused for all devices. Completed pages are saved; choose Scan / resume library to continue.':'The scan has already finished.');
+ },'quiet');
+ pause.disabled=!job||!['running','paused'].includes(job.status);
+ const start=button('Scan / resume library',async()=>{
+  scanStopped=false;const generation=++scanGeneration;pause.disabled=true;
+  const current=()=>!scanStopped&&generation===scanGeneration&&area.isConnected;
+  try{
+   // The server chooses the active job for the current root, not a stale latest-job response.
+   job=await request(API+'/scan',{method:'POST',data:{}});
+   if(!current())return;
+   if(job.status==='paused')job=await request(API+'/scan/'+job.id+'/resume',{method:'POST',data:{}});
+   if(!current())return;
+   pause.disabled=false;status.textContent=scanText(job);
+   while(current()&&job.status==='running'){
+    const next=await request(API+'/scan/'+job.id+'/step',{method:'POST',data:{}});
+    if(!current())return;
+    job=next;status.textContent=scanText(job);
+    if(job.status==='running')await new Promise(resolve=>setTimeout(resolve,150));
+   }
+   if(current()&&job.status==='complete')message('Visible books imported. Your Drive files were not changed.');
+  }catch(error){
+   if(current())status.textContent=(job?scanText(job)+' ':'')+'Scan stopped: '+error.message+' Completed pages are saved. Choose Scan / resume library to retry.';
+   throw error;
+  }finally{if(generation===scanGeneration&&area.isConnected)pause.disabled=!job||!['running','paused'].includes(job.status);}
+ });
+ area.replaceChildren(start,pause);
+}
 async function chooseGoogleFolder(){const config=await request(googleAPI+'/picker');const {script}=await import('./publication.mjs');await script('https://apis.google.com/js/api.js');await new Promise(resolve=>gapi.load('picker',resolve));const view=new google.picker.DocsView(google.picker.ViewId.FOLDERS).setIncludeFolders(true).setSelectFolderEnabled(true);const picker=new google.picker.PickerBuilder().setAppId(config.appId).setDeveloperKey(config.developerKey).setOAuthToken(config.accessToken).addView(view).setOrigin(location.origin).setCallback(data=>{if(data.action===google.picker.Action.PICKED){document.querySelector('#root-input').value=data.docs[0].id;document.querySelector('#root-form').requestSubmit();}}).build();picker.setVisible(true);}
 async function backupPage(){scanStopped=true;const {mountBooksBackup}=await import('./backup.mjs');await mountBooksBackup({me,onBack:showLibrary});}
 async function deviceSettings(){main.innerHTML=`<div class="hero"><div><p class="eyebrow">PRIVATE TO THIS DEVICE</p><h1>Offline books &amp; records</h1></div><button class="quiet" id="back-library">Back to books</button></div><section class="settings-card"><h2>Saved for offline reading</h2><p>Only save books on a device you trust. Downloaded books, notes and the last signed-in reader are stored in this browser until removed. Browser storage can be cleared by the device; original files remain in the cloud.</p><div id="offline-files" class="stack"></div><div class="row" id="device-actions" style="margin-top:24px"></div></section>`;document.querySelector('#back-library').onclick=showLibrary;const files=await local.all(me.user.id,'file'),list=document.querySelector('#offline-files');if(!files.length)list.textContent='No offline copies on this device.';for(const cache of files){const row=document.createElement('div');row.className='file-row';const label=document.createElement('span');label.textContent=cache.book.title+' · '+fileSize(cache.bytes.byteLength);row.append(label,button('Remove offline copy',async()=>{await local.forgetFile(me.user.id,cache.file);await deviceSettings();},'quiet'));list.append(row);}const actions=document.querySelector('#device-actions');const exp=document.createElement('a');exp.className='action quiet';exp.href=API+'/export';exp.textContent='Export my reading records';actions.append(exp,button('Clear this device',async()=>{if(!confirm('Remove all offline books and unsynced reading changes from this device? Cloud records and original books stay unchanged.'))return;await local.clearOffline();location.assign('/our-space/');},'quiet danger'));}

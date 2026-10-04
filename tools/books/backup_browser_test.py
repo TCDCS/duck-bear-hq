@@ -84,6 +84,7 @@ try:
     page.set_viewport_size({'width':390,'height':844})
     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
     page.screenshot(path=str(evidence/'backup-mobile.png'),full_page=True)
+    source_total=ctx.request.get(base+'/api/hq/books/catalogue').json()['total']
     target=context('zachary',recovery)
     for attempt in range(50):
         if server.poll() is not None:raise AssertionError('Isolated recovery server stopped')
@@ -98,8 +99,23 @@ try:
     restored.get_by_label('Choose a Books backup ZIP',exact=True).set_input_files(str(dest))
     expect(restored.get_by_role('button',name='Restore Books',exact=True)).to_be_disabled()
     restored.get_by_label('Type RESTORE BOOKS to confirm',exact=True).fill('RESTORE BOOKS')
-    restored.get_by_role('button',name='Restore Books',exact=True).click()
-    expect(restored.locator('#restore-result')).to_contain_text('Books restored privately',timeout=20000)
+    interrupted=[False]
+    def interrupt_once(route):
+        if not interrupted[0]:
+            interrupted[0]=True
+            route.fulfill(status=503,content_type='application/json',body=json.dumps({'error':'Synthetic retryable upload interruption.'}))
+        else: route.continue_()
+    restored.route('**/restore/*/files/*',interrupt_once)
+    apply=restored.get_by_role('button',name='Restore Books',exact=True)
+    apply.click()
+    expect(restored.locator('#restore-result')).to_contain_text('Synthetic retryable upload interruption.')
+    expect(apply).to_be_enabled()
+    expect(restored.get_by_label('Choose a Books backup ZIP',exact=True)).to_be_enabled()
+    assert target.request.get(recovery+'/api/hq/books/catalogue').json()['total']==0,'Interrupted staging must not partially restore records'
+    apply.click()
+    expect(restored.locator('#restore-result')).to_contain_text('Books restored privately',timeout=30000)
+    assert target.request.get(recovery+'/api/hq/books/catalogue').json()['total']==len(manifest['tables']['books_catalogue'])
+    checks.append('interrupted upload leaves catalogue empty; retry restores the complete catalogue')
     restored.screenshot(path=str(evidence/'restore-complete.png'),full_page=True)
     content=target.request.get(recovery+'/api/hq/books/files/'+file['id']+'/content?download=1')
     assert content.ok and content.body()==original
@@ -111,6 +127,10 @@ try:
     assert any(n['kind']=='bookmark' for n in owner_notes)
     assert all(n['note']!='Private partner recovery note' for n in owner_notes)
     assert [n['note'] for n in partner_notes]==['Private partner recovery note']
+    progress='/api/hq/books/files/'+file['id']+'/progress'
+    assert target.request.get(recovery+progress).json()['locator']['page']==2
+    assert other.request.get(recovery+progress).json()['locator']['page']==1
+    assert ctx.request.get(base+'/api/hq/books/catalogue').json()['total']==source_total,'The source library must remain intact'
     assert other.request.get(recovery+'/api/hq/books/backup').status==403
     assert target.request.get(recovery+'/api/hq/integrations/google-drive/status').json()['connected'] is False
     checks.append('confirmed browser restore preserves exact original bytes and separate reader records without Google tokens')

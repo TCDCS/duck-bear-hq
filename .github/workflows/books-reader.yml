@@ -1,7 +1,7 @@
 name: Books reader verification
 on:
   push:
-    branches: [feature/books-reader-2026-10-03]
+    branches: [feature/books-reader-2026-10-03, feature/books-reliable-scans-2026-10-04]
   pull_request:
     paths:
       - 'src/books/**'
@@ -63,6 +63,7 @@ jobs:
           python tools/books/reader_ui_test.py
           python tools/books/library_ui_test.py
           python tools/books/backup_ui_test.py
+          python tools/books/scan_ui_test.py
           python tools/books/make-fixtures.py
           node --experimental-sqlite tools/books/dev-server.mjs > verification/dev-server.log 2>&1 &
           for i in $(seq 1 30); do curl -s http://127.0.0.1:8788/books/ >/dev/null && break; sleep 1; done
