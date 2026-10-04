@@ -12,8 +12,11 @@ export async function beginOAuth(request,env,user,options={}){
  if(!configured(env))fail(503,'Google Drive credentials have not been configured.','not_configured');
  const origin=siteOrigin(env,request);let scope=DRIVE_FILE;if(options.mode==='readonly'){if(options.broadReadConfirmed!==true)fail(400,'Confirm that read-only access covers all files in the Google account before continuing.','scope_confirmation');scope=DRIVE_READONLY;}else if(options.mode&&options.mode!=='selected')fail(400,'Choose a supported access mode.');
  const state=randomToken(),browser=randomToken(),verifier=randomToken();
- await env.DB.prepare('DELETE FROM books_oauth_states WHERE expires_at < ?').bind(Date.now()).run();
- await env.DB.prepare('INSERT INTO books_oauth_states(hash,user_id,cookie_hash,verifier_cipher,scope,expires_at,created_at) VALUES(?,?,?,?,?,?,?)').bind(await hash(state),user.id,await hash(browser),await seal(env,{verifier,sessionId:user.session_id||null}),scope,Date.now()+600000,now()).run();
+ // A new attempt replaces older consent windows for this owner, including a callback waiting on Google.
+ await env.DB.batch([
+  env.DB.prepare('DELETE FROM books_oauth_states WHERE user_id=? OR expires_at < ?').bind(user.id,Date.now()),
+  env.DB.prepare('INSERT INTO books_oauth_states(hash,user_id,cookie_hash,verifier_cipher,scope,expires_at,created_at) VALUES(?,?,?,?,?,?,?)').bind(await hash(state),user.id,await hash(browser),await seal(env,{verifier,sessionId:user.session_id||null}),scope,Date.now()+600000,now())
+ ]);
  const url=new URL('https://accounts.google.com/o/oauth2/v2/auth');for(const [key,value] of Object.entries({client_id:env.GOOGLE_DRIVE_CLIENT_ID,redirect_uri:origin+CALLBACK,response_type:'code',scope,state,access_type:'offline',prompt:'select_account consent',code_challenge:await hash(verifier),code_challenge_method:'S256',include_granted_scopes:'false'}))url.searchParams.set(key,value);
  return json({authorizationUrl:url.href},200,{'set-cookie':stateCookie(browser)});
 }

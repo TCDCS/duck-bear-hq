@@ -17,7 +17,7 @@ export const BACKUP_TABLES={
 const nullable=new Set(['series_index','imported_rating','cover_file_id','created_by','source_id','parent_id','object_key','end_offset','rating']);
 const numeric=new Set(['series_index','imported_rating','unavailable','size','available','revision','progress','furthest','end_offset','deleted','favourite','rating']);
 const identifier=new Set(['id','book_id','file_id','user_id','cover_file_id','created_by','shelf_id']);
-const maxText={description:20000,selected_text:4000,note:10000,title:1000,name:1000,source_group:500,version:200,device_id:160,last_op_id:160};
+const maxText={description:20000,selected_text:4000,note:12000,title:1000,name:1000,source_group:500,version:200,device_id:160,last_op_id:160};
 const object=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
 const invalid=message=>fail(400,'Invalid Books backup: '+message,'invalid_backup');
 function jsonField(value,name){let parsed;try{parsed=JSON.parse(value);}catch{invalid(name+' is not valid JSON.');}if(parsed===null||typeof parsed!=='object')invalid(name+' must contain structured data.');return parsed;}

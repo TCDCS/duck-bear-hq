@@ -1,7 +1,7 @@
 """End-to-end verification using only synthetic books and local test accounts."""
 from pathlib import Path
 from playwright.sync_api import sync_playwright, expect
-import json, os
+import json, os, re
 root=Path(__file__).resolve().parents[2]
 base='http://127.0.0.1:8788'
 (root/'verification').mkdir(exist_ok=True)
@@ -68,7 +68,9 @@ with sync_playwright() as p:
   page.get_by_role('button',name='Open Sea and Sky',exact=True).click()
   page.get_by_role('button',name='Read EPUB',exact=True).click()
   expect(page.locator('#reader-stage iframe')).to_be_visible(timeout=20000)
-  page.wait_for_function("document.querySelector('#sync-status').textContent.startsWith('Saved') && parseInt(document.querySelector('#reader-progress').textContent)>40")
+  # Locator assertions work under WebKit's strict CSP; no unsafe-eval bypass.
+  expect(page.locator('#sync-status')).to_have_text(re.compile(r'^Saved'),timeout=20000)
+  expect(page.locator('#reader-progress')).to_have_text(re.compile(r'^(?:4[1-9]|[5-9][0-9]|100)%'),timeout=20000)
   restored=page.evaluate("""async()=>{const f=new URL(location.href).searchParams.get('file');const book=await(await fetch('/api/hq/books/'+new URL(location.href).searchParams.get('read'))).json();const file=book.book.files.find(x=>x.id===f);const saved=await(await fetch('/api/hq/books/files/'+f+'/progress?version='+encodeURIComponent(file.version))).json();return {progress:saved.progress,displayed:parseInt(document.querySelector('#reader-progress').textContent)};}""")
   assert restored['progress']>0.4 and abs(restored['progress']*100-restored['displayed'])<2,restored
   page.screenshot(path=str(root/'verification/reader-mobile.png'),full_page=True)

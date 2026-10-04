@@ -7,3 +7,6 @@ import './books/annotation-retry.test.mjs';
 
 import './books/backup.test.mjs';
 import './books/google-lifecycle.test.mjs';
+
+import './books/recovery-boundaries.test.mjs';
+import './books/oauth-supersession.test.mjs';
