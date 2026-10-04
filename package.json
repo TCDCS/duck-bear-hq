@@ -6,20 +6,30 @@
   "description": "Duck & Bear public website, private account and browser games",
   "scripts": {
     "deploy": "npm test && npm run check && wrangler deploy",
-    "check": "npm run build:seagull && npm run build:passkeys && node scripts/check.mjs && node scripts/mango-check.mjs",
+    "check": "npm run build:books && npm run build:seagull && npm run build:passkeys && node scripts/check.mjs && node scripts/mango-check.mjs",
     "test": "node --test tests/*.cjs tests/*.mjs",
     "smoke": "node scripts/smoke.mjs",
-    "dev": "npm run build:seagull && npm run build:passkeys && wrangler dev",
+    "dev": "npm run build:books && npm run build:seagull && npm run build:passkeys && wrangler dev",
     "migrate:local": "wrangler d1 migrations apply DB --local",
     "build:seagull": "esbuild src/seagull-simulator/main.ts --bundle --minify --format=iife --target=es2020 --outfile=public/games/seagull-simulator/game.js",
-    "build:passkeys": "esbuild src/browser/passkeys.mjs --bundle --minify --format=esm --target=es2020 --outfile=public/hq/webauthn.mjs"
+    "build:passkeys": "esbuild src/browser/passkeys.mjs --bundle --minify --format=esm --target=es2020 --outfile=public/hq/webauthn.mjs",
+    "build:books": "node scripts/build-books.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.45.0"
   },
   "dependencies": {
-    "phaser": "4.2.1",
     "@simplewebauthn/browser": "13.3.0",
-    "@simplewebauthn/server": "13.3.3"
+    "@simplewebauthn/server": "13.3.3",
+    "@xmldom/xmldom": "0.9.12",
+    "dompurify": "3.4.16",
+    "epubjs": "0.3.93",
+    "fflate": "0.8.3",
+    "pdfjs-dist": "6.3.289",
+    "phaser": "4.2.1"
+  },
+  "overrides": {
+    "@xmldom/xmldom": "0.9.12",
+    "undici": "7.29.1"
   }
 }

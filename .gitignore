@@ -17,3 +17,10 @@ unity/danao/MemoryCaptures/
 # Local test/output files
 playwright-report/
 test-results/
+
+# Generated private-book reader libraries and development evidence
+public/books/vendor/
+tests/books/generated/
+verification/
+*.pyc
+__pycache__/

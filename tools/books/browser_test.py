@@ -1,0 +1,115 @@
+"""End-to-end verification using only synthetic books and local test accounts."""
+from pathlib import Path
+from playwright.sync_api import sync_playwright, expect
+import json, os, re, signal, time
+root=Path(__file__).resolve().parents[2]
+base='http://127.0.0.1:8788'
+(root/'verification').mkdir(exist_ok=True)
+with sync_playwright() as p:
+ browser=getattr(p,os.environ.get('BOOKS_BROWSER','chromium')).launch(executable_path=os.environ.get('BOOKS_BROWSER_PATH') or None,headless=True,args=['--no-sandbox'] if os.environ.get('BOOKS_BROWSER','chromium')=='chromium' else [])
+ ctx=browser.new_context(viewport={'width':1365,'height':900})
+ ctx.add_cookies([{'name':'test_reader','value':'zachary','url':base}])
+ page=ctx.new_page();errors=[];external=[];console=[]
+ ctx.tracing.start(screenshots=True,snapshots=True,sources=True)
+ page.on('console',lambda m:console.append({'type':m.type,'text':m.text}))
+ page.on('requestfailed',lambda r:console.append({'type':'requestfailed','url':r.url,'failure':r.failure}))
+ page.on('pageerror',lambda e:errors.append(str(e)))
+ page.on('request',lambda r:external.append(r.url) if 'malicious.invalid' in r.url else None)
+ try:
+  page.goto(base+'/books/')
+  expect(page.get_by_role('heading',name='Our bookshelf',exact=True)).to_be_visible()
+  page.locator('#upload-files').set_input_files(str(root/'tests/books/generated/sea-and-sky.epub'))
+  expect(page.get_by_role('button',name='Open Sea and Sky',exact=True)).to_be_visible(timeout=30000)
+  page.get_by_role('button',name='Open Sea and Sky',exact=True).click()
+  page.get_by_role('button',name='Read EPUB',exact=True).click()
+  expect(page.locator('#reader-stage iframe')).to_be_visible(timeout=30000)
+  expect(page.locator('#reader-progress')).to_contain_text('%')
+  assert not external,external
+  assert page.evaluate('window.__bookScriptExecuted') is None
+  page.get_by_role('button',name='Chapters',exact=True).click()
+  page.get_by_role('button',name='2. The headland',exact=True).click()
+  page.wait_for_timeout(1600)
+  page.get_by_role('button',name='Bookmark',exact=True).click()
+  expect(page.locator('#sync-status')).to_contain_text('Saved',timeout=15000)
+  page.get_by_role('button',name='Notes',exact=True).click()
+  expect(page.locator('#reader-panel')).to_contain_text('Bookmark')
+  page.get_by_role('button',name='Close panel',exact=True).click()
+  page.get_by_role('button',name='Appearance',exact=True).click()
+  page.get_by_label('Theme',exact=True).select_option('sepia')
+  page.get_by_label('Text size',exact=True).fill('24')
+  page.get_by_role('button',name='Apply appearance',exact=True).click()
+  page.wait_for_timeout(1500)
+  page.screenshot(path=str(root/'verification/reader-desktop.png'),full_page=True)
+  page.get_by_role('button',name='Search book',exact=True).click()
+  page.get_by_placeholder('Search inside this book').fill('lighthouse')
+  page.get_by_role('button',name='Find in book',exact=True).click()
+  expect(page.locator('#reader-panel')).to_contain_text('result',timeout=15000)
+  page.get_by_role('button',name='Close panel',exact=True).click()
+  page.get_by_role('button',name='Save offline',exact=True).click()
+  expect(page.locator('#sync-status')).to_contain_text('offline',timeout=20000)
+  page.get_by_role('button',name='Back to books',exact=True).click()
+  page.locator('#upload-files').set_input_files(str(root/'tests/books/generated/field-notes.pdf'))
+  expect(page.get_by_role('button',name='Open field-notes',exact=True)).to_be_visible(timeout=20000)
+  page.get_by_role('button',name='Open field-notes',exact=True).click()
+  page.get_by_role('button',name='Read PDF',exact=True).click()
+  expect(page.locator('#reader-stage canvas')).to_be_visible(timeout=20000)
+  page.get_by_role('button',name='Next page',exact=True).click()
+  expect(page.locator('#reader-progress')).to_contain_text('2 of 3',timeout=10000)
+  page.get_by_role('button',name='Bookmark',exact=True).click()
+  page.wait_for_timeout(900)
+  page.screenshot(path=str(root/'verification/reader-pdf.png'),full_page=True)
+  page.get_by_role('button',name='Back to books',exact=True).click()
+  expect(page.get_by_role('heading',name='Our bookshelf',exact=True)).to_be_visible()
+  expect(page.locator('#book-count')).to_have_text('2 books')
+  page.screenshot(path=str(root/'verification/library-desktop.png'),full_page=True)
+  page.set_viewport_size({'width':390,'height':844})
+  assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'), 'Bookshelf is wider than the phone viewport'
+  page.screenshot(path=str(root/'verification/library-mobile.png'),full_page=True)
+  page.get_by_role('button',name='Open Sea and Sky',exact=True).click()
+  page.get_by_role('button',name='Read EPUB',exact=True).click()
+  expect(page.locator('#reader-stage iframe')).to_be_visible(timeout=20000)
+  # Locator assertions work under WebKit's strict CSP; no unsafe-eval bypass.
+  expect(page.locator('#sync-status')).to_have_text(re.compile(r'^Saved'),timeout=20000)
+  expect(page.locator('#reader-progress')).to_have_text(re.compile(r'^(?:4[1-9]|[5-9][0-9]|100)%'),timeout=20000)
+  restored=page.evaluate("""async()=>{const f=new URL(location.href).searchParams.get('file');const book=await(await fetch('/api/hq/books/'+new URL(location.href).searchParams.get('read'))).json();const file=book.book.files.find(x=>x.id===f);const saved=await(await fetch('/api/hq/books/files/'+f+'/progress?version='+encodeURIComponent(file.version))).json();return {progress:saved.progress,displayed:parseInt(document.querySelector('#reader-progress').textContent)};}""")
+  assert restored['progress']>0.4 and abs(restored['progress']*100-restored['displayed'])<2,restored
+  page.screenshot(path=str(root/'verification/reader-mobile.png'),full_page=True)
+  # Wait for service worker control before a real offline reload.
+  page.evaluate('navigator.serviceWorker.ready.then(() => true)');page.wait_for_timeout(1000)
+  if os.environ.get('BOOKS_BROWSER','chromium')=='webkit':
+   # Playwright #42775: its WebKit offline flag rejects even literal SW responses.
+   # Close the actual test listener instead. No SW mocks, route interception or CSP bypass.
+   pid=int((root/'verification/books-test-server-8788.pid').read_text())
+   os.kill(pid,signal.SIGUSR1)
+   try:
+    refused=False
+    for attempt in range(30):
+     try:ctx.request.get(base+'/api/hq/books/me',timeout=300)
+     except Exception:refused=True;break
+     time.sleep(.1)
+    assert refused,'The origin must be genuinely unavailable, not merely simulated in the reader'
+    page.reload(wait_until='domcontentloaded')
+    expect(page.locator('#reader-stage iframe')).to_be_visible(timeout=20000)
+    expect(page.locator('#sync-status')).to_contain_text('Offline')
+   finally:os.kill(pid,signal.SIGUSR2)
+   for attempt in range(30):
+    try:
+     if ctx.request.get(base+'/api/hq/books/me',timeout=300).ok:break
+    except Exception:pass
+    time.sleep(.1)
+   else:raise AssertionError('Test origin did not recover')
+   page.reload()
+  else:
+   ctx.set_offline(True);page.reload()
+   expect(page.locator('#reader-stage iframe')).to_be_visible(timeout=20000)
+   expect(page.locator('#sync-status')).to_contain_text('Offline')
+   ctx.set_offline(False)
+  page.wait_for_timeout(1800)
+  assert not errors,errors
+  (root/'verification/browser.json').write_text(json.dumps({'passed':True,'offlineTransport':'origin-listener-stopped' if os.environ.get('BOOKS_BROWSER')=='webkit' else 'browser-offline-emulation','externalBookRequests':external,'pageErrors':errors,'tests':['upload EPUB','metadata extraction','read EPUB','chapter navigation','bookmark','appearance','search','offline save/reload','restored EPUB percentage matches saved progress','PDF display and paging','desktop and mobile layout']},indent=2))
+ finally:
+  (root/'verification/browser-console.json').write_text(json.dumps({'pageErrors':errors,'console':console,'external':external},indent=2))
+  page.screenshot(path=str(root/'verification/last-browser-screen.png'),full_page=True)
+  (root/'verification/last-browser-page.html').write_text(page.content())
+  ctx.tracing.stop(path=str(root/'verification/browser-trace.zip'))
+ browser.close()
