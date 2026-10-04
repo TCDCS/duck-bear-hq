@@ -1,7 +1,7 @@
 """End-to-end verification using only synthetic books and local test accounts."""
 from pathlib import Path
 from playwright.sync_api import sync_playwright, expect
-import json, os, re
+import json, os, re, signal, time
 root=Path(__file__).resolve().parents[2]
 base='http://127.0.0.1:8788'
 (root/'verification').mkdir(exist_ok=True)
@@ -76,12 +76,37 @@ with sync_playwright() as p:
   page.screenshot(path=str(root/'verification/reader-mobile.png'),full_page=True)
   # Wait for service worker control before a real offline reload.
   page.evaluate('navigator.serviceWorker.ready.then(() => true)');page.wait_for_timeout(1000)
-  ctx.set_offline(True);page.reload()
-  expect(page.locator('#reader-stage iframe')).to_be_visible(timeout=20000)
-  expect(page.locator('#sync-status')).to_contain_text('Offline')
-  ctx.set_offline(False);page.wait_for_timeout(1800)
+  if os.environ.get('BOOKS_BROWSER','chromium')=='webkit':
+   # Playwright #42775: its WebKit offline flag rejects even literal SW responses.
+   # Close the actual test listener instead. No SW mocks, route interception or CSP bypass.
+   pid=int((root/'verification/books-test-server-8788.pid').read_text())
+   os.kill(pid,signal.SIGUSR1)
+   try:
+    refused=False
+    for attempt in range(30):
+     try:ctx.request.get(base+'/api/hq/books/me',timeout=300)
+     except Exception:refused=True;break
+     time.sleep(.1)
+    assert refused,'The origin must be genuinely unavailable, not merely simulated in the reader'
+    page.reload(wait_until='domcontentloaded')
+    expect(page.locator('#reader-stage iframe')).to_be_visible(timeout=20000)
+    expect(page.locator('#sync-status')).to_contain_text('Offline')
+   finally:os.kill(pid,signal.SIGUSR2)
+   for attempt in range(30):
+    try:
+     if ctx.request.get(base+'/api/hq/books/me',timeout=300).ok:break
+    except Exception:pass
+    time.sleep(.1)
+   else:raise AssertionError('Test origin did not recover')
+   page.reload()
+  else:
+   ctx.set_offline(True);page.reload()
+   expect(page.locator('#reader-stage iframe')).to_be_visible(timeout=20000)
+   expect(page.locator('#sync-status')).to_contain_text('Offline')
+   ctx.set_offline(False)
+  page.wait_for_timeout(1800)
   assert not errors,errors
-  (root/'verification/browser.json').write_text(json.dumps({'passed':True,'externalBookRequests':external,'pageErrors':errors,'tests':['upload EPUB','metadata extraction','read EPUB','chapter navigation','bookmark','appearance','search','offline save/reload','restored EPUB percentage matches saved progress','PDF display and paging','desktop and mobile layout']},indent=2))
+  (root/'verification/browser.json').write_text(json.dumps({'passed':True,'offlineTransport':'origin-listener-stopped' if os.environ.get('BOOKS_BROWSER')=='webkit' else 'browser-offline-emulation','externalBookRequests':external,'pageErrors':errors,'tests':['upload EPUB','metadata extraction','read EPUB','chapter navigation','bookmark','appearance','search','offline save/reload','restored EPUB percentage matches saved progress','PDF display and paging','desktop and mobile layout']},indent=2))
  finally:
   (root/'verification/browser-console.json').write_text(json.dumps({'pageErrors':errors,'console':console,'external':external},indent=2))
   page.screenshot(path=str(root/'verification/last-browser-screen.png'),full_page=True)

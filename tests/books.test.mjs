@@ -10,3 +10,5 @@ import './books/google-lifecycle.test.mjs';
 
 import './books/recovery-boundaries.test.mjs';
 import './books/oauth-supersession.test.mjs';
+
+import './books/asset-routing.test.mjs';
