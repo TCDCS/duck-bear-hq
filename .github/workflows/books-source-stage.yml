@@ -1,0 +1,85 @@
+name: Stage reviewed Books 0.3.0 source
+on:
+  push:
+    branches: [feature/books-reliable-scans-2026-10-04]
+    paths: ['.github/workflows/books-source-stage.yml', '.github/books-source.delta.b64']
+permissions:
+  contents: write
+jobs:
+  reviewed-source:
+    if: github.repository == 'TCDCS/duck-bear-hq' && github.ref == 'refs/heads/feature/books-reliable-scans-2026-10-04'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply exact reviewed delta to pinned upstream source
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64,hashlib,json,lzma,subprocess
+          raw=lzma.decompress(base64.b64decode(Path('.github/books-source.delta.b64').read_text()))
+          assert hashlib.sha256(raw).hexdigest()=='3cdcfe6d739cbc3c4d00fcfa816157f0aa6f0e9098b87b5f69c72e7480a9f47b'
+          plan=json.loads(raw)
+          assert plan['base']=='bbbb9e356186d43c957e9ff0655ef399e4a915dc'
+          assert subprocess.check_output(['git','rev-parse','HEAD^'],text=True).strip()==plan['base']
+          def blob(data):return hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+          for item in plan['files']:
+              name=item['path'];p=Path(name)
+              assert not p.is_absolute() and '..' not in p.parts
+              assert name.startswith(('src/books/','public/books/','tests/books','tools/books/','docs/books-')) or name=='.github/workflows/books-reader.yml'
+              assert item['before'] is not None or not p.exists()
+              old=p.read_bytes() if p.exists() else b''
+              assert item['before'] is None or blob(old)==item['before'],name
+              lines=old.decode('utf-8').splitlines(keepends=True)
+              for start,end,text in reversed(item['edits']):lines[start:end]=text.splitlines(keepends=True)
+              new=''.join(lines).encode('utf-8');assert blob(new)==item['after'],name
+              p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(new)
+          Path('candidate').mkdir(exist_ok=True)
+          Path('candidate/plan.json').write_bytes(raw)
+          print('Applied',len(plan['files']),'reviewed source files; no branch refs changed')
+          PY
+      - run: npm ci
+      - name: Exact lockfile audit and complete unit suite
+        run: |
+          set -o pipefail
+          npm audit --json > candidate/dependency-audit.json
+          npm test 2>&1 | tee candidate/unit-tests.log
+          npm run check 2>&1 | tee candidate/repository-checks.log
+          npx wrangler deploy --dry-run --outdir /tmp/books-reviewed-build 2>&1 | tee candidate/worker-build.log
+          npm pack undici@7.29.1 --pack-destination candidate >/dev/null
+      - name: Store verified source objects without publishing a branch or deploying
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json,os,urllib.request
+          plan=json.loads(Path('candidate/plan.json').read_text())
+          def blob(data):return hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+          def post(path,value):
+              request=urllib.request.Request('https://api.github.com/repos/TCDCS/duck-bear-hq/git/'+path,data=json.dumps(value).encode(),method='POST',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'})
+              with urllib.request.urlopen(request,timeout=30) as response:return json.load(response)
+          entries=[]
+          for item in plan['files']:
+              data=Path(item['path']).read_bytes();assert blob(data)==item['after'],item['path']
+              stored=post('blobs',{'content':data.decode('utf-8'),'encoding':'utf-8'})
+              assert stored['sha']==item['after']
+              entries.append({'path':item['path'],'mode':'100644','type':'blob','sha':stored['sha']})
+          tree=post('trees',{'base_tree':plan['baseTree'],'tree':entries})
+          assert tree['sha']==plan['tree'],'The remote tree differs from the reviewed local tree'
+          record={'base':plan['base'],'tree':tree['sha'],'files':entries,'sourceCommit':os.environ['GITHUB_SHA'],'refsChanged':False,'deployed':False}
+          Path('candidate/source-manifest.json').write_text(json.dumps(record,indent=2))
+          print(json.dumps(record,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: books-0.3.0-reviewed-source
+          path: candidate/
+          retention-days: 3
