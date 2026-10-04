@@ -10,7 +10,7 @@ evidence=root/'verification';evidence.mkdir(exist_ok=True)
 checks=[];errors=[]
 server_log=(evidence/'restore-dev-server.log').open('w')
 server=subprocess.Popen(['node','--experimental-sqlite','tools/books/dev-server.mjs'],cwd=root,
-    env={**os.environ,'BOOKS_TEST_PORT':'8789'},stdout=server_log,stderr=subprocess.STDOUT)
+    env={**os.environ,'BOOKS_TEST_PORT':'8789','BOOKS_TEST_FAIL_RESTORE_UPLOAD_ONCE':'1'},stdout=server_log,stderr=subprocess.STDOUT)
 try:
  with sync_playwright() as p:
     browser=getattr(p,os.environ.get('BOOKS_BROWSER','chromium')).launch(
@@ -84,6 +84,7 @@ try:
     page.set_viewport_size({'width':390,'height':844})
     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
     page.screenshot(path=str(evidence/'backup-mobile.png'),full_page=True)
+    source_total=ctx.request.get(base+'/api/hq/books/catalogue').json()['total']
     target=context('zachary',recovery)
     for attempt in range(50):
         if server.poll() is not None:raise AssertionError('Isolated recovery server stopped')
@@ -98,8 +99,17 @@ try:
     restored.get_by_label('Choose a Books backup ZIP',exact=True).set_input_files(str(dest))
     expect(restored.get_by_role('button',name='Restore Books',exact=True)).to_be_disabled()
     restored.get_by_label('Type RESTORE BOOKS to confirm',exact=True).fill('RESTORE BOOKS')
-    restored.get_by_role('button',name='Restore Books',exact=True).click()
-    expect(restored.locator('#restore-result')).to_contain_text('Books restored privately',timeout=20000)
+    # Inject a real HTTP 503 in the isolated target; keep service workers enabled.
+    apply=restored.get_by_role('button',name='Restore Books',exact=True)
+    apply.click()
+    expect(restored.locator('#restore-result')).to_contain_text('Synthetic retryable upload interruption.')
+    expect(apply).to_be_enabled()
+    expect(restored.get_by_label('Choose a Books backup ZIP',exact=True)).to_be_enabled()
+    assert target.request.get(recovery+'/api/hq/books/catalogue').json()['total']==0,'Interrupted staging must not partially restore records'
+    apply.click()
+    expect(restored.locator('#restore-result')).to_contain_text('Books restored privately',timeout=30000)
+    assert target.request.get(recovery+'/api/hq/books/catalogue').json()['total']==len(manifest['tables']['books_catalogue'])
+    checks.append('interrupted upload leaves catalogue empty; retry restores the complete catalogue')
     restored.screenshot(path=str(evidence/'restore-complete.png'),full_page=True)
     content=target.request.get(recovery+'/api/hq/books/files/'+file['id']+'/content?download=1')
     assert content.ok and content.body()==original
@@ -111,6 +121,10 @@ try:
     assert any(n['kind']=='bookmark' for n in owner_notes)
     assert all(n['note']!='Private partner recovery note' for n in owner_notes)
     assert [n['note'] for n in partner_notes]==['Private partner recovery note']
+    progress='/api/hq/books/files/'+file['id']+'/progress'
+    assert target.request.get(recovery+progress).json()['locator']['page']==2
+    assert other.request.get(recovery+progress).json()['locator']['page']==1
+    assert ctx.request.get(base+'/api/hq/books/catalogue').json()['total']==source_total,'The source library must remain intact'
     assert other.request.get(recovery+'/api/hq/books/backup').status==403
     assert target.request.get(recovery+'/api/hq/integrations/google-drive/status').json()['connected'] is False
     checks.append('confirmed browser restore preserves exact original bytes and separate reader records without Google tokens')
@@ -120,9 +134,14 @@ try:
     expect(restored.locator('#reader-stage canvas')).to_be_visible()
     expect(restored.locator('#reader-progress')).to_contain_text('2 of 3')
     restored.get_by_role('button',name='Notes',exact=True).click()
-    expect(restored.locator('#reader-panel')).to_contain_text('Bookmark')
+    expect(restored.locator('#reader-panel .note-card b')).to_have_text('Bookmark · Page 2')
     restored.screenshot(path=str(evidence/'restored-reader.png'),full_page=True)
-    checks.append('restored book opens at the saved page with its bookmark')
+    restored.get_by_role('button',name='Next page',exact=True).click()
+    expect(restored.locator('#reader-progress')).to_contain_text('3 of 3')
+    restored.get_by_role('button',name='Go to passage',exact=True).click()
+    expect(restored.locator('#reader-progress')).to_contain_text('2 of 3')
+    expect(restored.locator('#reader-panel')).to_be_hidden()
+    checks.append('restored book opens at the saved page and its rendered bookmark navigates back to that page')
     assert not errors,errors
     (evidence/'backup-browser.json').write_text(json.dumps({'passed':True,'checks':checks,'pageErrors':errors},indent=2))
     print('\n'.join('PASS '+x for x in checks))

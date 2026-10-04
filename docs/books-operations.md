@@ -31,3 +31,17 @@ The Undici security override is pinned to vendor-patched 7.29.1. The candidate l
 
 ### Recovery procedure
 As Zachary, open Books > Library connection > Book backups. Download the Books ZIP and keep it privately. Recovery first previews that ZIP and refuses a nonempty Books target; it never deletes existing data to make room. In an empty Books target using the original household accounts, type `RESTORE BOOKS`; the browser checks/uploads the archived private files, then the server commits the records together. Reconnect Google and explicitly select the eBooks folder for original cloud files. Restored state cannot grant another account access, change website roles or modify original Drive books. Large libraries need a direct D1/R2 backup outside this bounded browser tool.
+
+
+## Books 0.3.0 — reliable scans and verified recovery
+The Books build label and code-only offline cache are versioned independently of the main website. This continuation stays on the existing feature branch; it does not enable or deploy Books on production.
+
+A scan page now commits its catalogue, file manifest, warnings, counts and continuation token in one guarded D1 transaction. A lost/expired folder lease, paused job, removed Google connection or changed source root cannot publish the stale page. Failed writes roll back the entire page, so retry does not double-count. A conditional start reuses an existing running or paused scan for the selected root. The 100,000-item limit is checked before committing a page; originals and saved reader records are never removed by that limit.
+
+`Pause scan` now saves the paused status on the server and releases outstanding leases. It applies across owner devices. `Scan / resume library` resumes the saved current-root checkpoint; another root's old job is not silently resumed. The screen shows completed/total folders, imported-book and checked-item counts, plus bounded import warnings. A late browser response cannot replace the paused status. This remains a foreground, resumable scan, not an unattended background service.
+
+Metadata sidecars are rechecked against their scanned parent before their bytes are read. Missing, moved or unreadable OPF metadata produces a visible filename-fallback warning rather than deleting the source. As before, listing visible books does not prove that Google exposed every book.
+
+The local test harness serves the real shared ZIP module with JavaScript MIME. A regression check catches the former plain-text fallback. During a recovery attempt the ZIP picker is locked; a failed request unlocks it for retry. The browser recovery test uses a separate, fresh in-memory server with synthetic household IDs: it deliberately interrupts one upload, checks that the catalogue remains empty, retries, verifies byte-for-byte originals and separate reader records, then opens a recovered PDF at its saved page. No reset endpoint, production credentials or live data are used.
+
+Real-account Google consent, nested-library access and Kobo/mobile-device gates in the section above remain separate from automated tests.
